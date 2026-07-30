@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600" role="img" aria-label="Placeholder">
+  <rect width="800" height="600" fill="#6b6b6b"/>
+  <g fill="none" stroke="#9a9a9a" stroke-width="3">
+    <circle cx="300" cy="240" r="48"/>
+    <path d="M180 430l130-150 90 100 80-70 140 120" stroke-linejoin="round"/>
+  </g>
+  <text x="400" y="540" font-family="system-ui, sans-serif" font-size="28" fill="#bdbdbd" text-anchor="middle">Placeholder</text>
+</svg>
