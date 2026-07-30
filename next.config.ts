@@ -7,32 +7,13 @@ const supabaseHost =
     : "bzswpetvdwzvznhvtote.supabase.co";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   images: {
     remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "images.unsplash.com",
-        port: "",
-        pathname: "/**",
-      },
-      {
-        protocol: "https",
-        hostname: "cdn.shopify.com",
-        port: "",
-        pathname: "/**",
-      },
       {
         protocol: "https",
         hostname: supabaseHost,
         port: "",
         pathname: "/storage/v1/object/public/**",
-      },
-      {
-        protocol: "https",
-        hostname: "cdn.imagin.studio",
-        port: "",
-        pathname: "/**",
       },
     ],
   },

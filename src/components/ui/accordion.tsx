@@ -51,7 +51,7 @@ const AccordionTrigger = React.forwardRef<
                             size={20}
                             strokeWidth={2.5}
                             className={cn(
-                                "shrink-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:rotate-90 text-brand-green rounded-full border border-brand-green p-2 w-8 h-8",
+                                "shrink-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:rotate-90 text-lyp-cherry rounded-full border border-lyp-cherry p-2 w-8 h-8",
                                 isOpen
                                     ? "opacity-0 rotate-90"
                                     : "opacity-100 rotate-0",
@@ -62,7 +62,7 @@ const AccordionTrigger = React.forwardRef<
                             size={20}
                             strokeWidth={2.5}
                             className={cn(
-                                "shrink-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] absolute top-0 left-0 group-hover:rotate-90 text-brand-green rounded-full border border-brand-green p-2 w-8 h-8",
+                                "shrink-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] absolute top-0 left-0 group-hover:rotate-90 text-lyp-cherry rounded-full border border-lyp-cherry p-2 w-8 h-8",
                                 isOpen
                                     ? "opacity-100 rotate-0"
                                     : "opacity-0 rotate-90",

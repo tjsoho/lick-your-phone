@@ -1,0 +1,316 @@
+{
+  "_meta": {
+    "source": "PandaDoc templates 'LickYourPhone x [Client.Company] Brand Partnership' and 'Marketing Services', captured 30 Jul 2026",
+    "currency": "AUD",
+    "amounts": "All amounts are integers in CENTS and are EXCLUSIVE of GST. Every price in the source documents is quoted '+ GST'. GST handling is deferred (see spec 4C) but the portal must resolve it before any Pinch charge is made.",
+    "discount_rule": "list_price is DERIVED, never stored independently: list = round(target / (1 - discount_pct)). Verified against every price in both source documents. Storing both figures independently guarantees drift.",
+    "states": ["QLD", "NSW", "VIC", "WA"]
+  },
+
+  "services": [
+    {
+      "slug": "exclusive-brand-partnership",
+      "name": "Exclusive Brand Partnership",
+      "template": "brand-partnership",
+      "billing": "one_off",
+      "term": "7 weeks (1 week pre-promotion, 6 week campaign)",
+      "target_price": 598500,
+      "discount_pct": 0.25,
+      "discount_window_hours": 168,
+      "list_price": 798000,
+      "requires_other_service": false,
+      "inclusions": [
+        "Tailored strategy for the collaborative promotion",
+        "Limited edition special menu recommendations",
+        "Pre-hype strategy: recommendations and techniques to generate excitement",
+        "Social media strategy implementation",
+        "Content creation: 4 videos across LickYourPhone socials (1 pre-hype, 1 day before launch, 1 day of launch, 1 half-way through)",
+        "Influencer marketing: sourcing, inviting and managing 6 influencer bookings",
+        "Strategic planning",
+        "Content creation"
+      ]
+    },
+    {
+      "slug": "complimentary-visit",
+      "name": "Complimentary Visit",
+      "template": "brand-partnership",
+      "billing": "in_kind",
+      "term": "One-off campaign",
+      "target_price": 0,
+      "discount_pct": null,
+      "list_price": null,
+      "requires_other_service": false,
+      "inclusions": [
+        "1x Reel, 1x TikTok, 1x Pinterest post, 1x Facebook post via invite collaborator",
+        "On-site attendance and content creation",
+        "Pre-production and creative conceptualisation",
+        "Post-production including video editing and file preparation",
+        "One 15-30 second video published across all socials"
+      ],
+      "client_obligations": [
+        "1x video testimonial",
+        "1x Google review",
+        "1x EDM feature"
+      ]
+    },
+    {
+      "slug": "complimentary-brand-partnership",
+      "name": "Complimentary Brand Partnership",
+      "template": "brand-partnership",
+      "billing": "in_kind",
+      "term": "7 weeks (1 week pre-promotion, 6 week campaign)",
+      "target_price": 0,
+      "discount_pct": null,
+      "list_price": null,
+      "requires_other_service": false,
+      "inclusions": [
+        "Tailored strategy: conceptualise and suggest limited edition menu recommendations",
+        "Campaign management: planning, organising and managing all aspects",
+        "Influencer marketing: 6 influencer bookings",
+        "Content creation: 4 videos across LYP socials on the four posting slots",
+        "1x Reel, 1x TikTok, 1x Pinterest post, 1x Facebook post via invite collaborator"
+      ],
+      "client_obligations": [
+        "1x video testimonial",
+        "1x Google review",
+        "1x EDM feature"
+      ]
+    },
+
+    {
+      "slug": "videography-reels-subscription",
+      "name": "Videography — Reels Subscription",
+      "template": "marketing-services",
+      "menu": "MEDIA MENU / Professional Videography",
+      "billing": "recurring_monthly",
+      "term": "12 months, 6 shoots (every 2 months)",
+      "target_price": 124900,
+      "discount_pct": 0.20,
+      "discount_window_hours": 24,
+      "list_price": 156125,
+      "requires_other_service": false,
+      "inclusions": [
+        "15x Reels/TikTok videos per shoot",
+        "90x Reels/TikTok videos per year",
+        "10-30 second videos each",
+        "Vertical video dimension 9:16",
+        "On-site attendance and content creation",
+        "Pre-production and creative conceptualisation",
+        "Edited videos aligned with content guidelines",
+        "Creative video shoot meeting to design shoot brief",
+        "Selecting suitable music or sound effects",
+        "Post-production including minor video editing and file preparation"
+      ]
+    },
+    {
+      "slug": "community-management",
+      "name": "Community Management",
+      "template": "marketing-services",
+      "menu": "MEDIA MENU / Community Management",
+      "billing": "recurring_monthly",
+      "term": "12 months",
+      "target_price": 98500,
+      "discount_pct": 0.20,
+      "discount_window_hours": 24,
+      "list_price": 123125,
+      "requires_other_service": false,
+      "inclusions": [
+        "Managing all direct messages",
+        "Responding to public comments",
+        "Sharing customer content to Stories",
+        "Communication aligned with brand tone of voice",
+        "All enquiries handled across Meta"
+      ]
+    },
+    {
+      "slug": "videography-reels",
+      "name": "Videography — Reels",
+      "template": "marketing-services",
+      "menu": "MEDIA MENU / Professional Videography",
+      "billing": "one_off",
+      "target_price": 249500,
+      "discount_pct": null,
+      "list_price": null,
+      "requires_other_service": false,
+      "inclusions": [
+        "15x Reels/TikTok videos",
+        "10-30 second videos each",
+        "Vertical video dimension 9:16",
+        "On-site attendance and content creation",
+        "Pre-production and creative conceptualisation",
+        "Creative video shoot meeting to design shoot brief",
+        "Selecting suitable music or sound effects",
+        "Post-production including minor video editing and file preparation"
+      ]
+    },
+    {
+      "slug": "photography-images",
+      "name": "Photography — Images",
+      "template": "marketing-services",
+      "menu": "MEDIA MENU / Content Creation",
+      "billing": "one_off",
+      "target_price": 249500,
+      "discount_pct": null,
+      "list_price": null,
+      "requires_other_service": false,
+      "inclusions": [
+        "100 high quality images",
+        "Shot and edited for social media",
+        "On-site attendance and content creation",
+        "Pre-production and creative conceptualisation",
+        "Creative photoshoot meeting to design shoot brief",
+        "Edit and colour correction based on brand guidelines"
+      ]
+    },
+
+    {
+      "slug": "meta-digital-ads",
+      "name": "Meta Digital Ads",
+      "template": "marketing-services",
+      "menu": "MAIN MENU / Digital marketing solutions",
+      "billing": "recurring_monthly",
+      "price_display_period": "week",
+      "discount_pct": 0.20,
+      "discount_window_hours": 24,
+      "requires_other_service": false,
+      "tiers": [
+        { "slug": "annually",    "name": "Annually",    "target_price": 38900, "list_price": 48625 },
+        { "slug": "six-months",  "name": "Six months",  "target_price": 48900, "list_price": 61125 },
+        { "slug": "three-months","name": "Three months","target_price": 58900, "list_price": 73625 }
+      ],
+      "inclusions": [
+        "Custom strategy designed ads to attract new customers and reconnect with existing ones",
+        "Up to 3x Instagram and Facebook campaigns",
+        "Targeting based on age, gender, location and interests",
+        "Campaign monitoring and performance optimisation",
+        "Creative ad copy that grabs attention and converts",
+        "Monthly strategy meetings"
+      ],
+      "disclaimers": [
+        "Ad spend is completely your choice; we will recommend a budget based on your goals."
+      ]
+    },
+    {
+      "slug": "tiktok-digital-ads",
+      "name": "TikTok Digital Ads",
+      "template": "marketing-services",
+      "menu": "MAIN MENU / Digital marketing solutions",
+      "billing": "recurring_monthly",
+      "price_display_period": "week",
+      "discount_pct": 0.20,
+      "discount_window_hours": 24,
+      "requires_other_service": false,
+      "tiers": [
+        { "slug": "annually",    "name": "Annually",    "target_price": 38900, "list_price": 48625 },
+        { "slug": "six-months",  "name": "Six months",  "target_price": 48900, "list_price": 61125 },
+        { "slug": "three-months","name": "Three months","target_price": 58900, "list_price": 73625 }
+      ],
+      "inclusions": [
+        "Reach a younger audience to grow your business",
+        "Reach a more dynamic audience through interest-based targeting",
+        "Targeting based on age, gender, main city and behaviours",
+        "Campaign monitoring and performance optimisation",
+        "Creative ad copy that grabs attention",
+        "Monthly strategy meetings"
+      ],
+      "disclaimers": [
+        "TikTok requires a minimum ad spend of $20 per day per campaign."
+      ]
+    },
+    {
+      "slug": "influencer-marketing",
+      "name": "Influencer Marketing",
+      "template": "marketing-services",
+      "menu": "MAIN MENU / Hospitality marketing solutions",
+      "billing": "recurring_monthly",
+      "price_display_period": "week",
+      "discount_pct": 0.20,
+      "discount_window_hours": 24,
+      "requires_other_service": false,
+      "tiers": [
+        { "slug": "annually",    "name": "Annually",    "target_price": 38900, "list_price": 48625 },
+        { "slug": "six-months",  "name": "Six months",  "target_price": 48900, "list_price": 61125 },
+        { "slug": "three-months","name": "Three months","target_price": 58900, "list_price": 73625 }
+      ],
+      "inclusions": [
+        "Targeted influencer campaigns to create word-of-mouth referrals",
+        "Twelve influencers organised on average per quarter",
+        "Influencer pitching and campaign management",
+        "Targeting small to medium influencers",
+        "Campaign monitoring and tracking",
+        "Monthly strategy meetings"
+      ]
+    },
+
+    {
+      "slug": "media-event",
+      "name": "Media Event",
+      "aka": ["Influencer Event"],
+      "template": "marketing-services",
+      "menu": "MEDIA MENU / Event Marketing",
+      "billing": "one_off",
+      "term": "One-time campaign",
+      "discount_pct": 0.20,
+      "discount_window_hours": 24,
+      "requires_other_service": false,
+      "tiers": [
+        { "slug": "up-to-30", "name": "Up to 30x influencers", "target_price": 479120, "list_price": 598900 },
+        { "slug": "up-to-60", "name": "Up to 60x influencers", "target_price": 639120, "list_price": 798900 }
+      ],
+      "inclusions": [
+        "Define goals, plan and strategise the event",
+        "Select event date and create master plan",
+        "Organise guest list including media, celebrity and influencers",
+        "Event invitation and RSVP management",
+        "Tracking, measuring and delivery of insights and results",
+        "Create a run sheet for the event",
+        "Recommend campaign brief and execute event",
+        "Monitor and manage guest media obligations",
+        "Organise entertainment",
+        "Co-ordinate with event supplies",
+        "Share UGC across social media",
+        "LickYourPhone to host the event"
+      ],
+      "client_obligations": [
+        "Food",
+        "Drinks",
+        "Media wall",
+        "Styling of venue",
+        "Seating arrangements",
+        "Printed menu or name tags",
+        "Event photographer and/or videographer"
+      ]
+    },
+    {
+      "slug": "paid-partnership",
+      "name": "Paid Partnership",
+      "aka": ["LYP Partnership", "LickYourPhone Sponsored Post"],
+      "template": "marketing-services",
+      "menu": "MEDIA MENU / Paid Partnership",
+      "billing": "one_off",
+      "term": "One-time campaign",
+      "target_price": 159500,
+      "discount_pct": null,
+      "list_price": null,
+      "requires_other_service": true,
+      "_requires_note": "Source page states this campaign is only available alongside at least one other marketing service. The selector must be disabled until another service is chosen, and must auto-deselect if the last other service is removed.",
+      "inclusions": [
+        "1x Reel, 1x TikTok, 1x Pinterest, 1x Facebook via invite collaborate",
+        "On-site attendance and content creation",
+        "Pre-production and creative conceptualisation",
+        "Post-production including minor video editing and file preparation",
+        "Licensing allowing the client to use the content in ads and for reposting",
+        "One 15-30 second video published across all socials"
+      ],
+      "client_obligations": [
+        "All food and beverages provided complimentary to the team"
+      ]
+    }
+  ],
+
+  "_open_questions": [
+    "Meta Ads, TikTok Ads and Influencer Marketing carry byte-identical tier pricing. Confirm this is a deliberate flat rate card and not copy-paste drift in the PandaDoc template BEFORE seeding production.",
+    "Weekly-priced services are displayed per week but billed monthly. The exact monthly figure is undefined: 52/12 weeks gives $1,685.67 for the $389/wk tier, while 4 weeks gives $1,556. Confirm with Sofia.",
+    "GST: all amounts above are ex-GST. Pinch charges a literal amount which must be GST-inclusive."
+  ]
+}

@@ -12,14 +12,14 @@ const buttonVariants = cva(
             variant: {
                 default: "text-primary-foreground",
                 destructive:
-                    "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:border-brand-green hover:text-brand-green border border-transparent",
+                    "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:border-lyp-cherry hover:text-lyp-cherry border border-transparent",
                 outline:
-                    "border-gray-300 bg-background hover:bg-accent hover:text-accent-foreground hover:border-brand-green hover:text-brand-green border",
+                    "border-gray-300 bg-background hover:bg-accent hover:text-accent-foreground hover:border-lyp-cherry hover:text-lyp-cherry border",
                 secondary:
                     "bg-black text-white hover:bg-black backdrop-blur-lg hover:border-white hover:text-white border border-transparent",
-                ghost: "hover:bg-accent hover:text-accent-foreground hover:border-brand-green hover:text-brand-green border border-transparent",
-                link: "text-primary underline-offset-4 hover:underline hover:border-brand-green hover:text-brand-green border border-transparent",
-                white: "bg-white text-black hover:bg-gray-100 hover:border-brand-green hover:text-brand-green border border-transparent",
+                ghost: "hover:bg-accent hover:text-accent-foreground hover:border-lyp-cherry hover:text-lyp-cherry border border-transparent",
+                link: "text-primary underline-offset-4 hover:underline hover:border-lyp-cherry hover:text-lyp-cherry border border-transparent",
+                white: "bg-white text-black hover:bg-gray-100 hover:border-lyp-cherry hover:text-lyp-cherry border border-transparent",
             },
             size: {
                 default: "px-6 py-2",

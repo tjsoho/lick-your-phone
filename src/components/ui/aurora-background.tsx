@@ -27,7 +27,7 @@ const AuroraBackground: React.FC<AuroraBackgroundProps> = ({
     <div
       role="img"
       aria-label={ariaLabel}
-      className={`relative flex flex-col min-h-screen w-full items-stretch justify-start bg-brand-black text-slate-50 overflow-hidden ${className}`}
+      className={`relative flex flex-col min-h-screen w-full items-stretch justify-start bg-lyp-black text-slate-50 overflow-hidden ${className}`}
     >
       <div className="absolute inset-0 z-0 overflow-hidden" aria-hidden="true">
         {/* Pulsing radial gradients */}
