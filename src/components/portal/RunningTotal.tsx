@@ -20,8 +20,8 @@ export default function RunningTotal() {
   const hasDiscount = totalDiscountCents > 0
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-lyp-cherry/30 bg-lyp-cherry px-6 py-3">
-      <div className="mx-auto flex max-w-5xl items-center justify-between">
+    <div className="fixed top-0 left-0 right-0 z-50 border-b border-lyp-cherry/30 bg-lyp-cherry px-6 py-3">
+      <div className="mx-auto flex max-w-[1400px] items-center justify-between">
         <div className="flex items-center gap-3">
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-lyp-white font-heading text-sm text-lyp-cherry">
             {selectedCount}

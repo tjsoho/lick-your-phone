@@ -59,12 +59,16 @@ function CarouselInner() {
   const page = pages[currentPage]
   if (!page) return null
 
-  const hasBottom = selectedCount > 0
-  const navHeight = hasBottom ? "pb-[108px]" : "pb-[56px]"
+  const hasTop = selectedCount > 0
+  const isSummary = page.slug === "summary"
+  const showRunningTotal = hasTop && !isSummary
+  const topPad = showRunningTotal ? "pt-[52px]" : ""
 
   return (
     <div className="relative flex h-dvh flex-col portal-bg">
-      <div className={`flex-1 overflow-hidden ${navHeight}`}>
+      {showRunningTotal && <RunningTotal />}
+
+      <div className={`flex-1 overflow-hidden pb-[56px] ${topPad}`}>
         <div className="mx-auto h-full max-w-[1400px]">
           <motion.div
             key={page.id}
@@ -79,11 +83,7 @@ function CarouselInner() {
       </div>
 
       {/* Navigation bar */}
-      <div
-        className={`fixed left-0 right-0 z-40 border-t border-lyp-white/10 bg-lyp-black/80 backdrop-blur-md ${
-          hasBottom ? "bottom-14" : "bottom-0"
-        }`}
-      >
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-lyp-white/10 bg-lyp-black/80 backdrop-blur-md">
         <div className="h-0.5 w-full bg-lyp-white/5">
           <div
             className="h-0.5 bg-lyp-cherry transition-all duration-300"
@@ -115,8 +115,6 @@ function CarouselInner() {
           </button>
         </div>
       </div>
-
-      <RunningTotal />
     </div>
   )
 }
