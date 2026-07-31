@@ -4,12 +4,13 @@
 
 @layer base {
   :root {
-    --lyp-white: #FFFFFF;
-    --lyp-cherry: #B22626;
-    --lyp-black: #000000;
-    --lyp-maroon: #6D080A;
-    --lyp-deep-red: #9B0102;
-    --lyp-off-white: #EEE7E7;
+    --lyp-white: 255 255 255;
+    --lyp-cherry: 178 38 38;
+    --lyp-black: 0 0 0;
+    --lyp-maroon: 109 8 10;
+    --lyp-deep-red: 155 1 2;
+    --lyp-off-white: 238 231 231;
+    --lyp-gold: 218 165 32;
 
     --background: 0 0% 100%;
     --foreground: 0 0% 0%;
@@ -51,5 +52,16 @@
   }
   p {
     @apply font-body font-normal leading-relaxed;
+  }
+}
+
+@layer utilities {
+  .portal-bg {
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(155, 1, 2, 0.3) 0%, transparent 70%),
+      radial-gradient(ellipse at 80% 20%, rgba(109, 8, 10, 0.35) 0%, transparent 60%),
+      radial-gradient(ellipse at 60% 80%, rgba(178, 38, 38, 0.2) 0%, transparent 60%),
+      radial-gradient(ellipse at 40% 30%, rgba(60, 3, 3, 0.5) 0%, transparent 50%),
+      linear-gradient(135deg, #100303 0%, #1a0606 25%, #100303 50%, #080101 100%);
   }
 }

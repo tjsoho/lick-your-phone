@@ -10,12 +10,13 @@ const config: Config = {
     extend: {
       colors: {
         lyp: {
-          white: "var(--lyp-white)",
-          cherry: "var(--lyp-cherry)",
-          black: "var(--lyp-black)",
-          maroon: "var(--lyp-maroon)",
-          "deep-red": "var(--lyp-deep-red)",
-          "off-white": "var(--lyp-off-white)",
+          white: "rgb(var(--lyp-white) / <alpha-value>)",
+          cherry: "rgb(var(--lyp-cherry) / <alpha-value>)",
+          black: "rgb(var(--lyp-black) / <alpha-value>)",
+          maroon: "rgb(var(--lyp-maroon) / <alpha-value>)",
+          "deep-red": "rgb(var(--lyp-deep-red) / <alpha-value>)",
+          "off-white": "rgb(var(--lyp-off-white) / <alpha-value>)",
+          gold: "rgb(var(--lyp-gold) / <alpha-value>)",
         },
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
