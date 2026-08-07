@@ -7,10 +7,12 @@
  * Docs: https://docs.getpinch.com.au
  */
 
+import axios from "axios";
+
 const PINCH_API_URL =
-  process.env.PINCH_API_URL || "https://api.sandbox.getpinch.com.au";
+  process.env.PINCH_API_URL || "https://api.getpinch.com.au/test";
 const PINCH_AUTH_URL =
-  process.env.PINCH_AUTH_URL || "https://auth-sandbox.getpinch.com.au";
+  process.env.PINCH_AUTH_URL || "https://auth.getpinch.com.au";
 const PINCH_MERCHANT_ID = process.env.PINCH_MERCHANT_ID || "";
 const PINCH_SECRET_KEY = process.env.PINCH_SECRET_KEY || "";
 
@@ -25,22 +27,37 @@ let cachedToken: { accessToken: string; expiresAt: number } | null = null;
 export async function getPinchToken(): Promise<string> {
   if (!PINCH_MERCHANT_ID || !PINCH_SECRET_KEY) {
     throw new Error(
-      "Pinch credentials not configured. Set PINCH_MERCHANT_ID and PINCH_SECRET_KEY."
+      "Pinch credentials not configured. Set PINCH_MERCHANT_ID and PINCH_SECRET_KEY.",
     );
   }
 
   // Reuse token if still valid (with 60s buffer)
   if (cachedToken && Date.now() < cachedToken.expiresAt - 60_000) {
+    console.log(
+      `Using cached Pinch token (expires in ${Math.round(
+        (cachedToken.expiresAt - Date.now()) / 1000,
+      )}s)`,
+    );
     return cachedToken.accessToken;
   }
 
+  console.log(
+    "Fetching new Pinch token from auth endpoint...",
+    `${PINCH_AUTH_URL}/connect/token`,
+  );
+
+  const base64Credentials = Buffer.from(
+    `${PINCH_MERCHANT_ID}:${PINCH_SECRET_KEY}`,
+  ).toString("base64");
+
   const res = await fetch(`${PINCH_AUTH_URL}/connect/token`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${base64Credentials}`,
+    },
     body: new URLSearchParams({
       grant_type: "client_credentials",
-      client_id: PINCH_MERCHANT_ID,
-      client_secret: PINCH_SECRET_KEY,
     }),
   });
 
@@ -64,26 +81,32 @@ export async function getPinchToken(): Promise<string> {
 
 async function pinchFetch<T>(
   path: string,
-  options: { method: string; body?: unknown }
+  options: { method: string; body?: unknown },
 ): Promise<T> {
   const token = await getPinchToken();
 
-  const res = await fetch(`${PINCH_API_URL}${path}`, {
-    method: options.method,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "pinch-version": PINCH_VERSION,
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  console.log(`Pinch ${options.method} ${PINCH_API_URL}${path}`, options.body);
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Pinch ${options.method} ${path} failed (${res.status}): ${body}`);
+  try {
+    const res = await axios.request<T>({
+      url: `${PINCH_API_URL}${path}`,
+      method: options.method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "pinch-version": PINCH_VERSION,
+      },
+      data: options.body,
+    });
+
+    return res.data;
+  } catch (error: any) {
+    console.error(
+      `Pinch ${options.method} ${path} failed:`,
+      error.response?.data || error.message,
+    );
+    throw new Error(`Pinch ${options.method} ${path} failed: ${error.message}`);
   }
-
-  return res.json() as Promise<T>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -103,6 +126,7 @@ export async function createPayer(data: {
   emailAddress: string;
   companyName?: string;
 }): Promise<PinchPayer> {
+  console.log("Creating Pinch payer with data:", data);
   return pinchFetch<PinchPayer>("/payers", {
     method: "POST",
     body: data,
@@ -120,11 +144,14 @@ export interface PinchSource {
 
 export async function vaultSource(
   payerId: string,
-  token: string
+  token: string,
 ): Promise<PinchSource> {
   return pinchFetch<PinchSource>(`/payers/${payerId}/sources`, {
     method: "POST",
-    body: { sourceToken: token },
+    body: {
+      sourceType: "credit-card",
+      token: token,
+    },
   });
 }
 
@@ -142,7 +169,7 @@ export async function schedulePayment(
   sourceId: string,
   amountCents: number,
   date: string, // YYYY-MM-DD
-  idempotencyKey: string
+  idempotencyKey: string,
 ): Promise<PinchPayment> {
   return pinchFetch<PinchPayment>("/payments", {
     method: "POST",
@@ -161,7 +188,7 @@ export async function chargeRealtime(
   payerId: string,
   sourceId: string,
   amountCents: number,
-  idempotencyKey: string
+  idempotencyKey: string,
 ): Promise<PinchPayment> {
   return pinchFetch<PinchPayment>("/payments/realtime", {
     method: "POST",

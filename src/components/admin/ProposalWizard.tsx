@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { createClient, createVenue } from "@/server-actions/clients";
-import { createProposal } from "@/server-actions/proposals";
+import {
+  createProposal,
+  updateProposal,
+  supersedeProposal,
+} from "@/server-actions/proposals";
 
 type Client = {
   id: string;
@@ -21,9 +25,18 @@ type State = {
   abbreviation: string;
 };
 
+export type ProposalInitialData = {
+  clientId: string;
+  venueId: string;
+  notes: string;
+};
+
 type Props = {
   clients: Client[];
   states: State[];
+  mode?: "create" | "edit" | "supersede";
+  proposalId?: string;
+  initialData?: ProposalInitialData;
 };
 
 function slugify(name: string): string {
@@ -38,13 +51,21 @@ function slugify(name: string): string {
 
 const steps = ["Client", "Venue", "Notes", "Review"];
 
-export default function ProposalWizard({ clients, states }: Props) {
+export default function ProposalWizard({
+  clients,
+  states,
+  mode = "create",
+  proposalId,
+  initialData,
+}: Props) {
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
   // Client state
-  const [selectedClientId, setSelectedClientId] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState(
+    initialData?.clientId ?? "",
+  );
   const [showNewClient, setShowNewClient] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientEntity, setNewClientEntity] = useState("");
@@ -52,7 +73,9 @@ export default function ProposalWizard({ clients, states }: Props) {
   const [createdClients, setCreatedClients] = useState<Client[]>([]);
 
   // Venue state
-  const [selectedVenueId, setSelectedVenueId] = useState("");
+  const [selectedVenueId, setSelectedVenueId] = useState(
+    initialData?.venueId ?? "",
+  );
   const [showNewVenue, setShowNewVenue] = useState(false);
   const [newVenueName, setNewVenueName] = useState("");
   const [newVenueAddress, setNewVenueAddress] = useState("");
@@ -62,7 +85,7 @@ export default function ProposalWizard({ clients, states }: Props) {
   >([]);
 
   // Notes
-  const [notes, setNotes] = useState("");
+  const [notes, setNotes] = useState(initialData?.notes ?? "");
 
   const allClients = [...clients, ...createdClients];
   const selectedClient = allClients.find((c) => c.id === selectedClientId);
@@ -120,10 +143,7 @@ export default function ProposalWizard({ clients, states }: Props) {
       return;
     }
     if (data) {
-      setCreatedVenues((prev) => [
-        ...prev,
-        { id: data.id, name: data.name },
-      ]);
+      setCreatedVenues((prev) => [...prev, { id: data.id, name: data.name }]);
       setSelectedVenueId(data.id);
       setShowNewVenue(false);
       setNewVenueName("");
@@ -133,19 +153,37 @@ export default function ProposalWizard({ clients, states }: Props) {
     }
   }
 
-  async function handleCreateProposal() {
+  async function handleSubmit() {
     setLoading(true);
-    const { error } = await createProposal({
+    const payload = {
       client_id: selectedClientId,
       venue_id: selectedVenueId,
       notes: notes.trim() || undefined,
-    });
+    };
+
+    let result: { error: string | null };
+
+    if (mode === "edit" && proposalId) {
+      result = await updateProposal(proposalId, payload);
+    } else if (mode === "supersede" && proposalId) {
+      result = await supersedeProposal(proposalId, payload);
+    } else {
+      result = await createProposal(payload);
+    }
+
     setLoading(false);
-    if (error) {
-      toast.error(error);
+    if (result.error) {
+      toast.error(result.error);
       return;
     }
-    toast.success("Proposal created");
+
+    const msg =
+      mode === "edit"
+        ? "Proposal updated"
+        : mode === "supersede"
+          ? "Superseding proposal created"
+          : "Proposal created";
+    toast.success(msg);
     router.push("/admin/proposals");
   }
 
@@ -164,6 +202,21 @@ export default function ProposalWizard({ clients, states }: Props) {
     }
   }
 
+  const reviewTitle =
+    mode === "edit"
+      ? "Review & Save"
+      : mode === "supersede"
+        ? "Review & Supersede"
+        : "Review & Create";
+
+  const submitLabel = loading
+    ? "Saving..."
+    : mode === "edit"
+      ? "Save Changes"
+      : mode === "supersede"
+        ? "Create & Supersede"
+        : "Create Proposal";
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6">
       {/* Step indicators */}
@@ -180,7 +233,7 @@ export default function ProposalWizard({ clients, states }: Props) {
                     "w-8 h-8 rounded-full flex items-center justify-center text-sm font-heading font-bold",
                     isActive && "bg-lyp-cherry text-white",
                     isCompleted && "bg-green-500 text-white",
-                    !isActive && !isCompleted && "bg-gray-200 text-gray-500"
+                    !isActive && !isCompleted && "bg-gray-200 text-gray-500",
                   )}
                 >
                   {stepNum}
@@ -188,17 +241,13 @@ export default function ProposalWizard({ clients, states }: Props) {
                 <span
                   className={cn(
                     "font-body text-sm hidden sm:inline",
-                    isActive
-                      ? "text-lyp-black font-semibold"
-                      : "text-gray-500"
+                    isActive ? "text-lyp-black font-semibold" : "text-gray-500",
                   )}
                 >
                   {label}
                 </span>
               </div>
-              {i < steps.length - 1 && (
-                <div className="w-8 h-px bg-gray-300" />
-              )}
+              {i < steps.length - 1 && <div className="w-8 h-px bg-gray-300" />}
             </div>
           );
         })}
@@ -421,7 +470,7 @@ export default function ProposalWizard({ clients, states }: Props) {
       {step === 4 && (
         <div className="space-y-4">
           <h2 className="text-lg font-heading font-bold text-lyp-black">
-            Review &amp; Create
+            {reviewTitle}
           </h2>
           <div className="border border-gray-200 rounded-md p-4 space-y-3">
             <div>
@@ -456,7 +505,7 @@ export default function ProposalWizard({ clients, states }: Props) {
           disabled={step === 1}
           className={cn(
             "border border-gray-300 text-gray-700 px-4 py-2 rounded-md font-body text-sm hover:bg-gray-50 transition-colors",
-            step === 1 && "invisible"
+            step === 1 && "invisible",
           )}
         >
           Back
@@ -473,11 +522,11 @@ export default function ProposalWizard({ clients, states }: Props) {
         ) : (
           <button
             type="button"
-            onClick={handleCreateProposal}
+            onClick={handleSubmit}
             disabled={loading}
             className="bg-lyp-cherry text-white px-6 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
           >
-            {loading ? "Creating..." : "Create Proposal"}
+            {submitLabel}
           </button>
         )}
       </div>

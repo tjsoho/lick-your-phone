@@ -1,12 +1,14 @@
 "use server";
 
-import { createClient } from "@/utils/server";
+import { createAdminClient, createClient } from "@/utils/server";
 import {
   createPayer,
   vaultSource,
+  chargeRealtime,
   schedulePayment,
 } from "@/lib/pinch";
 import crypto from "crypto";
+import { dispatchNotification } from "@/lib/notification-service";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -23,6 +25,18 @@ interface CaptureResult {
   error: string | null;
 }
 
+interface ProposalLineItem {
+  id: string;
+  proposal_id: string;
+  service_id: string;
+  price_snapshot_cents: number;
+  services: {
+    name: string;
+    billing: "one_off" | "recurring_monthly" | "in_kind";
+    term: string | null;
+  } | null;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Main action – capture payment details and schedule payments       */
 /* ------------------------------------------------------------------ */
@@ -30,16 +44,16 @@ interface CaptureResult {
 export async function capturePaymentDetails(
   proposalId: string,
   token: string,
-  cardMeta: CardMeta
+  cardMeta: CardMeta,
 ): Promise<CaptureResult> {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     // 1. Fetch proposal + client + line items
     const { data: proposal, error: proposalErr } = await supabase
       .from("proposals")
       .select(
-        "*, clients(id, name, email, phone), proposal_line_items(*, services(name, billing, term))"
+        "*, clients(id, name, email, phone), proposal_line_items(*, services(name, billing, term))",
       )
       .eq("id", proposalId)
       .single();
@@ -49,7 +63,9 @@ export async function capturePaymentDetails(
     }
 
     if (proposal.status !== "signed") {
-      throw new Error("Proposal must be signed before payment details can be captured");
+      throw new Error(
+        "Proposal must be signed before payment details can be captured",
+      );
     }
 
     const client = proposal.clients as {
@@ -64,6 +80,8 @@ export async function capturePaymentDetails(
     const firstName = nameParts[0] || "Client";
     const lastName = nameParts.slice(1).join(" ") || "-";
 
+    console.log("Creating Pinch payer for client:", client.id, client.name);
+
     const payer = await createPayer({
       firstName,
       lastName,
@@ -71,8 +89,11 @@ export async function capturePaymentDetails(
       companyName: client.name,
     });
 
+    console.log("Created Pinch payer:", payer.id, "for client:", client.id);
+
     // 3. Vault the tokenised card
     const source = await vaultSource(payer.id, token);
+    console.log("Vaulted source:", source.id, "for payer:", payer.id);
 
     // 4. Create payment record
     const { data: payment, error: paymentErr } = await supabase
@@ -95,15 +116,8 @@ export async function capturePaymentDetails(
     }
 
     // 5. Schedule payments based on line items
-    const lineItems = (proposal.proposal_line_items || []) as Array<{
-      id: string;
-      price_cents: number;
-      services: {
-        name: string;
-        billing: "one_off" | "recurring_monthly" | "in_kind";
-        term: string | null;
-      } | null;
-    }>;
+    const lineItems = (proposal.proposal_line_items ||
+      []) as Array<ProposalLineItem>;
 
     const schedules: Array<{
       payment_id: string;
@@ -120,7 +134,8 @@ export async function capturePaymentDetails(
 
     for (const item of lineItems) {
       const svc = item.services;
-      if (!svc || svc.billing === "in_kind" || item.price_cents <= 0) continue;
+      if (!svc || svc.billing === "in_kind" || item.price_snapshot_cents <= 0)
+        continue;
 
       if (svc.billing === "one_off") {
         // One-off: charge at campaign start
@@ -130,15 +145,15 @@ export async function capturePaymentDetails(
         const pinchPayment = await schedulePayment(
           payer.id,
           source.id,
-          item.price_cents,
+          item.price_snapshot_cents,
           schedDate.toISOString().split("T")[0],
-          idempotencyKey
+          idempotencyKey,
         );
 
         schedules.push({
           payment_id: payment.id,
           pinch_payment_id: pinchPayment.id,
-          amount_cents: item.price_cents,
+          amount_cents: item.price_snapshot_cents,
           scheduled_date: schedDate.toISOString().split("T")[0],
           status: "scheduled",
           idempotency_key: idempotencyKey,
@@ -162,15 +177,15 @@ export async function capturePaymentDetails(
           const pinchPayment = await schedulePayment(
             payer.id,
             source.id,
-            item.price_cents,
+            item.price_snapshot_cents,
             schedDate.toISOString().split("T")[0],
-            idempotencyKey
+            idempotencyKey,
           );
 
           schedules.push({
             payment_id: payment.id,
             pinch_payment_id: pinchPayment.id,
-            amount_cents: item.price_cents,
+            amount_cents: item.price_snapshot_cents,
             scheduled_date: schedDate.toISOString().split("T")[0],
             status: "scheduled",
             idempotency_key: idempotencyKey,
@@ -186,7 +201,9 @@ export async function capturePaymentDetails(
         .insert(schedules);
 
       if (schedErr) {
-        throw new Error(`Failed to save payment schedules: ${schedErr.message}`);
+        throw new Error(
+          `Failed to save payment schedules: ${schedErr.message}`,
+        );
       }
     }
 

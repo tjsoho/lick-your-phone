@@ -7,6 +7,9 @@ const supabaseHost =
     : "bzswpetvdwzvznhvtote.supabase.co";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverComponentsHmrCache: false, // Disables the buggy local HMR cache
+  },
   images: {
     remotePatterns: [
       {

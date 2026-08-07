@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState, useRef, useCallback } from "react"
-import { useProposal } from "../ProposalContext"
-import { capturePaymentDetails } from "@/server-actions/payment"
+import { useState, useRef, useCallback } from "react";
+import { useProposal } from "../ProposalContext";
+import { capturePaymentDetails } from "@/server-actions/payment";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -10,17 +10,20 @@ import { capturePaymentDetails } from "@/server-actions/payment"
 
 interface PinchCapture {
   createToken: (opts: {
-    sourceType: string
-    cardNumber: string
-    expiryDate: string
-    securityCode: string
-    cardholderName: string
-  }) => Promise<{ token: string }>
+    sourceType: string;
+    cardNumber: string;
+    expiryMonth: string;
+    expiryYear: string;
+    cvc: string;
+    cardholderName: string;
+  }) => Promise<{ token: string }>;
 }
 
 declare global {
   interface Window {
-    PinchCapture?: new (publishableKey: string) => PinchCapture
+    Pinch?: {
+      Capture: new (params: { publishableKey: string }) => PinchCapture;
+    };
   }
 }
 
@@ -29,61 +32,64 @@ declare global {
 /* ------------------------------------------------------------------ */
 
 function detectCardBrand(number: string): string {
-  const cleaned = number.replace(/\s/g, "")
-  if (/^4/.test(cleaned)) return "visa"
-  if (/^5[1-5]/.test(cleaned) || /^2[2-7]/.test(cleaned)) return "mastercard"
-  if (/^3[47]/.test(cleaned)) return "amex"
-  if (/^36/.test(cleaned)) return "diners"
-  return "unknown"
+  const cleaned = number.replace(/\s/g, "");
+  if (/^4/.test(cleaned)) return "visa";
+  if (/^5[1-5]/.test(cleaned) || /^2[2-7]/.test(cleaned)) return "mastercard";
+  if (/^3[47]/.test(cleaned)) return "amex";
+  if (/^36/.test(cleaned)) return "diners";
+  return "unknown";
 }
 
 function formatCardNumber(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 16)
-  return digits.replace(/(.{4})/g, "$1 ").trim()
+  const digits = value.replace(/\D/g, "").slice(0, 16);
+  return digits.replace(/(.{4})/g, "$1 ").trim();
 }
 
 function formatExpiry(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 4)
-  if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`
-  return digits
+  const digits = value.replace(/\D/g, "").slice(0, 4);
+  if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+  return digits;
 }
 
 /** Load Pinch capture.js dynamically – only when the user submits */
 function loadPinchScript(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (window.PinchCapture) {
-      resolve()
-      return
+    if (window.Pinch) {
+      resolve();
+      return;
     }
-    const script = document.createElement("script")
-    script.src = "https://cdn.getpinch.com.au/capturejs/pinch.capture.v2.js"
-    script.async = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error("Failed to load Pinch capture script"))
-    document.head.appendChild(script)
-  })
+    const script = document.createElement("script");
+    script.src = "https://cdn.getpinch.com.au/capturejs/pinch.capture.v2.js";
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () =>
+      reject(new Error("Failed to load Pinch capture script"));
+    document.head.appendChild(script);
+  });
 }
 
 /* ------------------------------------------------------------------ */
 /*  Component                                                         */
 /* ------------------------------------------------------------------ */
 
-type Stage = "form" | "processing" | "success" | "error"
+type Stage = "form" | "processing" | "success" | "error";
 
 export default function PaymentPage() {
-  const { proposal, selections, serviceMap } = useProposal()
+  const { proposal, selections, serviceMap } = useProposal();
 
   // Check if all selected services are in_kind (no payment needed)
-  const allInKind = selections.length > 0 && selections.every((sel) => {
-    const svc = serviceMap[sel.serviceId]
-    return svc?.billing === "in_kind"
-  })
+  const allInKind =
+    selections.length > 0 &&
+    selections.every((sel) => {
+      const svc = serviceMap[sel.serviceId];
+      return svc?.billing === "in_kind";
+    });
 
   if (allInKind || selections.length === 0) {
-    return <NoPaymentRequired />
+    return <NoPaymentRequired />;
   }
 
-  return <PaymentForm proposalId={proposal.id} />
+  return <PaymentForm proposalId={proposal.id} />;
 }
 
 /* ------------------------------------------------------------------ */
@@ -116,7 +122,7 @@ function NoPaymentRequired() {
         at this time.
       </p>
     </div>
-  )
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -124,118 +130,122 @@ function NoPaymentRequired() {
 /* ------------------------------------------------------------------ */
 
 function PaymentForm({ proposalId }: { proposalId: string }) {
-  const [stage, setStage] = useState<Stage>("form")
-  const [errorMsg, setErrorMsg] = useState("")
+  const [stage, setStage] = useState<Stage>("form");
+  const [errorMsg, setErrorMsg] = useState("");
 
   // Form state
-  const [cardNumber, setCardNumber] = useState("")
-  const [expiry, setExpiry] = useState("")
-  const [cvc, setCvc] = useState("")
-  const [cardholderName, setCardholderName] = useState("")
+  const [cardNumber, setCardNumber] = useState("");
+  const [expiry, setExpiry] = useState("");
+  const [cvc, setCvc] = useState("");
+  const [cardholderName, setCardholderName] = useState("");
 
   // Refs for the raw digits
-  const rawCardRef = useRef("")
-  const rawExpiryRef = useRef("")
+  const rawCardRef = useRef("");
+  const rawExpiryRef = useRef("");
 
   const handleCardNumberChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = e.target.value.replace(/\D/g, "").slice(0, 16)
-      rawCardRef.current = raw
-      setCardNumber(formatCardNumber(e.target.value))
+      const raw = e.target.value.replace(/\D/g, "").slice(0, 16);
+      rawCardRef.current = raw;
+      setCardNumber(formatCardNumber(e.target.value));
     },
-    []
-  )
+    [],
+  );
 
   const handleExpiryChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = e.target.value.replace(/\D/g, "").slice(0, 4)
-      rawExpiryRef.current = raw
-      setExpiry(formatExpiry(e.target.value))
+      const raw = e.target.value.replace(/\D/g, "").slice(0, 4);
+      rawExpiryRef.current = raw;
+      setExpiry(formatExpiry(e.target.value));
     },
-    []
-  )
+    [],
+  );
 
   const handleCvcChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setCvc(e.target.value.replace(/\D/g, "").slice(0, 4))
+      setCvc(e.target.value.replace(/\D/g, "").slice(0, 4));
     },
-    []
-  )
+    [],
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const rawCard = rawCardRef.current
-    const rawExp = rawExpiryRef.current
+    const rawCard = rawCardRef.current;
+    const rawExp = rawExpiryRef.current;
 
     // Basic validation
     if (rawCard.length < 13) {
-      setErrorMsg("Please enter a valid card number")
-      return
+      setErrorMsg("Please enter a valid card number");
+      return;
     }
     if (rawExp.length < 4) {
-      setErrorMsg("Please enter a valid expiry date (MM/YY)")
-      return
+      setErrorMsg("Please enter a valid expiry date (MM/YY)");
+      return;
     }
     if (cvc.length < 3) {
-      setErrorMsg("Please enter a valid CVC")
-      return
+      setErrorMsg("Please enter a valid CVC");
+      return;
     }
     if (!cardholderName.trim()) {
-      setErrorMsg("Please enter the cardholder name")
-      return
+      setErrorMsg("Please enter the cardholder name");
+      return;
     }
 
-    setStage("processing")
-    setErrorMsg("")
+    setStage("processing");
+    setErrorMsg("");
 
     try {
       // Load Pinch script dynamically
-      const publishableKey = process.env.NEXT_PUBLIC_PINCH_PUBLISHABLE_KEY
+      const publishableKey = process.env.NEXT_PUBLIC_PINCH_PUBLISHABLE_KEY;
 
       if (!publishableKey) {
         // Dev mode – skip tokenisation but still call the server action
         // In production this would be an error
         throw new Error(
-          "Pinch publishable key not configured. Set NEXT_PUBLIC_PINCH_PUBLISHABLE_KEY."
-        )
+          "Pinch publishable key not configured. Set NEXT_PUBLIC_PINCH_PUBLISHABLE_KEY.",
+        );
       }
 
-      await loadPinchScript()
+      await loadPinchScript();
 
-      if (!window.PinchCapture) {
-        throw new Error("Pinch capture library failed to initialise")
+      if (!window.Pinch) {
+        throw new Error("Pinch capture library failed to initialise");
       }
 
-      const capture = new window.PinchCapture(publishableKey)
+      const capture = new window.Pinch.Capture({ publishableKey });
 
       // Tokenise the card client-side – raw number never leaves the browser
-      const expiryFormatted = `${rawExp.slice(0, 2)}/${rawExp.slice(2)}`
+      const expiryFormatted = `${rawExp.slice(0, 2)}/${rawExp.slice(2)}`;
+      const expiryMonth = rawExp.slice(0, 2);
+      const expiryYear = `20${rawExp.slice(2)}`;
+
       const { token } = await capture.createToken({
         sourceType: "credit-card",
         cardNumber: rawCard,
-        expiryDate: expiryFormatted,
-        securityCode: cvc,
+        expiryMonth: expiryMonth,
+        expiryYear: expiryYear,
+        cvc: cvc,
         cardholderName: cardholderName.trim(),
-      })
+      });
 
       // Send ONLY the token to the server
       const result = await capturePaymentDetails(proposalId, token, {
         lastFour: rawCard.slice(-4),
         brand: detectCardBrand(rawCard),
         expiry: expiryFormatted,
-      })
+      });
 
       if (result.error) {
-        throw new Error(result.error)
+        throw new Error(result.error);
       }
 
-      setStage("success")
+      setStage("success");
     } catch (err) {
-      setErrorMsg((err as Error).message)
-      setStage("error")
+      setErrorMsg((err as Error).message);
+      setStage("error");
     }
-  }
+  };
 
   /* ---- Success state ---- */
   if (stage === "success") {
@@ -264,7 +274,7 @@ function PaymentForm({ proposalId }: { proposalId: string }) {
           according to your agreement.
         </p>
       </div>
-    )
+    );
   }
 
   /* ---- Form / Error / Processing ---- */
@@ -421,5 +431,5 @@ function PaymentForm({ proposalId }: { proposalId: string }) {
         </p>
       </form>
     </div>
-  )
+  );
 }

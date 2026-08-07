@@ -1,4 +1,4 @@
-import React from "react"
+import React from "react";
 import {
   Document,
   Page,
@@ -8,35 +8,39 @@ import {
   StyleSheet,
   Font,
   renderToBuffer,
-} from "@react-pdf/renderer"
+} from "@react-pdf/renderer";
 
 /* ------------------------------------------------------------------ */
 /*  Brand tokens                                                      */
 /* ------------------------------------------------------------------ */
 
-const CHERRY = "#B22626"
-const BLACK = "#000000"
-const MAROON = "#6D080A"
-const OFF_WHITE = "#EEE7E7"
+const CHERRY = "#B22626";
+const BLACK = "#000000";
+const MAROON = "#6D080A";
+const OFF_WHITE = "#EEE7E7";
 // WHITE (#FFFFFF) used directly in stroke styles below
 
 /* ------------------------------------------------------------------ */
 /*  Fonts                                                             */
 /* ------------------------------------------------------------------ */
 
+const rootDir = process.cwd();
+const firaSansBoldPath = `${rootDir}/public/FiraSans-Bold.ttf`;
+const firaSansRegularPath = `${rootDir}/public/FiraSans-Regular.ttf`;
+
 Font.register({
   family: "Fira Sans",
   fonts: [
     {
-      src: "https://fonts.gstatic.com/s/firasans/v17/va9E4kDNxMZdWfMOD5Vvl4jL.ttf",
+      src: firaSansBoldPath,
       fontWeight: 700,
     },
     {
-      src: "https://fonts.gstatic.com/s/firasans/v17/va9E4kDNxMZdWfMOD5Vvk4jL.ttf",
+      src: firaSansRegularPath,
       fontWeight: 400,
     },
   ],
-})
+});
 
 Font.register({
   family: "Montserrat",
@@ -46,7 +50,7 @@ Font.register({
       fontWeight: 400,
     },
   ],
-})
+});
 
 /* ------------------------------------------------------------------ */
 /*  Styles                                                            */
@@ -181,27 +185,27 @@ const s = StyleSheet.create({
     objectFit: "contain",
     marginBottom: 4,
   },
-})
+});
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
 /* ------------------------------------------------------------------ */
 
 export interface PdfLineItem {
-  name: string
-  tierName: string | null
-  billing: "one_off" | "recurring_monthly" | "in_kind"
-  priceCents: number
+  name: string;
+  tierName: string | null;
+  billing: "one_off" | "recurring_monthly" | "in_kind";
+  priceCents: number;
 }
 
 export interface PdfContractInput {
-  clientName: string
-  venueName: string
-  lineItems: PdfLineItem[]
-  totalCents: number
-  signerEmail: string
-  signedAt: string
-  signatureDataUrl?: string
+  clientName: string;
+  venueName: string;
+  lineItems: PdfLineItem[];
+  totalCents: number;
+  signerEmail: string;
+  signedAt: string;
+  signatureDataUrl?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -214,13 +218,13 @@ function formatCents(cents: number): string {
     currency: "AUD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(cents / 100)
+  }).format(cents / 100);
 }
 
 function billingLabel(billing: string): string {
-  if (billing === "recurring_monthly") return "Monthly"
-  if (billing === "one_off") return "One-off"
-  return "Complimentary"
+  if (billing === "recurring_monthly") return "Monthly";
+  if (billing === "one_off") return "One-off";
+  return "Complimentary";
 }
 
 function formatDate(iso: string): string {
@@ -228,7 +232,7 @@ function formatDate(iso: string): string {
     day: "numeric",
     month: "long",
     year: "numeric",
-  })
+  });
 }
 
 /* ------------------------------------------------------------------ */
@@ -238,13 +242,13 @@ function formatDate(iso: string): string {
 export async function generateContractPdf(
   input: PdfContractInput,
 ): Promise<Buffer> {
-  const doc = createContractDocument(input)
-  const buffer = await renderToBuffer(doc)
-  return Buffer.from(buffer)
+  const doc = createContractDocument(input);
+  const buffer = await renderToBuffer(doc);
+  return Buffer.from(buffer);
 }
 
 function createContractDocument(input: PdfContractInput) {
-  const dateStr = formatDate(input.signedAt)
+  const dateStr = formatDate(input.signedAt);
 
   return React.createElement(
     Document,
@@ -279,17 +283,38 @@ function createContractDocument(input: PdfContractInput) {
         },
         React.createElement(
           Text,
-          { style: { ...s.rowName, fontFamily: "Fira Sans", fontWeight: 700, fontSize: 9 } },
+          {
+            style: {
+              ...s.rowName,
+              fontFamily: "Fira Sans",
+              fontWeight: 700,
+              fontSize: 9,
+            },
+          },
           "Service",
         ),
         React.createElement(
           Text,
-          { style: { ...s.rowBilling, fontFamily: "Fira Sans", fontWeight: 700, fontSize: 9 } },
+          {
+            style: {
+              ...s.rowBilling,
+              fontFamily: "Fira Sans",
+              fontWeight: 700,
+              fontSize: 9,
+            },
+          },
           "Billing",
         ),
         React.createElement(
           Text,
-          { style: { ...s.rowPrice, fontFamily: "Fira Sans", fontWeight: 700, fontSize: 9 } },
+          {
+            style: {
+              ...s.rowPrice,
+              fontFamily: "Fira Sans",
+              fontWeight: 700,
+              fontSize: 9,
+            },
+          },
           "Price (ex GST)",
         ),
       ),
@@ -304,7 +329,11 @@ function createContractDocument(input: PdfContractInput) {
             { style: s.rowName },
             item.tierName ? `${item.name} (${item.tierName})` : item.name,
           ),
-          React.createElement(Text, { style: s.rowBilling }, billingLabel(item.billing)),
+          React.createElement(
+            Text,
+            { style: s.rowBilling },
+            billingLabel(item.billing),
+          ),
           React.createElement(
             Text,
             { style: s.rowPrice },
@@ -318,11 +347,19 @@ function createContractDocument(input: PdfContractInput) {
         View,
         { style: s.totalRow },
         React.createElement(Text, { style: s.totalLabel }, "Total (ex GST)"),
-        React.createElement(Text, { style: s.totalAmount }, formatCents(input.totalCents)),
+        React.createElement(
+          Text,
+          { style: s.totalAmount },
+          formatCents(input.totalCents),
+        ),
       ),
 
       /* Contract terms */
-      React.createElement(Text, { style: s.sectionTitle }, "Terms & Conditions"),
+      React.createElement(
+        Text,
+        { style: s.sectionTitle },
+        "Terms & Conditions",
+      ),
       React.createElement(
         Text,
         { style: s.termsText },
@@ -375,17 +412,37 @@ function createContractDocument(input: PdfContractInput) {
                 src: input.signatureDataUrl,
               })
             : React.createElement(View, { style: s.signatureLine }),
-          React.createElement(Text, { style: { fontSize: 9 } }, input.signerEmail),
-          React.createElement(Text, { style: s.signatureDate }, `Signed: ${dateStr}`),
+          React.createElement(
+            Text,
+            { style: { fontSize: 9 } },
+            input.signerEmail,
+          ),
+          React.createElement(
+            Text,
+            { style: s.signatureDate },
+            `Signed: ${dateStr}`,
+          ),
         ),
         /* Agency signature */
         React.createElement(
           View,
           { style: s.signatureBox },
-          React.createElement(Text, { style: s.signatureLabel }, "LickYourPhone Media"),
+          React.createElement(
+            Text,
+            { style: s.signatureLabel },
+            "LickYourPhone Media",
+          ),
           React.createElement(View, { style: s.signatureLine }),
-          React.createElement(Text, { style: { fontSize: 9 } }, "Authorised Representative"),
-          React.createElement(Text, { style: s.signatureDate }, "Date: _______________"),
+          React.createElement(
+            Text,
+            { style: { fontSize: 9 } },
+            "Authorised Representative",
+          ),
+          React.createElement(
+            Text,
+            { style: s.signatureDate },
+            "Date: _______________",
+          ),
         ),
       ),
 
@@ -396,5 +453,5 @@ function createContractDocument(input: PdfContractInput) {
         `LickYourPhone Media — Service Agreement — Generated ${dateStr}`,
       ),
     ),
-  )
+  );
 }

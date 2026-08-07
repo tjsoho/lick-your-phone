@@ -2,30 +2,44 @@ import Link from "next/link";
 import { getProposals } from "@/server-actions/proposals";
 import { formatCents, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { Check, Clock, AlertCircle, CreditCard } from "lucide-react";
-
-const statusStyles: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700",
-  sent: "bg-blue-100 text-blue-700",
-  signed: "bg-green-100 text-green-700",
-  superseded: "bg-red-100 text-red-700",
-};
+import {
+  Check,
+  Clock,
+  AlertCircle,
+  CreditCard,
+  Pencil,
+  Copy,
+} from "lucide-react";
+import ProposalStatusSelect from "@/components/admin/ProposalStatusSelect";
 
 function PaymentBadge({ status }: { status?: string }) {
   if (!status) return <span className="text-gray-400 text-xs">—</span>;
-  const map: Record<string, { icon: typeof Check; color: string; label: string }> = {
-    details_captured: { icon: Check, color: "text-green-600", label: "Captured" },
+  const map: Record<
+    string,
+    { icon: typeof Check; color: string; label: string }
+  > = {
+    details_captured: {
+      icon: Check,
+      color: "text-green-600",
+      label: "Captured",
+    },
     scheduled: { icon: Clock, color: "text-blue-600", label: "Scheduled" },
     pending: { icon: Clock, color: "text-amber-600", label: "Pending" },
     settled: { icon: Check, color: "text-green-600", label: "Settled" },
-    dishonoured: { icon: AlertCircle, color: "text-red-600", label: "Dishonoured" },
+    dishonoured: {
+      icon: AlertCircle,
+      color: "text-red-600",
+      label: "Dishonoured",
+    },
     failed: { icon: AlertCircle, color: "text-red-600", label: "Failed" },
   };
   const entry = map[status];
   if (!entry) return <span className="text-gray-400 text-xs">{status}</span>;
   const Icon = entry.icon;
   return (
-    <span className={cn("flex items-center gap-1 text-xs font-medium", entry.color)}>
+    <span
+      className={cn("flex items-center gap-1 text-xs font-medium", entry.color)}
+    >
       <Icon className="h-3 w-3" />
       {entry.label}
     </span>
@@ -82,6 +96,9 @@ export default async function ProposalsPage() {
                 <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
                   Created
                 </th>
+                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -98,7 +115,7 @@ export default async function ProposalsPage() {
                     >
                       <td className="px-4 py-3">
                         <Link
-                          href={`/admin/clients/${proposal.clients?.id}`}
+                          href={`/admin/proposals/${proposal.id}`}
                           className="text-lyp-cherry font-body text-sm hover:underline"
                         >
                           {proposal.clients?.name ?? "—"}
@@ -108,14 +125,10 @@ export default async function ProposalsPage() {
                         {proposal.venues?.name ?? "—"}
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={cn(
-                            "inline-block px-2 py-0.5 rounded-full text-xs font-body font-medium capitalize",
-                            statusStyles[proposal.status] ?? "bg-gray-100 text-gray-700"
-                          )}
-                        >
-                          {proposal.status}
-                        </span>
+                        <ProposalStatusSelect
+                          proposalId={proposal.id}
+                          currentStatus={proposal.status}
+                        />
                       </td>
                       <td className="px-4 py-3">
                         <PaymentBadge status={paymentStatus} />
@@ -138,13 +151,35 @@ export default async function ProposalsPage() {
                       <td className="px-4 py-3 font-body text-sm text-gray-700">
                         {formatDate(proposal.created_at)}
                       </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          {proposal.status === "draft" && (
+                            <Link
+                              href={`/admin/proposals/${proposal.id}/edit`}
+                              className="text-gray-500 hover:text-lyp-cherry transition-colors"
+                              title="Edit draft"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          )}
+                          {proposal.status !== "superseded" && (
+                            <Link
+                              href={`/admin/proposals/${proposal.id}/edit?mode=supersede`}
+                              className="text-gray-500 hover:text-blue-600 transition-colors"
+                              title="Create superseding proposal"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Link>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-4 py-8 text-center font-body text-sm text-gray-500"
                   >
                     No proposals yet. Create your first proposal to get started.
