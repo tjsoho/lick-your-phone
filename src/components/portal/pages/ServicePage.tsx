@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { Check, AlertCircle } from "lucide-react"
-import { Switch } from "@/components/ui/switch"
-import { useProposal, type Service } from "../ProposalContext"
-import { cn } from "@/lib/utils"
+import { Check, AlertCircle } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useProposal, type Service } from "../ProposalContext";
+import { cn } from "@/lib/utils";
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -11,20 +11,24 @@ function formatCents(cents: number): string {
     currency: "AUD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(cents / 100)
+  }).format(cents / 100);
 }
 
-function listFromTarget(targetCents: number, discountPct: number | null): number {
-  if (discountPct == null || discountPct === 0) return targetCents
-  return Math.round(targetCents / (1 - discountPct))
+function listFromTarget(
+  targetCents: number,
+  discountPct: number | null,
+): number {
+  if (discountPct == null || discountPct === 0) return targetCents;
+  return Math.round(targetCents / (1 - discountPct));
 }
 
 interface ServicePageProps {
-  service: Service
+  service: Service;
 }
 
 export default function ServicePage({ service }: ServicePageProps) {
   const {
+    proposal,
     isSelected,
     selectedTierId,
     toggleService,
@@ -32,24 +36,28 @@ export default function ServicePage({ service }: ServicePageProps) {
     deselectService,
     selections,
     serviceMap,
-  } = useProposal()
+    paymentCaptured,
+  } = useProposal();
 
-  const selected = isSelected(service.id)
-  const currentTierId = selectedTierId(service.id)
-  const hasTiers = service.tiers.length > 0
-  const isInKind = service.billing === "in_kind"
+  const selected = isSelected(service.id);
+  const currentTierId = selectedTierId(service.id);
+  const hasTiers = service.tiers.length > 0;
+  const isInKind = service.billing === "in_kind";
 
   const hasOtherSelected = selections.some((sel) => {
-    const svc = serviceMap[sel.serviceId]
-    return svc && !svc.requiresOtherService && sel.serviceId !== service.id
-  })
-  const isDisabled = service.requiresOtherService && !hasOtherSelected
+    const svc = serviceMap[sel.serviceId];
+    return svc && !svc.requiresOtherService && sel.serviceId !== service.id;
+  });
+  const isDisabled =
+    proposal.status === "signed" ||
+    (service.requiresOtherService && !hasOtherSelected);
 
-  const displayTarget = service.targetPriceCents
-  const displayList = listFromTarget(displayTarget, service.discountPct)
-  const hasDiscount = service.discountPct != null && service.discountPct > 0
-  const periodLabel = service.priceDisplayPeriod === "week" ? " per week" : " per month"
-  const savingsCents = displayList - displayTarget
+  const displayTarget = service.targetPriceCents;
+  const displayList = listFromTarget(displayTarget, service.discountPct);
+  const hasDiscount = service.discountPct != null && service.discountPct > 0;
+  const periodLabel =
+    service.priceDisplayPeriod === "week" ? " per week" : " per month";
+  const savingsCents = displayList - displayTarget;
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -62,7 +70,9 @@ export default function ServicePage({ service }: ServicePageProps) {
           {service.name}
         </h1>
         {service.term && (
-          <p className="font-body text-sm text-lyp-white/50 mt-2">{service.term}</p>
+          <p className="font-body text-sm text-lyp-white/50 mt-2">
+            {service.term}
+          </p>
         )}
       </div>
 
@@ -116,7 +126,10 @@ export default function ServicePage({ service }: ServicePageProps) {
                 {service.disclaimers
                   .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
                   .map((d) => (
-                    <p key={d.id} className="font-body text-xs text-lyp-white/40 italic mt-2">
+                    <p
+                      key={d.id}
+                      className="font-body text-xs text-lyp-white/40 italic mt-2"
+                    >
                       {d.text}
                     </p>
                   ))}
@@ -127,11 +140,14 @@ export default function ServicePage({ service }: ServicePageProps) {
           {/* Right: pricing + selection */}
           <div className="flex flex-col items-center lg:items-end gap-8">
             <div className="w-full max-w-sm rounded-xl border border-lyp-white/10 bg-lyp-white/5 p-8 text-center">
-              <h3 className="font-heading text-lg text-lyp-white mb-2">Investment</h3>
+              <h3 className="font-heading text-lg text-lyp-white mb-2">
+                Investment
+              </h3>
 
               {hasDiscount && (
                 <p className="font-body text-sm text-lyp-gold mb-1">
-                  {Math.round((service.discountPct ?? 0) * 100)}% off when you sign within 24hrs
+                  {Math.round((service.discountPct ?? 0) * 100)}% off when you
+                  sign within 24hrs
                 </p>
               )}
 
@@ -144,16 +160,19 @@ export default function ServicePage({ service }: ServicePageProps) {
                   {service.tiers
                     .sort((a, b) => a.sequence - b.sequence)
                     .map((tier) => {
-                      const tierList = listFromTarget(tier.targetPriceCents, service.discountPct)
-                      const tierSelected = currentTierId === tier.id
-                      const tierSaving = tierList - tier.targetPriceCents
+                      const tierList = listFromTarget(
+                        tier.targetPriceCents,
+                        service.discountPct,
+                      );
+                      const tierSelected = currentTierId === tier.id;
+                      const tierSaving = tierList - tier.targetPriceCents;
                       return (
                         <button
                           key={tier.id}
                           disabled={isDisabled}
                           onClick={() => {
-                            if (tierSelected) deselectService(service.id)
-                            else selectTier(service.id, tier.id)
+                            if (tierSelected) deselectService(service.id);
+                            else selectTier(service.id, tier.id);
                           }}
                           className={cn(
                             "w-full rounded-lg border px-5 py-4 text-center transition-all",
@@ -172,15 +191,17 @@ export default function ServicePage({ service }: ServicePageProps) {
                             </p>
                           )}
                           <p className="font-heading text-xl text-lyp-white">
-                            {formatCents(tier.targetPriceCents)} + GST{periodLabel}
+                            {formatCents(tier.targetPriceCents)} + GST
+                            {periodLabel}
                           </p>
                           {hasDiscount && tierSaving > 0 && (
                             <p className="font-body text-xs text-lyp-cherry mt-1">
-                              Saving {formatCents(tierSaving)} + GST{periodLabel}
+                              Saving {formatCents(tierSaving)} + GST
+                              {periodLabel}
                             </p>
                           )}
                         </button>
-                      )
+                      );
                     })}
                 </div>
               ) : (
@@ -216,7 +237,7 @@ export default function ServicePage({ service }: ServicePageProps) {
                 <Switch
                   checked={selected}
                   onCheckedChange={() => {
-                    if (!isDisabled) toggleService(service.id)
+                    if (!isDisabled) toggleService(service.id);
                   }}
                   disabled={isDisabled}
                   className="data-[state=checked]:bg-lyp-cherry"
@@ -233,12 +254,14 @@ export default function ServicePage({ service }: ServicePageProps) {
 
             {isDisabled && (
               <p className="font-body text-xs text-lyp-white/40 max-w-xs text-center">
-                This service requires at least one other service to be selected first.
+                {proposal.status === "signed"
+                  ? "Proposal has already been signed. Services can no longer be changed."
+                  : "This service requires at least one other service to be selected first."}
               </p>
             )}
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

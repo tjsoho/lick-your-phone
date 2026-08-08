@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
-import { getProposal } from "@/server-actions/proposals";
 import { getClients } from "@/server-actions/clients";
 import { getStates } from "@/server-actions/states";
+import { getProposal } from "@/server-actions/proposals";
 import ProposalWizard from "@/components/admin/ProposalWizard";
-import type { ProposalInitialData } from "@/components/admin/ProposalWizard";
 
 export default async function EditProposalPage({
   params,
@@ -13,39 +12,32 @@ export default async function EditProposalPage({
   searchParams: Promise<{ mode?: string }>;
 }) {
   const { id } = await params;
-  const { mode: modeParam } = await searchParams;
-  const mode = modeParam === "supersede" ? "supersede" : "edit";
+  const { mode } = await searchParams;
+  const wizardMode = mode === "supersede" ? "supersede" : "edit";
 
-  const [proposalRes, clientsRes, statesRes] = await Promise.all([
+  const [{ data: proposal, error }, clientsRes, statesRes] = await Promise.all([
     getProposal(id),
     getClients(),
     getStates(),
   ]);
 
-  if (!proposalRes.data) return notFound();
+  if (error || !proposal) return notFound();
 
-  const proposal = proposalRes.data;
-
-  // Only allow editing drafts
-  if (mode === "edit" && proposal.status !== "draft") {
-    return notFound();
-  }
-
-  const initialData: ProposalInitialData = {
-    clientId: proposal.client_id,
-    venueId: proposal.venue_id,
-    notes: proposal.notes ?? "",
+  const initialData = {
+    clientId: proposal.clients?.id ?? "",
+    venueId: proposal.venues?.id ?? "",
+    notes: proposal.internal_notes?.[0]?.content ?? "",
   };
 
   return (
     <div>
       <h1 className="text-2xl font-heading font-bold text-lyp-black mb-6">
-        {mode === "edit" ? "Edit Proposal" : "Supersede Proposal"}
+        {wizardMode === "edit" ? "Edit Proposal" : "Supersede Proposal"}
       </h1>
       <ProposalWizard
         clients={clientsRes.data ?? []}
         states={statesRes.data ?? []}
-        mode={mode}
+        mode={wizardMode}
         proposalId={id}
         initialData={initialData}
       />

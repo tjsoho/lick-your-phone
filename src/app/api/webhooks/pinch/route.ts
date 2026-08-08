@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import { dispatchNotification } from "@/lib/notification-service";
 
 /**
  * Pinch webhook handler
@@ -28,11 +29,13 @@ function verifyPinchSignature(
   secret: string,
 ): boolean {
   // 1. Pecah header (contoh: "t=1619577772,v2=e5db0532...")
-  const parts = signatureHeader.split(",").reduce((acc, part) => {
-    const [key, val] = part.split("=");
-    acc[key] = val;
-    return acc;
-  }, {});
+  const parts = signatureHeader
+    .split(",")
+    .reduce<Record<string, string>>((acc, part) => {
+      const [key, val] = part.split("=");
+      acc[key] = val;
+      return acc;
+    }, {});
 
   const { t: timestamp, v2: signature } = parts as { t?: string; v2?: string };
 
@@ -184,6 +187,8 @@ const MAP_STATE = {
 
 const handleSettledEvent = async (payload: WebhookEvent) => {
   const supabase = getSupabaseAdmin();
+  const pinchPaymentId = payload.data.payment.id;
+  const eventType = payload.type;
 
   // Update the payment schedule record
   const { data: schedule, error: scheduleErr } = await supabase
@@ -197,43 +202,27 @@ const handleSettledEvent = async (payload: WebhookEvent) => {
     .single();
 
   if (scheduleErr) {
-    // Log but still return 200 to prevent Pinch from retrying
     console.error("Webhook: failed to update schedule:", scheduleErr.message);
     return NextResponse.json({ ok: true, warning: "Schedule not found" });
   }
 
-  // If settled or failed, check if all schedules for this payment are resolved
-  if (
-    newStatus === "settled" ||
-    newStatus === "failed" ||
-    newStatus === "dishonoured"
-  ) {
-    const { data: allSchedules } = await supabase
-      .from("payment_schedules")
-      .select("status")
-      .eq("payment_id", schedule.payment_id);
+  // Check if all schedules for this payment are resolved
+  const { data: allSchedules } = await supabase
+    .from("payment_schedules")
+    .select("status")
+    .eq("payment_id", schedule.payment_id);
 
-    const allSettled = allSchedules?.every((s) => s.status === "settled");
-    const anyFailed = allSchedules?.some(
-      (s) => s.status === "failed" || s.status === "dishonoured",
-    );
-
-    if (allSettled) {
-      await supabase
-        .from("payments")
-        .update({ status: "settled", updated_at: new Date().toISOString() })
-        .eq("id", schedule.payment_id);
-    } else if (anyFailed) {
-      await supabase
-        .from("payments")
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq("id", schedule.payment_id);
-    }
+  const allSettled = allSchedules?.every((s) => s.status === "settled");
+  if (allSettled) {
+    await supabase
+      .from("payments")
+      .update({ status: "settled", updated_at: new Date().toISOString() })
+      .eq("id", schedule.payment_id);
   }
 
   // Write audit event
   await supabase.from("audit_events").insert({
-    event_type: `pinch_webhook_${newStatus}`,
+    event_type: "pinch_webhook_settled",
     payload: {
       pinch_payment_id: pinchPaymentId,
       schedule_id: schedule.id,
@@ -279,16 +268,72 @@ const handleBankResultEvent = async (payload: BankResultWebhookEvent) => {
       continue; // Skip to next payment
     }
 
+    // Propagate status to parent payments table
+    const { data: allSchedules } = await supabase
+      .from("payment_schedules")
+      .select("status")
+      .eq("payment_id", schedule.payment_id);
+
+    const allSettled = allSchedules?.every((s) => s.status === "settled");
+    const anyDishonoured = allSchedules?.some(
+      (s) => s.status === "dishonoured" || s.status === "failed",
+    );
+
+    if (allSettled) {
+      await supabase
+        .from("payments")
+        .update({ status: "settled", updated_at: new Date().toISOString() })
+        .eq("id", schedule.payment_id);
+    } else if (anyDishonoured) {
+      await supabase
+        .from("payments")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq("id", schedule.payment_id);
+    }
+
     // Write audit event
     await supabase.from("audit_events").insert({
-      event_type: `pinch_webhook_bank_result_${newStatus}`,
-      payload: {
+      entity_id: schedule.payment_id,
+      entity_type: "payment",
+      action: "pinch_webhook_bank_result",
+      metadata: {
         pinch_payment_id: pinchPaymentId,
         schedule_id: schedule.id,
         payment_id: schedule.payment_id,
         raw_event: payload.type,
+        new_status: newStatus,
       },
+      actor_id: "system",
+      actor_type: "system",
     });
+
+    // Dispatch notification if payment is settled
+    if (newStatus === "settled") {
+      const clientRes = await supabase
+        .from("payments")
+        .select("client_id, amount, clients(name)")
+        .eq("id", schedule.payment_id)
+        .single();
+
+      dispatchNotification("PAYMENT_SUCCEEDED", {
+        clientName: clientRes.data?.clients?.[0]?.name || "Unknown Client",
+        amount: payment.amount,
+        paymentId: schedule.payment_id,
+      });
+    }
+
+    if (newStatus === "dishonoured" || newStatus === "failed") {
+      const clientRes = await supabase
+        .from("payments")
+        .select("client_id, amount, clients(name)")
+        .eq("id", schedule.payment_id)
+        .single();
+      dispatchNotification("PAYMENT_FAILED", {
+        clientName: clientRes.data?.clients?.[0]?.name || "Unknown Client",
+        amount: payment.amount,
+        paymentId: schedule.payment_id,
+      });
+    }
   }
 
   return NextResponse.json({ ok: true });

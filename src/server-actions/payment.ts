@@ -30,6 +30,7 @@ interface ProposalLineItem {
   proposal_id: string;
   service_id: string;
   price_snapshot_cents: number;
+  billing_cycle_snapshot_months: number | null;
   services: {
     name: string;
     billing: "one_off" | "recurring_monthly" | "in_kind";
@@ -121,11 +122,13 @@ export async function capturePaymentDetails(
 
     const schedules: Array<{
       payment_id: string;
-      pinch_payment_id: string;
+      pinch_payment_id: string | null;
       amount_cents: number;
       scheduled_date: string;
       status: string;
       idempotency_key: string;
+      description: string;
+      proposal_line_item_id: string;
     }> = [];
 
     // Determine campaign start date (use proposal signed_at + 14 days as default)
@@ -141,26 +144,22 @@ export async function capturePaymentDetails(
         // One-off: charge at campaign start
         const schedDate = new Date(campaignStart);
         const idempotencyKey = `${payment.id}-oneoff-${item.id}-${crypto.randomUUID()}`;
-
-        const pinchPayment = await schedulePayment(
-          payer.id,
-          source.id,
-          item.price_snapshot_cents,
-          schedDate.toISOString().split("T")[0],
-          idempotencyKey,
-        );
+        const description = `LickYourPhone campaign - ${svc.name} (One-time)`;
 
         schedules.push({
           payment_id: payment.id,
-          pinch_payment_id: pinchPayment.id,
+          pinch_payment_id: null,
           amount_cents: item.price_snapshot_cents,
           scheduled_date: schedDate.toISOString().split("T")[0],
-          status: "scheduled",
+          status: "pending",
           idempotency_key: idempotencyKey,
+          description,
+          proposal_line_item_id: item.id,
         });
+        await new Promise((resolve) => setTimeout(resolve, 500));
       } else if (svc.billing === "recurring_monthly") {
         // Recurring: first debit 7 days before campaign start, then monthly
-        const termMonths = parseInt(svc.term || "3", 10) || 3;
+        const termMonths = item.billing_cycle_snapshot_months || 1;
 
         for (let month = 0; month < termMonths; month++) {
           const schedDate = new Date(campaignStart);
@@ -173,23 +172,20 @@ export async function capturePaymentDetails(
           }
 
           const idempotencyKey = `${payment.id}-monthly-${item.id}-m${month}-${crypto.randomUUID()}`;
-
-          const pinchPayment = await schedulePayment(
-            payer.id,
-            source.id,
-            item.price_snapshot_cents,
-            schedDate.toISOString().split("T")[0],
-            idempotencyKey,
-          );
+          const description = `LickYourPhone campaign - ${svc.name} (Month ${month + 1})`;
 
           schedules.push({
             payment_id: payment.id,
-            pinch_payment_id: pinchPayment.id,
+            pinch_payment_id: null,
             amount_cents: item.price_snapshot_cents,
             scheduled_date: schedDate.toISOString().split("T")[0],
-            status: "scheduled",
+            status: "pending",
             idempotency_key: idempotencyKey,
+            description,
+            proposal_line_item_id: item.id,
           });
+
+          await new Promise((resolve) => setTimeout(resolve, 500));
         }
       }
     }
@@ -217,6 +213,13 @@ export async function capturePaymentDetails(
         card_last_four: cardMeta.lastFour,
         scheduled_count: schedules.length,
       },
+    });
+
+    // 8. Dispatch notification
+    dispatchNotification("PAYMENT_CAPTURED", {
+      clientName: client.name,
+      amount: schedules.reduce((sum, s) => sum + s.amount_cents, 0),
+      paymentId: payment.id,
     });
 
     return { data: { paymentId: payment.id }, error: null };

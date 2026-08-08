@@ -196,6 +196,8 @@ export interface PdfLineItem {
   tierName: string | null;
   billing: "one_off" | "recurring_monthly" | "in_kind";
   priceCents: number;
+  term: string | null;
+  billingCycleMonths: number;
 }
 
 export interface PdfContractInput {
@@ -320,33 +322,73 @@ function createContractDocument(input: PdfContractInput) {
       ),
 
       /* Line items */
-      ...input.lineItems.map((item, i) =>
-        React.createElement(
+      ...input.lineItems.map((item, i) => {
+        // Hitung total baris ini jika layanan bulanan
+        const itemTotalCents =
+          item.billing === "recurring_monthly"
+            ? item.priceCents * (item.billingCycleMonths || 1)
+            : item.priceCents;
+
+        return React.createElement(
           View,
           { key: i, style: { ...s.row, ...(i % 2 === 1 ? s.rowAlt : {}) } },
+
+          // Kolom 1: Nama Layanan + Deskripsi Term
           React.createElement(
-            Text,
+            View,
             { style: s.rowName },
-            item.tierName ? `${item.name} (${item.tierName})` : item.name,
+            React.createElement(
+              Text,
+              null,
+              item.tierName ? `${item.name} (${item.tierName})` : item.name,
+            ),
+            item.term
+              ? React.createElement(
+                  Text,
+                  { style: { fontSize: 8, color: "#666666", marginTop: 3 } },
+                  item.term, // Ini akan mencetak "12 months, 6 shoots (every 2 months)"
+                )
+              : null,
           ),
+
+          // Kolom 2: Tipe Billing
           React.createElement(
             Text,
             { style: s.rowBilling },
             billingLabel(item.billing),
           ),
+
+          // Kolom 3: Harga (Bulanan + Total)
           React.createElement(
-            Text,
+            View,
             { style: s.rowPrice },
-            item.billing === "in_kind" ? "—" : formatCents(item.priceCents),
+            React.createElement(
+              Text,
+              null,
+              item.billing === "in_kind"
+                ? "—"
+                : `${formatCents(item.priceCents)}${item.billing === "recurring_monthly" ? "/mo" : ""}`,
+            ),
+            item.billing === "recurring_monthly" && item.billingCycleMonths > 1
+              ? React.createElement(
+                  Text,
+                  { style: { fontSize: 7, color: "#666666", marginTop: 2 } },
+                  `Total: ${formatCents(itemTotalCents)}`,
+                )
+              : null,
           ),
-        ),
-      ),
+        );
+      }),
 
       /* Total */
       React.createElement(
         View,
         { style: s.totalRow },
-        React.createElement(Text, { style: s.totalLabel }, "Total (ex GST)"),
+        React.createElement(
+          Text,
+          { style: s.totalLabel },
+          "Total Contract Value (ex GST)",
+        ), // <-- UBAH TEKS INI
         React.createElement(
           Text,
           { style: s.totalAmount },

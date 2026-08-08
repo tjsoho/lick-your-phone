@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Check, ChevronDown, X } from "lucide-react"
-import { useProposal } from "../ProposalContext"
-import { cn } from "@/lib/utils"
+import { useState } from "react";
+import { Check, ChevronDown, X } from "lucide-react";
+import { useProposal } from "../ProposalContext";
+import { cn } from "@/lib/utils";
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -11,16 +11,20 @@ function formatCents(cents: number): string {
     currency: "AUD",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(cents / 100)
+  }).format(cents / 100);
 }
 
-function listFromTarget(targetCents: number, discountPct: number | null): number {
-  if (discountPct == null || discountPct === 0) return targetCents
-  return Math.round(targetCents / (1 - discountPct))
+function listFromTarget(
+  targetCents: number,
+  discountPct: number | null,
+): number {
+  if (discountPct == null || discountPct === 0) return targetCents;
+  return Math.round(targetCents / (1 - discountPct));
 }
 
 export default function SummaryPage() {
   const {
+    proposal,
     selections,
     serviceMap,
     totalListCents,
@@ -29,31 +33,46 @@ export default function SummaryPage() {
     pages,
     setCurrentPage,
     deselectService,
-  } = useProposal()
+    paymentCaptured,
+  } = useProposal();
 
-  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const selectedServices = selections
     .map((sel) => {
-      const svc = serviceMap[sel.serviceId]
-      if (!svc) return null
+      const svc = serviceMap[sel.serviceId];
+      if (!svc) return null;
 
-      let targetCents: number
-      let tierName: string | null = null
+      let targetCents: number;
+      let tierName: string | null = null;
 
       if (sel.tierId) {
-        const tier = svc.tiers.find((t) => t.id === sel.tierId)
-        targetCents = tier ? tier.targetPriceCents : svc.targetPriceCents
-        tierName = tier?.name ?? null
+        const tier = svc.tiers.find((t) => t.id === sel.tierId);
+        targetCents = tier ? tier.targetPriceCents : svc.targetPriceCents;
+        tierName = tier?.name ?? null;
       } else {
-        targetCents = svc.targetPriceCents
+        targetCents = svc.targetPriceCents;
       }
 
-      const isWeekly = svc.priceDisplayPeriod === "week"
-      const displayTarget = targetCents
-      const monthlyTarget = isWeekly ? Math.round(targetCents * 52 / 12) : targetCents
-      const listCents = listFromTarget(monthlyTarget, svc.discountPct)
-      const hasDiscount = svc.discountPct != null && svc.discountPct > 0
+      const isWeekly = svc.priceDisplayPeriod === "week";
+      const displayTarget = targetCents;
+      const monthlyTarget = isWeekly
+        ? Math.round((targetCents * 52) / 12)
+        : targetCents;
+      const listCents = listFromTarget(monthlyTarget, svc.discountPct);
+      const hasDiscount = svc.discountPct != null && svc.discountPct > 0;
+
+      let billingCycleMonths = 1;
+      if (svc.billing === "recurring_monthly") {
+        const tierCycle = sel.tierId
+          ? svc.tiers.find((t: any) => t.id === sel.tierId)?.billingCycleMonths
+          : null;
+
+        billingCycleMonths = tierCycle ?? svc.billingCycleMonths ?? 1;
+      }
+
+      const totalContractCents = monthlyTarget * billingCycleMonths;
+      const totalListContractCents = listCents * billingCycleMonths;
 
       return {
         id: svc.id,
@@ -68,12 +87,26 @@ export default function SummaryPage() {
         discountPct: svc.discountPct,
         inclusions: svc.inclusions ?? [],
         clientObligations: svc.clientObligations ?? [],
-      }
+        billingCycleMonths,
+        totalContractCents,
+        totalListContractCents,
+      };
     })
-    .filter(Boolean)
+    .filter(Boolean);
 
-  const signatureIdx = pages.findIndex((p) => p.slug === "signature")
-  const hasDiscount = totalDiscountCents > 0
+  const signatureIdx = pages.findIndex((p) => p.slug === "signature");
+  const paymentIdx = pages.findIndex((p) => p.slug === "payment");
+  const hasDiscount = totalDiscountCents > 0;
+
+  const grandTotalContractValue = selectedServices.reduce(
+    (sum, item) => sum + (item?.totalContractCents ?? 0),
+    0,
+  );
+  const grandTotalListValue = selectedServices.reduce(
+    (sum, item) => sum + (item?.totalListContractCents ?? 0),
+    0,
+  );
+  const grandTotalDiscount = grandTotalListValue - grandTotalContractValue;
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -82,7 +115,8 @@ export default function SummaryPage() {
           Your Proposal Summary
         </h1>
         <p className="font-body text-sm text-lyp-white/50 mb-8">
-          Here&apos;s everything you&apos;ve selected. Tap a service to see details.
+          Here&apos;s everything you&apos;ve selected. Tap a service to see
+          details.
         </p>
 
         {selectedServices.length === 0 ? (
@@ -99,8 +133,8 @@ export default function SummaryPage() {
             {/* Left: expandable drawers */}
             <div className="space-y-2">
               {selectedServices.map((item) => {
-                if (!item) return null
-                const isOpen = expandedId === item.id
+                if (!item) return null;
+                const isOpen = expandedId === item.id;
                 return (
                   <div
                     key={item.id}
@@ -137,14 +171,16 @@ export default function SummaryPage() {
                             )}
                             {formatCents(item.monthlyTarget)}
                             <span className="font-body text-xs text-lyp-white/40 ml-0.5">
-                              {item.billing === "recurring_monthly" ? "/mo" : ""}
+                              {item.billing === "recurring_monthly"
+                                ? "/mo"
+                                : ""}
                             </span>
                           </span>
                         )}
                         <ChevronDown
                           className={cn(
                             "h-4 w-4 text-lyp-white/40 transition-transform duration-200",
-                            isOpen && "rotate-180"
+                            isOpen && "rotate-180",
                           )}
                         />
                       </div>
@@ -155,7 +191,8 @@ export default function SummaryPage() {
                       <div className="border-t border-lyp-white/10 px-5 py-4 space-y-4">
                         {item.isWeekly && (
                           <p className="font-body text-xs text-lyp-white/40">
-                            {formatCents(item.displayTarget)}/week ({formatCents(item.monthlyTarget)}/month)
+                            {formatCents(item.displayTarget)}/week (
+                            {formatCents(item.monthlyTarget)}/month)
                           </p>
                         )}
 
@@ -166,11 +203,17 @@ export default function SummaryPage() {
                             </p>
                             <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
                               {item.inclusions
-                                .sort((a: { sequence?: number | null }, b: { sequence?: number | null }) =>
-                                  (a.sequence ?? 0) - (b.sequence ?? 0)
+                                .sort(
+                                  (
+                                    a: { sequence?: number | null },
+                                    b: { sequence?: number | null },
+                                  ) => (a.sequence ?? 0) - (b.sequence ?? 0),
                                 )
                                 .map((inc: { id: string; text: string }) => (
-                                  <li key={inc.id} className="flex items-start gap-2">
+                                  <li
+                                    key={inc.id}
+                                    className="flex items-start gap-2"
+                                  >
                                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-lyp-cherry/60" />
                                     <span className="font-body text-xs text-lyp-white/70">
                                       {inc.text}
@@ -188,11 +231,17 @@ export default function SummaryPage() {
                             </p>
                             <ul className="space-y-1">
                               {item.clientObligations
-                                .sort((a: { sequence?: number | null }, b: { sequence?: number | null }) =>
-                                  (a.sequence ?? 0) - (b.sequence ?? 0)
+                                .sort(
+                                  (
+                                    a: { sequence?: number | null },
+                                    b: { sequence?: number | null },
+                                  ) => (a.sequence ?? 0) - (b.sequence ?? 0),
                                 )
                                 .map((ob: { id: string; text: string }) => (
-                                  <li key={ob.id} className="flex items-start gap-2">
+                                  <li
+                                    key={ob.id}
+                                    className="flex items-start gap-2"
+                                  >
                                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-lyp-white/30" />
                                     <span className="font-body text-xs text-lyp-white/50">
                                       {ob.text}
@@ -203,22 +252,24 @@ export default function SummaryPage() {
                           </div>
                         )}
 
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            deselectService(item.id)
-                            setExpandedId(null)
-                          }}
-                          className="flex items-center gap-2 rounded-lg border border-lyp-white/15 px-4 py-2 font-body text-xs text-lyp-white/60 transition-colors hover:border-lyp-cherry/40 hover:text-lyp-cherry"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                          Remove from proposal
-                        </button>
+                        {!paymentCaptured && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deselectService(item.id);
+                              setExpandedId(null);
+                            }}
+                            className="flex items-center gap-2 rounded-lg border border-lyp-white/15 px-4 py-2 font-body text-xs text-lyp-white/60 transition-colors hover:border-lyp-cherry/40 hover:text-lyp-cherry"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            Remove from proposal
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>
-                )
+                );
               })}
             </div>
 
@@ -229,51 +280,71 @@ export default function SummaryPage() {
                   Investment Summary
                 </h3>
 
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {selectedServices.map((item) => {
-                    if (!item) return null
+                    if (!item) return null;
                     return (
-                      <div key={item.id} className="flex justify-between">
-                        <span className="font-body text-xs text-lyp-white/60 truncate mr-2">
+                      <div
+                        key={item.id}
+                        className="flex justify-between items-start"
+                      >
+                        <span className="font-body text-xs text-lyp-white/60 mr-2 mt-0.5">
                           {item.name}
                         </span>
-                        <span className="font-body text-xs text-lyp-white/80 shrink-0">
-                          {item.billing === "in_kind"
-                            ? "Free"
-                            : formatCents(item.monthlyTarget)}
-                        </span>
+                        <div className="flex flex-col items-end shrink-0">
+                          <span className="font-body text-xs text-lyp-white/80">
+                            {item.billing === "in_kind" ? (
+                              "Free"
+                            ) : (
+                              <>
+                                {formatCents(item.monthlyTarget)}
+                                {item.billing === "recurring_monthly" && (
+                                  <span className="text-lyp-white/50">/mo</span>
+                                )}
+                              </>
+                            )}
+                          </span>
+
+                          {/* Tampilkan rincian durasi kontrak jika recurring */}
+                          {item.billing === "recurring_monthly" &&
+                            item.billingCycleMonths > 1 && (
+                              <span className="font-body text-[10px] text-lyp-white/40 mt-0.5">
+                                for {item.billingCycleMonths} months
+                              </span>
+                            )}
+                        </div>
                       </div>
-                    )
+                    );
                   })}
                 </div>
 
                 <div className="border-t border-lyp-white/10 pt-3 space-y-2">
-                  {hasDiscount && (
+                  {grandTotalDiscount > 0 && (
                     <>
                       <div className="flex justify-between">
                         <span className="font-body text-xs text-lyp-white/40">
-                          List price
+                          Total List Price
                         </span>
                         <span className="font-body text-xs text-lyp-white/30 line-through">
-                          {formatCents(totalListCents)}
+                          {formatCents(grandTotalListValue)}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-body text-xs text-lyp-cherry">
-                          Your savings
+                          Your Savings
                         </span>
                         <span className="font-body text-xs text-lyp-cherry">
-                          -{formatCents(totalDiscountCents)}
+                          -{formatCents(grandTotalDiscount)}
                         </span>
                       </div>
                     </>
                   )}
                   <div className="flex justify-between items-baseline pt-1">
-                    <span className="font-heading text-base text-lyp-white">
-                      Total
+                    <span className="font-heading text-sm text-lyp-white">
+                      Total Contract Value
                     </span>
                     <span className="font-heading text-2xl text-lyp-white">
-                      {formatCents(totalTargetCents)}
+                      {formatCents(grandTotalContractValue)}
                       <span className="font-body text-xs text-lyp-white/40 ml-1">
                         + GST
                       </span>
@@ -281,13 +352,33 @@ export default function SummaryPage() {
                   </div>
                 </div>
 
-                {signatureIdx >= 0 && (
+                {paymentCaptured ? (
+                  <div className="mt-2 flex flex-col items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-5 py-4">
+                    <span className="inline-flex items-center gap-2 font-body text-sm text-green-400">
+                      <span className="h-2 w-2 rounded-full bg-green-400" />
+                      Payment details captured
+                    </span>
+                    <p className="font-body text-xs text-lyp-white/50 text-center">
+                      Your payment information is on file. No further action
+                      needed.
+                    </p>
+                  </div>
+                ) : proposal.status === "signed" ? (
                   <button
-                    onClick={() => setCurrentPage(signatureIdx)}
+                    onClick={() => setCurrentPage(paymentIdx)}
                     className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-colors hover:bg-lyp-deep-red mt-2"
                   >
-                    Proceed to Signature
+                    Proceed to Payment
                   </button>
+                ) : (
+                  signatureIdx >= 0 && (
+                    <button
+                      onClick={() => setCurrentPage(signatureIdx)}
+                      className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-colors hover:bg-lyp-deep-red mt-2"
+                    >
+                      Proceed to Signature
+                    </button>
+                  )
                 )}
               </div>
             </div>
@@ -295,5 +386,5 @@ export default function SummaryPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

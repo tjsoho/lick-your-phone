@@ -1,29 +1,16 @@
-"use client"
+"use client";
 
-import { useProposal, type PageData } from "../ProposalContext"
-import { useIntake } from "../IntakeContext"
-import PaymentPage from "./PaymentPage"
-import SignaturePage from "./SignaturePage"
-import IntakePage from "./IntakePage"
-
-function IntakeFormWrapper() {
-  const { intakeQuestions, intakeProviders, intakeResponses } = useIntake()
-  return (
-    <IntakePage
-      questions={intakeQuestions}
-      providers={intakeProviders}
-      existingResponses={intakeResponses}
-    />
-  )
-}
+import { useProposal, type PageData } from "../ProposalContext";
+import PaymentPage from "./PaymentPage";
+import SignaturePage from "./SignaturePage";
 
 interface ContentPageProps {
-  page: PageData
+  page: PageData;
 }
 
 export default function ContentPage({ page }: ContentPageProps) {
-  const { proposal } = useProposal()
-  const slug = page.slug
+  const { proposal, paymentCaptured, pages, setCurrentPage } = useProposal();
+  const slug = page.slug;
 
   if (slug === "cover") {
     return (
@@ -43,14 +30,31 @@ export default function ContentPage({ page }: ContentPageProps) {
         <p className="font-body text-xl text-lyp-white/50">
           {proposal.venueName}
         </p>
+        {proposal.status === "signed" && (
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full bg-green-500/15 px-4 py-1.5 font-body text-sm text-green-400 ring-1 ring-green-500/30">
+              <span className="h-2 w-2 rounded-full bg-green-400" />
+              Proposal signed
+            </span>
+            <button
+              onClick={() => {
+                const idx = pages.findIndex((p) => p.slug === "summary");
+                if (idx !== -1) setCurrentPage(idx);
+              }}
+              className="rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-colors hover:bg-lyp-cherry/90"
+            >
+              View Summary
+            </button>
+          </div>
+        )}
       </div>
-    )
+    );
   }
 
-  if (slug === "signature") return <SignaturePage />
-  if (slug === "payment") return <PaymentPage />
-  if (slug === "intake") return <IntakeFormWrapper />
-  if (slug === "summary") return null
+  if (slug === "signature") return <SignaturePage />;
+  if (slug === "payment") return <PaymentPage />;
+  // if (slug === "intake") return <IntakeFormWrapper />
+  if (slug === "summary") return null;
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -73,7 +77,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                     >
                       {String(block.content ?? "")}
                     </h2>
-                  )
+                  );
                 }
                 if (block.type === "paragraph") {
                   return (
@@ -83,7 +87,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                     >
                       {String(block.content ?? "")}
                     </p>
-                  )
+                  );
                 }
                 if (block.type === "list" && Array.isArray(block.content)) {
                   return (
@@ -98,7 +102,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                         </li>
                       ))}
                     </ul>
-                  )
+                  );
                 }
                 return (
                   <div
@@ -107,7 +111,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                   >
                     {JSON.stringify(block.content)}
                   </div>
-                )
+                );
               })}
           </div>
         ) : (
@@ -117,5 +121,5 @@ export default function ContentPage({ page }: ContentPageProps) {
         )}
       </div>
     </div>
-  )
+  );
 }

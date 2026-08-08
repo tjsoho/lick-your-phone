@@ -170,6 +170,7 @@ export async function schedulePayment(
   amountCents: number,
   date: string, // YYYY-MM-DD
   idempotencyKey: string,
+  description: string = "LickYourPhone campaign",
 ): Promise<PinchPayment> {
   return pinchFetch<PinchPayment>("/payments", {
     method: "POST",
@@ -178,7 +179,7 @@ export async function schedulePayment(
       sourceId,
       amount: amountCents / 100, // Pinch uses dollars
       transactionDate: date,
-      description: "LickYourPhone campaign",
+      description,
       idempotencyKey,
     },
   });

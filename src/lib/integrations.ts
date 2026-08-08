@@ -228,7 +228,7 @@ async function emitN8nWebhook(
 
 export async function onProposalSigned(ctx: IntegrationContext) {
   await Promise.allSettled([
-    sendClientEmail(ctx),
+    // sendClientEmail(ctx),
     // emitN8nWebhook("proposal_signed", ctx),
     dispatchNotification("PROPOSAL_SIGNED", {
       clientName: ctx.clientName,
@@ -236,7 +236,7 @@ export async function onProposalSigned(ctx: IntegrationContext) {
       totalAmount: ctx.totalCents,
       venueName: ctx.venueName,
       intakeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${ctx.proposalId}`,
-      sevices: ctx.lineItems.map((li) => ({
+      services: ctx.lineItems.map((li) => ({
         name: li.serviceName,
         billing: li.billing,
         term: null,

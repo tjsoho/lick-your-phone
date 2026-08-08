@@ -1,68 +1,79 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect } from "react"
-import { motion } from "framer-motion"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { useCallback, useEffect } from "react";
+import { motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   ProposalProvider,
   useProposal,
   type ProposalData,
   type PageData,
   type Service,
-} from "./ProposalContext"
-import RunningTotal from "./RunningTotal"
-import ServicePage from "./pages/ServicePage"
-import ContentPage from "./pages/ContentPage"
-import SummaryPage from "./pages/SummaryPage"
+  type Selection,
+} from "./ProposalContext";
+import RunningTotal from "./RunningTotal";
+import ServicePage from "./pages/ServicePage";
+import ContentPage from "./pages/ContentPage";
+import SummaryPage from "./pages/SummaryPage";
+import PaymentPage from "./pages/PaymentPage";
+import SignaturePage from "./pages/SignaturePage";
 
 function PageRenderer({ page }: { page: PageData }) {
-  const { services } = useProposal()
+  const { services } = useProposal();
 
   if (page.type === "service" && page.serviceId) {
-    const service = services.find((s) => s.id === page.serviceId)
-    if (service) return <ServicePage service={service} />
+    const service = services.find((s) => s.id === page.serviceId);
+    if (service) return <ServicePage service={service} />;
   }
 
   if (page.slug === "summary") {
-    return <SummaryPage />
+    return <SummaryPage />;
   }
 
-  return <ContentPage page={page} />
+  if (page.slug === "payment") {
+    return <PaymentPage />;
+  }
+
+  if (page.slug === "signature") {
+    return <SignaturePage />;
+  }
+
+  return <ContentPage page={page} />;
 }
 
 function CarouselInner() {
-  const { pages, currentPage, setCurrentPage, selectedCount } = useProposal()
+  const { pages, currentPage, setCurrentPage, selectedCount } = useProposal();
 
   const goNext = useCallback(() => {
-    setCurrentPage(Math.min(currentPage + 1, pages.length - 1))
-  }, [currentPage, pages.length, setCurrentPage])
+    setCurrentPage(Math.min(currentPage + 1, pages.length - 1));
+  }, [currentPage, pages.length, setCurrentPage]);
 
   const goPrev = useCallback(() => {
-    setCurrentPage(Math.max(currentPage - 1, 0))
-  }, [currentPage, setCurrentPage])
+    setCurrentPage(Math.max(currentPage - 1, 0));
+  }, [currentPage, setCurrentPage]);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-        e.preventDefault()
-        goNext()
+        e.preventDefault();
+        goNext();
       }
       if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-        e.preventDefault()
-        goPrev()
+        e.preventDefault();
+        goPrev();
       }
     }
-    window.addEventListener("keydown", handleKey)
-    return () => window.removeEventListener("keydown", handleKey)
-  }, [goNext, goPrev])
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [goNext, goPrev]);
 
-  const page = pages[currentPage]
-  if (!page) return null
+  const page = pages[currentPage];
+  if (!page) return null;
 
-  const hasTop = selectedCount > 0
-  const isSummary = page.slug === "summary"
-  const showRunningTotal = hasTop && !isSummary
-  const topPad = showRunningTotal ? "pt-[52px]" : ""
+  const hasTop = selectedCount > 0;
+  const isSummary = page.slug === "summary";
+  const showRunningTotal = hasTop && !isSummary;
+  const topPad = showRunningTotal ? "pt-[52px]" : "";
 
   return (
     <div className="relative flex h-dvh flex-col portal-bg">
@@ -116,23 +127,33 @@ function CarouselInner() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-interface ProposalCarouselProps {
-  proposal: ProposalData
-  pages: PageData[]
-  services: Service[]
+export interface ProposalCarouselProps {
+  proposal: ProposalData;
+  pages: PageData[];
+  services: Service[];
+  savedSelections?: Selection[] | null;
+  paymentCaptured?: boolean;
 }
 
 export default function ProposalCarousel({
   proposal,
   pages,
   services,
+  savedSelections,
+  paymentCaptured,
 }: ProposalCarouselProps) {
   return (
-    <ProposalProvider proposal={proposal} pages={pages} services={services}>
+    <ProposalProvider
+      proposal={proposal}
+      pages={pages}
+      services={services}
+      initialSelections={savedSelections ?? undefined}
+      paymentCaptured={paymentCaptured}
+    >
       <CarouselInner />
     </ProposalProvider>
-  )
+  );
 }

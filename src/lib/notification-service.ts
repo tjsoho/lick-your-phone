@@ -7,7 +7,8 @@ export type NotificationEvent =
   | "PROPOSAL_SIGNED"
   | "PAYMENT_FAILED"
   | "INTAKE_COMPLETED"
-  | "PAYMENT_SUCCEEDED";
+  | "PAYMENT_SUCCEEDED"
+  | "PAYMENT_CAPTURED";
 
 interface PayloadMap {
   PROPOSAL_SENT: {
@@ -24,11 +25,16 @@ interface PayloadMap {
     contractUrl: string;
     intakeUrl: string;
     signerEmail: string;
-    sevices: { name: string; billing: string; term: string | null }[];
+    services: { name: string; billing: string; term: string | null }[];
   };
   PAYMENT_FAILED: { clientName: string; amount: number; paymentId: string };
   INTAKE_COMPLETED: { clientName: string; proposalId: string };
   PAYMENT_SUCCEEDED: {
+    clientName: string;
+    amount: number;
+    paymentId: string;
+  };
+  PAYMENT_CAPTURED: {
     clientName: string;
     amount: number;
     paymentId: string;
@@ -93,6 +99,12 @@ export async function dispatchNotification<K extends NotificationEvent>(
 
       case "PAYMENT_SUCCEEDED": {
         const data = payload as PayloadMap["PAYMENT_SUCCEEDED"];
+        await sendWebhook(event, data);
+        break;
+      }
+
+      case "PAYMENT_CAPTURED": {
+        const data = payload as PayloadMap["PAYMENT_CAPTURED"];
         await sendWebhook(event, data);
         break;
       }
