@@ -297,27 +297,27 @@ const handleBankResultEvent = async (payload: BankResultWebhookEvent) => {
     }
 
     // Propagate status to parent payments table
-    const { data: allSchedules } = await supabase
-      .from("payment_schedules")
-      .select("status")
-      .eq("payment_id", schedule.payment_id);
+    // const { data: allSchedules } = await supabase
+    //   .from("payment_schedules")
+    //   .select("status")
+    //   .eq("payment_id", schedule.payment_id);
 
-    const allSettled = allSchedules?.every((s) => s.status === "settled");
-    const anyDishonoured = allSchedules?.some(
-      (s) => s.status === "dishonoured" || s.status === "failed",
-    );
+    // const allSettled = allSchedules?.every((s) => s.status === "settled");
+    // const anyDishonoured = allSchedules?.some(
+    //   (s) => s.status === "dishonoured" || s.status === "failed",
+    // );
 
-    if (allSettled) {
-      await supabase
-        .from("payments")
-        .update({ status: "settled", updated_at: new Date().toISOString() })
-        .eq("id", schedule.payment_id);
-    } else if (anyDishonoured) {
-      await supabase
-        .from("payments")
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq("id", schedule.payment_id);
-    }
+    // if (allSettled) {
+    //   await supabase
+    //     .from("payments")
+    //     .update({ status: "settled", updated_at: new Date().toISOString() })
+    //     .eq("id", schedule.payment_id);
+    // } else if (anyDishonoured) {
+    //   await supabase
+    //     .from("payments")
+    //     .update({ status: newStatus, updated_at: new Date().toISOString() })
+    //     .eq("id", schedule.payment_id);
+    // }
 
     // Dispatch notification if payment is settled
     if (newStatus === "settled") {
