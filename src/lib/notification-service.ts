@@ -28,7 +28,14 @@ interface PayloadMap {
     services: { name: string; billing: string; term: string | null }[];
   };
   PAYMENT_FAILED: { clientName: string; amount: number; paymentId: string };
-  INTAKE_COMPLETED: { clientName: string; proposalId: string };
+  INTAKE_COMPLETED: {
+    clientName: string;
+    proposalId: string;
+    venueName: string;
+    intakeUrl: string;
+    isEdit: boolean;
+    assets: string[];
+  };
   PAYMENT_SUCCEEDED: {
     clientName: string;
     amount: number;
@@ -41,11 +48,12 @@ interface PayloadMap {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function sendWebhook(event: NotificationEvent, data: any) {
   if (!N8N_WEBHOOK_URL) return console.warn("n8n Webhook URL missing");
 
   try {
-    const response = await axios.post(
+    await axios.post(
       N8N_WEBHOOK_URL,
       {
         event,

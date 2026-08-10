@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import type { FieldProps } from "./types"
+import type { FieldProps } from "./types";
 
 interface AddressValue {
-  street: string
-  city: string
-  state: string
-  postcode: string
-  country: string
+  street: string;
+  city: string;
+  state: string;
+  postcode: string;
+  country: string;
 }
 
-const AU_STATES = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"]
+const AU_STATES = ["ACT", "NSW", "NT", "QLD", "SA", "TAS", "VIC", "WA"];
 
 export default function AddressField({
   question,
@@ -23,14 +23,14 @@ export default function AddressField({
     state: "",
     postcode: "",
     country: "Australia",
-  }
+  };
 
   function handleChange(field: keyof AddressValue, val: string) {
-    onChange({ ...addr, [field]: val })
+    onChange({ ...addr, [field]: val });
   }
 
   const inputClass =
-    "w-full rounded-lg border border-lyp-white/20 bg-lyp-white/5 px-4 py-3 font-body text-sm text-lyp-white placeholder-lyp-white/30 outline-none transition-colors focus:border-lyp-cherry focus:ring-1 focus:ring-lyp-cherry"
+    "w-full rounded-lg border border-lyp-white/20 bg-lyp-white/5 px-4 py-3 font-body text-sm text-lyp-white placeholder-lyp-white/30 outline-none transition-colors focus:border-lyp-cherry focus:ring-1 focus:ring-lyp-cherry";
 
   return (
     <div className="space-y-2">
@@ -60,9 +60,11 @@ export default function AddressField({
             onChange={(e) => handleChange("state", e.target.value)}
             className={inputClass}
           >
-            <option value="">State</option>
+            <option className="text-black" value="">
+              State
+            </option>
             {AU_STATES.map((s) => (
-              <option key={s} value={s}>
+              <option className="text-black" key={s} value={s}>
                 {s}
               </option>
             ))}
@@ -87,5 +89,5 @@ export default function AddressField({
         </div>
       </div>
     </div>
-  )
+  );
 }

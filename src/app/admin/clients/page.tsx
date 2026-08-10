@@ -53,7 +53,7 @@ export default async function ClientsPage() {
                   entity_name?: string;
                   abn?: string;
                   created_at: string;
-                  venues: { count: number }[];
+                  venues: { id: string; name: string }[];
                 }) => (
                   <tr
                     key={client.id}
@@ -74,13 +74,13 @@ export default async function ClientsPage() {
                       {client.abn || "—"}
                     </td>
                     <td className="px-4 py-3 font-body text-sm text-gray-700">
-                      {client.venues?.[0]?.count ?? 0}
+                      {client.venues?.length ?? 0}
                     </td>
                     <td className="px-4 py-3 font-body text-sm text-gray-700">
                       {formatDate(client.created_at)}
                     </td>
                   </tr>
-                )
+                ),
               )
             ) : (
               <tr>

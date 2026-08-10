@@ -153,6 +153,44 @@ export default function ProposalWizard({
     }
   }
 
+  async function handleSaveDraft() {
+    if (!selectedClientId) {
+      toast.error("Please select a client first");
+      return;
+    }
+    setLoading(true);
+    const payload = {
+      client_id: selectedClientId,
+      venue_id: selectedVenueId || undefined,
+      notes: notes.trim() || undefined,
+    };
+
+    let result: { error: string | null };
+
+    if (mode === "edit" && proposalId) {
+      result = await updateProposal(proposalId, payload);
+    } else if (mode === "supersede" && proposalId) {
+      result = await supersedeProposal(proposalId, payload);
+    } else {
+      result = await createProposal(payload);
+    }
+
+    setLoading(false);
+    if (result.error) {
+      toast.error(result.error);
+      return;
+    }
+
+    const msg =
+      mode === "edit"
+        ? "Draft updated"
+        : mode === "supersede"
+          ? "Superseding draft created"
+          : "Draft saved";
+    toast.success(msg);
+    router.push("/admin/proposals");
+  }
+
   async function handleSubmit() {
     setLoading(true);
     const payload = {
@@ -498,7 +536,7 @@ export default function ProposalWizard({
       )}
 
       {/* Navigation buttons */}
-      <div className="flex justify-between mt-8 pt-4 border-t border-gray-200">
+      <div className="flex justify-between items-center mt-8 pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={() => setStep((s) => s - 1)}
@@ -510,25 +548,39 @@ export default function ProposalWizard({
         >
           Back
         </button>
-        {step < 4 ? (
-          <button
-            type="button"
-            onClick={() => setStep((s) => s + 1)}
-            disabled={!canProceed()}
-            className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
-          >
-            Next
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={loading}
-            className="bg-lyp-cherry text-white px-6 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
-          >
-            {submitLabel}
-          </button>
-        )}
+
+        <div className="flex gap-2">
+          {/* {step === 4 && selectedClientId && (
+            <button
+              type="button"
+              onClick={handleSaveDraft}
+              disabled={loading}
+              className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md font-body text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              Save as Draft
+            </button>
+          )} */}
+
+          {step < 4 ? (
+            <button
+              type="button"
+              onClick={() => setStep((s) => s + 1)}
+              disabled={!canProceed()}
+              className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
+            >
+              Next
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={loading}
+              className="bg-lyp-cherry text-white px-6 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
+            >
+              {submitLabel}
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState, useCallback, useMemo } from "react"
-import { ChevronLeft, ChevronRight, Check, Loader2 } from "lucide-react"
-import { useProposal } from "../ProposalContext"
+import { useState, useCallback, useMemo } from "react";
+import { ChevronLeft, ChevronRight, Check, Loader2 } from "lucide-react";
+import { useProposal } from "../ProposalContext";
 import {
   TextField,
   TextareaField,
@@ -18,29 +18,23 @@ import {
   RepeatableGroupField,
   ProviderPickerField,
   StaticContentField,
-} from "@/components/intake"
-import type {
-  IntakeQuestion,
-  Provider,
-} from "@/server-actions/intake"
-import {
-  saveIntakeResponses,
-  completeIntake,
-} from "@/server-actions/intake"
+} from "@/components/intake";
+import type { IntakeQuestion, Provider } from "@/server-actions/intake";
+import { saveIntakeResponses, completeIntake } from "@/server-actions/intake";
 
 interface IntakePageProps {
-  questions: IntakeQuestion[]
-  providers: Provider[]
-  existingResponses: Record<string, unknown>
+  questions: IntakeQuestion[];
+  providers: Provider[];
+  existingResponses: Record<string, unknown>;
 }
 
 const FIELD_COMPONENTS: Record<
   string,
   React.ComponentType<{
-    question: IntakeQuestion
-    value: unknown
-    onChange: (value: unknown) => void
-    providers?: Provider[]
+    question: IntakeQuestion;
+    value: unknown;
+    onChange: (value: unknown) => void;
+    providers?: Provider[];
   }>
 > = {
   text: TextField,
@@ -57,27 +51,30 @@ const FIELD_COMPONENTS: Record<
   repeatable_group: RepeatableGroupField,
   provider_picker: ProviderPickerField,
   static_content: StaticContentField,
-}
+};
 
 export default function IntakePage({
   questions,
   providers,
   existingResponses,
 }: IntakePageProps) {
-  const { proposal, selections } = useProposal()
+  const { proposal, selections } = useProposal();
   const [responses, setResponses] = useState<Record<string, unknown>>(
-    existingResponses ?? {}
-  )
-  const [currentIntakePage, setCurrentIntakePage] = useState(1)
-  const [saving, setSaving] = useState(false)
-  const [completed, setCompleted] = useState(false)
-  const [error, setError] = useState("")
+    existingResponses ?? {},
+  );
+  const [currentIntakePage, setCurrentIntakePage] = useState(1);
+  const [saving, setSaving] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [error, setError] = useState("");
+
+  console.log("selections", selections);
 
   // Build a set of signed service slugs for condition evaluation
   const signedServiceIds = useMemo(
     () => new Set(selections.map((s) => s.serviceId)),
-    [selections]
-  )
+    [selections],
+  );
 
   // We don't have venue state directly in ProposalContext,
   // so we pass all providers and let the picker filter by type
@@ -86,150 +83,164 @@ export default function IntakePage({
   // Evaluate whether a question should be visible
   const isQuestionVisible = useCallback(
     (q: IntakeQuestion): boolean => {
-      if (q.conditions.length === 0) return true
+      if (q.conditions.length === 0) return true;
 
       // All conditions must pass (AND logic)
       return q.conditions.every((c) => {
         switch (c.conditionType) {
           case "service_signed":
-            if (!c.conditionServiceId) return true
-            return signedServiceIds.has(c.conditionServiceId)
+            if (!c.conditionServiceId) return true;
+            return signedServiceIds.has(c.conditionServiceId);
 
           case "venue_state":
             // If no state filtering is possible at client level, show the question
             // The provider picker will filter by state server-side
-            return true
+            return true;
 
           case "answer_equals":
-            if (!c.conditionQuestionId || c.conditionValue == null) return true
-            return responses[c.conditionQuestionId] === c.conditionValue
+            if (!c.conditionQuestionId || c.conditionValue == null) return true;
+            return responses[c.conditionQuestionId] === c.conditionValue;
 
           default:
-            return true
+            return true;
         }
-      })
+      });
     },
-    [signedServiceIds, responses]
-  )
+    [signedServiceIds, responses],
+  );
 
   // Get all unique page numbers
   const allPageNumbers = useMemo(
-    () => [...new Set(questions.map((q) => q.pageNumber))].sort((a, b) => a - b),
-    [questions]
-  )
+    () =>
+      [...new Set(questions.map((q) => q.pageNumber))].sort((a, b) => a - b),
+    [questions],
+  );
 
   // Filter visible questions for the current intake page
   const visibleQuestionsForPage = useMemo(
     () =>
       questions
-        .filter((q) => q.pageNumber === currentIntakePage && isQuestionVisible(q))
+        .filter(
+          (q) => q.pageNumber === currentIntakePage && isQuestionVisible(q),
+        )
         .sort((a, b) => a.sequence - b.sequence),
-    [questions, currentIntakePage, isQuestionVisible]
-  )
+    [questions, currentIntakePage, isQuestionVisible],
+  );
 
   // Group visible questions by section
   const sections = useMemo(() => {
-    const grouped: { section: string | null; questions: IntakeQuestion[] }[] = []
-    let currentSection: string | null | undefined = undefined
+    const grouped: { section: string | null; questions: IntakeQuestion[] }[] =
+      [];
+    let currentSection: string | null | undefined = undefined;
 
     for (const q of visibleQuestionsForPage) {
       if (q.section !== currentSection) {
-        currentSection = q.section
-        grouped.push({ section: currentSection, questions: [] })
+        currentSection = q.section;
+        grouped.push({ section: currentSection, questions: [] });
       }
-      grouped[grouped.length - 1].questions.push(q)
+      grouped[grouped.length - 1].questions.push(q);
     }
-    return grouped
-  }, [visibleQuestionsForPage])
+    return grouped;
+  }, [visibleQuestionsForPage]);
 
   // Check if current page has any visible questions
   // Skip pages with no visible questions
-  const hasVisibleContent = visibleQuestionsForPage.length > 0
+  const hasVisibleContent = visibleQuestionsForPage.length > 0;
 
   // Find next/prev page with visible content
   const findNextPage = useCallback(
     (dir: 1 | -1): number | null => {
-      const currentIdx = allPageNumbers.indexOf(currentIntakePage)
-      let nextIdx = currentIdx + dir
+      const currentIdx = allPageNumbers.indexOf(currentIntakePage);
+      let nextIdx = currentIdx + dir;
       while (nextIdx >= 0 && nextIdx < allPageNumbers.length) {
-        const pageNum = allPageNumbers[nextIdx]
+        const pageNum = allPageNumbers[nextIdx];
         const pageQuestions = questions.filter(
-          (q) => q.pageNumber === pageNum && isQuestionVisible(q)
-        )
-        if (pageQuestions.length > 0) return pageNum
-        nextIdx += dir
+          (q) => q.pageNumber === pageNum && isQuestionVisible(q),
+        );
+        if (pageQuestions.length > 0) return pageNum;
+        nextIdx += dir;
       }
-      return null
+      return null;
     },
-    [allPageNumbers, currentIntakePage, questions, isQuestionVisible]
-  )
+    [allPageNumbers, currentIntakePage, questions, isQuestionVisible],
+  );
 
-  const nextPage = findNextPage(1)
-  const prevPage = findNextPage(-1)
-  const isFirstPage = prevPage === null
-  const isLastPage = nextPage === null
+  const nextPage = findNextPage(1);
+  const prevPage = findNextPage(-1);
+  const isFirstPage = prevPage === null;
+  const isLastPage = nextPage === null;
 
   // Validate required fields on current page
   function validateCurrentPage(): boolean {
     for (const q of visibleQuestionsForPage) {
-      if (!q.required) continue
-      if (q.fieldType === "static_content") continue
+      if (!q.required) continue;
+      if (q.fieldType === "static_content") continue;
 
-      const val = responses[q.id]
-      if (val == null || val === "" || (Array.isArray(val) && val.length === 0)) {
-        setError(`Please fill in "${q.fieldLabel}"`)
-        return false
+      const val = responses[q.id];
+      if (
+        val == null ||
+        val === "" ||
+        (Array.isArray(val) && val.length === 0)
+      ) {
+        setError(`Please fill in "${q.fieldLabel}"`);
+        return false;
       }
     }
-    setError("")
-    return true
+    setError("");
+    return true;
   }
 
   async function handleSaveAndNavigate(targetPage: number | null) {
-    if (!validateCurrentPage()) return
+    if (!validateCurrentPage()) return;
 
-    setSaving(true)
-    setError("")
+    setSaving(true);
+    setError("");
 
     // Save current page responses
     const pageResponses = visibleQuestionsForPage
-      .filter((q) => q.fieldType !== "static_content" && responses[q.id] != null)
+      .filter(
+        (q) => q.fieldType !== "static_content" && responses[q.id] != null,
+      )
       .map((q) => ({
         questionId: q.id,
         value: responses[q.id],
-      }))
+      }));
 
     if (pageResponses.length > 0) {
-      const result = await saveIntakeResponses(proposal.id, pageResponses)
+      const result = await saveIntakeResponses(proposal.id, pageResponses);
       if (result.error) {
-        setError(`Failed to save: ${result.error}`)
-        setSaving(false)
-        return
+        setError(`Failed to save: ${result.error}`);
+        setSaving(false);
+        return;
       }
     }
 
     if (targetPage !== null) {
-      setCurrentIntakePage(targetPage)
+      setCurrentIntakePage(targetPage);
     } else {
       // Final page — complete intake
-      const result = await completeIntake(proposal.id)
+      const result = await completeIntake(proposal.id);
       if (result.error) {
-        setError(`Failed to complete intake: ${result.error}`)
+        setError(`Failed to complete intake: ${result.error}`);
       } else {
-        setCompleted(true)
+        setCompleted(true);
+        setIsEditing(false);
       }
     }
 
-    setSaving(false)
+    setSaving(false);
   }
 
   function handleChange(questionId: string, val: unknown) {
-    setResponses((prev) => ({ ...prev, [questionId]: val }))
-    if (error) setError("")
+    setResponses((prev) => ({ ...prev, [questionId]: val }));
+    if (error) setError("");
   }
 
   // Completed state
-  if (completed) {
+  const isCompletedScreen =
+    (completed || proposal.status === "intake_complete") && !isEditing;
+
+  if (isCompletedScreen) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6 text-center">
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-lyp-cherry/20">
@@ -238,33 +249,43 @@ export default function IntakePage({
         <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-4">
           All Done!
         </h1>
-        <p className="font-body text-lyp-white/60 max-w-md">
+        <p className="font-body text-lyp-white/60 max-w-md mb-8">
           Thank you for completing the intake form. Your dedicated marketer will
           be in touch to schedule your onboarding call.
         </p>
+        <button
+          type="button"
+          onClick={() => {
+            setIsEditing(true);
+            setCurrentIntakePage(1);
+          }}
+          className="font-body text-sm text-lyp-cherry hover:text-lyp-cherry/80 transition-colors"
+        >
+          Want to edit your responses?
+        </button>
       </div>
-    )
+    );
   }
 
   // Skip empty pages automatically on first render
   if (!hasVisibleContent && allPageNumbers.length > 0) {
-    const next = findNextPage(1)
+    const next = findNextPage(1);
     if (next !== null) {
       // Use a timeout to avoid state update during render
-      setTimeout(() => setCurrentIntakePage(next), 0)
+      setTimeout(() => setCurrentIntakePage(next), 0);
     }
-    return null
+    return null;
   }
 
   // Page progress
   const visiblePageNumbers = allPageNumbers.filter((pn) => {
     const pageQuestions = questions.filter(
-      (q) => q.pageNumber === pn && isQuestionVisible(q)
-    )
-    return pageQuestions.length > 0
-  })
-  const currentVisibleIndex = visiblePageNumbers.indexOf(currentIntakePage)
-  const totalVisiblePages = visiblePageNumbers.length
+      (q) => q.pageNumber === pn && isQuestionVisible(q),
+    );
+    return pageQuestions.length > 0;
+  });
+  const currentVisibleIndex = visiblePageNumbers.indexOf(currentIntakePage);
+  const totalVisiblePages = visiblePageNumbers.length;
 
   return (
     <div className="flex h-full flex-col">
@@ -297,8 +318,8 @@ export default function IntakePage({
               )}
               <div className="space-y-6">
                 {section.questions.map((q) => {
-                  const Component = FIELD_COMPONENTS[q.fieldType]
-                  if (!Component) return null
+                  const Component = FIELD_COMPONENTS[q.fieldType];
+                  if (!Component) return null;
 
                   return (
                     <Component
@@ -308,7 +329,7 @@ export default function IntakePage({
                       onChange={(val) => handleChange(q.id, val)}
                       providers={providers}
                     />
-                  )
+                  );
                 })}
               </div>
             </div>
@@ -331,7 +352,7 @@ export default function IntakePage({
           <button
             type="button"
             onClick={() => {
-              if (prevPage !== null) setCurrentIntakePage(prevPage)
+              if (prevPage !== null) setCurrentIntakePage(prevPage);
             }}
             disabled={isFirstPage || saving}
             className="flex items-center gap-1 font-body text-sm text-lyp-white/60 transition-colors hover:text-lyp-white disabled:opacity-20"
@@ -342,9 +363,7 @@ export default function IntakePage({
 
           <button
             type="button"
-            onClick={() =>
-              handleSaveAndNavigate(isLastPage ? null : nextPage)
-            }
+            onClick={() => handleSaveAndNavigate(isLastPage ? null : nextPage)}
             disabled={saving}
             className="flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-colors hover:bg-lyp-cherry/90 disabled:opacity-50"
           >
@@ -355,5 +374,5 @@ export default function IntakePage({
         </div>
       </div>
     </div>
-  )
+  );
 }

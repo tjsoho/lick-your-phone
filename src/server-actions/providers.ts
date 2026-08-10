@@ -18,6 +18,22 @@ export async function getProviders() {
   }
 }
 
+async function syncProviderStates(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  providerId: string,
+  stateIds: string[],
+) {
+  await supabase.from("provider_states").delete().eq("provider_id", providerId);
+  if (stateIds.length > 0) {
+    const { error } = await supabase
+      .from("provider_states")
+      .insert(
+        stateIds.map((state_id) => ({ provider_id: providerId, state_id })),
+      );
+    if (error) throw error;
+  }
+}
+
 export async function createProvider(data: {
   name: string;
   type: "photographer" | "videographer";
@@ -25,16 +41,20 @@ export async function createProvider(data: {
   portfolio_url?: string;
   price_cents?: number;
   image_url?: string;
+  state_ids?: string[];
 }) {
   try {
     const supabase = await createClient();
+    const { state_ids, ...providerData } = data;
     const { data: result, error } = await supabase
       .from("providers")
-      .insert(data)
+      .insert(providerData)
       .select()
       .single();
 
     if (error) throw error;
+    if (state_ids?.length)
+      await syncProviderStates(supabase, result.id, state_ids);
     revalidatePath("/admin");
     return { data: result, error: null };
   } catch (error) {
@@ -51,18 +71,21 @@ export async function updateProvider(
     portfolio_url?: string;
     price_cents?: number;
     image_url?: string;
-  }
+    state_ids?: string[];
+  },
 ) {
   try {
     const supabase = await createClient();
+    const { state_ids, ...providerData } = data;
     const { data: result, error } = await supabase
       .from("providers")
-      .update(data)
+      .update(providerData)
       .eq("id", id)
       .select()
       .single();
 
     if (error) throw error;
+    if (state_ids) await syncProviderStates(supabase, id, state_ids);
     revalidatePath("/admin");
     return { data: result, error: null };
   } catch (error) {

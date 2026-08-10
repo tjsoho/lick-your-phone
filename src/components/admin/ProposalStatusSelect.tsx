@@ -6,21 +6,30 @@ import { updateProposal } from "@/server-actions/proposals";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const statuses = ["draft", "sent", "signed", "superseded"] as const;
+const statuses = [
+  "draft",
+  "sent",
+  "signed",
+  "superseded",
+  "intake_complete",
+] as const;
 
 const statusStyles: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700 border-gray-300",
   sent: "bg-blue-100 text-blue-700 border-blue-300",
   signed: "bg-green-100 text-green-700 border-green-300",
   superseded: "bg-red-100 text-red-700 border-red-300",
+  intake_complete: "bg-green-100 text-green-700 border-green-300",
 };
 
 export default function ProposalStatusSelect({
   proposalId,
   currentStatus,
+  disabled = true,
 }: {
   proposalId: string;
   currentStatus: string;
+  disabled?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -45,7 +54,7 @@ export default function ProposalStatusSelect({
     <select
       value={currentStatus}
       onChange={handleChange}
-      disabled={loading}
+      disabled={loading || disabled}
       className={cn(
         "text-xs font-body font-medium capitalize rounded-full px-2 py-0.5 border cursor-pointer appearance-none pr-5 disabled:opacity-50",
         statusStyles[currentStatus] ??

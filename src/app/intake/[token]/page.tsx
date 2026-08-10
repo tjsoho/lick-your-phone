@@ -28,13 +28,23 @@ export default async function IntakeRoutePage({ params }: Props) {
       status,
       discount_expires_at,
       client:clients!client_id ( id, name ),
-      venue:venues!venue_id ( id, name )
+      venue:venues!venue_id ( id, name, state_id )
     `,
     )
     .eq("token", token)
     .single();
 
-  if (proposalError || !proposal) {
+  // Guard: only accessible if payment details captured
+  const { data: payments } = await supabase
+    .from("payments")
+    .select("status")
+    .eq("proposal_id", proposal?.id ?? "");
+
+  const paymentCaptured = (payments ?? []).some(
+    (p) => p.status === "details_captured",
+  );
+
+  if (proposalError || !proposal || !paymentCaptured) {
     return (
       <div className="flex h-dvh flex-col items-center justify-center bg-lyp-black px-6 text-center">
         <h1 className="font-heading text-4xl text-lyp-cherry mb-4">
@@ -55,6 +65,7 @@ export default async function IntakeRoutePage({ params }: Props) {
   const venueObj = proposal.venue as unknown as {
     id: string;
     name: string;
+    state_id: string;
   } | null;
 
   const proposalData: ProposalData = {
@@ -66,15 +77,14 @@ export default async function IntakeRoutePage({ params }: Props) {
     venueName: venueObj?.name ?? "Venue",
   };
 
-  // 2. Fetch signed selections to know which services the client picked
   const { data: signedSelections } = await supabase
-    .from("proposal_selections")
-    .select("service_id, tier_id")
+    .from("proposal_line_items")
+    .select("proposal_id, service_id, service_tier_id")
     .eq("proposal_id", proposal.id);
 
   const selections = (signedSelections ?? []).map((s) => ({
     serviceId: s.service_id,
-    tierId: s.tier_id,
+    tierId: s.service_tier_id,
   }));
 
   // 3. Fetch services (needed for condition evaluation)
@@ -161,12 +171,21 @@ export default async function IntakeRoutePage({ params }: Props) {
   }));
 
   // 5. Fetch providers
-  const { data: providersRaw } = await supabase
+  let providersQuery = supabase
     .from("providers")
     .select(
-      "id, name, type, description, portfolio_url, price_cents, image_url",
+      "id, name, type, description, portfolio_url, price_cents, image_url, provider_states!inner(state_id)",
     )
     .order("name");
+
+  if (venueObj?.state_id) {
+    providersQuery = providersQuery.eq(
+      "provider_states.state_id",
+      venueObj.state_id,
+    );
+  }
+
+  const { data: providersRaw } = await providersQuery;
 
   const intakeProviders: Provider[] = (providersRaw ?? []).map((p) => ({
     id: p.id,

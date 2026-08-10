@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import { dispatchNotification } from "@/lib/notification-service";
+import { logAuditEvent } from "@/lib/audit-service";
 
 /**
  * Pinch webhook handler
@@ -220,15 +221,42 @@ const handleSettledEvent = async (payload: WebhookEvent) => {
       .eq("id", schedule.payment_id);
   }
 
+  // Get payment info to send notifications and audit logs
+  const clientRes = await supabase
+    .from("payments")
+    .select("client_id, amount, proposal_id, clients(name)")
+    .eq("id", schedule.payment_id)
+    .single();
+
+  const notificationPayload = {
+    clientName: clientRes.data?.clients?.[0]?.name || "Unknown Client",
+    amount: payload.data.payment.amount,
+    paymentId: schedule.payment_id,
+  };
+
+  await Promise.allSettled([
+    dispatchNotification("PAYMENT_SUCCEEDED", notificationPayload),
+    clientRes.data?.proposal_id
+      ? logAuditEvent(
+          clientRes.data.proposal_id,
+          "PAYMENT_SUCCEEDED",
+          notificationPayload,
+        )
+      : Promise.resolve(),
+  ]);
+
   // Write audit event
   await supabase.from("audit_events").insert({
-    event_type: "pinch_webhook_settled",
-    payload: {
+    entity_id: schedule.payment_id,
+    entity_type: "payment",
+    action: "pinch_webhook_settled",
+    metadata: {
       pinch_payment_id: pinchPaymentId,
       schedule_id: schedule.id,
       payment_id: schedule.payment_id,
       raw_event: eventType,
     },
+    actor_type: "system",
   });
 
   return NextResponse.json({ ok: true });
@@ -291,48 +319,73 @@ const handleBankResultEvent = async (payload: BankResultWebhookEvent) => {
         .eq("id", schedule.payment_id);
     }
 
-    // Write audit event
-    await supabase.from("audit_events").insert({
-      entity_id: schedule.payment_id,
-      entity_type: "payment",
-      action: "pinch_webhook_bank_result",
-      metadata: {
-        pinch_payment_id: pinchPaymentId,
-        schedule_id: schedule.id,
-        payment_id: schedule.payment_id,
-        raw_event: payload.type,
-        new_status: newStatus,
-      },
-      actor_id: "system",
-      actor_type: "system",
-    });
-
     // Dispatch notification if payment is settled
     if (newStatus === "settled") {
       const clientRes = await supabase
         .from("payments")
-        .select("client_id, amount, clients(name)")
+        .select("proposal_id, proposals(clients(name))")
         .eq("id", schedule.payment_id)
         .single();
 
-      dispatchNotification("PAYMENT_SUCCEEDED", {
-        clientName: clientRes.data?.clients?.[0]?.name || "Unknown Client",
+      console.log(
+        "Webhook: dispatching payment succeeded notification for proposal:",
+        clientRes.data?.proposal_id,
+        "client:",
+        clientRes.data,
+      );
+
+      const proposalData = clientRes.data?.proposals as any;
+      const clientData = Array.isArray(proposalData)
+        ? proposalData[0]?.clients
+        : proposalData?.clients;
+      const clientName =
+        (Array.isArray(clientData) ? clientData[0]?.name : clientData?.name) ||
+        "Unknown Client";
+
+      const payload = {
+        clientName,
         amount: payment.amount,
         paymentId: schedule.payment_id,
-      });
+      };
+
+      console.log(
+        "Dispatching payment succeeded notification:",
+        payload,
+        clientRes.data?.proposal_id,
+        clientRes.error,
+      );
+
+      await Promise.allSettled([
+        dispatchNotification("PAYMENT_SUCCEEDED", payload),
+        clientRes.data?.proposal_id
+          ? logAuditEvent(
+              clientRes.data.proposal_id,
+              "PAYMENT_SUCCEEDED",
+              payload,
+            )
+          : Promise.resolve(),
+      ]);
     }
 
     if (newStatus === "dishonoured" || newStatus === "failed") {
       const clientRes = await supabase
         .from("payments")
-        .select("client_id, amount, clients(name)")
+        .select("client_id, amount, proposal_id, clients(name)")
         .eq("id", schedule.payment_id)
         .single();
-      dispatchNotification("PAYMENT_FAILED", {
+
+      const payload = {
         clientName: clientRes.data?.clients?.[0]?.name || "Unknown Client",
         amount: payment.amount,
         paymentId: schedule.payment_id,
-      });
+      };
+
+      await Promise.allSettled([
+        dispatchNotification("PAYMENT_FAILED", payload),
+        clientRes.data?.proposal_id
+          ? logAuditEvent(clientRes.data.proposal_id, "PAYMENT_FAILED", payload)
+          : Promise.resolve(),
+      ]);
     }
   }
 
@@ -351,13 +404,6 @@ export async function POST(request: NextRequest) {
     const eventType = body.type;
 
     console.log(`[Pinch Webhook] Received event: ${eventType}, body:`, body);
-
-    // write body to json file for debugging
-    const fs = require("fs");
-    fs.writeFileSync(
-      `pinch-webhook-${Date.now()}.json`,
-      JSON.stringify(body, null, 2),
-    );
 
     if (!eventType) {
       return NextResponse.json(

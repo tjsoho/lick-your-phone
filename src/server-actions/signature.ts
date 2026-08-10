@@ -6,6 +6,16 @@ import crypto from "crypto";
 import { generateContractPdf, type PdfLineItem } from "@/lib/pdf";
 import { onProposalSigned } from "@/lib/integrations";
 
+function calculateMonthlyCents(
+  targetCents: number,
+  displayPeriod: string | null,
+): number {
+  if (displayPeriod === "week") {
+    return Math.round((targetCents * 52) / 12);
+  }
+  return targetCents;
+}
+
 interface SignatureSelection {
   serviceId: string;
   tierId: string | null;
@@ -56,7 +66,7 @@ export async function signProposal(input: SignProposalInput) {
     const { data: services, error: svcErr } = await supabase
       .from("services")
       .select(
-        "id, name, billing, term, target_price_cents, discount_pct, service_tiers(id, name, target_price_cents)",
+        "id, name, billing, term, billing_cycle_months, price_display_period, target_price_cents, discount_pct, service_tiers(id, name, target_price_cents, billing_cycle_months)",
       )
       .in("id", serviceIds);
 
@@ -74,33 +84,42 @@ export async function signProposal(input: SignProposalInput) {
       price_snapshot_cents: number;
       billing: string;
       term: string | null;
+      billing_cycle_snapshot_months: number | null;
     }> = [];
 
     const pdfLineItems: PdfLineItem[] = [];
     let totalCents = 0;
 
+    const tiers = services.flatMap((s) => s.service_tiers || []);
+
     for (const sel of input.selections) {
       const svc = serviceMap[sel.serviceId];
       if (!svc) continue;
 
-      const tiers = svc.service_tiers as unknown as Array<{
-        id: string;
-        name: string;
-        target_price_cents: number;
-      }> | null;
-
-      let priceCents: number;
+      let basePriceCents: number;
       let tierName: string | null = null;
+      let finalBillingCycle: number | null = svc.billing_cycle_months;
 
+      // 1. Dapatkan harga dasar dari Tier atau Service
       if (sel.tierId && tiers) {
         const tier = tiers.find((t) => t.id === sel.tierId);
-        priceCents = tier ? tier.target_price_cents : svc.target_price_cents;
+        basePriceCents = tier
+          ? tier.target_price_cents
+          : svc.target_price_cents;
         tierName = tier?.name ?? null;
+
+        if (tier && tier.billing_cycle_months) {
+          finalBillingCycle = tier.billing_cycle_months;
+        }
       } else {
-        priceCents = svc.target_price_cents;
+        basePriceCents = svc.target_price_cents;
       }
 
-      // We snapshot the target price (what the client actually pays)
+      const priceCents = calculateMonthlyCents(
+        basePriceCents,
+        svc.price_display_period,
+      );
+
       lineItemRows.push({
         proposal_id: input.proposalId,
         service_id: sel.serviceId,
@@ -108,6 +127,7 @@ export async function signProposal(input: SignProposalInput) {
         price_snapshot_cents: priceCents,
         billing: svc.billing,
         term: svc.term,
+        billing_cycle_snapshot_months: finalBillingCycle,
       });
 
       const billing = svc.billing as
@@ -120,17 +140,26 @@ export async function signProposal(input: SignProposalInput) {
         tierName,
         billing,
         priceCents,
+        term: svc.term,
+        billingCycleMonths: finalBillingCycle || 1,
       });
 
       if (billing !== "in_kind") {
-        totalCents += priceCents;
+        if (billing === "recurring_monthly") {
+          totalCents += priceCents * (finalBillingCycle || 1);
+        } else {
+          totalCents += priceCents;
+        }
       }
     }
 
     // 4. Insert line items
     const { error: lineItemErr } = await supabase
       .from("proposal_line_items")
-      .insert(lineItemRows);
+      // .insert(lineItemRows);
+      .upsert(lineItemRows, {
+        onConflict: "proposal_id,service_id,service_tier_id",
+      });
 
     if (lineItemErr) {
       return { error: "Failed to save line items: " + lineItemErr.message };
@@ -218,19 +247,6 @@ export async function signProposal(input: SignProposalInput) {
     if (updateErr) {
       return { error: "Failed to update proposal: " + updateErr.message };
     }
-
-    // 10. Write audit event
-    await supabase.from("audit_events").insert({
-      proposal_id: input.proposalId,
-      event_type: "proposal_signed",
-      payload: {
-        signer_email: input.signerEmail,
-        signer_ip: signerIp,
-        document_hash: documentHash,
-        total_snapshot_cents: totalCents,
-        line_item_count: lineItemRows.length,
-      },
-    });
 
     // 11. Fire integrations (non-blocking — failures don't affect the client)
     const clientSlug = (clientObj?.name ?? "client")

@@ -1,147 +1,153 @@
-"use client"
+"use client";
 
-import { useRef, useState, useCallback, useEffect } from "react"
-import { useProposal } from "../ProposalContext"
-import { signProposal } from "@/server-actions/signature"
+import { useRef, useState, useCallback, useEffect } from "react";
+import { useProposal } from "../ProposalContext";
+import { signProposal } from "@/server-actions/signature";
 
-type SignState = "idle" | "signing" | "signed" | "error"
+type SignState = "idle" | "signing" | "signed" | "error";
 
 export default function SignaturePage() {
-  const { proposal, selections } = useProposal()
+  const {
+    proposal,
+    selections,
+    updateProposal,
+    pages,
+    setCurrentPage,
+    paymentCaptured,
+  } = useProposal();
 
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [isDrawing, setIsDrawing] = useState(false)
-  const [hasDrawn, setHasDrawn] = useState(false)
-  const [email, setEmail] = useState("")
-  const [emailError, setEmailError] = useState("")
-  const [signState, setSignState] = useState<SignState>("idle")
-  const [errorMsg, setErrorMsg] = useState("")
-  const [documentUrl, setDocumentUrl] = useState("")
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [hasDrawn, setHasDrawn] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [signState, setSignState] = useState<SignState>("idle");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [documentUrl, setDocumentUrl] = useState("");
 
   // Already signed?
-  const alreadySigned = proposal.status === "signed"
+  const alreadySigned = proposal.status === "signed";
+
+  const paymentPageIndex = pages.findIndex((p) => p.slug === "payment");
 
   /* ---------------------------------------------------------------- */
   /*  Canvas drawing logic                                            */
   /* ---------------------------------------------------------------- */
 
   const getCtx = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return null
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return null
-    return ctx
-  }, [])
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    return ctx;
+  }, []);
 
-  const getPos = useCallback(
-    (e: React.MouseEvent | React.TouchEvent) => {
-      const canvas = canvasRef.current
-      if (!canvas) return { x: 0, y: 0 }
-      const rect = canvas.getBoundingClientRect()
-      const scaleX = canvas.width / rect.width
-      const scaleY = canvas.height / rect.height
-      if ("touches" in e) {
-        const touch = e.touches[0]
-        return {
-          x: (touch.clientX - rect.left) * scaleX,
-          y: (touch.clientY - rect.top) * scaleY,
-        }
-      }
+  const getPos = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return { x: 0, y: 0 };
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ("touches" in e) {
+      const touch = e.touches[0];
       return {
-        x: (e.clientX - rect.left) * scaleX,
-        y: (e.clientY - rect.top) * scaleY,
-      }
-    },
-    [],
-  )
+        x: (touch.clientX - rect.left) * scaleX,
+        y: (touch.clientY - rect.top) * scaleY,
+      };
+    }
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  }, []);
 
   const startDraw = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
-      e.preventDefault()
-      const ctx = getCtx()
-      if (!ctx) return
-      const pos = getPos(e)
-      ctx.beginPath()
-      ctx.moveTo(pos.x, pos.y)
-      setIsDrawing(true)
+      e.preventDefault();
+      const ctx = getCtx();
+      if (!ctx) return;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+      setIsDrawing(true);
     },
     [getCtx, getPos],
-  )
+  );
 
   const draw = useCallback(
     (e: React.MouseEvent | React.TouchEvent) => {
-      if (!isDrawing) return
-      e.preventDefault()
-      const ctx = getCtx()
-      if (!ctx) return
-      const pos = getPos(e)
-      ctx.lineTo(pos.x, pos.y)
-      ctx.strokeStyle = "#FFFFFF"
-      ctx.lineWidth = 2
-      ctx.lineCap = "round"
-      ctx.lineJoin = "round"
-      ctx.stroke()
-      setHasDrawn(true)
+      if (!isDrawing) return;
+      e.preventDefault();
+      const ctx = getCtx();
+      if (!ctx) return;
+      const pos = getPos(e);
+      ctx.lineTo(pos.x, pos.y);
+      ctx.strokeStyle = "#FFFFFF";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.stroke();
+      setHasDrawn(true);
     },
     [isDrawing, getCtx, getPos],
-  )
+  );
 
   const endDraw = useCallback(() => {
-    setIsDrawing(false)
-  }, [])
+    setIsDrawing(false);
+  }, []);
 
   const clearCanvas = useCallback(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    setHasDrawn(false)
-  }, [])
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    setHasDrawn(false);
+  }, []);
 
   // Set canvas size on mount
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     // Use a fixed internal resolution for consistent signature capture
-    canvas.width = 600
-    canvas.height = 200
-  }, [])
+    canvas.width = 600;
+    canvas.height = 200;
+  }, []);
 
   /* ---------------------------------------------------------------- */
   /*  Email validation                                                */
   /* ---------------------------------------------------------------- */
 
   const validateEmail = useCallback((val: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!val) {
-      setEmailError("Email is required")
-      return false
+      setEmailError("Email is required");
+      return false;
     }
     if (!re.test(val)) {
-      setEmailError("Please enter a valid email address")
-      return false
+      setEmailError("Please enter a valid email address");
+      return false;
     }
-    setEmailError("")
-    return true
-  }, [])
+    setEmailError("");
+    return true;
+  }, []);
 
   /* ---------------------------------------------------------------- */
   /*  Submit                                                          */
   /* ---------------------------------------------------------------- */
 
   const handleSign = useCallback(async () => {
-    if (!validateEmail(email)) return
-    if (!hasDrawn) return
+    if (!validateEmail(email)) return;
+    if (!hasDrawn) return;
 
-    const canvas = canvasRef.current
-    if (!canvas) return
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    setSignState("signing")
-    setErrorMsg("")
+    setSignState("signing");
+    setErrorMsg("");
 
     try {
-      const signatureDataUrl = canvas.toDataURL("image/png")
+      const signatureDataUrl = canvas.toDataURL("image/png");
 
       const result = await signProposal({
         proposalId: proposal.id,
@@ -151,21 +157,22 @@ export default function SignaturePage() {
           serviceId: s.serviceId,
           tierId: s.tierId,
         })),
-      })
+      });
 
       if (result.error) {
-        setSignState("error")
-        setErrorMsg(result.error)
-        return
+        setSignState("error");
+        setErrorMsg(result.error);
+        return;
       }
 
-      setDocumentUrl(result.documentUrl ?? "")
-      setSignState("signed")
+      setDocumentUrl(result.documentUrl ?? "");
+      setSignState("signed");
+      updateProposal({ status: "signed" });
     } catch {
-      setSignState("error")
-      setErrorMsg("An unexpected error occurred. Please try again.")
+      setSignState("error");
+      setErrorMsg("An unexpected error occurred. Please try again.");
     }
-  }, [email, hasDrawn, proposal.id, selections, validateEmail])
+  }, [email, hasDrawn, proposal.id, selections, validateEmail, updateProposal]);
 
   /* ---------------------------------------------------------------- */
   /*  Already signed state                                            */
@@ -182,18 +189,55 @@ export default function SignaturePage() {
             stroke="currentColor"
             strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
         <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-4">
-          Already Signed
+          Agreement Signed
         </h1>
-        <p className="font-body text-sm text-lyp-white/60 max-w-sm">
+        <p className="font-body text-sm text-lyp-white/60 max-w-sm mb-8">
           This proposal has already been signed. If you need a copy of your
           contract, please contact your account manager.
         </p>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {documentUrl && (
+            <a
+              href={documentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg bg-lyp-white/10 border border-lyp-white/20 px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-white/20"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Download Contract PDF
+            </a>
+          )}
+          {paymentPageIndex !== -1 && !paymentCaptured && (
+            <button
+              onClick={() => setCurrentPage(paymentPageIndex)}
+              className="inline-flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon justify-center"
+            >
+              Proceed to Payment
+            </button>
+          )}
+        </div>
       </div>
-    )
+    );
   }
 
   /* ---------------------------------------------------------------- */
@@ -211,7 +255,11 @@ export default function SignaturePage() {
             stroke="currentColor"
             strokeWidth={2}
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         </div>
         <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-4">
@@ -220,28 +268,48 @@ export default function SignaturePage() {
         <p className="font-body text-sm text-lyp-white/60 max-w-sm mb-8">
           Thank you for signing. A copy of your contract has been generated.
         </p>
-        {documentUrl && (
-          <a
-            href={documentUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Download Contract PDF
-          </a>
-        )}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {documentUrl && (
+            <a
+              href={documentUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg bg-lyp-white/10 border border-lyp-white/20 px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-white/20"
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Download Contract PDF
+            </a>
+          )}
+          {paymentPageIndex !== -1 && !paymentCaptured && (
+            <button
+              onClick={() => setCurrentPage(paymentPageIndex)}
+              className="inline-flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon justify-center"
+            >
+              Proceed to Payment
+            </button>
+          )}
+        </div>
       </div>
-    )
+    );
   }
 
   /* ---------------------------------------------------------------- */
   /*  Signing form                                                    */
   /* ---------------------------------------------------------------- */
 
-  const noSelections = selections.length === 0
+  const noSelections = selections.length === 0;
 
   return (
     <div className="flex h-full flex-col px-6 py-8 md:px-16 lg:px-24">
@@ -276,8 +344,8 @@ export default function SignaturePage() {
               type="email"
               value={email}
               onChange={(e) => {
-                setEmail(e.target.value)
-                if (emailError) validateEmail(e.target.value)
+                setEmail(e.target.value);
+                if (emailError) validateEmail(e.target.value);
               }}
               onBlur={() => validateEmail(email)}
               placeholder="you@example.com"
@@ -285,7 +353,9 @@ export default function SignaturePage() {
               disabled={signState === "signing"}
             />
             {emailError && (
-              <p className="font-body text-xs text-lyp-cherry mt-1">{emailError}</p>
+              <p className="font-body text-xs text-lyp-cherry mt-1">
+                {emailError}
+              </p>
             )}
           </div>
 
@@ -320,9 +390,9 @@ export default function SignaturePage() {
 
           {/* Agreement text */}
           <p className="font-body text-xs text-lyp-white/40 max-w-md leading-relaxed">
-            By clicking &ldquo;I Agree &amp; Sign&rdquo; you confirm that you have reviewed the
-            selected services and pricing, and agree to the terms and conditions
-            outlined in this proposal.
+            By clicking &ldquo;I Agree &amp; Sign&rdquo; you confirm that you
+            have reviewed the selected services and pricing, and agree to the
+            terms and conditions outlined in this proposal.
           </p>
 
           {/* Error */}
@@ -371,5 +441,5 @@ export default function SignaturePage() {
         </div>
       )}
     </div>
-  )
+  );
 }

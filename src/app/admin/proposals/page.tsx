@@ -9,8 +9,10 @@ import {
   CreditCard,
   Pencil,
   Copy,
+  Eye,
 } from "lucide-react";
 import ProposalStatusSelect from "@/components/admin/ProposalStatusSelect";
+import SendProposalButton from "@/components/admin/SendProposalButton";
 
 function PaymentBadge({ status }: { status?: string }) {
   if (!status) return <span className="text-gray-400 text-xs">—</span>;
@@ -73,6 +75,9 @@ export default async function ProposalsPage() {
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
+                  ID
+                </th>
+                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
                   Client
                 </th>
                 <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
@@ -86,9 +91,6 @@ export default async function ProposalsPage() {
                     <CreditCard className="h-3.5 w-3.5" />
                     Payment
                   </span>
-                </th>
-                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
-                  Intake
                 </th>
                 <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
                   Total
@@ -118,6 +120,14 @@ export default async function ProposalsPage() {
                           href={`/admin/proposals/${proposal.id}`}
                           className="text-lyp-cherry font-body text-sm hover:underline"
                         >
+                          {proposal.id ?? "—"}
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/admin/clients/${proposal.clients?.id}`}
+                          className="text-lyp-cherry font-body text-sm hover:underline"
+                        >
                           {proposal.clients?.name ?? "—"}
                         </Link>
                       </td>
@@ -133,16 +143,6 @@ export default async function ProposalsPage() {
                       <td className="px-4 py-3">
                         <PaymentBadge status={paymentStatus} />
                       </td>
-                      <td className="px-4 py-3">
-                        {intakeCount > 0 ? (
-                          <span className="flex items-center gap-1 text-xs font-medium text-green-600">
-                            <Check className="h-3 w-3" />
-                            Done
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 text-xs">—</span>
-                        )}
-                      </td>
                       <td className="px-4 py-3 font-body text-sm text-gray-700">
                         {proposal.total_snapshot_cents != null
                           ? formatCents(proposal.total_snapshot_cents)
@@ -153,6 +153,20 @@ export default async function ProposalsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
+                          <SendProposalButton
+                            proposalId={proposal.id}
+                            status={proposal.status}
+                          />
+
+                          {intakeCount > 0 && (
+                            <Link
+                              href={`/admin/proposals/${proposal.id}/intake`}
+                              className="text-gray-500 hover:text-green-600 transition-colors"
+                              title="View intake responses"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          )}
                           {proposal.status === "draft" && (
                             <Link
                               href={`/admin/proposals/${proposal.id}/edit`}

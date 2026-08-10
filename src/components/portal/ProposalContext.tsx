@@ -96,6 +96,7 @@ export interface Selection {
 
 interface ProposalContextValue {
   proposal: ProposalData;
+  updateProposal: (updates: Partial<ProposalData>) => void;
   pages: PageData[];
   services: Service[];
   serviceMap: Record<string, Service>;
@@ -159,19 +160,28 @@ interface ProviderProps {
 }
 
 export function ProposalProvider({
-  proposal,
+  proposal: initialProposal,
   pages,
   services,
   initialSelections,
   children,
   paymentCaptured = false,
 }: ProviderProps) {
-  const filteredPages = pages.filter((p) => {
-    if (p.slug !== "payment") return true;
-    if (paymentCaptured) return false; // already paid
-    if (proposal.status !== "signed") return false; // must sign first
-    return true;
-  });
+  const [proposal, setProposal] = useState<ProposalData>(initialProposal);
+
+  const updateProposal = useCallback((updates: Partial<ProposalData>) => {
+    setProposal((prev) => ({ ...prev, ...updates }));
+  }, []);
+
+  const filteredPages = useMemo(() => {
+    return pages.filter((p) => {
+      if (p.slug !== "payment") return true;
+      if (paymentCaptured) return false; // already paid
+      if (proposal.status !== "signed") return false; // must sign first
+      return true;
+    });
+  }, [pages, paymentCaptured, proposal.status]);
+
   const [currentPage, setCurrentPage] = useState(0);
   const [selections, setSelections] = useState<Selection[]>(
     initialSelections ?? [],
@@ -297,6 +307,7 @@ export function ProposalProvider({
 
   const value: ProposalContextValue = {
     proposal,
+    updateProposal,
     pages: filteredPages,
     services,
     serviceMap,

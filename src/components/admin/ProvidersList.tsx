@@ -35,9 +35,10 @@ const emptyForm = {
   description: "",
   portfolio_url: "",
   price_cents: 0,
+  state_ids: [] as string[],
 };
 
-export default function ProvidersList({ providers }: Props) {
+export default function ProvidersList({ providers, states }: Props) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -56,6 +57,7 @@ export default function ProvidersList({ providers }: Props) {
       description: form.description || undefined,
       portfolio_url: form.portfolio_url || undefined,
       price_cents: form.price_cents || 0,
+      state_ids: form.state_ids,
     });
     setSaving(false);
     if (error) {
@@ -77,6 +79,7 @@ export default function ProvidersList({ providers }: Props) {
       description: form.description || undefined,
       portfolio_url: form.portfolio_url || undefined,
       price_cents: form.price_cents || 0,
+      state_ids: form.state_ids,
     });
     setSaving(false);
     if (error) {
@@ -98,6 +101,10 @@ export default function ProvidersList({ providers }: Props) {
       description: p.description ?? "",
       portfolio_url: p.portfolio_url ?? "",
       price_cents: p.price_cents ?? 0,
+      state_ids:
+        (p.provider_states
+          ?.map((ps) => ps.states?.id)
+          .filter(Boolean) as string[]) ?? [],
     });
   };
 
@@ -113,7 +120,9 @@ export default function ProvidersList({ providers }: Props) {
     <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4 space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Name</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Name
+          </label>
           <input
             className={inputClass}
             value={form.name}
@@ -122,7 +131,9 @@ export default function ProvidersList({ providers }: Props) {
           />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Type</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Type
+          </label>
           <select
             className={inputClass}
             value={form.type}
@@ -138,16 +149,22 @@ export default function ProvidersList({ providers }: Props) {
           </select>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Portfolio URL</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Portfolio URL
+          </label>
           <input
             className={inputClass}
             value={form.portfolio_url}
-            onChange={(e) => setForm({ ...form, portfolio_url: e.target.value })}
+            onChange={(e) =>
+              setForm({ ...form, portfolio_url: e.target.value })
+            }
             placeholder="https://..."
           />
         </div>
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Price (cents)</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Price (cents)
+          </label>
           <input
             className={inputClass}
             type="number"
@@ -158,7 +175,37 @@ export default function ProvidersList({ providers }: Props) {
           />
         </div>
         <div className="md:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            States
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {states.map((s) => (
+              <label
+                key={s.id}
+                className="inline-flex items-center gap-1.5 text-sm cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  checked={form.state_ids.includes(s.id)}
+                  onChange={(e) => {
+                    setForm({
+                      ...form,
+                      state_ids: e.target.checked
+                        ? [...form.state_ids, s.id]
+                        : form.state_ids.filter((id) => id !== s.id),
+                    });
+                  }}
+                  className="rounded border-gray-300 text-lyp-cherry focus:ring-lyp-cherry/30"
+                />
+                {s.name} ({s.code})
+              </label>
+            ))}
+          </div>
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-sm font-semibold text-gray-700 mb-1">
+            Description
+          </label>
           <textarea
             className={inputClass}
             rows={2}
@@ -216,11 +263,21 @@ export default function ProvidersList({ providers }: Props) {
           <table className="w-full text-sm font-body">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Name</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Type</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">States</th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">Price</th>
-                <th className="text-right px-4 py-3 font-semibold text-gray-600">Actions</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">
+                  Name
+                </th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">
+                  Type
+                </th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">
+                  States
+                </th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-600">
+                  Price
+                </th>
+                <th className="text-right px-4 py-3 font-semibold text-gray-600">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody>

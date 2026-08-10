@@ -20,6 +20,7 @@ import {
   Download,
   ClipboardList,
 } from "lucide-react";
+import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 
 type State = { id: string; code: string; name: string };
 
@@ -75,6 +76,11 @@ type Proposal = {
   documents?: Document[];
   payments?: Payment[];
   intake_responses?: { id: string }[];
+  internal_notes?: {
+    id: string;
+    content: string;
+    created_at: string;
+  }[];
 };
 
 type Client = {
@@ -668,10 +674,9 @@ export default function ClientDetailView({ client, states }: Props) {
 
               const payment = proposal.payments?.[0];
               const contract = proposal.documents?.find(
-                (d) => d.type === "contract"
+                (d) => d.type === "contract",
               );
-              const hasIntake =
-                (proposal.intake_responses?.length ?? 0) > 0;
+              const hasIntake = (proposal.intake_responses?.length ?? 0) > 0;
               const lineItems = proposal.proposal_line_items ?? [];
 
               return (
@@ -867,15 +872,24 @@ export default function ClientDetailView({ client, states }: Props) {
                       </p>
                     </div>
                   )}
+
+                  {/* Internal Notes */}
+                  <div className="px-5 py-4 border-t border-gray-100 bg-gray-50/50">
+                    <h4 className="font-heading text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+                      Internal Notes
+                    </h4>
+                    <ProposalInternalNotes
+                      proposalId={proposal.id}
+                      initialNotes={proposal.internal_notes}
+                    />
+                  </div>
                 </div>
               );
             })}
           </div>
         ) : (
           <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-            <p className="font-body text-sm text-gray-500">
-              No proposals yet.
-            </p>
+            <p className="font-body text-sm text-gray-500">No proposals yet.</p>
           </div>
         )}
       </section>

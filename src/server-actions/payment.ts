@@ -1,14 +1,10 @@
 "use server";
 
-import { createAdminClient, createClient } from "@/utils/server";
-import {
-  createPayer,
-  vaultSource,
-  chargeRealtime,
-  schedulePayment,
-} from "@/lib/pinch";
+import { createAdminClient } from "@/utils/server";
+import { createPayer, vaultSource } from "@/lib/pinch";
 import crypto from "crypto";
 import { dispatchNotification } from "@/lib/notification-service";
+import { logAuditEvent } from "@/lib/audit-service";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -203,24 +199,17 @@ export async function capturePaymentDetails(
       }
     }
 
-    // 7. Write audit event
-    await supabase.from("audit_events").insert({
-      proposal_id: proposalId,
-      event_type: "payment_details_captured",
-      payload: {
-        payment_id: payment.id,
-        card_brand: cardMeta.brand,
-        card_last_four: cardMeta.lastFour,
-        scheduled_count: schedules.length,
-      },
-    });
-
-    // 8. Dispatch notification
-    dispatchNotification("PAYMENT_CAPTURED", {
+    const payload = {
       clientName: client.name,
       amount: schedules.reduce((sum, s) => sum + s.amount_cents, 0),
       paymentId: payment.id,
-    });
+    };
+
+    // 7. Write audit event and dispatch notification
+    await Promise.allSettled([
+      logAuditEvent(proposalId, "PAYMENT_CAPTURED", payload),
+      dispatchNotification("PAYMENT_CAPTURED", payload),
+    ]);
 
     return { data: { paymentId: payment.id }, error: null };
   } catch (error) {

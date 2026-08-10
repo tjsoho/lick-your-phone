@@ -41,8 +41,6 @@ export default async function PortalPage({ params }: Props) {
     )
     .eq("token", token)
     .single();
-  console.error("PortalPage proposal:", proposalError); // Log the proposal for debugging
-  console.log("PortalPage proposal:", proposal); // Log the proposal for debugging
 
   if (proposalError || !proposal) {
     return (
@@ -122,8 +120,6 @@ export default async function PortalPage({ params }: Props) {
     serviceId: item.service_id,
     tierId: item.service_tier_id,
   }));
-
-  console.log("PortalPage savedSelections:", savedSelections); // Log the saved selections for debugging
 
   return (
     <ProposalCarousel

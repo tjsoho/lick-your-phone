@@ -1,69 +1,62 @@
-"use client"
+"use client";
 
-import { useState, useRef, useCallback, useMemo } from "react"
-import { Upload, X, FileIcon } from "lucide-react"
-import { createClient } from "@/utils/client"
-import type { FieldProps } from "./types"
+import { useState, useRef, useCallback, useMemo } from "react";
+import { Upload, X, FileIcon } from "lucide-react";
+import { uploadIntakeFile } from "@/server-actions/intake";
+import type { FieldProps } from "./types";
 
 interface UploadedFile {
-  name: string
-  url: string
-  size: number
+  name: string;
+  url: string;
+  size: number;
 }
 
 export default function FileField({ question, value, onChange }: FieldProps) {
-  const files = useMemo(() => (value as UploadedFile[]) ?? [], [value])
-  const [uploading, setUploading] = useState(false)
-  const [dragOver, setDragOver] = useState(false)
-  const [error, setError] = useState("")
-  const inputRef = useRef<HTMLInputElement>(null)
+  const files = useMemo(() => (value as UploadedFile[]) ?? [], [value]);
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const upload = useCallback(
     async (fileList: FileList) => {
-      setUploading(true)
-      setError("")
-      const supabase = createClient()
-      const newFiles: UploadedFile[] = [...files]
+      setUploading(true);
+      setError("");
+      const newFiles: UploadedFile[] = [...files];
 
       for (const file of Array.from(fileList)) {
-        const ext = file.name.split(".").pop()
-        const path = `intake/${question.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+        const formData = new FormData();
+        formData.append("file", file);
 
-        const { error: uploadError } = await supabase.storage
-          .from("intake-uploads")
-          .upload(path, file)
+        const result = await uploadIntakeFile(question.id, formData);
 
-        if (uploadError) {
-          setError(`Failed to upload ${file.name}: ${uploadError.message}`)
-          continue
+        if ("error" in result) {
+          setError(`Failed to upload ${file.name}: ${result.error}`);
+          continue;
         }
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("intake-uploads").getPublicUrl(path)
-
         newFiles.push({
-          name: file.name,
-          url: publicUrl,
-          size: file.size,
-        })
+          name: result.name,
+          url: result.url,
+          size: result.size,
+        });
       }
 
-      onChange(newFiles)
-      setUploading(false)
+      onChange(newFiles);
+      setUploading(false);
     },
-    [files, onChange, question.id]
-  )
+    [files, onChange, question.id],
+  );
 
   function removeFile(index: number) {
-    const next = files.filter((_, i) => i !== index)
-    onChange(next)
+    const next = files.filter((_, i) => i !== index);
+    onChange(next);
   }
 
   function formatSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   return (
@@ -75,15 +68,15 @@ export default function FileField({ question, value, onChange }: FieldProps) {
 
       <div
         onDragOver={(e) => {
-          e.preventDefault()
-          setDragOver(true)
+          e.preventDefault();
+          setDragOver(true);
         }}
         onDragLeave={() => setDragOver(false)}
         onDrop={(e) => {
-          e.preventDefault()
-          setDragOver(false)
+          e.preventDefault();
+          setDragOver(false);
           if (e.dataTransfer.files.length > 0) {
-            upload(e.dataTransfer.files)
+            upload(e.dataTransfer.files);
           }
         }}
         onClick={() => inputRef.current?.click()}
@@ -103,7 +96,7 @@ export default function FileField({ question, value, onChange }: FieldProps) {
           multiple
           onChange={(e) => {
             if (e.target.files && e.target.files.length > 0) {
-              upload(e.target.files)
+              upload(e.target.files);
             }
           }}
           className="hidden"
@@ -131,8 +124,8 @@ export default function FileField({ question, value, onChange }: FieldProps) {
               <button
                 type="button"
                 onClick={(e) => {
-                  e.stopPropagation()
-                  removeFile(i)
+                  e.stopPropagation();
+                  removeFile(i);
                 }}
                 className="text-lyp-white/40 hover:text-lyp-cherry transition-colors"
               >
@@ -143,5 +136,5 @@ export default function FileField({ question, value, onChange }: FieldProps) {
         </div>
       )}
     </div>
-  )
+  );
 }

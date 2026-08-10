@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   ChevronLeft,
+  CircleQuestionMarkIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +26,13 @@ const navItems = [
   { label: "Clients", icon: Users, href: "/admin/clients" },
   { label: "Services", icon: Package, href: "/admin/services" },
   { label: "Content Pages", icon: BookOpen, href: "/admin/pages" },
+  {
+    label: "Intake Questions",
+    icon: CircleQuestionMarkIcon,
+    href: "/admin/intake-questions",
+  },
   { label: "Providers", icon: Camera, href: "/admin/providers" },
+  { label: "Venues", icon: MapPin, href: "/admin/venues" },
   { label: "States", icon: MapPin, href: "/admin/states" },
   { label: "Settings", icon: Settings, href: "/admin/settings" },
 ];
@@ -74,7 +81,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         className={cn(
           "fixed top-0 left-0 z-40 h-screen bg-lyp-black text-white flex flex-col transition-all duration-300",
           collapsed ? "w-[72px]" : "w-64",
-          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
         {/* Header */}
@@ -100,7 +107,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
             <ChevronLeft
               className={cn(
                 "h-5 w-5 transition-transform",
-                collapsed && "rotate-180"
+                collapsed && "rotate-180",
               )}
             />
           </button>
@@ -121,7 +128,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                       active
                         ? "bg-lyp-cherry text-white"
-                        : "text-gray-300 hover:bg-white/10 hover:text-white"
+                        : "text-gray-300 hover:bg-white/10 hover:text-white",
                     )}
                     title={collapsed ? item.label : undefined}
                   >

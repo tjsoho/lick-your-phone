@@ -18,7 +18,7 @@ function getBillingLabel(billing: string) {
 function getPrice(service: {
   billing: string;
   target_price_cents?: number;
-  service_tiers?: { price_cents: number }[];
+  service_tiers?: { target_price_cents: number }[];
 }) {
   if (service.billing === "in_kind") return "Paid in kind";
 
@@ -28,7 +28,7 @@ function getPrice(service: {
     service.service_tiers.length > 0
   ) {
     const lowestTierPrice = Math.min(
-      ...service.service_tiers.map((t) => t.price_cents)
+      ...service.service_tiers.map((t) => t.target_price_cents),
     );
     return `From ${formatCents(lowestTierPrice)}/wk`;
   }
@@ -93,7 +93,7 @@ export default async function ServicesPage() {
                   target_price_cents?: number;
                   discount_pct?: number;
                   sequence?: number;
-                  service_tiers?: { price_cents: number }[];
+                  service_tiers?: { target_price_cents: number }[];
                 }) => (
                   <tr
                     key={service.id}
@@ -122,7 +122,7 @@ export default async function ServicesPage() {
                       {service.sequence ?? "—"}
                     </td>
                   </tr>
-                )
+                ),
               )
             ) : (
               <tr>

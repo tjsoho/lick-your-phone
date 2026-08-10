@@ -4,7 +4,7 @@ import { schedulePayment } from "@/lib/pinch";
 
 export async function GET(req: Request) {
   const supabase = await createAdminClient();
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 5;
 
   try {
     const { data: pendingSchedules, error: fetchErr } = await supabase
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
           sourceId,
           schedule.amount_cents,
           schedule.scheduled_date,
-          schedule.idempotency_key,
+          schedule.idempotency_key + "-" + schedule.retry_count, // Append retry count to idempotency key
           schedule.description,
         );
 
@@ -48,8 +48,7 @@ export async function GET(req: Request) {
         console.error(`Failed to schedule payment ${schedule.id}:`, err);
 
         const newRetryCount = schedule.retry_count + 1;
-        const newStatus =
-          newRetryCount >= MAX_RETRIES ? "failed_to_schedule" : "pending";
+        const newStatus = newRetryCount >= MAX_RETRIES ? "failed" : "pending";
 
         await supabase
           .from("payment_schedules")

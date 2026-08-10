@@ -8,7 +8,7 @@ export async function getClients() {
     const supabase = await createSupabaseClient();
     const { data, error } = await supabase
       .from("clients")
-      .select("*, venues(count)")
+      .select("*, venues(id, name)")
       .order("name");
 
     if (error) throw error;
@@ -32,8 +32,9 @@ export async function getClient(id: string) {
           proposal_line_items(*, services(name, slug)),
           documents(id, type, file_url, created_at),
           payments(id, status, card_last_four, card_brand, details_captured_at),
-          intake_responses(id)
-        )`
+          intake_responses(id),
+          internal_notes(id, content, created_at)
+        )`,
       )
       .eq("id", id)
       .single();
@@ -74,7 +75,7 @@ export async function updateClient(
     slug?: string;
     abn?: string;
     entity_name?: string;
-  }
+  },
 ) {
   try {
     const supabase = await createSupabaseClient();
@@ -121,7 +122,7 @@ export async function updateVenue(
     name?: string;
     address?: string;
     state_id?: string;
-  }
+  },
 ) {
   try {
     const supabase = await createSupabaseClient();
@@ -174,7 +175,7 @@ export async function updateContact(
     phone?: string;
     role?: string;
     is_primary?: boolean;
-  }
+  },
 ) {
   try {
     const supabase = await createSupabaseClient();
