@@ -4,15 +4,18 @@ import { schedulePayment } from "@/lib/pinch";
 
 export async function GET(req: Request) {
   const supabase = await createAdminClient();
-  const MAX_RETRIES = 5;
+  const todayStr = new Date().toISOString().split("T")[0];
+  console.log("CRON: Processing payment schedules for date:", todayStr);
+  const MAX_RETRIES = 6;
 
   try {
     const { data: pendingSchedules, error: fetchErr } = await supabase
       .from("payment_schedules")
       .select("*, payments(pinch_payer_id, pinch_source_id)")
-      .eq("status", "pending")
+      .in("status", ["pending", "dishonoured"])
+      .lte("scheduled_date", todayStr)
       .lt("retry_count", MAX_RETRIES)
-      .limit(20);
+      .order("scheduled_date", { ascending: true });
 
     if (fetchErr || !pendingSchedules || pendingSchedules.length === 0) {
       return NextResponse.json({ message: "No pending schedules found." });
@@ -48,7 +51,8 @@ export async function GET(req: Request) {
         console.error(`Failed to schedule payment ${schedule.id}:`, err);
 
         const newRetryCount = schedule.retry_count + 1;
-        const newStatus = newRetryCount >= MAX_RETRIES ? "failed" : "pending";
+        const newStatus =
+          newRetryCount >= MAX_RETRIES ? "failed" : "dishonoured";
 
         await supabase
           .from("payment_schedules")

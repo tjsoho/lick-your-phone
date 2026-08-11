@@ -24,9 +24,13 @@ import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 interface ProposalLineItem {
   id: string;
   price_snapshot_cents: number;
+  billing_cycle_snapshot_months: number;
   billing: string | null;
   term: string | null;
   services: {
+    name: string;
+  } | null;
+  service_tiers: {
     name: string;
   } | null;
 }
@@ -269,21 +273,41 @@ export default async function ProposalDetailPage({
               <tr className="border-b border-gray-200">
                 <th className="py-2 font-semibold">Service</th>
                 <th className="py-2 font-semibold">Billing</th>
-                <th className="py-2 font-semibold">Term</th>
                 <th className="py-2 font-semibold text-right">Price</th>
+                <th className="py-2 font-semibold">Term</th>
+                <th className="py-2 font-semibold text-right">Subtotal</th>
               </tr>
             </thead>
             <tbody>
               {lineItems.map((li) => (
                 <tr key={li.id} className="border-b border-gray-100">
-                  <td className="py-2">{li.services?.name ?? "—"}</td>
+                  <td className="py-2">
+                    {li.services?.name}{" "}
+                    {li.service_tiers?.name && `(${li.service_tiers.name})`}
+                  </td>
                   <td className="py-2 capitalize">{li.billing ?? "—"}</td>
-                  <td className="py-2">{li.term ?? "—"}</td>
+                  <td className="py-2">
+                    {li.billing_cycle_snapshot_months} Months
+                  </td>
                   <td className="py-2 text-right">
                     {formatCents(li.price_snapshot_cents)}
                   </td>
+                  <td className="py-2 text-right">
+                    {formatCents(
+                      li.price_snapshot_cents *
+                        (li.billing_cycle_snapshot_months || 1),
+                    )}
+                  </td>
                 </tr>
               ))}
+              <tr>
+                <td colSpan={4} className="py-2 font-semibold text-right">
+                  Total
+                </td>
+                <td className="py-2 text-right font-semibold">
+                  {formatCents(proposal.total_snapshot_cents ?? 0)}
+                </td>
+              </tr>
             </tbody>
           </table>
         )}
@@ -354,6 +378,21 @@ export default async function ProposalDetailPage({
                         </td>
                       </tr>
                     ))}
+
+                    <tr>
+                      <td colSpan={2} className="py-1.5 font-semibold">
+                        Total
+                      </td>
+                      <td className="py-1.5 font-semibold">
+                        {formatCents(
+                          payment.payment_schedules.reduce(
+                            (sum, sched) => sum + sched.amount_cents,
+                            0,
+                          ),
+                        )}
+                      </td>
+                      <td colSpan={2}></td>
+                    </tr>
                   </tbody>
                 </table>
               ) : (

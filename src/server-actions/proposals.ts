@@ -35,12 +35,10 @@ export async function getProposal(id: string) {
     const { data, error } = await supabase
       .from("proposals")
       .select(
-        "*, clients(*), venues(*), proposal_line_items(*, services(name)), internal_notes(*), payments(*, payment_schedules(*))",
+        "*, clients(*), venues(*), proposal_line_items(*, services(name), service_tiers(name)), internal_notes(*), payments(*, payment_schedules(*))",
       )
       .eq("id", id)
       .single();
-
-    console.log("getProposal data:", data); // Log the data for debugging
 
     if (error) throw error;
     return { data, error: null };
@@ -199,7 +197,7 @@ export const sendProposal = async (proposalId: string) => {
     const supabase = await createClient();
     const { data: proposal, error: proposalErr } = await supabase
       .from("proposals")
-      .select("id, token, status, clients(email, name), venues(name)")
+      .select("id, token, status, clients(email, name), venues(name, address)")
       .eq("id", proposalId)
       .single();
 
@@ -228,6 +226,7 @@ export const sendProposal = async (proposalId: string) => {
       clientEmail: clientData?.email,
       clientName: clientData?.name,
       venueName: venueData?.name,
+      venueAddress: venueData?.address,
       portalUrl: `${appUrl}/portal/${proposal.token}`,
     };
 

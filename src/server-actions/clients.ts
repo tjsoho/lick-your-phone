@@ -51,6 +51,7 @@ export async function createClient(data: {
   slug: string;
   abn?: string;
   entity_name?: string;
+  email: string;
 }) {
   try {
     const supabase = await createSupabaseClient();
@@ -75,6 +76,7 @@ export async function updateClient(
     slug?: string;
     abn?: string;
     entity_name?: string;
+    email?: string;
   },
 ) {
   try {

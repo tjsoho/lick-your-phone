@@ -221,7 +221,7 @@ export async function completeIntake(
     const { data: proposal } = await supabase
       .from("proposals")
       .select(
-        "signer_email, client:clients!client_id(name), venue:venues!venue_id(name), status, token",
+        "signer_email, client:clients!client_id(name), venue:venues!venue_id(name, address), status, token",
       )
       .eq("id", proposalId)
       .single();
@@ -280,13 +280,19 @@ export async function completeIntake(
 
     // Fire integrations (non-blocking)
     const clientObj = proposal.client as unknown as { name: string } | null;
-    const venueObj = proposal.venue as unknown as { name: string } | null;
+    const venueObj = proposal.venue as unknown as {
+      name: string;
+      address: string;
+    } | null;
     const clientName = clientObj?.name ?? "Client";
 
     onIntakeCompleted({
       proposalId,
       clientName,
+      clientEmail: proposal.signer_email ?? "",
+
       venueName: venueObj?.name ?? "Venue",
+      venueAddress: venueObj?.address ?? "",
       proposalToken: proposal.token,
       isEdit,
       assets,

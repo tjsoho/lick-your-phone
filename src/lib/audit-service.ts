@@ -1,5 +1,13 @@
 import { createAdminClient, createClient } from "@/utils/server";
 
+type Client = {
+  clientName: string;
+  clientEmail: string;
+  portalUrl: string;
+  venueName: string;
+  venueAddress: string;
+};
+
 export type AuditEvent =
   | "PROPOSAL_SENT"
   | "PROPOSAL_SIGNED"
@@ -9,40 +17,38 @@ export type AuditEvent =
   | "PAYMENT_CAPTURED";
 
 interface AuditPayloadMap {
-  PROPOSAL_SENT: {
-    clientEmail: string;
-    clientName: string;
-    portalUrl: string;
-    venueName?: string;
-    venueAddress?: string;
-  };
+  PROPOSAL_SENT: Client;
   PROPOSAL_SIGNED: {
-    clientName: string;
-    venueName: string;
+    client: Client;
     totalAmount: number;
     contractUrl: string;
     intakeUrl: string;
     signerEmail: string;
     services: { name: string; billing: string; term: string | null }[];
   };
-  PAYMENT_FAILED: { clientName: string; amount: number; paymentId: string };
+  PAYMENT_FAILED: { client: Client; amount: number; paymentId: string };
   INTAKE_COMPLETED: {
-    clientName: string;
+    client: Client;
     proposalId: string;
-    venueName: string;
     intakeUrl: string;
     isEdit: boolean;
     assets: string[];
   };
   PAYMENT_SUCCEEDED: {
-    clientName: string;
+    client: Client;
     amount: number;
     paymentId: string;
   };
   PAYMENT_CAPTURED: {
-    clientName: string;
+    client: Client;
     amount: number;
     paymentId: string;
+    intakeUrl: string;
+    paymentSchedules: {
+      date: string;
+      description: string;
+      amount: number;
+    }[];
   };
 }
 

@@ -12,6 +12,7 @@ type FormValues = {
   slug: string;
   entityName: string;
   abn: string;
+  email: string;
 };
 
 type Props = {
@@ -21,6 +22,7 @@ type Props = {
     slug: string;
     abn?: string;
     entity_name?: string;
+    email: string;
   };
 };
 
@@ -40,6 +42,7 @@ export default function ClientForm({ client }: Props) {
       slug: client?.slug ?? "",
       entityName: client?.entity_name ?? "",
       abn: client?.abn ?? "",
+      email: client?.email ?? "",
     },
   });
 
@@ -57,6 +60,7 @@ export default function ClientForm({ client }: Props) {
       slug: values.slug,
       entity_name: values.entityName || undefined,
       abn: values.abn || undefined,
+      email: values.email || undefined,
     };
 
     if (isEditing) {
@@ -68,7 +72,11 @@ export default function ClientForm({ client }: Props) {
       toast.success("Client updated");
       router.push(`/admin/clients/${client.id}`);
     } else {
-      const { data, error } = await createClient(payload);
+      const email = values.email || "";
+      const { data, error } = await createClient({
+        ...payload,
+        email,
+      });
       if (error) {
         toast.error(error);
         return;
@@ -93,6 +101,19 @@ export default function ClientForm({ client }: Props) {
         />
         {errors.name && (
           <p className="text-red-600 text-xs mt-1">{errors.name.message}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block font-body text-sm font-medium text-lyp-black mb-1">
+          Email <span className="text-lyp-cherry">*</span>
+        </label>
+        <input
+          {...register("email", { required: "Email is required" })}
+          className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+        />
+        {errors.email && (
+          <p className="text-red-600 text-xs mt-1">{errors.email.message}</p>
         )}
       </div>
 
@@ -133,7 +154,11 @@ export default function ClientForm({ client }: Props) {
           disabled={isSubmitting}
           className="bg-lyp-cherry text-white px-6 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
         >
-          {isSubmitting ? "Saving..." : isEditing ? "Update Client" : "Create Client"}
+          {isSubmitting
+            ? "Saving..."
+            : isEditing
+              ? "Update Client"
+              : "Create Client"}
         </button>
         <button
           type="button"

@@ -34,6 +34,11 @@ interface ProposalLineItem {
   } | null;
 }
 
+type DateBundle = {
+  totalCents: number;
+  lineItemIds: string[];
+};
+
 /* ------------------------------------------------------------------ */
 /*  Main action – capture payment details and schedule payments       */
 /* ------------------------------------------------------------------ */
@@ -50,7 +55,7 @@ export async function capturePaymentDetails(
     const { data: proposal, error: proposalErr } = await supabase
       .from("proposals")
       .select(
-        "*, clients(id, name, email, phone), proposal_line_items(*, services(name, billing, term))",
+        "*, clients(id, name, email, phone), proposal_line_items(*, services(name, billing, term)), venues(name, address)",
       )
       .eq("id", proposalId)
       .single();
@@ -77,8 +82,6 @@ export async function capturePaymentDetails(
     const firstName = nameParts[0] || "Client";
     const lastName = nameParts.slice(1).join(" ") || "-";
 
-    console.log("Creating Pinch payer for client:", client.id, client.name);
-
     const payer = await createPayer({
       firstName,
       lastName,
@@ -86,11 +89,8 @@ export async function capturePaymentDetails(
       companyName: client.name,
     });
 
-    console.log("Created Pinch payer:", payer.id, "for client:", client.id);
-
     // 3. Vault the tokenised card
     const source = await vaultSource(payer.id, token);
-    console.log("Vaulted source:", source.id, "for payer:", payer.id);
 
     // 4. Create payment record
     const { data: payment, error: paymentErr } = await supabase
@@ -124,66 +124,89 @@ export async function capturePaymentDetails(
       status: string;
       idempotency_key: string;
       description: string;
-      proposal_line_item_id: string;
+      retry_count: number;
+      metadata?: Record<string, any>;
     }> = [];
 
     // Determine campaign start date (use proposal signed_at + 14 days as default)
     const campaignStart = new Date();
+    const signedAt = proposal.signed_at ? new Date(proposal.signed_at) : null;
+    if (signedAt) {
+      campaignStart.setTime(signedAt.getTime());
+    }
     campaignStart.setDate(campaignStart.getDate() + 14);
 
+    const bundles = new Map<string, DateBundle>();
     for (const item of lineItems) {
       const svc = item.services;
       if (!svc || svc.billing === "in_kind" || item.price_snapshot_cents <= 0)
         continue;
 
       if (svc.billing === "one_off") {
-        // One-off: charge at campaign start
-        const schedDate = new Date(campaignStart);
-        const idempotencyKey = `${payment.id}-oneoff-${item.id}-${crypto.randomUUID()}`;
-        const description = `LickYourPhone campaign - ${svc.name} (One-time)`;
+        const d = new Date(campaignStart);
+        const dateKey = d.toISOString().split("T")[0];
 
-        schedules.push({
-          payment_id: payment.id,
-          pinch_payment_id: null,
-          amount_cents: item.price_snapshot_cents,
-          scheduled_date: schedDate.toISOString().split("T")[0],
-          status: "pending",
-          idempotency_key: idempotencyKey,
-          description,
-          proposal_line_item_id: item.id,
-        });
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        if (!bundles.has(dateKey)) {
+          bundles.set(dateKey, { totalCents: 0, lineItemIds: [] });
+        }
+
+        const bundle = bundles.get(dateKey)!;
+        bundle.totalCents += item.price_snapshot_cents;
+        bundle.lineItemIds.push(item.id);
       } else if (svc.billing === "recurring_monthly") {
         // Recurring: first debit 7 days before campaign start, then monthly
         const termMonths = item.billing_cycle_snapshot_months || 1;
 
         for (let month = 0; month < termMonths; month++) {
-          const schedDate = new Date(campaignStart);
-          // First payment is 7 days before campaign start
+          const d = new Date(campaignStart);
+
           if (month === 0) {
-            schedDate.setDate(schedDate.getDate() - 7);
+            d.setDate(d.getDate() - 7); // First debit 7 days before campaign start
           } else {
-            // Subsequent months from campaign start
-            schedDate.setMonth(schedDate.getMonth() + month);
+            d.setMonth(d.getMonth() + month); // Subsequent debits monthly
           }
 
-          const idempotencyKey = `${payment.id}-monthly-${item.id}-m${month}-${crypto.randomUUID()}`;
-          const description = `LickYourPhone campaign - ${svc.name} (Month ${month + 1})`;
+          const dateKey = d.toISOString().split("T")[0];
 
-          schedules.push({
-            payment_id: payment.id,
-            pinch_payment_id: null,
-            amount_cents: item.price_snapshot_cents,
-            scheduled_date: schedDate.toISOString().split("T")[0],
-            status: "pending",
-            idempotency_key: idempotencyKey,
-            description,
-            proposal_line_item_id: item.id,
-          });
+          if (!bundles.has(dateKey)) {
+            bundles.set(dateKey, { totalCents: 0, lineItemIds: [] });
+          }
 
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          const bundle = bundles.get(dateKey)!;
+          bundle.totalCents += item.price_snapshot_cents;
+          bundle.lineItemIds.push(item.id);
         }
       }
+    }
+
+    const sortedEntries = Array.from(bundles.entries()).sort((a, b) =>
+      a[0].localeCompare(b[0]),
+    );
+
+    let sequence = 1;
+    for (const [dateKey, bundle] of sortedEntries) {
+      const idempotencyKey = `${payment.id}-bundle-${dateKey}-${crypto.randomUUID()}`;
+
+      // Create a description for the payment schedule
+      const clientName = client.name || "Client";
+      const description =
+        sequence === 1
+          ? `LickYourPhone (${clientName}) - Initial Deposit / Setup`
+          : `LickYourPhone (${clientName}) - Scheduled Payment (${dateKey})`;
+
+      schedules.push({
+        payment_id: payment.id,
+        pinch_payment_id: null,
+        amount_cents: bundle.totalCents,
+        scheduled_date: dateKey,
+        status: "pending",
+        idempotency_key: idempotencyKey,
+        retry_count: 0,
+        metadata: { included_items: bundle.lineItemIds },
+        description,
+      });
+
+      sequence++;
     }
 
     // 6. Insert payment schedules
@@ -200,9 +223,21 @@ export async function capturePaymentDetails(
     }
 
     const payload = {
-      clientName: client.name,
       amount: schedules.reduce((sum, s) => sum + s.amount_cents, 0),
       paymentId: payment.id,
+      paymentSchedules: schedules.map((s) => ({
+        date: s.scheduled_date,
+        description: s.description,
+        amount: s.amount_cents,
+      })),
+      client: {
+        clientName: client.name,
+        clientEmail: proposal.signer_email || "",
+        venueName: proposal.venues?.name || "",
+        venueAddress: proposal.venues?.address || "",
+        portalUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${proposal.token}`,
+      },
+      intakeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/intake/${proposal.token}`,
     };
 
     // 7. Write audit event and dispatch notification
@@ -214,5 +249,63 @@ export async function capturePaymentDetails(
     return { data: { paymentId: payment.id }, error: null };
   } catch (error) {
     return { data: null, error: (error as Error).message };
+  }
+}
+
+export async function resedNotificationForPayment(proposalId: string) {
+  try {
+    const supabase = await createAdminClient();
+    const { data: payment, error: paymentErr } = await supabase
+      .from("payments")
+      .select("*, proposal_id, payment_schedules(*)")
+      .eq("proposal_id", proposalId)
+      .single();
+
+    if (paymentErr || !payment) {
+      console.error(
+        `Failed to fetch payment for proposal ${proposalId}:`,
+        paymentErr,
+      );
+      throw new Error("Payment not found");
+    }
+
+    const { data: proposal, error: proposalErr } = await supabase
+      .from("proposals")
+      .select("*, clients(id, name, email, phone), venues(name, address)")
+      .eq("id", proposalId)
+      .single();
+
+    if (proposalErr || !proposal) {
+      throw new Error("Proposal not found");
+    }
+
+    const totalAmount = payment.payment_schedules.reduce(
+      (sum: number, s: any) => sum + s.amount_cents,
+      0,
+    );
+
+    const payload = {
+      amount: totalAmount,
+      paymentId: payment.id,
+      paymentSchedules: payment.payment_schedules.map((s: any) => ({
+        date: s.scheduled_date,
+        description: s.description,
+        amount: s.amount_cents,
+      })),
+      client: {
+        clientName: proposal.clients?.name || "",
+        clientEmail: proposal.signer_email || "",
+        venueName: proposal.venues?.name || "",
+        venueAddress: proposal.venues?.address || "",
+        portalUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${proposal.token}`,
+      },
+      intakeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/intake/${proposal.token}`,
+    };
+
+    await dispatchNotification("PAYMENT_CAPTURED", payload);
+  } catch (error) {
+    throw new Error(
+      `Failed to resend notification: ${(error as Error).message}`,
+    );
   }
 }

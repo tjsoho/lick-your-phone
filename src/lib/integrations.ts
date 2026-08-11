@@ -6,6 +6,7 @@ interface IntegrationContext {
   clientName: string;
   clientSlug: string;
   venueName: string;
+  venueAddress: string;
   signerEmail: string;
   totalCents: number;
   lineItems: Array<{
@@ -19,10 +20,15 @@ interface IntegrationContext {
 
 export async function onProposalSigned(ctx: IntegrationContext) {
   const payload = {
-    clientName: ctx.clientName,
+    client: {
+      clientName: ctx.clientName,
+      clientEmail: ctx.signerEmail,
+      portalUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${ctx.proposalId}`,
+      venueName: ctx.venueName,
+      venueAddress: "", // Assuming venue address is not available in the context
+    },
     contractUrl: ctx.documentUrl,
     totalAmount: ctx.totalCents,
-    venueName: ctx.venueName,
     intakeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${ctx.proposalId}`,
     services: ctx.lineItems.map((li) => ({
       name: li.serviceName,
@@ -42,13 +48,20 @@ export async function onIntakeCompleted(params: {
   proposalId: string;
   proposalToken: string;
   clientName: string;
+  clientEmail: string;
+  venueAddress: string;
   venueName: string;
   isEdit: boolean;
   assets: string[];
 }) {
   const payload = {
-    clientName: params.clientName,
-    venueName: params.venueName,
+    client: {
+      clientName: params.clientName,
+      clientEmail: params.clientEmail,
+      portalUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${params.proposalToken}`,
+      venueName: params.venueName,
+      venueAddress: params.venueAddress,
+    },
     intakeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/admin/proposals/${params.proposalId}/intake`,
     proposalId: params.proposalId,
     isEdit: params.isEdit,

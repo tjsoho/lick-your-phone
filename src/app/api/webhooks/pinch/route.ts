@@ -186,82 +186,6 @@ const MAP_STATE = {
   pending: "pending",
 };
 
-const handleSettledEvent = async (payload: WebhookEvent) => {
-  const supabase = getSupabaseAdmin();
-  const pinchPaymentId = payload.data.payment.id;
-  const eventType = payload.type;
-
-  // Update the payment schedule record
-  const { data: schedule, error: scheduleErr } = await supabase
-    .from("payment_schedules")
-    .update({
-      status: "settled",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("pinch_payment_id", pinchPaymentId)
-    .select("id, payment_id")
-    .single();
-
-  if (scheduleErr) {
-    console.error("Webhook: failed to update schedule:", scheduleErr.message);
-    return NextResponse.json({ ok: true, warning: "Schedule not found" });
-  }
-
-  // Check if all schedules for this payment are resolved
-  const { data: allSchedules } = await supabase
-    .from("payment_schedules")
-    .select("status")
-    .eq("payment_id", schedule.payment_id);
-
-  const allSettled = allSchedules?.every((s) => s.status === "settled");
-  if (allSettled) {
-    await supabase
-      .from("payments")
-      .update({ status: "settled", updated_at: new Date().toISOString() })
-      .eq("id", schedule.payment_id);
-  }
-
-  // Get payment info to send notifications and audit logs
-  const clientRes = await supabase
-    .from("payments")
-    .select("client_id, amount, proposal_id, clients(name)")
-    .eq("id", schedule.payment_id)
-    .single();
-
-  const notificationPayload = {
-    clientName: clientRes.data?.clients?.[0]?.name || "Unknown Client",
-    amount: payload.data.payment.amount,
-    paymentId: schedule.payment_id,
-  };
-
-  await Promise.allSettled([
-    dispatchNotification("PAYMENT_SUCCEEDED", notificationPayload),
-    clientRes.data?.proposal_id
-      ? logAuditEvent(
-          clientRes.data.proposal_id,
-          "PAYMENT_SUCCEEDED",
-          notificationPayload,
-        )
-      : Promise.resolve(),
-  ]);
-
-  // Write audit event
-  await supabase.from("audit_events").insert({
-    entity_id: schedule.payment_id,
-    entity_type: "payment",
-    action: "pinch_webhook_settled",
-    metadata: {
-      pinch_payment_id: pinchPaymentId,
-      schedule_id: schedule.id,
-      payment_id: schedule.payment_id,
-      raw_event: eventType,
-    },
-    actor_type: "system",
-  });
-
-  return NextResponse.json({ ok: true });
-};
-
 const handleBankResultEvent = async (payload: BankResultWebhookEvent) => {
   const supabase = getSupabaseAdmin();
 
@@ -296,94 +220,74 @@ const handleBankResultEvent = async (payload: BankResultWebhookEvent) => {
       continue; // Skip to next payment
     }
 
-    // Propagate status to parent payments table
-    // const { data: allSchedules } = await supabase
-    //   .from("payment_schedules")
-    //   .select("status")
-    //   .eq("payment_id", schedule.payment_id);
-
-    // const allSettled = allSchedules?.every((s) => s.status === "settled");
-    // const anyDishonoured = allSchedules?.some(
-    //   (s) => s.status === "dishonoured" || s.status === "failed",
-    // );
-
-    // if (allSettled) {
-    //   await supabase
-    //     .from("payments")
-    //     .update({ status: "settled", updated_at: new Date().toISOString() })
-    //     .eq("id", schedule.payment_id);
-    // } else if (anyDishonoured) {
-    //   await supabase
-    //     .from("payments")
-    //     .update({ status: newStatus, updated_at: new Date().toISOString() })
-    //     .eq("id", schedule.payment_id);
-    // }
-
-    // Dispatch notification if payment is settled
-    if (newStatus === "settled") {
-      const clientRes = await supabase
+    if (
+      newStatus === "settled" ||
+      newStatus === "dishonoured" ||
+      newStatus === "failed"
+    ) {
+      const { data: paymentData, error: fetchErr } = await supabase
         .from("payments")
-        .select("proposal_id, proposals(clients(name))")
+        .select(
+          `
+          proposal_id,
+          proposals (
+            token,
+            clients ( name, email ),
+            venues ( name, address )
+          )
+        `,
+        )
         .eq("id", schedule.payment_id)
         .single();
 
-      console.log(
-        "Webhook: dispatching payment succeeded notification for proposal:",
-        clientRes.data?.proposal_id,
-        "client:",
-        clientRes.data,
-      );
+      if (fetchErr || !paymentData) {
+        console.error(
+          "Webhook: failed to fetch related data for notification",
+          fetchErr,
+        );
+        continue;
+      }
 
-      const proposalData = clientRes.data?.proposals as any;
-      const clientData = Array.isArray(proposalData)
-        ? proposalData[0]?.clients
-        : proposalData?.clients;
-      const clientName =
-        (Array.isArray(clientData) ? clientData[0]?.name : clientData?.name) ||
-        "Unknown Client";
+      const proposal = Array.isArray(paymentData.proposals)
+        ? paymentData.proposals[0]
+        : paymentData.proposals;
+      const client = Array.isArray(proposal?.clients)
+        ? proposal?.clients[0]
+        : proposal?.clients;
+      const venue = Array.isArray(proposal?.venues)
+        ? proposal?.venues[0]
+        : proposal?.venues;
 
-      const payload = {
-        clientName,
+      const notificationPayload = {
+        client: {
+          clientName: client?.name || "Unknown Client",
+          clientEmail: client?.email || "",
+          portalUrl: proposal?.token
+            ? `${process.env.NEXT_PUBLIC_APP_URL}/portal/${proposal.token}`
+            : "",
+          venueName: venue?.name || "",
+          venueAddress: venue?.address || "",
+        },
         amount: payment.amount,
         paymentId: schedule.payment_id,
       };
 
+      const eventType =
+        newStatus === "settled" ? "PAYMENT_SUCCEEDED" : "PAYMENT_FAILED";
+
       console.log(
-        "Dispatching payment succeeded notification:",
-        payload,
-        clientRes.data?.proposal_id,
-        clientRes.error,
+        `Webhook: dispatching ${eventType} notification for proposal:`,
+        paymentData.proposal_id,
       );
 
       await Promise.allSettled([
-        dispatchNotification("PAYMENT_SUCCEEDED", payload),
-        clientRes.data?.proposal_id
+        dispatchNotification(eventType, notificationPayload),
+        paymentData.proposal_id
           ? logAuditEvent(
-              clientRes.data.proposal_id,
-              "PAYMENT_SUCCEEDED",
-              payload,
+              paymentData.proposal_id,
+              eventType,
+              notificationPayload,
             )
-          : Promise.resolve(),
-      ]);
-    }
-
-    if (newStatus === "dishonoured" || newStatus === "failed") {
-      const clientRes = await supabase
-        .from("payments")
-        .select("client_id, amount, proposal_id, clients(name)")
-        .eq("id", schedule.payment_id)
-        .single();
-
-      const payload = {
-        clientName: clientRes.data?.clients?.[0]?.name || "Unknown Client",
-        amount: payment.amount,
-        paymentId: schedule.payment_id,
-      };
-
-      await Promise.allSettled([
-        dispatchNotification("PAYMENT_FAILED", payload),
-        clientRes.data?.proposal_id
-          ? logAuditEvent(clientRes.data.proposal_id, "PAYMENT_FAILED", payload)
           : Promise.resolve(),
       ]);
     }
@@ -445,8 +349,6 @@ export async function POST(request: NextRequest) {
 
     switch (eventType) {
       // settled
-      case "transfer":
-        return handleSettledEvent(body as WebhookEvent);
       case "bank-results":
         return handleBankResultEvent(body as BankResultWebhookEvent);
       default:

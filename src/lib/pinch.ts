@@ -177,7 +177,7 @@ export async function schedulePayment(
     body: {
       payerId,
       sourceId,
-      amount: amountCents / 100, // Pinch uses dollars
+      amount: amountCents, // Pinch uses cents for scheduled payments
       transactionDate: date,
       description,
       idempotencyKey,
@@ -196,7 +196,7 @@ export async function chargeRealtime(
     body: {
       payerId,
       sourceId,
-      amount: amountCents / 100,
+      amount: amountCents, // Pinch uses cents for realtime payments
       description: "LickYourPhone campaign – one-off",
       idempotencyKey,
     },

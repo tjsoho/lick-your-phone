@@ -44,7 +44,7 @@ export async function signProposal(input: SignProposalInput) {
         `
         id, status, token,
         client:clients!client_id ( id, name ),
-        venue:venues!venue_id ( id, name )
+        venue:venues!venue_id ( id, name, address )
       `,
       )
       .eq("id", input.proposalId)
@@ -173,6 +173,7 @@ export async function signProposal(input: SignProposalInput) {
     const venueObj = proposal.venue as unknown as {
       id: string;
       name: string;
+      address: string;
     } | null;
 
     const signedAt = new Date().toISOString();
@@ -259,6 +260,7 @@ export async function signProposal(input: SignProposalInput) {
       clientName: clientObj?.name ?? "Client",
       clientSlug,
       venueName: venueObj?.name ?? "Venue",
+      venueAddress: venueObj?.address ?? "",
       signerEmail: input.signerEmail,
       totalCents,
       lineItems: pdfLineItems.map((li) => ({

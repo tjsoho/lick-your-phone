@@ -2,6 +2,14 @@ import axios from "axios";
 
 const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
 
+type Client = {
+  clientName: string;
+  clientEmail: string;
+  portalUrl: string;
+  venueName: string;
+  venueAddress: string;
+};
+
 export type NotificationEvent =
   | "PROPOSAL_SENT"
   | "PROPOSAL_SIGNED"
@@ -11,40 +19,37 @@ export type NotificationEvent =
   | "PAYMENT_CAPTURED";
 
 interface PayloadMap {
-  PROPOSAL_SENT: {
-    clientEmail: string;
-    clientName: string;
-    portalUrl: string;
-    venueName?: string;
-    venueAddress?: string;
-  };
+  PROPOSAL_SENT: Client;
   PROPOSAL_SIGNED: {
-    clientName: string;
-    venueName: string;
+    client: Client;
     totalAmount: number;
     contractUrl: string;
     intakeUrl: string;
     signerEmail: string;
     services: { name: string; billing: string; term: string | null }[];
   };
-  PAYMENT_FAILED: { clientName: string; amount: number; paymentId: string };
+  PAYMENT_FAILED: { client: Client; amount: number; paymentId: string };
   INTAKE_COMPLETED: {
-    clientName: string;
-    proposalId: string;
-    venueName: string;
+    client: Client;
     intakeUrl: string;
     isEdit: boolean;
     assets: string[];
   };
   PAYMENT_SUCCEEDED: {
-    clientName: string;
+    client: Client;
     amount: number;
     paymentId: string;
   };
   PAYMENT_CAPTURED: {
-    clientName: string;
+    client: Client;
     amount: number;
     paymentId: string;
+    intakeUrl: string;
+    paymentSchedules: {
+      date: string;
+      description: string;
+      amount: number;
+    }[];
   };
 }
 
@@ -122,6 +127,5 @@ export async function dispatchNotification<K extends NotificationEvent>(
     }
   } catch (error) {
     console.error(`[Notification Service] Error processing ${event}:`, error);
-    // Opsional: Catat error ke Sentry atau Supabase error log
   }
 }
