@@ -28,7 +28,15 @@ interface PayloadMap {
     signerEmail: string;
     services: { name: string; billing: string; term: string | null }[];
   };
-  PAYMENT_FAILED: { client: Client; amount: number; paymentId: string };
+  PAYMENT_FAILED: {
+    client: Client;
+    payment: {
+      description: string;
+      amount: number;
+      date: string;
+      id: string;
+    };
+  };
   INTAKE_COMPLETED: {
     client: Client;
     intakeUrl: string;
@@ -37,8 +45,12 @@ interface PayloadMap {
   };
   PAYMENT_SUCCEEDED: {
     client: Client;
-    amount: number;
-    paymentId: string;
+    payment: {
+      description: string;
+      amount: number;
+      date: string;
+      id: string;
+    };
   };
   PAYMENT_CAPTURED: {
     client: Client;

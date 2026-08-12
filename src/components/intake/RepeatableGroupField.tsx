@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { Plus, Trash2 } from "lucide-react"
-import type { FieldProps } from "./types"
+import { Plus, Trash2 } from "lucide-react";
+import type { FieldProps } from "./types";
 
 interface SubField {
-  key: string
-  label: string
-  type: string
+  key: string;
+  label: string;
+  type: string;
 }
 
 interface GroupConfig {
-  subFields: SubField[]
+  subFields: SubField[];
 }
 
 export default function RepeatableGroupField({
@@ -18,35 +18,37 @@ export default function RepeatableGroupField({
   value,
   onChange,
 }: FieldProps) {
-  const config = (question.config as GroupConfig) ?? { subFields: [] }
-  const rows = (value as Record<string, string>[]) ?? []
+  const config = (question.config as unknown as GroupConfig) ?? {
+    subFields: [],
+  };
+  const rows = (value as Record<string, string>[]) ?? [];
 
   function addRow() {
-    const empty: Record<string, string> = {}
+    const empty: Record<string, string> = {};
     for (const f of config.subFields) {
-      empty[f.key] = ""
+      empty[f.key] = "";
     }
-    onChange([...rows, empty])
+    onChange([...rows, empty]);
   }
 
   function removeRow(index: number) {
-    onChange(rows.filter((_, i) => i !== index))
+    onChange(rows.filter((_, i) => i !== index));
   }
 
   function updateField(rowIndex: number, key: string, val: string) {
     const next = rows.map((row, i) =>
-      i === rowIndex ? { ...row, [key]: val } : row
-    )
-    onChange(next)
+      i === rowIndex ? { ...row, [key]: val } : row,
+    );
+    onChange(next);
   }
 
   const inputClass =
-    "w-full rounded-lg border border-lyp-white/20 bg-lyp-white/5 px-4 py-3 font-body text-sm text-lyp-white placeholder-lyp-white/30 outline-none transition-colors focus:border-lyp-cherry focus:ring-1 focus:ring-lyp-cherry"
+    "w-full rounded-lg border border-lyp-white/20 bg-lyp-white/5 px-4 py-3 font-body text-sm text-lyp-white placeholder-lyp-white/30 outline-none transition-colors focus:border-lyp-cherry focus:ring-1 focus:ring-lyp-cherry";
 
   return (
     <div className="space-y-2">
       <label className="block font-body text-sm text-lyp-white/80">
-        {question.fieldLabel}
+        {question.field_label}
         {question.required && <span className="text-lyp-cherry ml-1">*</span>}
       </label>
 
@@ -75,7 +77,13 @@ export default function RepeatableGroupField({
                     {f.label}
                   </label>
                   <input
-                    type={f.type === "email" ? "email" : f.type === "phone" ? "tel" : "text"}
+                    type={
+                      f.type === "email"
+                        ? "email"
+                        : f.type === "phone"
+                          ? "tel"
+                          : "text"
+                    }
                     value={row[f.key] ?? ""}
                     onChange={(e) => updateField(i, f.key, e.target.value)}
                     className={inputClass}
@@ -97,5 +105,5 @@ export default function RepeatableGroupField({
         </button>
       </div>
     </div>
-  )
+  );
 }

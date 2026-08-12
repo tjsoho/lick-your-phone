@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { ExternalLink, Check } from "lucide-react"
-import type { FieldProps } from "./types"
+import { ExternalLink, Check } from "lucide-react";
+import type { FieldProps } from "./types";
 
 export default function ProviderPickerField({
   question,
@@ -9,50 +9,49 @@ export default function ProviderPickerField({
   onChange,
   providers,
 }: FieldProps) {
-  const selected = (value as string[]) ?? []
-  const providerType = (question.config as Record<string, string>)?.providerType
+  const selected = (value as string[]) ?? [];
+  const providerType = (question.config as Record<string, string>)
+    ?.providerType;
 
   const filtered = (providers ?? []).filter(
-    (p) => !providerType || p.type === providerType
-  )
+    (p) => !providerType || p.type === providerType,
+  );
 
   function toggle(id: string) {
     if (selected.includes(id)) {
-      onChange(selected.filter((s) => s !== id))
+      onChange(selected.filter((s) => s !== id));
     } else {
-      onChange([...selected, id])
+      onChange([...selected, id]);
     }
   }
 
   function formatPrice(cents: number): string {
-    return `$${(cents / 100).toLocaleString("en-AU")}`
+    return `$${(cents / 100).toLocaleString("en-AU")}`;
   }
 
   if (filtered.length === 0) {
     return (
       <div className="space-y-2">
         <label className="block font-body text-sm text-lyp-white/80">
-          {question.fieldLabel}
-          {question.required && (
-            <span className="text-lyp-cherry ml-1">*</span>
-          )}
+          {question.field_label}
+          {question.required && <span className="text-lyp-cherry ml-1">*</span>}
         </label>
         <p className="font-body text-sm text-lyp-white/40">
           No providers available for your area yet.
         </p>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-2">
       <label className="block font-body text-sm text-lyp-white/80">
-        {question.fieldLabel}
+        {question.field_label}
         {question.required && <span className="text-lyp-cherry ml-1">*</span>}
       </label>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {filtered.map((provider) => {
-          const isSelected = selected.includes(provider.id)
+          const isSelected = selected.includes(provider.id);
           return (
             <button
               key={provider.id}
@@ -70,11 +69,11 @@ export default function ProviderPickerField({
                 </div>
               )}
 
-              {provider.imageUrl && (
+              {provider.image_url && (
                 <div className="mb-3 h-32 w-full overflow-hidden rounded-lg bg-lyp-white/5">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={provider.imageUrl}
+                    src={provider.image_url}
                     alt={provider.name}
                     className="h-full w-full object-cover"
                   />
@@ -92,14 +91,14 @@ export default function ProviderPickerField({
               )}
 
               <div className="mt-3 flex items-center justify-between">
-                {provider.priceCents > 0 && (
+                {provider.price_cents > 0 && (
                   <span className="font-body text-sm text-lyp-cherry font-semibold">
-                    {formatPrice(provider.priceCents)}
+                    {formatPrice(provider.price_cents)}
                   </span>
                 )}
-                {provider.portfolioUrl && (
+                {provider.portfolio_url && (
                   <a
-                    href={provider.portfolioUrl}
+                    href={provider.portfolio_url}
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
@@ -111,9 +110,9 @@ export default function ProviderPickerField({
                 )}
               </div>
             </button>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }

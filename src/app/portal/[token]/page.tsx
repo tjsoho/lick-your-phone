@@ -3,8 +3,6 @@ import ProposalCarousel from "@/components/portal/ProposalCarousel";
 import type {
   ProposalData,
   PageData,
-  Service,
-  Selection,
 } from "@/components/portal/ProposalContext";
 import { mapPages, mapServices } from "./mappers";
 
@@ -104,7 +102,7 @@ export default async function PortalPage({ params }: Props) {
   };
 
   const pages: PageData[] = mapPages(pagesRaw ?? []);
-  const services: Service[] = mapServices(servicesRaw ?? []);
+  const services = mapServices(servicesRaw ?? []);
 
   // Payment captured = any payment with status beyond "pending" creation
   const payments =

@@ -205,7 +205,7 @@ export const sendProposal = async (proposalId: string) => {
       throw new Error(proposalErr?.message || "Proposal not found");
     }
 
-    const proposalData = proposal as any;
+    const proposalData = proposal;
     if (proposalData.status === "draft") {
       const { error: updateErr } = await supabase
         .from("proposals")

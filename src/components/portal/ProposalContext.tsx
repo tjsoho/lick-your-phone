@@ -13,52 +13,6 @@ import {
 /*  Types coming from the server component                            */
 /* ------------------------------------------------------------------ */
 
-export interface ServiceTier {
-  id: string;
-  slug: string;
-  name: string;
-  targetPriceCents: number;
-  sequence: number;
-  billingCycleMonths: number;
-}
-
-export interface ServiceInclusion {
-  id: string;
-  text: string;
-  sequence: number | null;
-}
-
-export interface ServiceObligation {
-  id: string;
-  text: string;
-  sequence: number | null;
-}
-
-export interface ServiceDisclaimer {
-  id: string;
-  text: string;
-  sequence: number | null;
-}
-
-export interface Service {
-  id: string;
-  slug: string;
-  name: string;
-  billing: "one_off" | "recurring_monthly" | "in_kind";
-  term: string | null;
-  targetPriceCents: number;
-  discountPct: number | null;
-  discountWindowHours: number | null;
-  priceDisplayPeriod: string | null;
-  requiresOtherService: boolean;
-  sequence: number;
-  tiers: ServiceTier[];
-  inclusions: ServiceInclusion[];
-  clientObligations: ServiceObligation[];
-  disclaimers: ServiceDisclaimer[];
-  billingCycleMonths: number;
-}
-
 export interface ContentBlock {
   id: string;
   type: "heading" | "paragraph" | "image" | "list" | "custom" | null;
@@ -140,7 +94,7 @@ function listFromTarget(
 
 /** Monthly-equivalent cents for totalling */
 function monthlyTarget(service: Service, tierTarget: number): number {
-  if (service.priceDisplayPeriod === "week") {
+  if (service.price_display_period === "week") {
     return Math.round((tierTarget * 52) / 12);
   }
   return tierTarget;
@@ -213,12 +167,12 @@ export function ProposalProvider({
           // that no longer have a non-requires companion
           const hasNonRequires = next.some((sel) => {
             const svc = serviceMap[sel.serviceId];
-            return svc && !svc.requiresOtherService;
+            return svc && !svc.requires_other_service;
           });
           if (!hasNonRequires) {
             return next.filter((sel) => {
               const svc = serviceMap[sel.serviceId];
-              return svc && !svc.requiresOtherService;
+              return svc && !svc.requires_other_service;
             });
           }
           return next;
@@ -247,12 +201,12 @@ export function ProposalProvider({
         const next = prev.filter((s) => s.serviceId !== serviceId);
         const hasNonRequires = next.some((sel) => {
           const svc = serviceMap[sel.serviceId];
-          return svc && !svc.requiresOtherService;
+          return svc && !svc.requires_other_service;
         });
         if (!hasNonRequires) {
           return next.filter((sel) => {
             const svc = serviceMap[sel.serviceId];
-            return svc && !svc.requiresOtherService;
+            return svc && !svc.requires_other_service;
           });
         }
         return next;
@@ -284,13 +238,13 @@ export function ProposalProvider({
       let target: number;
       if (sel.tierId) {
         const tier = svc.tiers.find((t) => t.id === sel.tierId);
-        target = tier ? tier.targetPriceCents : svc.targetPriceCents;
+        target = tier ? tier.target_price_cents : svc.target_price_cents;
       } else {
-        target = svc.targetPriceCents;
+        target = svc.target_price_cents;
       }
 
       const monthlyT = monthlyTarget(svc, target);
-      const list = listFromTarget(monthlyT, svc.discountPct);
+      const list = listFromTarget(monthlyT, svc.discount_pct);
 
       targetTotal += monthlyT;
       listTotal += list;

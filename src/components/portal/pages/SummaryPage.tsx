@@ -27,9 +27,6 @@ export default function SummaryPage() {
     proposal,
     selections,
     serviceMap,
-    totalListCents,
-    totalTargetCents,
-    totalDiscountCents,
     pages,
     setCurrentPage,
     deselectService,
@@ -48,27 +45,27 @@ export default function SummaryPage() {
 
       if (sel.tierId) {
         const tier = svc.tiers.find((t) => t.id === sel.tierId);
-        targetCents = tier ? tier.targetPriceCents : svc.targetPriceCents;
+        targetCents = tier ? tier.target_price_cents : svc.target_price_cents;
         tierName = tier?.name ?? null;
       } else {
-        targetCents = svc.targetPriceCents;
+        targetCents = svc.target_price_cents;
       }
 
-      const isWeekly = svc.priceDisplayPeriod === "week";
+      const isWeekly = svc.price_display_period === "week";
       const displayTarget = targetCents;
       const monthlyTarget = isWeekly
         ? Math.round((targetCents * 52) / 12)
         : targetCents;
-      const listCents = listFromTarget(monthlyTarget, svc.discountPct);
-      const hasDiscount = svc.discountPct != null && svc.discountPct > 0;
+      const listCents = listFromTarget(monthlyTarget, svc.discount_pct);
+      const hasDiscount = svc.discount_pct != null && svc.discount_pct > 0;
 
       let billingCycleMonths = 1;
       if (svc.billing === "recurring_monthly") {
         const tierCycle = sel.tierId
-          ? svc.tiers.find((t: any) => t.id === sel.tierId)?.billingCycleMonths
+          ? svc.tiers.find((t) => t.id === sel.tierId)?.billing_cycle_months
           : null;
 
-        billingCycleMonths = tierCycle ?? svc.billingCycleMonths ?? 1;
+        billingCycleMonths = tierCycle ?? svc.billing_cycle_months ?? 1;
       }
 
       const totalContractCents = monthlyTarget * billingCycleMonths;
@@ -84,9 +81,9 @@ export default function SummaryPage() {
         monthlyTarget,
         listCents,
         hasDiscount,
-        discountPct: svc.discountPct,
+        discountPct: svc.discount_pct,
         inclusions: svc.inclusions ?? [],
-        clientObligations: svc.clientObligations ?? [],
+        clientObligations: svc.client_obligations ?? [],
         billingCycleMonths,
         totalContractCents,
         totalListContractCents,
@@ -96,7 +93,6 @@ export default function SummaryPage() {
 
   const signatureIdx = pages.findIndex((p) => p.slug === "signature");
   const paymentIdx = pages.findIndex((p) => p.slug === "payment");
-  const hasDiscount = totalDiscountCents > 0;
 
   const grandTotalContractValue = selectedServices.reduce(
     (sum, item) => sum + (item?.totalContractCents ?? 0),

@@ -69,53 +69,6 @@ function verifyPinchSignature(
 /*  Webhook event types we care about                                 */
 /* ------------------------------------------------------------------ */
 
-export interface WebhookEvent {
-  id: string;
-  type: string;
-  eventDate: string;
-  metadata: Metadata;
-  data: Data;
-  merchantId: string;
-  webhooks: Webhook[];
-}
-
-export interface Metadata {
-  status: string;
-  amount: number;
-}
-
-export interface Data {
-  payment: Payment;
-  eventId: string;
-}
-
-export interface Payment {
-  id: string;
-  attemptId: string;
-  amount: number;
-  currency: string;
-  description: string;
-  applicationFee: number;
-  totalFee: number;
-  totalFeeFractional: number;
-  isSurcharged: boolean;
-  sourceType: string;
-  transactionDate: string;
-  status: string;
-  estimatedTransferDate: string;
-  actualTransferDate: any;
-  payer: any[];
-  subscription: any;
-  attempts: any[];
-  refunds: any[];
-  metadata: any;
-  preAuthorisation: any;
-  nonce: any;
-  disputeId: any;
-  dishonourType: any;
-  cancellationReason: any;
-}
-
 export interface Webhook {
   id: string;
   webhookId: string;
@@ -153,16 +106,6 @@ export interface Payer {
   firstName: string;
   lastName: string;
   emailAddress: string;
-  mobileNumber: any;
-  streetAddress: any;
-  suburb: any;
-  postcode: any;
-  state: any;
-  country: any;
-  countryCode: any;
-  companyName: string;
-  companyRegistrationNumber: any;
-  metadata: any;
 }
 
 export interface BankResultPayment {
@@ -175,8 +118,10 @@ export interface BankResultPayment {
   status: string;
   estimatedTransferDate: string;
   payer: Payer;
-  dishonour: any;
-  cancellationReason: any;
+  dishonour: {
+    type: string;
+    reason: string;
+  };
 }
 
 const MAP_STATE = {
@@ -268,8 +213,12 @@ const handleBankResultEvent = async (payload: BankResultWebhookEvent) => {
           venueName: venue?.name || "",
           venueAddress: venue?.address || "",
         },
-        amount: payment.amount,
-        paymentId: schedule.payment_id,
+        payment: {
+          description: payment.description,
+          amount: payment.amount,
+          date: payment.transactionDate,
+          id: payment.id,
+        },
       };
 
       const eventType =

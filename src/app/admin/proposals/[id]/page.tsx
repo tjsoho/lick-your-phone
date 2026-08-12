@@ -4,7 +4,7 @@ import React from "react";
 import { getProposal } from "@/server-actions/proposals";
 import { formatCents, formatDate, formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { createAdminClient, createClient } from "@/utils/server";
+import { createAdminClient } from "@/utils/server";
 import {
   ArrowLeft,
   Check,

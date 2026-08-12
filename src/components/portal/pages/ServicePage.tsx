@@ -2,7 +2,7 @@
 
 import { Check, AlertCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { useProposal, type Service } from "../ProposalContext";
+import { useProposal } from "../ProposalContext";
 import { cn } from "@/lib/utils";
 
 function formatCents(cents: number): string {
@@ -36,7 +36,6 @@ export default function ServicePage({ service }: ServicePageProps) {
     deselectService,
     selections,
     serviceMap,
-    paymentCaptured,
   } = useProposal();
 
   const selected = isSelected(service.id);
@@ -46,17 +45,17 @@ export default function ServicePage({ service }: ServicePageProps) {
 
   const hasOtherSelected = selections.some((sel) => {
     const svc = serviceMap[sel.serviceId];
-    return svc && !svc.requiresOtherService && sel.serviceId !== service.id;
+    return svc && !svc.requires_other_service && sel.serviceId !== service.id;
   });
   const isDisabled =
     proposal.status === "signed" ||
-    (service.requiresOtherService && !hasOtherSelected);
+    (service.requires_other_service && !hasOtherSelected);
 
-  const displayTarget = service.targetPriceCents;
-  const displayList = listFromTarget(displayTarget, service.discountPct);
-  const hasDiscount = service.discountPct != null && service.discountPct > 0;
+  const displayTarget = service.target_price_cents;
+  const displayList = listFromTarget(displayTarget, service.discount_pct);
+  const hasDiscount = service.discount_pct != null && service.discount_pct > 0;
   const periodLabel =
-    service.priceDisplayPeriod === "week" ? " per week" : " per month";
+    service.price_display_period === "week" ? " per week" : " per month";
   const savingsCents = displayList - displayTarget;
 
   return (
@@ -101,13 +100,13 @@ export default function ServicePage({ service }: ServicePageProps) {
               </div>
             )}
 
-            {service.clientObligations.length > 0 && (
+            {service.client_obligations.length > 0 && (
               <div>
                 <h3 className="font-heading text-lg text-lyp-white/60 mb-4 uppercase tracking-wider">
                   Your Commitments
                 </h3>
                 <ul className="space-y-3">
-                  {service.clientObligations
+                  {service.client_obligations
                     .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
                     .map((ob) => (
                       <li key={ob.id} className="flex items-start gap-3">
@@ -146,7 +145,7 @@ export default function ServicePage({ service }: ServicePageProps) {
 
               {hasDiscount && (
                 <p className="font-body text-sm text-lyp-gold mb-1">
-                  {Math.round((service.discountPct ?? 0) * 100)}% off when you
+                  {Math.round((service.discount_pct ?? 0) * 100)}% off when you
                   sign within 24hrs
                 </p>
               )}
@@ -161,11 +160,11 @@ export default function ServicePage({ service }: ServicePageProps) {
                     .sort((a, b) => a.sequence - b.sequence)
                     .map((tier) => {
                       const tierList = listFromTarget(
-                        tier.targetPriceCents,
-                        service.discountPct,
+                        tier.target_price_cents,
+                        service.discount_pct,
                       );
                       const tierSelected = currentTierId === tier.id;
-                      const tierSaving = tierList - tier.targetPriceCents;
+                      const tierSaving = tierList - tier.target_price_cents;
                       return (
                         <button
                           key={tier.id}
@@ -191,7 +190,7 @@ export default function ServicePage({ service }: ServicePageProps) {
                             </p>
                           )}
                           <p className="font-heading text-xl text-lyp-white">
-                            {formatCents(tier.targetPriceCents)} + GST
+                            {formatCents(tier.target_price_cents)} + GST
                             {periodLabel}
                           </p>
                           {hasDiscount && tierSaving > 0 && (

@@ -100,12 +100,14 @@ async function pinchFetch<T>(
     });
 
     return res.data;
-  } catch (error: any) {
-    console.error(
-      `Pinch ${options.method} ${path} failed:`,
-      error.response?.data || error.message,
-    );
-    throw new Error(`Pinch ${options.method} ${path} failed: ${error.message}`);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error(`Pinch ${options.method} ${path} failed:`, error.message);
+      throw new Error(
+        `Pinch ${options.method} ${path} failed: ${error.message}`,
+      );
+    }
+    throw new Error(`Pinch ${options.method} ${path} failed: Unknown error`);
   }
 }
 

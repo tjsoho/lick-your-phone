@@ -8,7 +8,6 @@ import {
   useProposal,
   type ProposalData,
   type PageData,
-  type Service,
   type Selection,
 } from "./ProposalContext";
 import RunningTotal from "./RunningTotal";

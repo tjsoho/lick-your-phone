@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Plus, Trash2, GripVertical } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import {
   upsertQuestion,
   deleteQuestion,
@@ -18,10 +18,10 @@ interface IntakeQuestionFormProps {
     section: string | null;
     field_label: string;
     field_type: string;
-    options: any;
+    options: string[] | null;
     required: boolean;
     sequence: number;
-    config: any;
+    config: Record<string, unknown> | null;
     intake_conditions?: {
       id?: string;
       condition_type: "service_signed" | "answer_equals" | "venue_state";
@@ -96,19 +96,19 @@ export default function IntakeQuestionForm({
     question?.config &&
     typeof question.config === "object" &&
     "placeholder" in question.config
-      ? String((question.config as any).placeholder)
+      ? String(question.config?.placeholder)
       : "";
   const configContent =
     question?.config &&
     typeof question.config === "object" &&
     "content" in question.config
-      ? String((question.config as any).content)
+      ? String(question.config?.content)
       : "";
   const configProviderType =
     question?.config &&
     typeof question.config === "object" &&
     "providerType" in question.config
-      ? String((question.config as any).providerType)
+      ? String(question.config?.providerType)
       : "photographer";
 
   const {
@@ -173,24 +173,28 @@ export default function IntakeQuestionForm({
 
       // Map conditions
       const conditions = data.conditions.map((c) => {
-        const payload: any = {
+        const payload: IntakeQuestionFormData["conditions"][number] = {
           condition_type: c.condition_type,
+          condition_service_id: "",
+          condition_state_id: "",
+          condition_question_id: "",
+          condition_value: "",
         };
         if (c.id) payload.id = c.id;
 
         if (c.condition_type === "service_signed") {
-          payload.condition_service_id = c.condition_service_id || null;
+          payload.condition_service_id = c.condition_service_id;
         } else if (c.condition_type === "venue_state") {
-          payload.condition_state_id = c.condition_state_id || null;
+          payload.condition_state_id = c.condition_state_id;
         } else if (c.condition_type === "answer_equals") {
-          payload.condition_question_id = c.condition_question_id || null;
-          payload.condition_value = c.condition_value || null;
+          payload.condition_question_id = c.condition_question_id;
+          payload.condition_value = c.condition_value;
         }
         return payload;
       });
 
       // Map config based on field type
-      let configPayload: any = null;
+      let configPayload: Record<string, unknown> | null = null;
       if (data.field_type === "text" || data.field_type === "email") {
         configPayload = { placeholder: data.config?.placeholder || "" };
       } else if (data.field_type === "static_content") {
@@ -201,7 +205,7 @@ export default function IntakeQuestionForm({
         };
       }
 
-      const payload = {
+      const payload: IntakeQuestionInput = {
         id: question?.id,
         page_number: Number(data.page_number),
         sequence: Number(data.sequence),
@@ -211,7 +215,7 @@ export default function IntakeQuestionForm({
         options: optionsArray,
         required: data.required,
         config: configPayload,
-        conditions,
+        intake_conditions: conditions,
       };
 
       const { error } = await upsertQuestion(payload);

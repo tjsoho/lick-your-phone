@@ -19,11 +19,10 @@ import {
   ProviderPickerField,
   StaticContentField,
 } from "@/components/intake";
-import type { IntakeQuestion, Provider } from "@/server-actions/intake";
 import { saveIntakeResponses, completeIntake } from "@/server-actions/intake";
 
 interface IntakePageProps {
-  questions: IntakeQuestion[];
+  questions: IntakeQuestionWithConditions[];
   providers: Provider[];
   existingResponses: Record<string, unknown>;
 }
@@ -31,7 +30,7 @@ interface IntakePageProps {
 const FIELD_COMPONENTS: Record<
   string,
   React.ComponentType<{
-    question: IntakeQuestion;
+    question: IntakeQuestionWithConditions;
     value: unknown;
     onChange: (value: unknown) => void;
     providers?: Provider[];
@@ -82,15 +81,15 @@ export default function IntakePage({
 
   // Evaluate whether a question should be visible
   const isQuestionVisible = useCallback(
-    (q: IntakeQuestion): boolean => {
-      if (q.conditions.length === 0) return true;
+    (q: IntakeQuestionWithConditions): boolean => {
+      if (q.intake_conditions.length === 0) return true;
 
       // All conditions must pass (AND logic)
-      return q.conditions.every((c) => {
-        switch (c.conditionType) {
+      return q.intake_conditions.every((c) => {
+        switch (c.condition_type) {
           case "service_signed":
-            if (!c.conditionServiceId) return true;
-            return signedServiceIds.has(c.conditionServiceId);
+            if (!c.condition_service_id) return true;
+            return signedServiceIds.has(c.condition_service_id);
 
           case "venue_state":
             // If no state filtering is possible at client level, show the question
@@ -98,8 +97,9 @@ export default function IntakePage({
             return true;
 
           case "answer_equals":
-            if (!c.conditionQuestionId || c.conditionValue == null) return true;
-            return responses[c.conditionQuestionId] === c.conditionValue;
+            if (!c.condition_question_id || c.condition_value == null)
+              return true;
+            return responses[c.condition_question_id] === c.condition_value;
 
           default:
             return true;
@@ -112,7 +112,7 @@ export default function IntakePage({
   // Get all unique page numbers
   const allPageNumbers = useMemo(
     () =>
-      [...new Set(questions.map((q) => q.pageNumber))].sort((a, b) => a - b),
+      [...new Set(questions.map((q) => q.page_number))].sort((a, b) => a - b),
     [questions],
   );
 
@@ -121,7 +121,7 @@ export default function IntakePage({
     () =>
       questions
         .filter(
-          (q) => q.pageNumber === currentIntakePage && isQuestionVisible(q),
+          (q) => q.page_number === currentIntakePage && isQuestionVisible(q),
         )
         .sort((a, b) => a.sequence - b.sequence),
     [questions, currentIntakePage, isQuestionVisible],
@@ -129,8 +129,10 @@ export default function IntakePage({
 
   // Group visible questions by section
   const sections = useMemo(() => {
-    const grouped: { section: string | null; questions: IntakeQuestion[] }[] =
-      [];
+    const grouped: {
+      section: string | null;
+      questions: IntakeQuestionWithConditions[];
+    }[] = [];
     let currentSection: string | null | undefined = undefined;
 
     for (const q of visibleQuestionsForPage) {
@@ -155,7 +157,7 @@ export default function IntakePage({
       while (nextIdx >= 0 && nextIdx < allPageNumbers.length) {
         const pageNum = allPageNumbers[nextIdx];
         const pageQuestions = questions.filter(
-          (q) => q.pageNumber === pageNum && isQuestionVisible(q),
+          (q) => q.page_number === pageNum && isQuestionVisible(q),
         );
         if (pageQuestions.length > 0) return pageNum;
         nextIdx += dir;
@@ -174,7 +176,7 @@ export default function IntakePage({
   function validateCurrentPage(): boolean {
     for (const q of visibleQuestionsForPage) {
       if (!q.required) continue;
-      if (q.fieldType === "static_content") continue;
+      if (q.field_type === "static_content") continue;
 
       const val = responses[q.id];
       if (
@@ -182,7 +184,7 @@ export default function IntakePage({
         val === "" ||
         (Array.isArray(val) && val.length === 0)
       ) {
-        setError(`Please fill in "${q.fieldLabel}"`);
+        setError(`Please fill in "${q.field_label}"`);
         return false;
       }
     }
@@ -199,7 +201,7 @@ export default function IntakePage({
     // Save current page responses
     const pageResponses = visibleQuestionsForPage
       .filter(
-        (q) => q.fieldType !== "static_content" && responses[q.id] != null,
+        (q) => q.field_type !== "static_content" && responses[q.id] != null,
       )
       .map((q) => ({
         questionId: q.id,
@@ -280,7 +282,7 @@ export default function IntakePage({
   // Page progress
   const visiblePageNumbers = allPageNumbers.filter((pn) => {
     const pageQuestions = questions.filter(
-      (q) => q.pageNumber === pn && isQuestionVisible(q),
+      (q) => q.page_number === pn && isQuestionVisible(q),
     );
     return pageQuestions.length > 0;
   });
@@ -318,7 +320,7 @@ export default function IntakePage({
               )}
               <div className="space-y-6">
                 {section.questions.map((q) => {
-                  const Component = FIELD_COMPONENTS[q.fieldType];
+                  const Component = FIELD_COMPONENTS[q.field_type];
                   if (!Component) return null;
 
                   return (

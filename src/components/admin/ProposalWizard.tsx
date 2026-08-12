@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
 import { createClient, createVenue } from "@/server-actions/clients";
 import {
   createProposal,
-  updateProposal,
   supersedeProposal,
+  updateProposal,
 } from "@/server-actions/proposals";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import toast from "react-hot-toast";
 
 type Client = {
   id: string;
@@ -70,6 +70,7 @@ export default function ProposalWizard({
   const [newClientName, setNewClientName] = useState("");
   const [newClientEntity, setNewClientEntity] = useState("");
   const [newClientAbn, setNewClientAbn] = useState("");
+  const [newClientEmail, setNewClientEmail] = useState("");
   const [createdClients, setCreatedClients] = useState<Client[]>([]);
 
   // Venue state
@@ -103,6 +104,7 @@ export default function ProposalWizard({
       slug: slugify(newClientName),
       entity_name: newClientEntity.trim() || undefined,
       abn: newClientAbn.trim() || undefined,
+      email: newClientEmail.trim(),
     });
     setLoading(false);
     if (error) {
@@ -117,6 +119,7 @@ export default function ProposalWizard({
       setNewClientName("");
       setNewClientEntity("");
       setNewClientAbn("");
+      setNewClientEmail("");
       toast.success("Client created");
     }
   }
@@ -151,44 +154,6 @@ export default function ProposalWizard({
       setNewVenueStateId("");
       toast.success("Venue created");
     }
-  }
-
-  async function handleSaveDraft() {
-    if (!selectedClientId) {
-      toast.error("Please select a client first");
-      return;
-    }
-    setLoading(true);
-    const payload = {
-      client_id: selectedClientId,
-      venue_id: selectedVenueId || undefined,
-      notes: notes.trim() || undefined,
-    };
-
-    let result: { error: string | null };
-
-    if (mode === "edit" && proposalId) {
-      result = await updateProposal(proposalId, payload);
-    } else if (mode === "supersede" && proposalId) {
-      result = await supersedeProposal(proposalId, payload);
-    } else {
-      result = await createProposal(payload);
-    }
-
-    setLoading(false);
-    if (result.error) {
-      toast.error(result.error);
-      return;
-    }
-
-    const msg =
-      mode === "edit"
-        ? "Draft updated"
-        : mode === "supersede"
-          ? "Superseding draft created"
-          : "Draft saved";
-    toast.success(msg);
-    router.push("/admin/proposals");
   }
 
   async function handleSubmit() {
@@ -338,6 +303,18 @@ export default function ProposalWizard({
                   onChange={(e) => setNewClientName(e.target.value)}
                   className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent"
                   placeholder="Client name"
+                />
+              </div>
+              <div>
+                <label className="block font-body text-sm text-gray-700 mb-1">
+                  Email *
+                </label>
+                <input
+                  type="email"
+                  value={newClientEmail}
+                  onChange={(e) => setNewClientEmail(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent"
+                  placeholder="Email address"
                 />
               </div>
               <div>

@@ -1,45 +1,45 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { ChevronDown, X } from "lucide-react"
-import type { FieldProps } from "./types"
+import { useState, useRef, useEffect } from "react";
+import { ChevronDown, X } from "lucide-react";
+import type { FieldProps } from "./types";
 
 export default function MultiselectField({
   question,
   value,
   onChange,
 }: FieldProps) {
-  const options = (question.options as string[]) ?? []
-  const selected = (value as string[]) ?? []
-  const [open, setOpen] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const options = (question.options as string[]) ?? [];
+  const selected = (value as string[]) ?? [];
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) {
-        setOpen(false)
+        setOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClick)
-    return () => document.removeEventListener("mousedown", handleClick)
-  }, [])
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   function toggle(opt: string) {
     if (selected.includes(opt)) {
-      onChange(selected.filter((s) => s !== opt))
+      onChange(selected.filter((s) => s !== opt));
     } else {
-      onChange([...selected, opt])
+      onChange([...selected, opt]);
     }
   }
 
   function remove(opt: string) {
-    onChange(selected.filter((s) => s !== opt))
+    onChange(selected.filter((s) => s !== opt));
   }
 
   return (
     <div className="space-y-2">
       <label className="block font-body text-sm text-lyp-white/80">
-        {question.fieldLabel}
+        {question.field_label}
         {question.required && <span className="text-lyp-cherry ml-1">*</span>}
       </label>
       <div ref={ref} className="relative">
@@ -111,5 +111,5 @@ export default function MultiselectField({
         )}
       </div>
     </div>
-  )
+  );
 }

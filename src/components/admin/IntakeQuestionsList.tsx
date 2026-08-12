@@ -19,7 +19,9 @@ import {
 import { cn } from "@/lib/utils";
 
 interface IntakeQuestionsListProps {
-  questions: any[];
+  questions: (IntakeQuestion & {
+    intake_conditions?: IntakeCondition[];
+  })[];
 }
 
 export default function IntakeQuestionsList({
@@ -29,7 +31,12 @@ export default function IntakeQuestionsList({
   const [reordering, setReordering] = useState(false);
 
   // Group questions by page number
-  const pages: Record<number, any[]> = {};
+  const pages: Record<
+    number,
+    (IntakeQuestion & {
+      intake_conditions?: IntakeCondition[];
+    })[]
+  > = {};
   questions.forEach((q) => {
     const page = q.page_number;
     if (!pages[page]) {
@@ -232,8 +239,8 @@ export default function IntakeQuestionsList({
                           <td className="px-6 py-4">
                             {hasConditions ? (
                               <span className="font-body text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-semibold">
-                                {q.intake_conditions.length}{" "}
-                                {q.intake_conditions.length === 1
+                                {q.intake_conditions?.length || 0}{" "}
+                                {q.intake_conditions?.length === 1
                                   ? "condition"
                                   : "conditions"}
                               </span>

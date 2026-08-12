@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useProposal } from "../ProposalContext";
 import { capturePaymentDetails } from "@/server-actions/payment";
+import Link from "next/link";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -273,6 +274,13 @@ function PaymentForm({ proposalId }: { proposalId: string }) {
           Your card has been securely saved. Payments will be scheduled
           according to your agreement.
         </p>
+
+        <Link
+          href={`/intake/${proposalId}`}
+          className="w-full rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-colors hover:bg-lyp-deep-red disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Access Intake Form
+        </Link>
       </div>
     );
   }
@@ -302,10 +310,7 @@ function PaymentForm({ proposalId }: { proposalId: string }) {
             value={cardholderName}
             onChange={(e) => setCardholderName(e.target.value)}
             placeholder="Name on card"
-            className="w-full rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3.5
-                       font-body text-sm text-lyp-white placeholder:text-lyp-white/30
-                       focus:border-lyp-cherry focus:outline-none focus:ring-1 focus:ring-lyp-cherry
-                       transition-colors"
+            className="w-full rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3.5 font-body text-sm text-lyp-white placeholder:text-lyp-white/30 focus:border-lyp-cherry focus:outline-none focus:ring-1 focus:ring-lyp-cherry transition-colors"
             disabled={stage === "processing"}
             autoComplete="off"
           />
@@ -323,10 +328,7 @@ function PaymentForm({ proposalId }: { proposalId: string }) {
               value={cardNumber}
               onChange={handleCardNumberChange}
               placeholder="1234 5678 9012 3456"
-              className="w-full rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3.5
-                         font-body text-sm text-lyp-white placeholder:text-lyp-white/30
-                         focus:border-lyp-cherry focus:outline-none focus:ring-1 focus:ring-lyp-cherry
-                         transition-colors pr-16"
+              className="w-full rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3.5 font-body text-sm text-lyp-white placeholder:text-lyp-white/30 focus:border-lyp-cherry focus:outline-none focus:ring-1 focus:ring-lyp-cherry transition-colors pr-16"
               disabled={stage === "processing"}
               autoComplete="off"
             />
@@ -390,8 +392,7 @@ function PaymentForm({ proposalId }: { proposalId: string }) {
         <button
           type="submit"
           disabled={stage === "processing"}
-          className="w-full rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white
-                     transition-colors hover:bg-lyp-deep-red disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-colors hover:bg-lyp-deep-red disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {stage === "processing" ? (
             <span className="flex items-center justify-center gap-3">

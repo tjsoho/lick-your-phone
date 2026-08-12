@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
-import type { FieldProps } from "./types"
+import type { FieldProps } from "./types";
 
 export default function CheckboxField({
   question,
   value,
   onChange,
 }: FieldProps) {
-  const options = (question.options as string[]) ?? []
-  const selected = (value as string[]) ?? []
+  const options = (question.options as string[]) ?? [];
+  const selected = (value as string[]) ?? [];
 
   function toggle(opt: string) {
     if (selected.includes(opt)) {
-      onChange(selected.filter((s) => s !== opt))
+      onChange(selected.filter((s) => s !== opt));
     } else {
-      onChange([...selected, opt])
+      onChange([...selected, opt]);
     }
   }
 
   return (
     <div className="space-y-2">
       <label className="block font-body text-sm text-lyp-white/80">
-        {question.fieldLabel}
+        {question.field_label}
         {question.required && <span className="text-lyp-cherry ml-1">*</span>}
       </label>
       <div className="space-y-2">
@@ -41,5 +41,5 @@ export default function CheckboxField({
         ))}
       </div>
     </div>
-  )
+  );
 }

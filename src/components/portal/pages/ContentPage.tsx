@@ -9,7 +9,7 @@ interface ContentPageProps {
 }
 
 export default function ContentPage({ page }: ContentPageProps) {
-  const { proposal, paymentCaptured, pages, setCurrentPage } = useProposal();
+  const { proposal, pages, setCurrentPage } = useProposal();
   const slug = page.slug;
 
   if (slug === "cover") {

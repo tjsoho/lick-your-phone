@@ -108,7 +108,7 @@ export default function ServiceTiersSection({
         </div>
       ) : tiers.length === 0 ? (
         <div className="text-center py-6 text-gray-500 font-body text-sm border border-dashed border-gray-200 rounded-md">
-          No tiers created yet. Click "Add Tier" to create one.
+          No tiers created yet. &quot;Click Add Tier&quot; to create one.
         </div>
       ) : (
         <div className="overflow-x-auto">

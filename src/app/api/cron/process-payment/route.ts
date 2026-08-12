@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/server";
 import { schedulePayment } from "@/lib/pinch";
 
-export async function GET(req: Request) {
+export async function GET() {
   const supabase = await createAdminClient();
   const todayStr = new Date().toISOString().split("T")[0];
   console.log("CRON: Processing payment schedules for date:", todayStr);

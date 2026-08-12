@@ -3,7 +3,10 @@
 import { createClient } from "@/utils/server";
 import { revalidatePath } from "next/cache";
 
-export async function getServices() {
+export async function getServices(): Promise<{
+  data: Service[];
+  error: string | null;
+}> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -14,7 +17,7 @@ export async function getServices() {
     if (error) throw error;
     return { data, error: null };
   } catch (error) {
-    return { data: null, error: (error as Error).message };
+    return { data: [], error: (error as Error).message };
   }
 }
 
@@ -24,7 +27,7 @@ export async function getService(slug: string) {
     const { data, error } = await supabase
       .from("services")
       .select(
-        "*, service_tiers(*), service_inclusions(*), service_client_obligations(*)"
+        "*, service_tiers(*), service_inclusions(*), service_client_obligations(*)",
       )
       .eq("slug", slug)
       .single();
@@ -79,7 +82,7 @@ export async function updateService(
     price_display_period?: string;
     requires_other_service?: boolean;
     sequence?: number;
-  }
+  },
 ) {
   try {
     const supabase = await createClient();
@@ -113,7 +116,7 @@ export async function deleteService(id: string) {
 
 export async function updateServiceInclusions(
   serviceId: string,
-  inclusions: { text: string; sequence: number }[]
+  inclusions: { text: string; sequence: number }[],
 ) {
   try {
     const supabase = await createClient();
@@ -133,7 +136,7 @@ export async function updateServiceInclusions(
             service_id: serviceId,
             text: i.text,
             sequence: i.sequence,
-          }))
+          })),
         );
 
       if (insertError) throw insertError;
@@ -148,7 +151,7 @@ export async function updateServiceInclusions(
 
 export async function updateServiceObligations(
   serviceId: string,
-  obligations: { text: string; sequence: number }[]
+  obligations: { text: string; sequence: number }[],
 ) {
   try {
     const supabase = await createClient();
@@ -168,7 +171,7 @@ export async function updateServiceObligations(
             service_id: serviceId,
             text: o.text,
             sequence: o.sequence,
-          }))
+          })),
         );
 
       if (insertError) throw insertError;

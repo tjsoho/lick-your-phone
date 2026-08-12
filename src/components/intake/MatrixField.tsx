@@ -1,15 +1,18 @@
-"use client"
+"use client";
 
-import type { FieldProps } from "./types"
+import type { FieldProps } from "./types";
 
 interface MatrixConfig {
-  rows: string[]
-  columns: string[]
+  rows: string[];
+  columns: string[];
 }
 
 export default function MatrixField({ question, value, onChange }: FieldProps) {
-  const config = (question.config as MatrixConfig) ?? { rows: [], columns: [] }
-  const matrix = (value as Record<string, Record<string, string>>) ?? {}
+  const config = (question.config as unknown as MatrixConfig) ?? {
+    rows: [],
+    columns: [],
+  };
+  const matrix = (value as Record<string, Record<string, string>>) ?? {};
 
   function handleChange(row: string, col: string, val: string) {
     const next = {
@@ -18,14 +21,14 @@ export default function MatrixField({ question, value, onChange }: FieldProps) {
         ...(matrix[row] ?? {}),
         [col]: val,
       },
-    }
-    onChange(next)
+    };
+    onChange(next);
   }
 
   return (
     <div className="space-y-2">
       <label className="block font-body text-sm text-lyp-white/80">
-        {question.fieldLabel}
+        {question.field_label}
         {question.required && <span className="text-lyp-cherry ml-1">*</span>}
       </label>
       <div className="overflow-x-auto">
@@ -54,9 +57,7 @@ export default function MatrixField({ question, value, onChange }: FieldProps) {
                     <input
                       type="text"
                       value={matrix[row]?.[col] ?? ""}
-                      onChange={(e) =>
-                        handleChange(row, col, e.target.value)
-                      }
+                      onChange={(e) => handleChange(row, col, e.target.value)}
                       className="w-full min-w-[100px] rounded border border-lyp-white/20 bg-lyp-white/5 px-3 py-2 font-body text-sm text-lyp-white placeholder-lyp-white/30 outline-none focus:border-lyp-cherry"
                       placeholder="—"
                     />
@@ -68,5 +69,5 @@ export default function MatrixField({ question, value, onChange }: FieldProps) {
         </table>
       </div>
     </div>
-  )
+  );
 }

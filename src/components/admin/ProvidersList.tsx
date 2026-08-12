@@ -7,17 +7,6 @@ import { Plus, Pencil, Camera, Video } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatCents } from "@/lib/format";
 
-interface Provider {
-  id: string;
-  name: string;
-  type: "photographer" | "videographer" | null;
-  description: string | null;
-  portfolio_url: string | null;
-  price_cents: number | null;
-  image_url: string | null;
-  provider_states: { states: { id: string; code: string; name: string } }[];
-}
-
 interface State {
   id: string;
   code: string;

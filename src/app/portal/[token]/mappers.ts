@@ -1,6 +1,5 @@
 import type {
   PageData,
-  Service,
   ContentBlock,
 } from "@/components/portal/ProposalContext";
 
@@ -24,47 +23,39 @@ export function mapPages(raw: any[]): PageData[] {
   }));
 }
 
-export function mapServices(raw: any[]): Service[] {
+export function mapServices(
+  raw: any[],
+): ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers[] {
   return raw.map((s) => ({
     id: s.id,
     slug: s.slug,
     name: s.name,
     billing: s.billing as Service["billing"],
     term: s.term,
-    targetPriceCents: s.target_price_cents,
-    discountPct: s.discount_pct,
-    discountWindowHours: s.discount_window_hours,
-    priceDisplayPeriod: s.price_display_period,
-    requiresOtherService: s.requires_other_service ?? false,
+    target_price_cents: s.target_price_cents,
+    discount_pct: s.discount_pct,
+    discount_window_hours: s.discount_window_hours,
+    price_display_period: s.price_display_period,
+    requires_other_service: s.requires_other_service ?? false,
     sequence: s.sequence,
-    tiers: cast<{
-      id: string;
-      slug: string;
-      name: string;
-      target_price_cents: number;
-      sequence: number;
-      billing_cycle_months: number;
-    }>(s.service_tiers)
-      .map((t) => ({
-        id: t.id,
-        slug: t.slug,
-        name: t.name,
-        targetPriceCents: t.target_price_cents,
-        sequence: t.sequence,
-        billingCycleMonths: t.billing_cycle_months,
-      }))
+    tiers: cast<ServiceTier>(s.service_tiers)
+      .map(
+        (t): ServiceTier => ({
+          id: t.id,
+          slug: t.slug,
+          name: t.name,
+          target_price_cents: t.target_price_cents,
+          sequence: t.sequence,
+          billing_cycle_months: t.billing_cycle_months,
+          service_id: s.id,
+        }),
+      )
       .sort(bySeq),
-    inclusions: cast<{ id: string; text: string; sequence: number | null }>(
-      s.service_inclusions,
+    inclusions: cast<ServiceInclusion>(s.service_inclusions).sort(bySeq),
+    client_obligations: cast<ServiceObligation>(
+      s.service_client_obligations,
     ).sort(bySeq),
-    clientObligations: cast<{
-      id: string;
-      text: string;
-      sequence: number | null;
-    }>(s.service_client_obligations).sort(bySeq),
-    disclaimers: cast<{ id: string; text: string; sequence: number | null }>(
-      s.service_disclaimers,
-    ).sort(bySeq),
-    billingCycleMonths: s.billing_cycle_months,
+    disclaimers: cast<ServiceDisclaimer>(s.service_disclaimers).sort(bySeq),
+    billing_cycle_months: s.billing_cycle_months,
   }));
 }

@@ -84,46 +84,35 @@ export default async function ServicesPage() {
           </thead>
           <tbody>
             {services && services.length > 0 ? (
-              services.map(
-                (service: {
-                  id: string;
-                  slug: string;
-                  name: string;
-                  billing: string;
-                  target_price_cents?: number;
-                  discount_pct?: number;
-                  sequence?: number;
-                  service_tiers?: { target_price_cents: number }[];
-                }) => (
-                  <tr
-                    key={service.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/admin/services/${service.slug}`}
-                        className="text-lyp-cherry font-body text-sm hover:underline"
-                      >
-                        {service.name}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 font-body text-sm text-gray-700">
-                      {getBillingLabel(service.billing)}
-                    </td>
-                    <td className="px-4 py-3 font-body text-sm text-gray-700">
-                      {getPrice(service)}
-                    </td>
-                    <td className="px-4 py-3 font-body text-sm text-gray-700">
-                      {service.discount_pct != null
-                        ? `${Math.round(service.discount_pct * 100)}%`
-                        : "—"}
-                    </td>
-                    <td className="px-4 py-3 font-body text-sm text-gray-700">
-                      {service.sequence ?? "—"}
-                    </td>
-                  </tr>
-                ),
-              )
+              services.map((service) => (
+                <tr
+                  key={service.id}
+                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/admin/services/${service.slug}`}
+                      className="text-lyp-cherry font-body text-sm hover:underline"
+                    >
+                      {service.name}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 font-body text-sm text-gray-700">
+                    {getBillingLabel(service.billing)}
+                  </td>
+                  <td className="px-4 py-3 font-body text-sm text-gray-700">
+                    {getPrice(service)}
+                  </td>
+                  <td className="px-4 py-3 font-body text-sm text-gray-700">
+                    {service.discount_pct != null
+                      ? `${Math.round(service.discount_pct * 100)}%`
+                      : "—"}
+                  </td>
+                  <td className="px-4 py-3 font-body text-sm text-gray-700">
+                    {service.sequence ?? "—"}
+                  </td>
+                </tr>
+              ))
             ) : (
               <tr>
                 <td

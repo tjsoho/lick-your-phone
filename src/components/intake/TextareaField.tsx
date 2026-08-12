@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import type { FieldProps } from "./types"
+import type { FieldProps } from "./types";
 
 export default function TextareaField({
   question,
@@ -10,7 +10,7 @@ export default function TextareaField({
   return (
     <div className="space-y-2">
       <label className="block font-body text-sm text-lyp-white/80">
-        {question.fieldLabel}
+        {question.field_label}
         {question.required && <span className="text-lyp-cherry ml-1">*</span>}
       </label>
       <textarea
@@ -24,5 +24,5 @@ export default function TextareaField({
         }
       />
     </div>
-  )
+  );
 }

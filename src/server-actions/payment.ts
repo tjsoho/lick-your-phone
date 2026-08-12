@@ -125,7 +125,7 @@ export async function capturePaymentDetails(
       idempotency_key: string;
       description: string;
       retry_count: number;
-      metadata?: Record<string, any>;
+      metadata?: Record<string, unknown>;
     }> = [];
 
     // Determine campaign start date (use proposal signed_at + 14 days as default)
@@ -280,18 +280,24 @@ export async function resedNotificationForPayment(proposalId: string) {
     }
 
     const totalAmount = payment.payment_schedules.reduce(
-      (sum: number, s: any) => sum + s.amount_cents,
+      (sum: number, s: { amount_cents: number }) => sum + s.amount_cents,
       0,
     );
 
     const payload = {
       amount: totalAmount,
       paymentId: payment.id,
-      paymentSchedules: payment.payment_schedules.map((s: any) => ({
-        date: s.scheduled_date,
-        description: s.description,
-        amount: s.amount_cents,
-      })),
+      paymentSchedules: payment.payment_schedules.map(
+        (s: {
+          scheduled_date: Date;
+          description: string;
+          amount_cents: number;
+        }) => ({
+          date: s.scheduled_date,
+          description: s.description,
+          amount: s.amount_cents,
+        }),
+      ),
       client: {
         clientName: proposal.clients?.name || "",
         clientEmail: proposal.signer_email || "",

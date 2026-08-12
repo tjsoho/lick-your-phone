@@ -1,35 +1,38 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import type { FieldProps } from "./types"
+import { useState } from "react";
+import type { FieldProps } from "./types";
 
 interface PhoneValue {
-  countryCode: string
-  number: string
+  countryCode: string;
+  number: string;
 }
 
 export default function PhoneField({ question, value, onChange }: FieldProps) {
-  const phoneVal = (value as PhoneValue) ?? { countryCode: "+61", number: "" }
-  const [error, setError] = useState("")
+  const phoneVal = (value as PhoneValue) ?? { countryCode: "+61", number: "" };
+  const [error, setError] = useState("");
 
   function handleChange(field: keyof PhoneValue, val: string) {
-    const next = { ...phoneVal, [field]: val }
-    onChange(next)
-    if (error) setError("")
+    const next = { ...phoneVal, [field]: val };
+    onChange(next);
+    if (error) setError("");
   }
 
   function validate() {
-    if (phoneVal.number && !/^\d{6,15}$/.test(phoneVal.number.replace(/\s/g, ""))) {
-      setError("Please enter a valid phone number")
+    if (
+      phoneVal.number &&
+      !/^\d{6,15}$/.test(phoneVal.number.replace(/\s/g, ""))
+    ) {
+      setError("Please enter a valid phone number");
     } else {
-      setError("")
+      setError("");
     }
   }
 
   return (
     <div className="space-y-2">
       <label className="block font-body text-sm text-lyp-white/80">
-        {question.fieldLabel}
+        {question.field_label}
         {question.required && <span className="text-lyp-cherry ml-1">*</span>}
       </label>
       <div className="flex gap-2">
@@ -50,9 +53,7 @@ export default function PhoneField({ question, value, onChange }: FieldProps) {
           placeholder="0400 000 000"
         />
       </div>
-      {error && (
-        <p className="font-body text-xs text-lyp-cherry">{error}</p>
-      )}
+      {error && <p className="font-body text-xs text-lyp-cherry">{error}</p>}
     </div>
-  )
+  );
 }

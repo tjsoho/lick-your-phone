@@ -17,7 +17,13 @@ export async function createClient() {
           cookiesToSet: {
             name: string;
             value: string;
-            options: any;
+            options: {
+              path?: string;
+              domain?: string;
+              secure?: boolean;
+              httpOnly?: boolean;
+              maxAge?: number;
+            };
           }[],
         ) {
           try {

@@ -3,28 +3,6 @@
 import { createClient, createAdminClient } from "@/utils/server";
 import { revalidatePath } from "next/cache";
 
-export type IntakeConditionInput = {
-  id?: string;
-  condition_type: "service_signed" | "answer_equals" | "venue_state";
-  condition_service_id?: string | null;
-  condition_state_id?: string | null;
-  condition_question_id?: string | null;
-  condition_value?: string | null;
-};
-
-export type IntakeQuestionInput = {
-  id?: string;
-  page_number: number;
-  section?: string | null;
-  field_label: string;
-  field_type: string;
-  options?: any;
-  required?: boolean;
-  sequence: number;
-  config?: any;
-  conditions: IntakeConditionInput[];
-};
-
 export async function getQuestions() {
   try {
     const supabase = await createClient();
@@ -81,8 +59,8 @@ export async function upsertQuestion(input: IntakeQuestionInput) {
       if (deleteError) throw deleteError;
     }
 
-    if (input.conditions && input.conditions.length > 0) {
-      const conditionsToInsert = input.conditions.map((c) => ({
+    if (input.intake_conditions && input.intake_conditions.length > 0) {
+      const conditionsToInsert = input.intake_conditions.map((c) => ({
         question_id: question.id,
         condition_type: c.condition_type,
         condition_service_id: c.condition_service_id || null,

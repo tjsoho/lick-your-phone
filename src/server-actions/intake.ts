@@ -4,40 +4,8 @@ import { createClient, createAdminClient } from "@/utils/server";
 import { revalidatePath } from "next/cache";
 import { onIntakeCompleted } from "@/lib/integrations";
 
-export interface IntakeQuestion {
-  id: string;
-  pageNumber: number;
-  section: string | null;
-  fieldLabel: string;
-  fieldType: string;
-  options: unknown;
-  required: boolean;
-  sequence: number;
-  config: unknown;
-  conditions: IntakeCondition[];
-}
-
-export interface IntakeCondition {
-  id: string;
-  conditionType: string;
-  conditionServiceId: string | null;
-  conditionStateId: string | null;
-  conditionQuestionId: string | null;
-  conditionValue: string | null;
-}
-
-export interface Provider {
-  id: string;
-  name: string;
-  type: string | null;
-  description: string | null;
-  portfolioUrl: string | null;
-  priceCents: number;
-  imageUrl: string | null;
-}
-
 export async function getIntakeQuestions(): Promise<{
-  data: IntakeQuestion[] | null;
+  data: IntakeQuestionWithConditions[];
   error: string | null;
 }> {
   try {
@@ -70,38 +38,9 @@ export async function getIntakeQuestions(): Promise<{
 
     if (error) throw error;
 
-    const questions: IntakeQuestion[] = (data ?? []).map((q) => ({
-      id: q.id,
-      pageNumber: q.page_number,
-      section: q.section,
-      fieldLabel: q.field_label,
-      fieldType: q.field_type ?? "text",
-      options: q.options,
-      required: q.required ?? false,
-      sequence: q.sequence,
-      config: q.config,
-      conditions: (
-        (q.intake_conditions as unknown as Array<{
-          id: string;
-          condition_type: string;
-          condition_service_id: string | null;
-          condition_state_id: string | null;
-          condition_question_id: string | null;
-          condition_value: string | null;
-        }>) ?? []
-      ).map((c) => ({
-        id: c.id,
-        conditionType: c.condition_type,
-        conditionServiceId: c.condition_service_id,
-        conditionStateId: c.condition_state_id,
-        conditionQuestionId: c.condition_question_id,
-        conditionValue: c.condition_value,
-      })),
-    }));
-
-    return { data: questions, error: null };
+    return { data: data, error: null };
   } catch (error) {
-    return { data: null, error: (error as Error).message };
+    return { data: [], error: (error as Error).message };
   }
 }
 
@@ -122,7 +61,7 @@ export async function getProvidersByState(stateId: string): Promise<{
         portfolio_url,
         price_cents,
         image_url,
-        provider_states!inner ( state_id )
+        provider_states!inner ( state_id, code, name )
       `,
       )
       .eq("provider_states.state_id", stateId)
@@ -135,9 +74,16 @@ export async function getProvidersByState(stateId: string): Promise<{
       name: p.name,
       type: p.type,
       description: p.description,
-      portfolioUrl: p.portfolio_url,
-      priceCents: p.price_cents ?? 0,
-      imageUrl: p.image_url,
+      portfolio_url: p.portfolio_url,
+      price_cents: p.price_cents ?? 0,
+      image_url: p.image_url,
+      provider_states: p.provider_states.map((ps) => ({
+        states: {
+          id: ps.state_id,
+          code: ps.code,
+          name: ps.name,
+        },
+      })),
     }));
 
     return { data: providers, error: null };
@@ -162,7 +108,8 @@ export async function getAllProviders(): Promise<{
         description,
         portfolio_url,
         price_cents,
-        image_url
+        image_url,
+        provider_states!inner ( state_id, code, name )
       `,
       )
       .order("name");
@@ -174,9 +121,16 @@ export async function getAllProviders(): Promise<{
       name: p.name,
       type: p.type,
       description: p.description,
-      portfolioUrl: p.portfolio_url,
-      priceCents: p.price_cents ?? 0,
-      imageUrl: p.image_url,
+      portfolio_url: p.portfolio_url,
+      price_cents: p.price_cents ?? 0,
+      image_url: p.image_url,
+      provider_states: p.provider_states.map((ps) => ({
+        states: {
+          id: ps.state_id,
+          code: ps.code,
+          name: ps.name,
+        },
+      })),
     }));
 
     return { data: providers, error: null };
