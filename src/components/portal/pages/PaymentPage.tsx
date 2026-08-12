@@ -90,7 +90,9 @@ export default function PaymentPage() {
     return <NoPaymentRequired />;
   }
 
-  return <PaymentForm proposalId={proposal.id} />;
+  return (
+    <PaymentForm proposalId={proposal.id} proposalToken={proposal.token} />
+  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -130,7 +132,13 @@ function NoPaymentRequired() {
 /*  Payment form                                                      */
 /* ------------------------------------------------------------------ */
 
-function PaymentForm({ proposalId }: { proposalId: string }) {
+function PaymentForm({
+  proposalId,
+  proposalToken,
+}: {
+  proposalId: string;
+  proposalToken: string;
+}) {
   const [stage, setStage] = useState<Stage>("form");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -276,8 +284,8 @@ function PaymentForm({ proposalId }: { proposalId: string }) {
         </p>
 
         <Link
-          href={`/intake/${proposalId}`}
-          className="w-full rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-colors hover:bg-lyp-deep-red disabled:opacity-50 disabled:cursor-not-allowed"
+          href={`/intake/${proposalToken}`}
+          className="block mt-6 w-fit rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-colors hover:bg-lyp-deep-red disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Access Intake Form
         </Link>
