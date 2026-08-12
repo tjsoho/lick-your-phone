@@ -17,7 +17,6 @@ export default function SendProposalButton({
   const isDraft = status === "draft";
 
   async function handleSend() {
-    if (!isDraft) return;
     setLoading(true);
 
     const res = await sendProposal(proposalId);
