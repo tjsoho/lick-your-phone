@@ -52,8 +52,11 @@ interface ProposalContextValue {
   proposal: ProposalData;
   updateProposal: (updates: Partial<ProposalData>) => void;
   pages: PageData[];
-  services: Service[];
-  serviceMap: Record<string, Service>;
+  services: ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers[];
+  serviceMap: Record<
+    string,
+    ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers
+  >;
 
   currentPage: number;
   setCurrentPage: (i: number) => void;
@@ -107,7 +110,7 @@ function monthlyTarget(service: Service, tierTarget: number): number {
 interface ProviderProps {
   proposal: ProposalData;
   pages: PageData[];
-  services: Service[];
+  services: ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers[];
   initialSelections?: Selection[];
   paymentCaptured?: boolean;
   children: ReactNode;
@@ -237,7 +240,7 @@ export function ProposalProvider({
 
       let target: number;
       if (sel.tierId) {
-        const tier = svc.tiers.find((t) => t.id === sel.tierId);
+        const tier = svc.service_tiers.find((t) => t.id === sel.tierId);
         target = tier ? tier.target_price_cents : svc.target_price_cents;
       } else {
         target = svc.target_price_cents;

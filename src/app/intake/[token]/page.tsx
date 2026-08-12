@@ -4,6 +4,7 @@ import { ProposalProvider } from "@/components/portal/ProposalContext";
 import type { ProposalData } from "@/components/portal/ProposalContext";
 import { getIntakeQuestions } from "@/server-actions/intake";
 import { getServices } from "@/server-actions/services";
+import { getProposalLineItems } from "@/server-actions/proposals";
 
 export const dynamic = "force-dynamic";
 
@@ -74,10 +75,7 @@ export default async function IntakeRoutePage({ params }: Props) {
     venueName: venueObj?.name ?? "Venue",
   };
 
-  const { data: signedSelections } = await supabase
-    .from("proposal_line_items")
-    .select("proposal_id, service_id, service_tier_id")
-    .eq("proposal_id", proposal.id);
+  const { data: signedSelections } = await getProposalLineItems(proposal.id);
 
   const selections = (signedSelections ?? []).map((s) => ({
     serviceId: s.service_id,
@@ -85,7 +83,31 @@ export default async function IntakeRoutePage({ params }: Props) {
   }));
 
   // 3. Fetch services (needed for condition evaluation)
-  const { data: services } = await getServices();
+  const { data: services, error: servicesError } =
+    await getServices<ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers>(
+      `id, slug, name, billing, term, target_price_cents,
+       discount_pct, discount_window_hours, price_display_period,
+       requires_other_service, sequence, billing_cycle_months,
+       service_tiers ( id, slug, name, target_price_cents, sequence, billing_cycle_months ),
+       service_inclusions ( id, text, sequence ),
+       service_client_obligations ( id, text, sequence ),
+       service_disclaimers ( id, text, sequence )`,
+    );
+
+  if (servicesError || !services || services.length === 0) {
+    console.error("Error loading services:", servicesError);
+    return (
+      <div className="flex h-dvh flex-col items-center justify-center bg-lyp-black px-6 text-center">
+        <h1 className="font-heading text-4xl text-lyp-cherry mb-4">
+          Error Loading Services
+        </h1>
+        <p className="font-body text-lyp-white/60 max-w-sm">
+          There was an error loading the services for this proposal. Please
+          contact your account manager for assistance.
+        </p>
+      </div>
+    );
+  }
 
   // 4. Fetch intake questions with conditions
   const { data: intakeQuestions } = await getIntakeQuestions();

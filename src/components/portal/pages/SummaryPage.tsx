@@ -44,7 +44,7 @@ export default function SummaryPage() {
       let tierName: string | null = null;
 
       if (sel.tierId) {
-        const tier = svc.tiers.find((t) => t.id === sel.tierId);
+        const tier = svc.service_tiers.find((t) => t.id === sel.tierId);
         targetCents = tier ? tier.target_price_cents : svc.target_price_cents;
         tierName = tier?.name ?? null;
       } else {
@@ -62,7 +62,8 @@ export default function SummaryPage() {
       let billingCycleMonths = 1;
       if (svc.billing === "recurring_monthly") {
         const tierCycle = sel.tierId
-          ? svc.tiers.find((t) => t.id === sel.tierId)?.billing_cycle_months
+          ? svc.service_tiers.find((t) => t.id === sel.tierId)
+              ?.billing_cycle_months
           : null;
 
         billingCycleMonths = tierCycle ?? svc.billing_cycle_months ?? 1;

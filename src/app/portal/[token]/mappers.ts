@@ -38,7 +38,7 @@ export function mapServices(
     price_display_period: s.price_display_period,
     requires_other_service: s.requires_other_service ?? false,
     sequence: s.sequence,
-    tiers: cast<ServiceTier>(s.service_tiers)
+    service_tiers: cast<ServiceTier>(s.service_tiers)
       .map(
         (t): ServiceTier => ({
           id: t.id,

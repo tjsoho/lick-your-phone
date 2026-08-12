@@ -20,10 +20,6 @@ declare interface Service {
   price_display_period: string | null;
   requires_other_service: boolean;
   sequence: number;
-  tiers: ServiceTier[];
-  inclusions: ServiceInclusion[];
-  client_obligations: ServiceObligation[];
-  disclaimers: ServiceDisclaimer[];
   billing_cycle_months: number;
 }
 
@@ -45,8 +41,12 @@ declare interface ServiceDisclaimer {
   sequence: number | null;
 }
 
+declare interface ServiceWithTiers extends Service {
+  service_tiers: ServiceTier[];
+}
+
 declare interface ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers extends Service {
-  tiers: ServiceTier[];
+  service_tiers: ServiceTier[];
   inclusions: ServiceInclusion[];
   client_obligations: ServiceObligation[];
   disclaimers: ServiceDisclaimer[];

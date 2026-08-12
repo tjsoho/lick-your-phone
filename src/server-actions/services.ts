@@ -3,19 +3,21 @@
 import { createClient } from "@/utils/server";
 import { revalidatePath } from "next/cache";
 
-export async function getServices(): Promise<{
-  data: Service[];
+export async function getServices<T = ServiceWithTiers>(
+  selectQuery = "*, service_tiers(*)",
+): Promise<{
+  data: T[];
   error: string | null;
 }> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("services")
-      .select("*, service_tiers(*)")
+      .select(selectQuery)
       .order("sequence");
 
     if (error) throw error;
-    return { data, error: null };
+    return { data: data as T[], error: null };
   } catch (error) {
     return { data: [], error: (error as Error).message };
   }

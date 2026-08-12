@@ -23,7 +23,7 @@ function listFromTarget(
 }
 
 interface ServicePageProps {
-  service: Service;
+  service: ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers;
 }
 
 export default function ServicePage({ service }: ServicePageProps) {
@@ -40,7 +40,7 @@ export default function ServicePage({ service }: ServicePageProps) {
 
   const selected = isSelected(service.id);
   const currentTierId = selectedTierId(service.id);
-  const hasTiers = service.tiers.length > 0;
+  const hasTiers = service.service_tiers.length > 0;
   const isInKind = service.billing === "in_kind";
 
   const hasOtherSelected = selections.some((sel) => {
@@ -156,7 +156,7 @@ export default function ServicePage({ service }: ServicePageProps) {
                 </p>
               ) : hasTiers ? (
                 <div className="space-y-3 mt-4">
-                  {service.tiers
+                  {service.service_tiers
                     .sort((a, b) => a.sequence - b.sequence)
                     .map((tier) => {
                       const tierList = listFromTarget(

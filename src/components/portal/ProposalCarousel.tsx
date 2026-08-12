@@ -132,7 +132,7 @@ function CarouselInner() {
 export interface ProposalCarouselProps {
   proposal: ProposalData;
   pages: PageData[];
-  services: Service[];
+  services: ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers[];
   savedSelections?: Selection[] | null;
   paymentCaptured?: boolean;
 }

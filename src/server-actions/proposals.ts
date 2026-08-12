@@ -342,3 +342,25 @@ export async function supersedeProposal(
     return { data: null, error: (error as Error).message };
   }
 }
+
+export async function getProposalLineItems<T extends ProposalLineItem>(
+  proposalId: string,
+  selectQuery = "*",
+): Promise<{
+  data: T[];
+  error: string | null;
+}> {
+  try {
+    const supabase = await createClient();
+    const { data: proposalLineItems, error } = await supabase
+      .from("proposal_line_items")
+      .select(selectQuery)
+      .eq("proposal_id", proposalId);
+
+    if (error) throw error;
+
+    return { data: proposalLineItems as unknown as T[], error: null };
+  } catch (error) {
+    return { data: [], error: (error as Error).message };
+  }
+}
