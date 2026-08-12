@@ -34,16 +34,14 @@ export default function SendProposalButton({
   return (
     <button
       type="button"
-      title={isDraft ? "Send proposal link" : "Proposal already sent"}
+      title={isDraft ? "Send proposal link" : "Resend proposal link"}
       onClick={handleSend}
-      disabled={loading || !isDraft}
+      disabled={loading}
       className="disabled:opacity-50 disabled:cursor-not-allowed"
     >
       <SendIcon
         className={
-          isDraft
-            ? "h-4 w-4 text-gray-500 hover:text-blue-600 transition-colors"
-            : "h-4 w-4 text-gray-300"
+          "h-4 w-4 text-gray-500 hover:text-blue-600 transition-colors"
         }
       />
     </button>
