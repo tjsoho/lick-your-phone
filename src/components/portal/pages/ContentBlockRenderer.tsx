@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ContentBlock } from "../ProposalContext";
 
 export default function ContentBlockRenderer({
@@ -50,12 +51,13 @@ export default function ContentBlockRenderer({
               <div key={block.id} className="flex flex-wrap items-center gap-3">
                 {(block.content as { url: string; alt: string }[]).map(
                   (logo, i) => (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
+                    <Image
                       key={i}
                       src={logo.url}
                       alt={logo.alt || "Logo"}
                       className="h-16 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
+                      width={200}
+                      height={64}
                     />
                   ),
                 )}
@@ -66,10 +68,12 @@ export default function ContentBlockRenderer({
           if (block.type === "image" && typeof block.content === "string") {
             return (
               <div key={block.id} className="overflow-hidden rounded-2xl">
-                <img
+                <Image
                   src={block.content}
                   alt="Content image"
                   className="w-full h-auto object-cover aspect-[4/3] md:aspect-auto"
+                  width={800}
+                  height={600}
                 />
               </div>
             );

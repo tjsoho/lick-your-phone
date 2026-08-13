@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useProposal, type PageData } from "../ProposalContext";
 import ContentBlockRenderer from "./ContentBlockRenderer";
 import PaymentPage from "./PaymentPage";
@@ -77,10 +78,12 @@ export default function ContentPage({ page }: ContentPageProps) {
             <div className="lg:col-span-5 relative">
               {/* Opsi 'sticky' agar gambar tetap terlihat saat teks di-scroll (hapus 'sticky top-10' jika tidak suka efeknya) */}
               <div className="sticky top-10 overflow-hidden rounded-2xl border border-lyp-white/10 shadow-xl">
-                <img
+                <Image
                   src={page.featuredImage}
                   alt={page.title || "Page illustration"}
                   className="w-full h-auto object-cover aspect-[4/3] md:aspect-auto"
+                  width={800}
+                  height={600}
                 />
               </div>
             </div>
