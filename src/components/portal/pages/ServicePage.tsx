@@ -38,8 +38,6 @@ export default function ServicePage({ service, page }: ServicePageProps) {
     deselectService,
     selections,
     serviceMap,
-    pages,
-    currentPage,
   } = useProposal();
 
   const selected = isSelected(service.id);
