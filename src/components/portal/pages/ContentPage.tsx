@@ -1,6 +1,7 @@
 "use client";
 
 import { useProposal, type PageData } from "../ProposalContext";
+import ContentBlockRenderer from "./ContentBlockRenderer";
 import PaymentPage from "./PaymentPage";
 import SignaturePage from "./SignaturePage";
 
@@ -64,61 +65,27 @@ export default function ContentPage({ page }: ContentPageProps) {
             {page.title}
           </h1>
         )}
-        {page.contentBlocks.length > 0 ? (
-          <div className="space-y-5 max-w-4xl">
-            {page.contentBlocks
-              .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
-              .map((block) => {
-                if (block.type === "heading") {
-                  return (
-                    <h2
-                      key={block.id}
-                      className="font-heading text-2xl md:text-3xl text-lyp-white uppercase tracking-wide"
-                    >
-                      {String(block.content ?? "")}
-                    </h2>
-                  );
-                }
-                if (block.type === "paragraph") {
-                  return (
-                    <p
-                      key={block.id}
-                      className="font-body text-base text-lyp-white/85 leading-relaxed"
-                    >
-                      {String(block.content ?? "")}
-                    </p>
-                  );
-                }
-                if (block.type === "list" && Array.isArray(block.content)) {
-                  return (
-                    <ul key={block.id} className="space-y-2 pl-1">
-                      {(block.content as string[]).map((item, i) => (
-                        <li
-                          key={i}
-                          className="flex items-start gap-3 font-body text-base text-lyp-white/85"
-                        >
-                          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-lyp-cherry" />
-                          {item}
-                        </li>
-                      ))}
-                    </ul>
-                  );
-                }
-                return (
-                  <div
-                    key={block.id}
-                    className="font-body text-base text-lyp-white/60"
-                  >
-                    {JSON.stringify(block.content)}
-                  </div>
-                );
-              })}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+          {/* Kiri: Konten Teks (mengambil 7 kolom) */}
+          <div className="lg:col-span-7">
+            <ContentBlockRenderer blocks={page.contentBlocks} />
           </div>
-        ) : (
-          <p className="font-body text-lyp-white/30 text-lg">
-            Content for this page is coming soon.
-          </p>
-        )}
+
+          {/* Kanan: Gambar (mengambil 5 kolom) */}
+          {page.featuredImage && (
+            <div className="lg:col-span-5 relative">
+              {/* Opsi 'sticky' agar gambar tetap terlihat saat teks di-scroll (hapus 'sticky top-10' jika tidak suka efeknya) */}
+              <div className="sticky top-10 overflow-hidden rounded-2xl border border-lyp-white/10 shadow-xl">
+                <img
+                  src={page.featuredImage}
+                  alt={page.title || "Page illustration"}
+                  className="w-full h-auto object-cover aspect-[4/3] md:aspect-auto"
+                />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -62,7 +62,7 @@ export default async function PortalPage({ params }: Props) {
   const { data: pagesRaw } = await supabase
     .from("pages")
     .select(
-      `id, type, slug, title, sequence, service_id,
+      `id, type, slug, title, sequence, service_id, featured_image, image_position,
        content_blocks ( id, type, content, sequence )`,
     )
     .eq("visible", true)

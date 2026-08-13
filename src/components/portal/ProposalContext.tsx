@@ -15,7 +15,7 @@ import {
 
 export interface ContentBlock {
   id: string;
-  type: "heading" | "paragraph" | "image" | "list" | "custom" | null;
+  type: "heading" | "paragraph" | "image" | "list" | "custom" | "logos" | null;
   content: unknown;
   sequence: number | null;
 }
@@ -27,6 +27,8 @@ export interface PageData {
   title: string | null;
   sequence: number;
   serviceId: string | null;
+  featuredImage: string | null;
+  imagePosition: "left" | "right" | null;
   contentBlocks: ContentBlock[];
 }
 

@@ -2,8 +2,9 @@
 
 import { Check, AlertCircle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { useProposal } from "../ProposalContext";
+import { PageData, useProposal } from "../ProposalContext";
 import { cn } from "@/lib/utils";
+import ContentBlockRenderer from "./ContentBlockRenderer";
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -24,9 +25,10 @@ function listFromTarget(
 
 interface ServicePageProps {
   service: ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers;
+  page: PageData;
 }
 
-export default function ServicePage({ service }: ServicePageProps) {
+export default function ServicePage({ service, page }: ServicePageProps) {
   const {
     proposal,
     isSelected,
@@ -36,6 +38,8 @@ export default function ServicePage({ service }: ServicePageProps) {
     deselectService,
     selections,
     serviceMap,
+    pages,
+    currentPage,
   } = useProposal();
 
   const selected = isSelected(service.id);
@@ -57,6 +61,8 @@ export default function ServicePage({ service }: ServicePageProps) {
   const periodLabel =
     service.price_display_period === "week" ? " per week" : " per month";
   const savingsCents = displayList - displayTarget;
+
+  console.log(page);
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -134,6 +140,8 @@ export default function ServicePage({ service }: ServicePageProps) {
                   ))}
               </div>
             )}
+
+            <ContentBlockRenderer blocks={page.contentBlocks} />
           </div>
 
           {/* Right: pricing + selection */}

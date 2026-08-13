@@ -43,6 +43,12 @@ export default async function IntakeRoutePage({ params }: Props) {
   );
 
   if (proposalError || !proposal || !paymentCaptured) {
+    console.error(
+      "Error loading proposal:",
+      proposalError,
+      proposal,
+      paymentCaptured,
+    );
     return (
       <div className="flex h-dvh flex-col items-center justify-center bg-lyp-black px-6 text-center">
         <h1 className="font-heading text-4xl text-lyp-cherry mb-4">

@@ -17,6 +17,8 @@ export function mapPages(raw: any[]): PageData[] {
     type: p.type as PageData["type"],
     slug: p.slug,
     title: p.title,
+    featuredImage: p.featured_image,
+    imagePosition: p.image_position as PageData["imagePosition"],
     sequence: p.sequence,
     serviceId: p.service_id,
     contentBlocks: cast<ContentBlock>(p.content_blocks).sort(bySeq),

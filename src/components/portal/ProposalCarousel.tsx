@@ -22,7 +22,7 @@ function PageRenderer({ page }: { page: PageData }) {
 
   if (page.type === "service" && page.serviceId) {
     const service = services.find((s) => s.id === page.serviceId);
-    if (service) return <ServicePage service={service} />;
+    if (service) return <ServicePage service={service} page={page} />;
   }
 
   if (page.slug === "summary") {
