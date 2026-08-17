@@ -8,7 +8,7 @@ export async function getClients() {
     const supabase = await createSupabaseClient();
     const { data, error } = await supabase
       .from("clients")
-      .select("*, venues(id, name)")
+      .select("*, venues(id, name, address, state_id)")
       .order("name");
 
     if (error) throw error;

@@ -7,16 +7,32 @@ import {
   supersedeProposal,
   updateProposal,
 } from "@/server-actions/proposals";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  ChevronDown,
+  Loader2,
+  MapPin,
+  Plus,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
+
+type Venue = {
+  id: string;
+  name: string;
+  address?: string | null;
+  state_id?: string | null;
+};
 
 type Client = {
   id: string;
   name: string;
   entity_name?: string;
   abn?: string;
-  venues: { id: string; name: string }[];
+  venues: Venue[];
 };
 
 type State = {
@@ -49,7 +65,35 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-const steps = ["Client", "Venue", "Notes", "Review"];
+const steps = ["Client", "Location", "Notes", "Review"];
+
+const EASE = "ease-[cubic-bezier(0.32,0.72,0,1)]";
+
+const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-3 font-body text-[14px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] hover:border-[#E2D2D2] focus:border-lyp-cherry/40 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`;
+
+const selectClasses = `${fieldClasses} appearance-none pr-11`;
+
+const labelClasses =
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+
+const primaryPill = `group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none`;
+
+const secondaryPill = `group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-5 pr-5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`;
+
+const pillIcon = `flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`;
+
+/** Native selects need their own chevron once appearance is stripped. */
+function SelectShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      {children}
+      <ChevronDown
+        strokeWidth={1.5}
+        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A89898]"
+      />
+    </div>
+  );
+}
 
 export default function ProposalWizard({
   clients,
@@ -73,17 +117,14 @@ export default function ProposalWizard({
   const [newClientEmail, setNewClientEmail] = useState("");
   const [createdClients, setCreatedClients] = useState<Client[]>([]);
 
-  // Venue state
+  // Location state
   const [selectedVenueId, setSelectedVenueId] = useState(
     initialData?.venueId ?? "",
   );
-  const [showNewVenue, setShowNewVenue] = useState(false);
   const [newVenueName, setNewVenueName] = useState("");
   const [newVenueAddress, setNewVenueAddress] = useState("");
   const [newVenueStateId, setNewVenueStateId] = useState("");
-  const [createdVenues, setCreatedVenues] = useState<
-    { id: string; name: string }[]
-  >([]);
+  const [createdVenues, setCreatedVenues] = useState<Venue[]>([]);
 
   // Notes
   const [notes, setNotes] = useState(initialData?.notes ?? "");
@@ -92,6 +133,9 @@ export default function ProposalWizard({
   const selectedClient = allClients.find((c) => c.id === selectedClientId);
   const allVenues = [...(selectedClient?.venues ?? []), ...createdVenues];
   const selectedVenue = allVenues.find((v) => v.id === selectedVenueId);
+  const selectedVenueState = states.find(
+    (s) => s.id === selectedVenue?.state_id,
+  );
 
   async function handleCreateClient() {
     if (!newClientName.trim()) {
@@ -121,12 +165,13 @@ export default function ProposalWizard({
       setNewClientAbn("");
       setNewClientEmail("");
       toast.success("Client created");
+      setStep(2);
     }
   }
 
   async function handleCreateVenue() {
     if (!newVenueName.trim()) {
-      toast.error("Venue name is required");
+      toast.error("Location name is required");
       return;
     }
     if (!newVenueStateId) {
@@ -146,13 +191,21 @@ export default function ProposalWizard({
       return;
     }
     if (data) {
-      setCreatedVenues((prev) => [...prev, { id: data.id, name: data.name }]);
+      setCreatedVenues((prev) => [
+        ...prev,
+        {
+          id: data.id,
+          name: data.name,
+          address: data.address,
+          state_id: data.state_id,
+        },
+      ]);
       setSelectedVenueId(data.id);
-      setShowNewVenue(false);
       setNewVenueName("");
       setNewVenueAddress("");
       setNewVenueStateId("");
-      toast.success("Venue created");
+      toast.success("Location created");
+      setStep(3);
     }
   }
 
@@ -197,7 +250,6 @@ export default function ProposalWizard({
       case 2:
         return !!selectedVenueId;
       case 3:
-        return true;
       case 4:
         return true;
       default:
@@ -213,7 +265,7 @@ export default function ProposalWizard({
         : "Review & Create";
 
   const submitLabel = loading
-    ? "Saving..."
+    ? "Saving"
     : mode === "edit"
       ? "Save Changes"
       : mode === "supersede"
@@ -221,343 +273,461 @@ export default function ProposalWizard({
         : "Create Proposal";
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6">
-      {/* Step indicators */}
-      <div className="flex items-center justify-center gap-3 mb-8">
+    <div className="animate-rise overflow-hidden rounded-3xl border border-[#EFE6E6] bg-lyp-white">
+      {/* ─────────────── Step rail ─────────────── */}
+      <div className="flex items-center justify-center gap-1.5 border-b border-[#F1E8E8] bg-[#FCFAFA] px-6 py-5 sm:gap-3">
         {steps.map((label, i) => {
           const stepNum = i + 1;
           const isActive = step === stepNum;
           const isCompleted = step > stepNum;
           return (
-            <div key={label} className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div
-                  className={cn(
-                    "w-8 h-8 rounded-full flex items-center justify-center text-sm font-heading font-bold",
-                    isActive && "bg-lyp-cherry text-white",
-                    isCompleted && "bg-green-500 text-white",
-                    !isActive && !isCompleted && "bg-gray-200 text-gray-500",
-                  )}
-                >
-                  {stepNum}
-                </div>
+            <div key={label} className="flex items-center gap-1.5 sm:gap-3">
+              <div className="flex items-center gap-2.5">
                 <span
                   className={cn(
-                    "font-body text-sm hidden sm:inline",
-                    isActive ? "text-lyp-black font-semibold" : "text-gray-500",
+                    "flex h-7 w-7 items-center justify-center rounded-full font-body text-[11px] font-semibold transition-all duration-500",
+                    EASE,
+                    isActive &&
+                      "bg-lyp-cherry text-lyp-white shadow-[0_6px_16px_-6px_rgba(178,38,38,0.6)]",
+                    isCompleted && "bg-lyp-cherry/10 text-lyp-cherry",
+                    !isActive && !isCompleted && "bg-[#F3ECEC] text-[#A89898]",
+                  )}
+                >
+                  {isCompleted ? (
+                    <Check strokeWidth={2} className="h-3.5 w-3.5" />
+                  ) : (
+                    stepNum
+                  )}
+                </span>
+                <span
+                  className={cn(
+                    "hidden font-body text-[11px] uppercase tracking-[0.18em] transition-colors duration-500 sm:inline",
+                    EASE,
+                    isActive
+                      ? "font-semibold text-lyp-black"
+                      : isCompleted
+                        ? "text-lyp-cherry/70"
+                        : "text-[#A89898]",
                   )}
                 >
                   {label}
                 </span>
               </div>
-              {i < steps.length - 1 && <div className="w-8 h-px bg-gray-300" />}
+              {i < steps.length - 1 && (
+                <span
+                  className={cn(
+                    "h-px w-4 transition-colors duration-500 sm:w-8",
+                    EASE,
+                    isCompleted ? "bg-lyp-cherry/25" : "bg-[#EFE6E6]",
+                  )}
+                />
+              )}
             </div>
           );
         })}
       </div>
 
-      {/* Step 1: Select Client */}
-      {step === 1 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-heading font-bold text-lyp-black">
-            Select Client
-          </h2>
-          {!showNewClient ? (
-            <>
-              <select
-                value={selectedClientId}
-                onChange={(e) => {
-                  setSelectedClientId(e.target.value);
-                  setSelectedVenueId("");
-                  setCreatedVenues([]);
-                }}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent"
-              >
-                <option value="">Choose a client...</option>
-                {allClients.map((client) => (
-                  <option key={client.id} value={client.id}>
-                    {client.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => setShowNewClient(true)}
-                className="text-lyp-cherry font-body text-sm hover:underline"
-              >
-                + Create New Client
-              </button>
-            </>
-          ) : (
-            <div className="border border-gray-200 rounded-md p-4 space-y-3">
-              <h3 className="font-heading text-sm font-semibold text-lyp-black">
-                New Client
-              </h3>
-              <div>
-                <label className="block font-body text-sm text-gray-700 mb-1">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={newClientName}
-                  onChange={(e) => setNewClientName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent"
-                  placeholder="Client name"
-                />
-              </div>
-              <div>
-                <label className="block font-body text-sm text-gray-700 mb-1">
-                  Email *
-                </label>
-                <input
-                  type="email"
-                  value={newClientEmail}
-                  onChange={(e) => setNewClientEmail(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent"
-                  placeholder="Email address"
-                />
-              </div>
-              <div>
-                <label className="block font-body text-sm text-gray-700 mb-1">
-                  Entity Name
-                </label>
-                <input
-                  type="text"
-                  value={newClientEntity}
-                  onChange={(e) => setNewClientEntity(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent"
-                  placeholder="Entity name"
-                />
-              </div>
-              <div>
-                <label className="block font-body text-sm text-gray-700 mb-1">
-                  ABN
-                </label>
-                <input
-                  type="text"
-                  value={newClientAbn}
-                  onChange={(e) => setNewClientAbn(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent"
-                  placeholder="ABN"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleCreateClient}
-                  disabled={loading}
-                  className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
-                >
-                  {loading ? "Creating..." : "Create Client"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowNewClient(false)}
-                  className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md font-body text-sm hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="px-6 py-8 sm:px-8">
+        {/* ─────────────── Step 1: Client ─────────────── */}
+        {step === 1 && (
+          <div>
+            <h2 className="font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
+              Select Client
+            </h2>
+            <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
+              Choose who this proposal is for, or add a new client.
+            </p>
 
-      {/* Step 2: Select Venue */}
-      {step === 2 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-heading font-bold text-lyp-black">
-            Select Venue
-          </h2>
-          <p className="font-body text-sm text-gray-500">
-            Client: {selectedClient?.name}
-          </p>
-          {!showNewVenue ? (
-            <>
-              <select
-                value={selectedVenueId}
-                onChange={(e) => setSelectedVenueId(e.target.value)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent"
-              >
-                <option value="">Choose a venue...</option>
-                {allVenues.map((venue) => (
-                  <option key={venue.id} value={venue.id}>
-                    {venue.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => setShowNewVenue(true)}
-                className="text-lyp-cherry font-body text-sm hover:underline"
-              >
-                + Create New Venue
-              </button>
-            </>
-          ) : (
-            <div className="border border-gray-200 rounded-md p-4 space-y-3">
-              <h3 className="font-heading text-sm font-semibold text-lyp-black">
-                New Venue
-              </h3>
-              <div>
-                <label className="block font-body text-sm text-gray-700 mb-1">
-                  Name *
-                </label>
-                <input
-                  type="text"
-                  value={newVenueName}
-                  onChange={(e) => setNewVenueName(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent"
-                  placeholder="Venue name"
-                />
-              </div>
-              <div>
-                <label className="block font-body text-sm text-gray-700 mb-1">
-                  Address
-                </label>
-                <input
-                  type="text"
-                  value={newVenueAddress}
-                  onChange={(e) => setNewVenueAddress(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent"
-                  placeholder="Street address"
-                />
-              </div>
-              <div>
-                <label className="block font-body text-sm text-gray-700 mb-1">
-                  State *
-                </label>
-                <select
-                  value={newVenueStateId}
-                  onChange={(e) => setNewVenueStateId(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent"
+            {!showNewClient ? (
+              <div className="mt-7 space-y-4">
+                <div>
+                  <label htmlFor="client" className={labelClasses}>
+                    Client
+                  </label>
+                  <SelectShell>
+                    <select
+                      id="client"
+                      value={selectedClientId}
+                      onChange={(e) => {
+                        setSelectedClientId(e.target.value);
+                        setSelectedVenueId("");
+                        setCreatedVenues([]);
+                      }}
+                      className={selectClasses}
+                    >
+                      <option value="">Choose a client…</option>
+                      {allClients.map((client) => (
+                        <option key={client.id} value={client.id}>
+                          {client.name}
+                        </option>
+                      ))}
+                    </select>
+                  </SelectShell>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowNewClient(true)}
+                  className={`group inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
                 >
-                  <option value="">Choose a state...</option>
-                  {states.map((state) => (
-                    <option key={state.id} value={state.id}>
-                      {state.name} ({state.abbreviation})
-                    </option>
-                  ))}
-                </select>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-lyp-cherry/[0.08]">
+                    <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
+                  </span>
+                  Create new client
+                </button>
               </div>
-              <div className="flex gap-2">
+            ) : (
+              <div className="mt-7 rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] p-5 sm:p-6">
+                <h3 className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
+                  New Client
+                </h3>
+
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <div className="sm:col-span-2">
+                    <label htmlFor="c-name" className={labelClasses}>
+                      Name *
+                    </label>
+                    <input
+                      id="c-name"
+                      type="text"
+                      value={newClientName}
+                      onChange={(e) => setNewClientName(e.target.value)}
+                      className={fieldClasses}
+                      placeholder="Client name"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label htmlFor="c-email" className={labelClasses}>
+                      Email *
+                    </label>
+                    <input
+                      id="c-email"
+                      type="email"
+                      value={newClientEmail}
+                      onChange={(e) => setNewClientEmail(e.target.value)}
+                      className={fieldClasses}
+                      placeholder="name@company.com"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="c-entity" className={labelClasses}>
+                      Entity Name
+                    </label>
+                    <input
+                      id="c-entity"
+                      type="text"
+                      value={newClientEntity}
+                      onChange={(e) => setNewClientEntity(e.target.value)}
+                      className={fieldClasses}
+                      placeholder="Entity name"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="c-abn" className={labelClasses}>
+                      ABN
+                    </label>
+                    <input
+                      id="c-abn"
+                      type="text"
+                      value={newClientAbn}
+                      onChange={(e) => setNewClientAbn(e.target.value)}
+                      className={fieldClasses}
+                      placeholder="ABN"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCreateClient}
+                    disabled={loading}
+                    className={primaryPill}
+                  >
+                    {loading ? "Creating" : "Create Client"}
+                    <span className={pillIcon}>
+                      {loading ? (
+                        <Loader2
+                          strokeWidth={1.5}
+                          className="h-4 w-4 animate-spin"
+                        />
+                      ) : (
+                        <ArrowRight strokeWidth={1.5} className="h-4 w-4" />
+                      )}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowNewClient(false)}
+                    className={secondaryPill}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ─────────────── Step 2: Location ─────────────── */}
+        {step === 2 && (
+          <div>
+            <h2 className="font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
+              Location
+            </h2>
+            <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
+              Where the work happens, for{" "}
+              <span className="font-semibold text-lyp-black">
+                {selectedClient?.name}
+              </span>
+              .
+            </p>
+
+            {/* Saved locations, when this client already has some */}
+            {allVenues.length > 0 && (
+              <div className="mt-7">
+                <p className={labelClasses}>Saved locations</p>
+                <div className="flex flex-wrap gap-2">
+                  {allVenues.map((venue) => {
+                    const isSelected = selectedVenueId === venue.id;
+                    return (
+                      <button
+                        key={venue.id}
+                        type="button"
+                        onClick={() =>
+                          setSelectedVenueId(isSelected ? "" : venue.id)
+                        }
+                        className={cn(
+                          "inline-flex items-center gap-2 rounded-full border px-4 py-2 font-body text-[13px] transition-all duration-500",
+                          EASE,
+                          isSelected
+                            ? "border-lyp-cherry/30 bg-lyp-cherry/[0.06] font-semibold text-lyp-cherry"
+                            : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/25 hover:text-lyp-black",
+                        )}
+                      >
+                        <MapPin strokeWidth={1.25} className="h-3.5 w-3.5" />
+                        {venue.name}
+                        {isSelected && (
+                          <Check strokeWidth={2} className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="mt-7 flex items-center gap-4">
+                  <span className="h-px flex-1 bg-[#F1E8E8]" />
+                  <span className="font-body text-[10px] uppercase tracking-[0.22em] text-[#C3B5B5]">
+                    Or add a new one
+                  </span>
+                  <span className="h-px flex-1 bg-[#F1E8E8]" />
+                </div>
+              </div>
+            )}
+
+            {/* The form is always available */}
+            <div className="mt-7 rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] p-5 sm:p-6">
+              <h3 className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
+                New Location
+              </h3>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label htmlFor="v-name" className={labelClasses}>
+                    Location Name *
+                  </label>
+                  <input
+                    id="v-name"
+                    type="text"
+                    value={newVenueName}
+                    onChange={(e) => setNewVenueName(e.target.value)}
+                    className={fieldClasses}
+                    placeholder="e.g. Riverside Ballroom"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label htmlFor="v-address" className={labelClasses}>
+                    Address
+                  </label>
+                  <input
+                    id="v-address"
+                    type="text"
+                    value={newVenueAddress}
+                    onChange={(e) => setNewVenueAddress(e.target.value)}
+                    className={fieldClasses}
+                    placeholder="Street address"
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label htmlFor="v-state" className={labelClasses}>
+                    State *
+                  </label>
+                  <SelectShell>
+                    <select
+                      id="v-state"
+                      value={newVenueStateId}
+                      onChange={(e) => setNewVenueStateId(e.target.value)}
+                      className={selectClasses}
+                    >
+                      <option value="">Choose a state…</option>
+                      {states.map((state) => (
+                        <option key={state.id} value={state.id}>
+                          {state.name} ({state.abbreviation})
+                        </option>
+                      ))}
+                    </select>
+                  </SelectShell>
+                </div>
+              </div>
+
+              <div className="mt-6">
                 <button
                   type="button"
                   onClick={handleCreateVenue}
                   disabled={loading}
-                  className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
+                  className={primaryPill}
                 >
-                  {loading ? "Creating..." : "Create Venue"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowNewVenue(false)}
-                  className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md font-body text-sm hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
+                  {loading ? "Creating" : "Create Location"}
+                  <span className={pillIcon}>
+                    {loading ? (
+                      <Loader2
+                        strokeWidth={1.5}
+                        className="h-4 w-4 animate-spin"
+                      />
+                    ) : (
+                      <ArrowRight strokeWidth={1.5} className="h-4 w-4" />
+                    )}
+                  </span>
                 </button>
               </div>
             </div>
-          )}
-        </div>
-      )}
-
-      {/* Step 3: Notes */}
-      {step === 3 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-heading font-bold text-lyp-black">
-            Internal Notes
-          </h2>
-          <p className="font-body text-sm text-gray-500">
-            Add any internal notes for this proposal (optional).
-          </p>
-          <textarea
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={5}
-            className="w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent resize-vertical"
-            placeholder="Internal notes..."
-          />
-        </div>
-      )}
-
-      {/* Step 4: Review */}
-      {step === 4 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-heading font-bold text-lyp-black">
-            {reviewTitle}
-          </h2>
-          <div className="border border-gray-200 rounded-md p-4 space-y-3">
-            <div>
-              <span className="font-body text-sm text-gray-500">Client</span>
-              <p className="font-body text-sm text-lyp-black font-medium">
-                {selectedClient?.name}
-              </p>
-            </div>
-            <div>
-              <span className="font-body text-sm text-gray-500">Venue</span>
-              <p className="font-body text-sm text-lyp-black font-medium">
-                {selectedVenue?.name}
-              </p>
-            </div>
-            {notes.trim() && (
-              <div>
-                <span className="font-body text-sm text-gray-500">Notes</span>
-                <p className="font-body text-sm text-gray-700 whitespace-pre-wrap">
-                  {notes.length > 200 ? notes.slice(0, 200) + "..." : notes}
-                </p>
-              </div>
-            )}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Navigation buttons */}
-      <div className="flex justify-between items-center mt-8 pt-4 border-t border-gray-200">
+        {/* ─────────────── Step 3: Notes ─────────────── */}
+        {step === 3 && (
+          <div>
+            <h2 className="font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
+              Internal Notes
+            </h2>
+            <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
+              Only your team sees these. Optional.
+            </p>
+            <div className="mt-7">
+              <label htmlFor="notes" className={labelClasses}>
+                Notes
+              </label>
+              <textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={6}
+                className={`${fieldClasses} resize-y leading-relaxed`}
+                placeholder="Anything the team should know about this proposal…"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ─────────────── Step 4: Review ─────────────── */}
+        {step === 4 && (
+          <div>
+            <h2 className="font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
+              {reviewTitle}
+            </h2>
+            <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
+              Check the details before you commit.
+            </p>
+
+            <dl className="mt-7 overflow-hidden rounded-2xl border border-[#EFE6E6]">
+              <div className="flex items-start gap-4 border-b border-[#F1E8E8] px-5 py-4">
+                <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
+                  Client
+                </dt>
+                <dd className="font-body text-[14px] font-medium text-lyp-black">
+                  {selectedClient?.name ?? "—"}
+                </dd>
+              </div>
+              <div className="flex items-start gap-4 px-5 py-4">
+                <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
+                  Location
+                </dt>
+                <dd>
+                  <p className="font-body text-[14px] font-medium text-lyp-black">
+                    {selectedVenue?.name ?? "—"}
+                  </p>
+                  {(selectedVenue?.address || selectedVenueState) && (
+                    <p className="mt-1 font-body text-[13px] leading-relaxed text-[#8A7A7A]">
+                      {[selectedVenue?.address, selectedVenueState?.name]
+                        .filter(Boolean)
+                        .join(", ")}
+                    </p>
+                  )}
+                </dd>
+              </div>
+              {notes.trim() && (
+                <div className="flex items-start gap-4 border-t border-[#F1E8E8] px-5 py-4">
+                  <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
+                    Notes
+                  </dt>
+                  <dd className="whitespace-pre-wrap font-body text-[13px] leading-relaxed text-[#8A7A7A]">
+                    {notes.length > 200 ? `${notes.slice(0, 200)}…` : notes}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </div>
+        )}
+      </div>
+
+      {/* ─────────────── Navigation ─────────────── */}
+      <div className="flex items-center justify-between gap-4 border-t border-[#F1E8E8] bg-[#FCFAFA] px-6 py-5 sm:px-8">
         <button
           type="button"
-          onClick={() => setStep((s) => s - 1)}
+          onClick={() => setStep((s) => Math.max(1, s - 1))}
           disabled={step === 1}
           className={cn(
-            "border border-gray-300 text-gray-700 px-4 py-2 rounded-md font-body text-sm hover:bg-gray-50 transition-colors",
-            step === 1 && "invisible",
+            `group inline-flex items-center gap-2.5 rounded-full border border-[#EFE6E6] bg-lyp-white py-2 pl-3.5 pr-5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`,
+            step === 1 && "pointer-events-none opacity-0",
           )}
         >
+          <span
+            className={`flex h-7 w-7 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:-translate-x-0.5`}
+          >
+            <ArrowLeft strokeWidth={1.5} className="h-3.5 w-3.5" />
+          </span>
           Back
         </button>
 
-        <div className="flex gap-2">
-          {/* {step === 4 && selectedClientId && (
-            <button
-              type="button"
-              onClick={handleSaveDraft}
-              disabled={loading}
-              className="border border-gray-300 text-gray-700 px-4 py-2 rounded-md font-body text-sm hover:bg-gray-50 transition-colors disabled:opacity-50"
-            >
-              Save as Draft
-            </button>
-          )} */}
-
-          {step < 4 ? (
-            <button
-              type="button"
-              onClick={() => setStep((s) => s + 1)}
-              disabled={!canProceed()}
-              className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={loading}
-              className="bg-lyp-cherry text-white px-6 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
-            >
-              {submitLabel}
-            </button>
-          )}
-        </div>
+        {step < 4 ? (
+          <button
+            type="button"
+            onClick={() => setStep((s) => s + 1)}
+            disabled={!canProceed()}
+            className={primaryPill}
+          >
+            Next
+            <span className={pillIcon}>
+              <ArrowRight strokeWidth={1.5} className="h-4 w-4" />
+            </span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            className={primaryPill}
+          >
+            {submitLabel}
+            <span className={pillIcon}>
+              {loading ? (
+                <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check strokeWidth={1.5} className="h-4 w-4" />
+              )}
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );
