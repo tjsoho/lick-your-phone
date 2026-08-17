@@ -5,6 +5,7 @@ import { createPayer, vaultSource } from "@/lib/pinch";
 import crypto from "crypto";
 import { dispatchNotification } from "@/lib/notification-service";
 import { logAuditEvent } from "@/lib/audit-service";
+import { getAppUrl } from "@/lib/app-url";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -222,6 +223,7 @@ export async function capturePaymentDetails(
       }
     }
 
+    const appUrl = await getAppUrl();
     const payload = {
       amount: schedules.reduce((sum, s) => sum + s.amount_cents, 0),
       paymentId: payment.id,
@@ -235,9 +237,9 @@ export async function capturePaymentDetails(
         clientEmail: proposal.signer_email || "",
         venueName: proposal.venues?.name || "",
         venueAddress: proposal.venues?.address || "",
-        portalUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${proposal.token}`,
+        portalUrl: `${appUrl}/portal/${proposal.token}`,
       },
-      intakeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/intake/${proposal.token}`,
+      intakeUrl: `${appUrl}/intake/${proposal.token}`,
     };
 
     // 7. Write audit event and dispatch notification
@@ -284,6 +286,7 @@ export async function resedNotificationForPayment(proposalId: string) {
       0,
     );
 
+    const appUrl = await getAppUrl();
     const payload = {
       amount: totalAmount,
       paymentId: payment.id,
@@ -303,9 +306,9 @@ export async function resedNotificationForPayment(proposalId: string) {
         clientEmail: proposal.signer_email || "",
         venueName: proposal.venues?.name || "",
         venueAddress: proposal.venues?.address || "",
-        portalUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${proposal.token}`,
+        portalUrl: `${appUrl}/portal/${proposal.token}`,
       },
-      intakeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/intake/${proposal.token}`,
+      intakeUrl: `${appUrl}/intake/${proposal.token}`,
     };
 
     await dispatchNotification("PAYMENT_CAPTURED", payload);

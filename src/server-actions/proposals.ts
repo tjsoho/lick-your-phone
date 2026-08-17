@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import crypto from "crypto";
 import { dispatchNotification } from "@/lib/notification-service";
 import { logAuditEvent } from "@/lib/audit-service";
+import { getAppUrl } from "@/lib/app-url";
 
 export async function getProposals() {
   try {
@@ -171,7 +172,7 @@ export async function updateProposal(
 
     // Only dispatch notification for status changes (not draft edits)
     if (data.status === "sent") {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const appUrl = await getAppUrl();
       const payload = {
         clientEmail: result.clients?.email,
         clientName: result.clients?.name,
@@ -214,7 +215,7 @@ export const sendProposal = async (proposalId: string) => {
       if (updateErr) throw updateErr;
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl = await getAppUrl();
     const clientData = Array.isArray(proposalData.clients)
       ? proposalData.clients[0]
       : proposalData.clients;

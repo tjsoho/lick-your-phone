@@ -1,5 +1,6 @@
 import { dispatchNotification } from "./notification-service";
 import { logAuditEvent } from "./audit-service";
+import { getAppUrl } from "./app-url";
 
 interface IntegrationContext {
   proposalId: string;
@@ -19,17 +20,18 @@ interface IntegrationContext {
 }
 
 export async function onProposalSigned(ctx: IntegrationContext) {
+  const appUrl = await getAppUrl();
   const payload = {
     client: {
       clientName: ctx.clientName,
       clientEmail: ctx.signerEmail,
-      portalUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${ctx.proposalId}`,
+      portalUrl: `${appUrl}/portal/${ctx.proposalId}`,
       venueName: ctx.venueName,
       venueAddress: "", // Assuming venue address is not available in the context
     },
     contractUrl: ctx.documentUrl,
     totalAmount: ctx.totalCents,
-    intakeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${ctx.proposalId}`,
+    intakeUrl: `${appUrl}/portal/${ctx.proposalId}`,
     services: ctx.lineItems.map((li) => ({
       name: li.serviceName,
       billing: li.billing,
@@ -54,15 +56,16 @@ export async function onIntakeCompleted(params: {
   isEdit: boolean;
   assets: string[];
 }) {
+  const appUrl = await getAppUrl();
   const payload = {
     client: {
       clientName: params.clientName,
       clientEmail: params.clientEmail,
-      portalUrl: `${process.env.NEXT_PUBLIC_APP_URL}/portal/${params.proposalToken}`,
+      portalUrl: `${appUrl}/portal/${params.proposalToken}`,
       venueName: params.venueName,
       venueAddress: params.venueAddress,
     },
-    intakeUrl: `${process.env.NEXT_PUBLIC_APP_URL}/admin/proposals/${params.proposalId}/intake`,
+    intakeUrl: `${appUrl}/admin/proposals/${params.proposalId}/intake`,
     proposalId: params.proposalId,
     isEdit: params.isEdit,
     assets: params.assets,

@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 import { dispatchNotification } from "@/lib/notification-service";
 import { logAuditEvent } from "@/lib/audit-service";
+import { getAppUrl } from "@/lib/app-url";
 
 /**
  * Pinch webhook handler
@@ -203,12 +204,13 @@ const handleBankResultEvent = async (payload: BankResultWebhookEvent) => {
         ? proposal?.venues[0]
         : proposal?.venues;
 
+      const appUrl = await getAppUrl();
       const notificationPayload = {
         client: {
           clientName: client?.name || "Unknown Client",
           clientEmail: client?.email || "",
           portalUrl: proposal?.token
-            ? `${process.env.NEXT_PUBLIC_APP_URL}/portal/${proposal.token}`
+            ? `${appUrl}/portal/${proposal.token}`
             : "",
           venueName: venue?.name || "",
           venueAddress: venue?.address || "",
