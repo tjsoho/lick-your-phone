@@ -79,7 +79,7 @@ function CarouselInner() {
       {showRunningTotal && <RunningTotal />}
 
       <div className={`flex-1 overflow-hidden pb-[56px] ${topPad}`}>
-        <div className="mx-auto h-full max-w-[1400px]">
+        <div className="portal-scroll mx-auto h-full max-w-[1400px]">
           <motion.div
             key={page.id}
             initial={{ opacity: 0 }}
