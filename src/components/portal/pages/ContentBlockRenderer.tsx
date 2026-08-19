@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { ContentBlock } from "../ProposalContext";
+import MediaCarousel from "./MediaCarousel";
 
 export default function ContentBlockRenderer({
   blocks,
@@ -62,6 +63,15 @@ export default function ContentBlockRenderer({
                   ),
                 )}
               </div>
+            );
+          }
+
+          if (block.type === "media_carousel" && Array.isArray(block.content)) {
+            return (
+              <MediaCarousel
+                key={block.id}
+                items={block.content as { url: string; alt: string }[]}
+              />
             );
           }
 

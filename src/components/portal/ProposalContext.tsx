@@ -15,7 +15,7 @@ import {
 
 export interface ContentBlock {
   id: string;
-  type: "heading" | "paragraph" | "image" | "list" | "custom" | "logos" | null;
+  type: "heading" | "paragraph" | "image" | "list" | "custom" | "logos" | "media_carousel" | null;
   content: unknown;
   sequence: number | null;
 }

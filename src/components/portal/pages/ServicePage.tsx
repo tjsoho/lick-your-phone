@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { PageData, useProposal } from "../ProposalContext";
 import { cn } from "@/lib/utils";
 import ContentBlockRenderer from "./ContentBlockRenderer";
+import Image from "next/image";
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -78,6 +79,21 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           </p>
         )}
       </div>
+
+      {/* Render Featured Image */}
+      {page.featuredImage && (
+        <div className="px-8 md:px-16 lg:px-24 mb-6">
+          <div className="overflow-hidden rounded-2xl">
+            <Image
+              src={page.featuredImage}
+              alt={service.name}
+              className="max-h-[400px] max-w-[800px] w-full h-auto object-cover mx-auto"
+              width={800}
+              height={450}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 px-8 pb-8 md:px-16 lg:px-24">

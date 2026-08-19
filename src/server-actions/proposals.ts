@@ -314,6 +314,21 @@ export async function supersedeProposal(
 
     if (updateError) throw updateError;
 
+    // Cancel pending payment schedules for the old proposal
+    const { data: oldPayments } = await supabase
+      .from("payments")
+      .select("id")
+      .eq("proposal_id", oldProposalId);
+
+    if (oldPayments && oldPayments.length > 0) {
+      const paymentIds = oldPayments.map((p: { id: string }) => p.id);
+      await supabase
+        .from("payment_schedules")
+        .update({ status: "cancelled" })
+        .in("payment_id", paymentIds)
+        .in("status", ["pending", "scheduled"]);
+    }
+
     // Create new draft proposal
     const { data: result, error: insertError } = await supabase
       .from("proposals")

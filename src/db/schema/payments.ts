@@ -7,7 +7,7 @@ export const paymentStatusEnum = pgEnum('payment_status', [
 ])
 
 export const paymentScheduleStatusEnum = pgEnum('payment_schedule_status', [
-  'scheduled', 'pending', 'settled', 'dishonoured', 'failed',
+  'scheduled', 'pending', 'settled', 'dishonoured', 'failed', 'cancelled',
 ])
 
 export const payments = pgTable('payments', {

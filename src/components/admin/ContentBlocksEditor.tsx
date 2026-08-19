@@ -20,7 +20,7 @@ import {
 import { uploadImage } from "@/utils/storage";
 import toast from "react-hot-toast";
 
-const BLOCK_TYPES = ["heading", "paragraph", "list", "image", "logos", "custom"] as const;
+const BLOCK_TYPES = ["heading", "paragraph", "list", "image", "logos", "media_carousel", "custom"] as const;
 type BlockType = (typeof BLOCK_TYPES)[number];
 
 interface LogoItem { url: string; alt: string }
@@ -44,6 +44,9 @@ function contentToString(content: unknown, type?: string | null): string {
   if (type === "logos" && Array.isArray(content)) {
     return (content as LogoItem[]).map((l) => l.alt || l.url).join(", ");
   }
+  if (type === "media_carousel" && Array.isArray(content)) {
+    return (content as LogoItem[]).map((l) => l.alt || l.url).join(", ");
+  }
   if (typeof content === "string") return content;
   if (Array.isArray(content)) return content.join("\n");
   if (content == null) return "";
@@ -59,10 +62,10 @@ function stringToContent(type: string | null, raw: string): unknown {
 }
 
 const typeLabel = (t: string | null) =>
-  ({ heading: "Heading", paragraph: "Paragraph", list: "List", image: "Image", logos: "Logos", custom: "Custom" }[t ?? ""] ?? t ?? "unknown");
+  ({ heading: "Heading", paragraph: "Paragraph", list: "List", image: "Image", logos: "Logos", media_carousel: "Media Carousel", custom: "Custom" }[t ?? ""] ?? t ?? "unknown");
 
 const typeBadge = (t: string | null) =>
-  ({ heading: "bg-purple-100 text-purple-700", paragraph: "bg-gray-100 text-gray-700", list: "bg-blue-100 text-blue-700", image: "bg-green-100 text-green-700", logos: "bg-pink-100 text-pink-700", custom: "bg-yellow-100 text-yellow-700" }[t ?? ""] ?? "bg-gray-100 text-gray-700");
+  ({ heading: "bg-purple-100 text-purple-700", paragraph: "bg-gray-100 text-gray-700", list: "bg-blue-100 text-blue-700", image: "bg-green-100 text-green-700", logos: "bg-pink-100 text-pink-700", media_carousel: "bg-teal-100 text-teal-700", custom: "bg-yellow-100 text-yellow-700" }[t ?? ""] ?? "bg-gray-100 text-gray-700");
 
 function BlockTextarea({ type, value, onChange }: { type: string; value: string; onChange: (v: string) => void }) {
   return (
@@ -129,7 +132,7 @@ function TypeSelect({ value, onChange }: { value: BlockType; onChange: (v: Block
     </select>
   );
 }
-function LogosEditor({ logos, onChange }: { logos: LogoItem[]; onChange: (v: LogoItem[]) => void }) {
+function LogosEditor({ logos, onChange, addLabel = "Add logo" }: { logos: LogoItem[]; onChange: (v: LogoItem[]) => void; addLabel?: string }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
 
@@ -207,7 +210,7 @@ function LogosEditor({ logos, onChange }: { logos: LogoItem[]; onChange: (v: Log
         }}
       />
       <button onClick={addRow} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-lyp-cherry font-body">
-        <Plus className="h-4 w-4" /> Add logo
+        <Plus className="h-4 w-4" /> {addLabel}
       </button>
     </div>
   );
@@ -253,16 +256,16 @@ export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEdit
   const [newLogos, setNewLogos] = useState<LogoItem[]>([]);
 
   const getEditContent = (type: BlockType) =>
-    type === "logos" ? editLogos : stringToContent(type, editContent);
+    type === "logos" || type === "media_carousel" ? editLogos : stringToContent(type, editContent);
 
   const getNewContent = (type: BlockType) =>
-    type === "logos" ? newLogos : stringToContent(type, newContent);
+    type === "logos" || type === "media_carousel" ? newLogos : stringToContent(type, newContent);
 
   const startEdit = (block: Block) => {
     setEditingId(block.id);
     const t = (block.type ?? "paragraph") as BlockType;
     setEditType(t);
-    if (t === "logos" && Array.isArray(block.content)) {
+    if ((t === "logos" || t === "media_carousel") && Array.isArray(block.content)) {
       setEditLogos(block.content as LogoItem[]);
     } else {
       setEditContent(contentToString(block.content, block.type));
@@ -345,8 +348,8 @@ export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEdit
                 <TypeSelect value={editType} onChange={setEditType} />
                 <span className="text-xs text-gray-400 font-mono">seq: {block.sequence}</span>
               </div>
-              {editType === "logos"
-                ? <LogosEditor logos={editLogos} onChange={setEditLogos} />
+              {editType === "logos" || editType === "media_carousel"
+                ? <LogosEditor logos={editLogos} onChange={setEditLogos} addLabel={editType === "media_carousel" ? "Add media" : "Add logo"} />
                 : editType === "image"
                 ? <ImageUploadEditor value={editContent} onChange={setEditContent} />
                 : <BlockTextarea type={editType} value={editContent} onChange={setEditContent} />
@@ -376,8 +379,8 @@ export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEdit
             <TypeSelect value={newType} onChange={setNewType} />
             <span className="text-xs text-gray-400 font-body">New block</span>
           </div>
-          {newType === "logos"
-            ? <LogosEditor logos={newLogos} onChange={setNewLogos} />
+          {newType === "logos" || newType === "media_carousel"
+            ? <LogosEditor logos={newLogos} onChange={setNewLogos} addLabel={newType === "media_carousel" ? "Add media" : "Add logo"} />
             : newType === "image"
             ? <ImageUploadEditor value={newContent} onChange={setNewContent} />
             : <BlockTextarea type={newType} value={newContent} onChange={setNewContent} />
