@@ -8,8 +8,10 @@ import ContentBlockRenderer, {
   IMAGE_RADIUS,
   MAIN_IMAGE,
   MAIN_IMAGE_HEIGHT,
+  SIZES,
 } from "./ContentBlockRenderer";
 import MediaCarousel from "./MediaCarousel";
+import Reveal, { revealDelay } from "../Reveal";
 
 /* -------------------------------------------------------------------------
    THE SERVICE SPREAD
@@ -146,10 +148,13 @@ function PictureRail({
   images,
   logos,
   alt,
+  delay,
 }: {
   images: MediaItem[];
   logos: MediaItem[];
   alt: string;
+  /** ms. The rail settles alongside the index, not after the whole page. */
+  delay: number;
 }) {
   // Requested explicitly for the platform marks: a white ring hugging the
   // circular artwork. This is a deliberate exception to the project-wide
@@ -171,7 +176,9 @@ function PictureRail({
         <Image
           src={images[0].url}
           alt={images[0].alt || alt}
-          className={IMG}
+          sizes={SIZES.main}
+          className={`portal-reveal portal-reveal-lift ${IMG}`}
+          style={{ animationDelay: `${delay}ms` }}
           width={900}
           height={1000}
           priority
@@ -182,11 +189,18 @@ function PictureRail({
         // The carousel fills a box rather than shrink-wrapping one photo, so it
         // needs the height stated: `h-full` has nothing to resolve against in a
         // content-sized row.
-        <div
+        <Reveal
+          variant="lift"
+          delay={delay}
           className={`flex min-h-0 w-full items-center ${MAIN_IMAGE_HEIGHT}`}
         >
-          <MediaCarousel items={images} frame imageClassName={IMG_IN_FRAME} />
-        </div>
+          <MediaCarousel
+            items={images}
+            frame
+            imageClassName={IMG_IN_FRAME}
+            sizes={SIZES.main}
+          />
+        </Reveal>
       )}
 
       {/* -----------------------------------------------------------
@@ -215,7 +229,10 @@ function PictureRail({
                 key={`${logo.url}-${i}`}
                 src={logo.url}
                 alt={logo.alt || "Platform logo"}
+                sizes={SIZES.platformMark}
+                style={{ animationDelay: `${delay + i * 90}ms` }}
                 className={cn(
+                  "portal-reveal portal-reveal-pop",
                   "h-auto w-full rounded-full object-contain",
                   LOGO_RING,
                   i % 2 === 0 ? "-translate-x-[37%]" : "translate-x-[37%]",
@@ -233,8 +250,10 @@ function PictureRail({
           <Image
             src={logos[0].url}
             alt={logos[0].alt || "Platform logo"}
+            sizes={SIZES.platformMark}
+            style={{ animationDelay: `${delay}ms` }}
             className={cn(
-              "mx-auto h-auto w-[41%] shrink-0 rounded-full object-contain",
+              "portal-reveal portal-reveal-pop mx-auto h-auto w-[41%] shrink-0 rounded-full object-contain",
               LOGO_RING,
             )}
             width={640}
@@ -250,7 +269,9 @@ function PictureRail({
               key={i}
               src={logo.url}
               alt={logo.alt || "Platform logo"}
-              className="h-9 w-auto object-contain [@media(min-height:850px)]:h-11"
+              sizes={SIZES.platformMarkSmall}
+              style={{ animationDelay: `${delay + 160 + i * 70}ms` }}
+              className="portal-reveal portal-reveal-pop h-9 w-auto object-contain [@media(min-height:850px)]:h-11"
               width={320}
               height={320}
             />
@@ -337,6 +358,34 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   // — unless the offer needs it for three tiers side by side.
   const wideRail = !twoColumnIndex && tierCount < 3;
 
+  /* ---------------------------------------------------------------------
+     THE SPREAD'S CHOREOGRAPHY.
+
+     One ladder, computed from the same copy the layout is computed from, so
+     a three-inclusion service and a twelve-inclusion one both finish arriving
+     at roughly the same moment: the index cascades at a per-row interval that
+     shrinks as the list grows, and everything under it is anchored to where
+     that cascade ends rather than to a fixed count of steps.
+     --------------------------------------------------------------------- */
+  const D_EYEBROW = revealDelay(0);
+  const D_TITLE = revealDelay(1);
+  const D_RULE = revealDelay(2);
+  const D_INDEX = revealDelay(3);
+  // A long index deals faster, so twelve rows never outlast four.
+  const rowStep = inclusions.length > 8 ? 28 : inclusions.length > 5 ? 38 : 52;
+  const D_ROWS = D_INDEX + 70;
+  const indexTail = D_ROWS + Math.max(inclusions.length - 1, 0) * rowStep;
+  const D_OBLIGATIONS = indexTail + 90;
+  const D_DISCLAIMERS = D_OBLIGATIONS + 80;
+  const D_BLOCKS = D_DISCLAIMERS + 80;
+  // The offer is the climax: it waits for the index to finish, then lands.
+  const D_OFFER = indexTail + 190;
+  const D_TIERS = D_OFFER + 110;
+  const D_TOGGLE = D_OFFER + 170;
+  // The picture is a parallel column, not a later one — it settles with the
+  // index rather than queueing behind it.
+  const D_RAIL = D_RULE + 80;
+
   return (
     <article
       className={cn(
@@ -362,30 +411,47 @@ export default function ServicePage({ service, page }: ServicePageProps) {
       <header className="shrink-0">
         <div className="flex items-end justify-between gap-10">
           <div className="min-w-0">
-            <p
+            <Reveal
+              as="p"
+              delay={D_EYEBROW}
               className={`font-heading text-[10px] font-semibold uppercase tracking-[0.42em] [@media(min-height:850px)]:text-[11px] ${ROSE}`}
             >
               Media Menu
-            </p>
-            <h1 className="mt-2 font-heading text-[30px] uppercase leading-[0.94] tracking-[-0.015em] text-lyp-white sm:text-[38px] lg:text-[46px] [@media(min-height:850px)]:mt-3 [@media(min-height:850px)]:text-[58px]">
+            </Reveal>
+            <Reveal
+              as="h1"
+              delay={D_TITLE}
+              className="mt-2 font-heading text-[30px] uppercase leading-[0.94] tracking-[-0.015em] text-lyp-white sm:text-[38px] lg:text-[46px] [@media(min-height:850px)]:mt-3 [@media(min-height:850px)]:text-[58px]"
+            >
               {service.name}
-            </h1>
+            </Reveal>
           </div>
           {service.term && (
-            <p className="hidden max-w-[16rem] shrink-0 pb-1 text-right font-body text-[11px] uppercase leading-snug tracking-[0.16em] text-lyp-white/75 lg:block [@media(min-height:850px)]:text-xs">
+            <Reveal
+              as="p"
+              delay={D_TITLE}
+              className="hidden max-w-[16rem] shrink-0 pb-1 text-right font-body text-[11px] uppercase leading-snug tracking-[0.16em] text-lyp-white/75 lg:block [@media(min-height:850px)]:text-xs"
+            >
               {service.term}
-            </p>
+            </Reveal>
           )}
         </div>
         {/* One hairline, fading out — a rule, not a border. */}
+        {/* The hairline DRAWS from the left rather than fading up — the one
+            gesture on the page that has direction, and it points at the copy. */}
         <div
           aria-hidden
-          className="mt-3.5 h-px w-full bg-gradient-to-r from-[#f0c9c9]/55 via-lyp-white/15 to-transparent [@media(min-height:850px)]:mt-6"
+          style={{ animationDelay: `${D_RULE}ms` }}
+          className="portal-reveal portal-reveal-rule mt-3.5 h-px w-full bg-gradient-to-r from-[#f0c9c9]/55 via-lyp-white/15 to-transparent [@media(min-height:850px)]:mt-6"
         />
         {service.term && (
-          <p className="mt-2 font-body text-[11px] uppercase tracking-[0.16em] text-lyp-white/75 lg:hidden">
+          <Reveal
+            as="p"
+            delay={D_RULE}
+            className="mt-2 font-body text-[11px] uppercase tracking-[0.16em] text-lyp-white/75 lg:hidden"
+          >
             {service.term}
-          </p>
+          </Reveal>
         )}
       </header>
 
@@ -412,7 +478,13 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           <div className="portal-scroll min-h-0 max-lg:overflow-visible">
             {inclusions.length > 0 && (
               <section>
-                <h2 className={`${CAPTION} ${ROSE}`}>What&apos;s Included</h2>
+                <Reveal
+                  as="h2"
+                  delay={D_INDEX}
+                  className={`${CAPTION} ${ROSE}`}
+                >
+                  What&apos;s Included
+                </Reveal>
                 <ul
                   className={cn(
                     "mt-3.5",
@@ -427,8 +499,10 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   )}
                 >
                   {inclusions.map((inc, i) => (
-                    <li
+                    <Reveal
+                      as="li"
                       key={inc.id}
+                      delay={D_ROWS + i * rowStep}
                       className={cn(
                         "flex break-inside-avoid items-baseline gap-3 last:mb-0",
                         density === "open"
@@ -455,7 +529,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                       >
                         {inc.text}
                       </span>
-                    </li>
+                    </Reveal>
                   ))}
                 </ul>
               </section>
@@ -470,11 +544,21 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                     : "[@media(min-height:850px)]:mt-6",
                 )}
               >
-                <h2 className={`${CAPTION} ${ROSE}`}>Your Commitments</h2>
+                <Reveal
+                  as="h2"
+                  delay={D_OBLIGATIONS}
+                  className={`${CAPTION} ${ROSE}`}
+                >
+                  Your Commitments
+                </Reveal>
                 {/* A run, not a list. These are short items — setting them as
                     one flowing line with rose dividers costs a fraction of the
                     height of seven bulleted rows and reads faster. */}
-                <p className="mt-1.5 font-body text-[14px] leading-normal text-lyp-white/85 [@media(min-height:850px)]:mt-2 [@media(min-height:850px)]:text-[16px] [@media(min-height:850px)]:leading-normal">
+                <Reveal
+                  as="p"
+                  delay={D_OBLIGATIONS + 60}
+                  className="mt-1.5 font-body text-[14px] leading-normal text-lyp-white/85 [@media(min-height:850px)]:mt-2 [@media(min-height:850px)]:text-[16px] [@media(min-height:850px)]:leading-normal"
+                >
                   {obligations.map((ob, i) => (
                     <span key={ob.id}>
                       {i > 0 && (
@@ -483,26 +567,31 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                       {ob.text}
                     </span>
                   ))}
-                </p>
+                </Reveal>
               </section>
             )}
 
             {disclaimers.length > 0 && (
               <div className="mt-4 [@media(min-height:850px)]:mt-7">
-                {disclaimers.map((d) => (
-                  <p
+                {disclaimers.map((d, i) => (
+                  <Reveal
+                    as="p"
                     key={d.id}
+                    delay={D_DISCLAIMERS + i * 60}
                     className="mt-1.5 font-body text-[11px] italic leading-snug text-lyp-white/70 first:mt-0 [@media(min-height:850px)]:text-xs"
                   >
                     {d.text}
-                  </p>
+                  </Reveal>
                 ))}
               </div>
             )}
 
             {textBlocks.length > 0 && (
               <div className="mt-6">
-                <ContentBlockRenderer blocks={textBlocks} />
+                <ContentBlockRenderer
+                  blocks={textBlocks}
+                  revealFrom={D_BLOCKS}
+                />
               </div>
             )}
           </div>
@@ -515,7 +604,16 @@ export default function ServicePage({ service, page }: ServicePageProps) {
               edge. No drop shadow.
               ----------------------------------------------------------- */}
           <div className="mt-9 flex shrink-0 flex-col gap-3 lg:flex-row lg:items-end lg:gap-5 [@media(min-height:850px)]:mt-12">
-          <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-gradient-to-b from-lyp-white/[0.11] to-lyp-white/[0.035] px-5 py-3 ring-1 ring-inset ring-lyp-white/[0.14] backdrop-blur-[2px] [@media(min-height:850px)]:px-7 [@media(min-height:850px)]:py-4">
+          <Reveal
+            // Fade, not rise. This panel is the lowest element on the slide and
+            // `.portal-scroll` counts a transformed child's box in its
+            // scrollable overflow, so a downward offset here flashed a 6px
+            // scrollbar on a 720px screen. The tier buttons inside still pop,
+            // which is where the movement belongs anyway.
+            variant="fade"
+            delay={D_OFFER}
+            className="relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-gradient-to-b from-lyp-white/[0.11] to-lyp-white/[0.035] px-5 py-3 ring-1 ring-inset ring-lyp-white/[0.14] backdrop-blur-[2px] [@media(min-height:850px)]:px-7 [@media(min-height:850px)]:py-4"
+          >
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f0c9c9]/45 to-transparent"
@@ -560,7 +658,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   {service.service_tiers
                     .slice()
                     .sort((a, b) => a.sequence - b.sequence)
-                    .map((tier) => {
+                    .map((tier, tierIndex) => {
                       const tierList = listFromTarget(
                         tier.target_price_cents,
                         service.discount_pct,
@@ -570,13 +668,16 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                       return (
                         <button
                           key={tier.id}
+                          style={{
+                            animationDelay: `${D_TIERS + tierIndex * 70}ms`,
+                          }}
                           disabled={isDisabled}
                           onClick={() => {
                             if (tierSelected) deselectService(service.id);
                             else selectTier(service.id, tier.id);
                           }}
                           className={cn(
-                            "rounded-xl px-3 py-2.5 text-left ring-1 ring-inset transition-colors duration-300 ease-brand",
+                            "portal-reveal portal-reveal-pop rounded-xl px-3 py-2.5 text-left ring-1 ring-inset transition-[background-color,box-shadow,transform] duration-300 ease-brand hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none",
                             tierSelected
                               ? "bg-[#f0c9c9]/[0.14] ring-[#f0c9c9]/70"
                               : "bg-lyp-white/[0.04] ring-lyp-white/[0.14] hover:ring-lyp-white/35",
@@ -648,13 +749,17 @@ export default function ServicePage({ service, page }: ServicePageProps) {
 
             </div>
 
-          </div>
+          </Reveal>
 
           {/* Selection — a deliberate action, not a stray toggle. It sits
               OUTSIDE the quote, on the panel's bottom-right corner: the panel
               states the price, this answers it. */}
           {!hasTiers && (
-            <div
+            <Reveal
+              // `pop` scales UP to its final size, so it never occupies more
+              // room than it settles into — safe at the foot of the slide.
+              variant="pop"
+              delay={D_TOGGLE}
               className={cn(
                 "flex shrink-0 items-center gap-3 self-end rounded-xl px-4 py-2.5 ring-1 ring-inset transition-colors duration-300 ease-brand",
                 selected
@@ -678,13 +783,18 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                     ? "Selected"
                     : "Add to proposal"}
               </span>
-            </div>
+            </Reveal>
           )}
           </div>
         </div>
 
         {hasArtwork && (
-          <PictureRail images={images} logos={logos} alt={service.name} />
+          <PictureRail
+            images={images}
+            logos={logos}
+            alt={service.name}
+            delay={D_RAIL}
+          />
         )}
       </div>
     </article>

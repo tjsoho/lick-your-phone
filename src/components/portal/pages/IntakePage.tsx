@@ -20,11 +20,55 @@ import {
   StaticContentField,
 } from "@/components/intake";
 import { saveIntakeResponses, completeIntake } from "@/server-actions/intake";
+import Reveal, { revealDelay } from "../Reveal";
 
 interface IntakePageProps {
   questions: IntakeQuestionWithConditions[];
   providers: Provider[];
   existingResponses: Record<string, unknown>;
+}
+
+/**
+ * Field types whose answer is CHOSEN from a set rather than typed. If such a
+ * question has an empty set, there is literally nothing the client can do with
+ * it — so a required one must not be allowed to block the form.
+ */
+const OPTION_FIELD_TYPES = new Set([
+  "radio",
+  "checkbox",
+  "multiselect",
+  "provider_picker",
+]);
+
+/**
+ * How many options a question can actually offer right now.
+ *
+ * `null` means the question is not option-based (free text, a file, an
+ * address) and the count does not apply. `0` means it IS option-based and has
+ * nothing to offer — a photographer picker in a region with no photographers
+ * on the books, for instance.
+ *
+ * Deliberately generic: it keys off the question's own option set, not off a
+ * hardcoded id, slug or field type, so any future question that ends up with
+ * an empty set behaves the same way without another patch here.
+ */
+function availableOptionCount(
+  q: IntakeQuestionWithConditions,
+  providers: Provider[],
+): number | null {
+  if (!OPTION_FIELD_TYPES.has(q.field_type)) return null;
+
+  if (q.field_type === "provider_picker") {
+    // Mirrors ProviderPickerField's own filter, so what validation counts is
+    // exactly what the client is shown.
+    const providerType = (q.config as Record<string, string> | null)
+      ?.providerType;
+    return (providers ?? []).filter(
+      (p) => !providerType || p.type === providerType,
+    ).length;
+  }
+
+  return Array.isArray(q.options) ? q.options.length : 0;
 }
 
 const FIELD_COMPONENTS: Record<
@@ -178,6 +222,13 @@ export default function IntakePage({
       if (!q.required) continue;
       if (q.field_type === "static_content") continue;
 
+      // A required question with an EMPTY option set is a dead end: there is
+      // nothing to select, so demanding a selection strands the client on the
+      // step forever. Skipped questions submit exactly as an unanswered
+      // optional one would — nothing is written, nothing is fabricated.
+      // A required question that DOES have options still blocks, unchanged.
+      if (availableOptionCount(q, providers) === 0) continue;
+
       const val = responses[q.id];
       if (
         val == null ||
@@ -298,11 +349,15 @@ export default function IntakePage({
             Step {currentVisibleIndex + 1} of {totalVisiblePages}
           </span>
         </div>
-        <div className="h-1 w-full rounded-full bg-lyp-white/10">
+        <div className="h-1 w-full overflow-hidden rounded-full bg-lyp-white/10">
+          {/* scaleX rather than width — a transform, so the bar advances on
+              the compositor and never triggers layout. */}
           <div
-            className="h-1 rounded-full bg-lyp-cherry transition-all duration-300"
+            className="h-1 w-full origin-left rounded-full bg-lyp-cherry transition-transform duration-700 ease-brand motion-reduce:transition-none"
             style={{
-              width: `${((currentVisibleIndex + 1) / totalVisiblePages) * 100}%`,
+              transform: `scaleX(${
+                (currentVisibleIndex + 1) / Math.max(totalVisiblePages, 1)
+              })`,
             }}
           />
         </div>
@@ -310,39 +365,51 @@ export default function IntakePage({
 
       {/* Form content */}
       <div className="flex-1 overflow-y-auto px-6 py-8 md:px-16 lg:px-24">
-        <div className="mx-auto max-w-2xl space-y-8">
-          {sections.map((section, si) => (
-            <div key={si}>
-              {section.section && (
-                <h2 className="font-heading text-xl text-lyp-white mb-6 border-b border-lyp-white/10 pb-3">
-                  {section.section}
-                </h2>
-              )}
-              <div className="space-y-6">
-                {section.questions.map((q) => {
-                  const Component = FIELD_COMPONENTS[q.field_type];
-                  if (!Component) return null;
+        {/* Keyed on the step number: moving between intake pages remounts
+            the stack, so the cascade replays on every step rather than only
+            on first load. The running counter `qi` carries the delay ACROSS
+            sections, so the form reads as one list, not several. */}
+        <div key={currentIntakePage} className="mx-auto max-w-2xl space-y-8">
+          {(() => {
+            let qi = 0;
+            return sections.map((section, si) => (
+              <div key={si}>
+                {section.section && (
+                  <Reveal
+                    as="h2"
+                    delay={revealDelay(qi++)}
+                    className="font-heading text-xl text-lyp-white mb-6 border-b border-lyp-white/10 pb-3"
+                  >
+                    {section.section}
+                  </Reveal>
+                )}
+                <div className="space-y-6">
+                  {section.questions.map((q) => {
+                    const Component = FIELD_COMPONENTS[q.field_type];
+                    if (!Component) return null;
 
-                  return (
-                    <Component
-                      key={q.id}
-                      question={q}
-                      value={responses[q.id] ?? null}
-                      onChange={(val) => handleChange(q.id, val)}
-                      providers={providers}
-                    />
-                  );
-                })}
+                    return (
+                      <Reveal key={q.id} delay={revealDelay(qi++)}>
+                        <Component
+                          question={q}
+                          value={responses[q.id] ?? null}
+                          onChange={(val) => handleChange(q.id, val)}
+                          providers={providers}
+                        />
+                      </Reveal>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            ));
+          })()}
         </div>
       </div>
 
       {/* Error message */}
       {error && (
         <div className="flex-shrink-0 px-6">
-          <div className="mx-auto max-w-2xl rounded-lg bg-lyp-cherry/10 border border-lyp-cherry/30 px-4 py-3">
+          <div className="portal-reveal portal-reveal-fall mx-auto max-w-2xl rounded-lg bg-lyp-cherry/10 border border-lyp-cherry/30 px-4 py-3">
             <p className="font-body text-sm text-lyp-cherry">{error}</p>
           </div>
         </div>
@@ -357,9 +424,9 @@ export default function IntakePage({
               if (prevPage !== null) setCurrentIntakePage(prevPage);
             }}
             disabled={isFirstPage || saving}
-            className="flex items-center gap-1 font-body text-sm text-lyp-white/60 transition-colors hover:text-lyp-white disabled:opacity-20"
+            className="group flex items-center gap-1 font-body text-sm text-lyp-white/60 transition-colors duration-300 ease-brand hover:text-lyp-white disabled:opacity-20"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4 transition-transform duration-300 ease-brand group-hover:-translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
             Back
           </button>
 
@@ -367,11 +434,13 @@ export default function IntakePage({
             type="button"
             onClick={() => handleSaveAndNavigate(isLastPage ? null : nextPage)}
             disabled={saving}
-            className="flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-colors hover:bg-lyp-cherry/90 disabled:opacity-50"
+            className="group flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
             {isLastPage ? "Submit" : "Continue"}
-            {!isLastPage && <ChevronRight className="h-4 w-4" />}
+            {!isLastPage && (
+              <ChevronRight className="h-4 w-4 transition-transform duration-300 ease-brand group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
+            )}
           </button>
         </div>
       </div>

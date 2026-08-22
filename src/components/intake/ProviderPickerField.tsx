@@ -31,13 +31,20 @@ export default function ProviderPickerField({
 
   if (filtered.length === 0) {
     return (
+      // No required marker here, deliberately. There is nothing to choose, so
+      // an asterisk would promise the client an action they cannot take —
+      // IntakePage's validation treats an empty option set as satisfied and
+      // lets them continue.
       <div className="space-y-2">
         <label className="block font-body text-sm text-lyp-white/80">
           {question.field_label}
-          {question.required && <span className="text-lyp-cherry ml-1">*</span>}
         </label>
-        <p className="font-body text-sm text-lyp-white/40">
+        <p className="font-body text-sm text-lyp-white/70">
           No providers available for your area yet.
+        </p>
+        <p className="font-body text-sm text-lyp-white/60">
+          Nothing to do here — continue to the next step and your account
+          manager will arrange this with you directly.
         </p>
       </div>
     );

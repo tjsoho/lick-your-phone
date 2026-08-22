@@ -1000,11 +1000,11 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                     </div>
                   </div>
 
-                  {/* Portal link — clickable, opens the client's proposal */}
+                  {/* Proposal link — clickable, opens the client's proposal */}
                   {proposal.status !== "superseded" && proposal.token && (
                     <div className="flex items-center gap-3 border-t border-[#F1E8E8] bg-[#FBF8F8] px-5 py-3">
                       <span className="shrink-0 font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
-                        Portal link
+                        Proposal Link
                       </span>
                       <PortalLinkCell
                         url={`${appUrl}/portal/${proposal.token}`}

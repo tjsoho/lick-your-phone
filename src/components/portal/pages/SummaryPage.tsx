@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
 import { useProposal } from "../ProposalContext";
 import { cn } from "@/lib/utils";
+import Reveal, { STEP, revealDelay } from "../Reveal";
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -108,33 +109,46 @@ export default function SummaryPage() {
   return (
     <div className="flex h-full flex-col overflow-y-auto">
       <div className="flex-1 px-8 py-8 md:px-16 lg:px-24">
-        <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-2 uppercase tracking-tight">
+        <Reveal
+          as="h1"
+          index={0}
+          className="font-heading text-3xl md:text-5xl text-lyp-white mb-2 uppercase tracking-tight"
+        >
           Your Proposal Summary
-        </h1>
-        <p className="font-body text-sm text-lyp-white/50 mb-8">
+        </Reveal>
+        <Reveal
+          as="p"
+          index={1}
+          className="font-body text-sm text-lyp-white/50 mb-8"
+        >
           Here&apos;s everything you&apos;ve selected. Tap a service to see
           details.
-        </p>
+        </Reveal>
 
         {selectedServices.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <p className="font-body text-lyp-white/40 text-lg">
+            <Reveal as="p" index={2} className="font-body text-lyp-white/40 text-lg">
               No services selected yet.
-            </p>
-            <p className="font-body text-lyp-white/30 text-sm mt-2">
+            </Reveal>
+            <Reveal
+              as="p"
+              index={3}
+              className="font-body text-lyp-white/30 text-sm mt-2"
+            >
               Browse the pages to add services to your proposal.
-            </p>
+            </Reveal>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
             {/* Left: expandable drawers */}
             <div className="space-y-2">
-              {selectedServices.map((item) => {
+              {selectedServices.map((item, i) => {
                 if (!item) return null;
                 const isOpen = expandedId === item.id;
                 return (
-                  <div
+                  <Reveal
                     key={item.id}
+                    delay={revealDelay(2) + i * STEP}
                     className="overflow-hidden"
                   >
                     {/* Collapsed row */}
@@ -176,7 +190,7 @@ export default function SummaryPage() {
                         )}
                         <ChevronDown
                           className={cn(
-                            "h-4 w-4 text-lyp-white/40 transition-transform duration-200",
+                            "h-4 w-4 text-lyp-white/40 transition-transform duration-300 ease-brand motion-reduce:transition-none",
                             isOpen && "rotate-180",
                           )}
                         />
@@ -185,7 +199,9 @@ export default function SummaryPage() {
 
                     {/* Expanded details */}
                     {isOpen && (
-                      <div className="border-t border-lyp-white/10 px-5 py-4 space-y-4">
+                      // The drawer body mounts on expand, so its own reveal
+                      // fires each time it is opened.
+                      <div className="portal-reveal border-t border-lyp-white/10 px-5 py-4 space-y-4">
                         {item.isWeekly && (
                           <p className="font-body text-xs text-lyp-white/40">
                             {formatCents(item.displayTarget)}/week (
@@ -265,13 +281,17 @@ export default function SummaryPage() {
                         )}
                       </div>
                     )}
-                  </div>
+                  </Reveal>
                 );
               })}
             </div>
 
             {/* Right: pricing card */}
-            <div className="lg:sticky lg:top-4 self-start">
+            <Reveal
+              variant="right"
+              delay={revealDelay(3)}
+              className="lg:sticky lg:top-4 self-start"
+            >
               <div className="rounded-xl border border-lyp-white/10 bg-lyp-white/5 p-6 space-y-4">
                 <h3 className="font-heading text-lg text-lyp-white text-center mb-3">
                   Investment Summary
@@ -363,7 +383,7 @@ export default function SummaryPage() {
                 ) : proposal.status === "signed" ? (
                   <button
                     onClick={() => setCurrentPage(paymentIdx)}
-                    className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-colors hover:bg-lyp-deep-red mt-2"
+                    className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 mt-2"
                   >
                     Proceed to Payment
                   </button>
@@ -371,14 +391,14 @@ export default function SummaryPage() {
                   signatureIdx >= 0 && (
                     <button
                       onClick={() => setCurrentPage(signatureIdx)}
-                      className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-colors hover:bg-lyp-deep-red mt-2"
+                      className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 mt-2"
                     >
                       Proceed to Signature
                     </button>
                   )
                 )}
               </div>
-            </div>
+            </Reveal>
           </div>
         )}
       </div>

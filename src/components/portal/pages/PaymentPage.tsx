@@ -1,9 +1,27 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import toast from "react-hot-toast";
 import { useProposal } from "../ProposalContext";
 import { capturePaymentDetails } from "@/server-actions/payment";
 import Link from "next/link";
+import Reveal, { revealDelay } from "../Reveal";
+
+/**
+ * CONFIRMATION GREEN.
+ *
+ * Cherry read as an error on this screen — a red tick after a successful
+ * payment is exactly the wrong signal. This is a lifted sage: the same hue
+ * family as the project's `#4A7A5C`, raised until it clears 4.5:1 against what
+ * is actually rendered behind it, which is the tint disc composited over the
+ * portal's red smoke rather than the raw page colour. Measured on the live
+ * page at 6.4:1 against the disc and 8.5:1 against the bare ground.
+ *
+ * Written out in full rather than built from a template: Tailwind scans source
+ * text, so an interpolated `${GREEN}/20` never compiles to any CSS.
+ */
+const CONFIRM_GREEN = "text-[#86D6A5]";
+const CONFIRM_GREEN_TINT = "bg-[#86D6A5]/[0.18]";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -102,7 +120,11 @@ export default function PaymentPage() {
 function NoPaymentRequired() {
   return (
     <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-      <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-lyp-cherry/20">
+      <Reveal
+        variant="pop"
+        index={0}
+        className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-lyp-cherry/20"
+      >
         <svg
           className="h-10 w-10 text-lyp-cherry"
           fill="none"
@@ -116,11 +138,17 @@ function NoPaymentRequired() {
             d="M5 13l4 4L19 7"
           />
         </svg>
-      </div>
-      <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-4">
+      </Reveal>
+      <h1
+        className="portal-reveal font-heading text-3xl md:text-5xl text-lyp-white mb-4"
+        style={{ animationDelay: `${revealDelay(1)}ms` }}
+      >
         No Payment Required
       </h1>
-      <p className="font-body text-sm text-lyp-white/60 max-w-md">
+      <p
+        className="portal-reveal font-body text-sm text-lyp-white/60 max-w-md"
+        style={{ animationDelay: `${revealDelay(2)}ms` }}
+      >
         Your selected services are complimentary. No payment details are needed
         at this time.
       </p>
@@ -141,6 +169,28 @@ function PaymentForm({
 }) {
   const [stage, setStage] = useState<Stage>("form");
   const [errorMsg, setErrorMsg] = useState("");
+
+  /**
+   * The confirmation toast fires ONCE, on the transition into success.
+   *
+   * Two guards, because one is not enough: the ref survives StrictMode's
+   * mount/unmount/mount in dev (the effect body runs twice on the same
+   * instance, the ref does not reset), and the fixed toast `id` makes
+   * react-hot-toast idempotent even if this component is remounted entirely —
+   * e.g. by paging away and back to an already-successful screen.
+   *
+   * `position` is passed per-toast. The global <Toaster /> stays top-right,
+   * which the admin depends on.
+   */
+  const announcedRef = useRef(false);
+  useEffect(() => {
+    if (stage !== "success" || announcedRef.current) return;
+    announcedRef.current = true;
+    toast.success("Payment accepted", {
+      id: "payment-accepted",
+      position: "bottom-right",
+    });
+  }, [stage]);
 
   // Form state
   const [cardNumber, setCardNumber] = useState("");
@@ -260,9 +310,13 @@ function PaymentForm({
   if (stage === "success") {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-lyp-cherry/20">
+        <Reveal
+          variant="pop"
+          index={0}
+          className={`mb-6 flex h-20 w-20 items-center justify-center rounded-full ${CONFIRM_GREEN_TINT}`}
+        >
           <svg
-            className="h-10 w-10 text-lyp-cherry"
+            className={`h-10 w-10 ${CONFIRM_GREEN}`}
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -274,18 +328,25 @@ function PaymentForm({
               d="M5 13l4 4L19 7"
             />
           </svg>
-        </div>
-        <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-4">
+        </Reveal>
+        <h1
+          className="portal-reveal font-heading text-3xl md:text-5xl text-lyp-white mb-4"
+          style={{ animationDelay: `${revealDelay(1)}ms` }}
+        >
           Payment Details Saved
         </h1>
-        <p className="font-body text-sm text-lyp-white/60 max-w-md">
+        <p
+          className="portal-reveal font-body text-sm text-lyp-white/60 max-w-md"
+          style={{ animationDelay: `${revealDelay(2)}ms` }}
+        >
           Your card has been securely saved. Payments will be scheduled
           according to your agreement.
         </p>
 
         <Link
           href={`/intake/${proposalToken}`}
-          className="block mt-6 w-fit rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-colors hover:bg-lyp-deep-red disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ animationDelay: `${revealDelay(3)}ms` }}
+          className="portal-reveal block mt-6 w-fit rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:active:scale-100"
         >
           Access Intake Form
         </Link>
@@ -296,12 +357,20 @@ function PaymentForm({
   /* ---- Form / Error / Processing ---- */
   return (
     <div className="flex h-full flex-col items-center justify-center px-6">
-      <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-2 text-center">
+      <Reveal
+        as="h1"
+        index={0}
+        className="font-heading text-3xl md:text-5xl text-lyp-white mb-2 text-center"
+      >
         Payment Details
-      </h1>
-      <p className="font-body text-sm text-lyp-white/50 mb-8 text-center max-w-md">
+      </Reveal>
+      <Reveal
+        as="p"
+        index={1}
+        className="font-body text-sm text-lyp-white/50 mb-8 text-center max-w-md"
+      >
         Your card will be securely tokenised. No charges will be made today.
-      </p>
+      </Reveal>
 
       <form
         onSubmit={handleSubmit}
@@ -309,7 +378,7 @@ function PaymentForm({
         autoComplete="off"
       >
         {/* Cardholder Name */}
-        <div>
+        <Reveal index={2}>
           <label className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block">
             Cardholder Name
           </label>
@@ -322,10 +391,10 @@ function PaymentForm({
             disabled={stage === "processing"}
             autoComplete="off"
           />
-        </div>
+        </Reveal>
 
         {/* Card Number */}
-        <div>
+        <Reveal index={3}>
           <label className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block">
             Card Number
           </label>
@@ -347,10 +416,10 @@ function PaymentForm({
               </span>
             )}
           </div>
-        </div>
+        </Reveal>
 
         {/* Expiry + CVC row */}
-        <div className="grid grid-cols-2 gap-4">
+        <Reveal index={4} className="grid grid-cols-2 gap-4">
           <div>
             <label className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block">
               Expiry
@@ -387,7 +456,7 @@ function PaymentForm({
               autoComplete="off"
             />
           </div>
-        </div>
+        </Reveal>
 
         {/* Error message */}
         {errorMsg && (
@@ -400,7 +469,8 @@ function PaymentForm({
         <button
           type="submit"
           disabled={stage === "processing"}
-          className="w-full rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-colors hover:bg-lyp-deep-red disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{ animationDelay: `${revealDelay(5)}ms` }}
+          className="portal-reveal w-full rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:active:scale-100"
         >
           {stage === "processing" ? (
             <span className="flex items-center justify-center gap-3">
@@ -433,7 +503,10 @@ function PaymentForm({
         </button>
 
         {/* Security note */}
-        <p className="font-body text-xs text-lyp-white/30 text-center leading-relaxed">
+        <p
+          className="portal-reveal portal-reveal-fade font-body text-xs text-lyp-white/30 text-center leading-relaxed"
+          style={{ animationDelay: `${revealDelay(6)}ms` }}
+        >
           Your card details are securely tokenised and never touch our servers.
           Payments are processed by Pinch Payments, an Australian PCI-DSS
           compliant payment provider.

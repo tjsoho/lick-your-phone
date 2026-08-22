@@ -3,6 +3,7 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useProposal } from "../ProposalContext";
 import { signProposal } from "@/server-actions/signature";
+import Reveal, { revealDelay } from "../Reveal";
 
 type SignState = "idle" | "signing" | "signed" | "error";
 
@@ -181,7 +182,11 @@ export default function SignaturePage() {
   if (alreadySigned) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-lyp-cherry/20">
+        <Reveal
+          variant="pop"
+          index={0}
+          className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-lyp-cherry/20"
+        >
           <svg
             className="h-8 w-8 text-lyp-cherry"
             fill="none"
@@ -195,15 +200,15 @@ export default function SignaturePage() {
               d="M5 13l4 4L19 7"
             />
           </svg>
-        </div>
-        <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-4">
+        </Reveal>
+        <h1 className="portal-reveal font-heading text-3xl md:text-5xl text-lyp-white mb-4" style={{ animationDelay: `${revealDelay(1)}ms` }}>
           Agreement Signed
         </h1>
-        <p className="font-body text-sm text-lyp-white/60 max-w-sm mb-8">
+        <p className="portal-reveal font-body text-sm text-lyp-white/60 max-w-sm mb-8" style={{ animationDelay: `${revealDelay(2)}ms` }}>
           This proposal has already been signed. If you need a copy of your
           contract, please contact your account manager.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <Reveal index={3} className="flex flex-col sm:flex-row gap-4 justify-center">
           {documentUrl && (
             <a
               href={documentUrl}
@@ -235,7 +240,7 @@ export default function SignaturePage() {
               Proceed to Payment
             </button>
           )}
-        </div>
+        </Reveal>
       </div>
     );
   }
@@ -247,7 +252,11 @@ export default function SignaturePage() {
   if (signState === "signed") {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-lyp-cherry/20">
+        <Reveal
+          variant="pop"
+          index={0}
+          className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-lyp-cherry/20"
+        >
           <svg
             className="h-8 w-8 text-lyp-cherry"
             fill="none"
@@ -261,14 +270,14 @@ export default function SignaturePage() {
               d="M5 13l4 4L19 7"
             />
           </svg>
-        </div>
-        <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-4">
+        </Reveal>
+        <h1 className="portal-reveal font-heading text-3xl md:text-5xl text-lyp-white mb-4" style={{ animationDelay: `${revealDelay(1)}ms` }}>
           Agreement Signed
         </h1>
-        <p className="font-body text-sm text-lyp-white/60 max-w-sm mb-8">
+        <p className="portal-reveal font-body text-sm text-lyp-white/60 max-w-sm mb-8" style={{ animationDelay: `${revealDelay(2)}ms` }}>
           Thank you for signing. A copy of your contract has been generated.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <Reveal index={3} className="flex flex-col sm:flex-row gap-4 justify-center">
           {documentUrl && (
             <a
               href={documentUrl}
@@ -300,7 +309,7 @@ export default function SignaturePage() {
               Proceed to Payment
             </button>
           )}
-        </div>
+        </Reveal>
       </div>
     );
   }
@@ -313,26 +322,38 @@ export default function SignaturePage() {
 
   return (
     <div className="flex h-full flex-col px-6 py-8 md:px-16 lg:px-24">
-      <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-2">
+      <Reveal
+        as="h1"
+        index={0}
+        className="font-heading text-3xl md:text-5xl text-lyp-white mb-2"
+      >
         Sign Your Agreement
-      </h1>
-      <p className="font-body text-sm text-lyp-white/50 mb-6">
+      </Reveal>
+      <Reveal
+        as="p"
+        index={1}
+        className="font-body text-sm text-lyp-white/50 mb-6"
+      >
         Review and sign to confirm your selected services.
-      </p>
+      </Reveal>
 
       {noSelections ? (
         <div className="flex flex-1 flex-col items-center justify-center">
-          <p className="font-body text-lyp-white/40 text-lg">
+          <Reveal as="p" index={2} className="font-body text-lyp-white/40 text-lg">
             No services selected.
-          </p>
-          <p className="font-body text-lyp-white/30 text-sm mt-2">
+          </Reveal>
+          <Reveal
+            as="p"
+            index={3}
+            className="font-body text-lyp-white/30 text-sm mt-2"
+          >
             Go back and select at least one service before signing.
-          </p>
+          </Reveal>
         </div>
       ) : (
         <div className="flex-1 overflow-y-auto space-y-6">
           {/* Email */}
-          <div>
+          <Reveal index={2}>
             <label
               htmlFor="signer-email"
               className="block font-body text-sm text-lyp-white/70 mb-2"
@@ -357,10 +378,12 @@ export default function SignaturePage() {
                 {emailError}
               </p>
             )}
-          </div>
+          </Reveal>
 
-          {/* Signature canvas */}
-          <div>
+          {/* Signature canvas. FADE ONLY, deliberately: `getPos` reads the
+              canvas's bounding rect to place each stroke, and a transform
+              would offset that rect for anyone who starts drawing mid-entry. */}
+          <Reveal variant="fade" index={3}>
             <p className="font-body text-sm text-lyp-white/70 mb-2">
               Draw your signature below
             </p>
@@ -386,10 +409,13 @@ export default function SignaturePage() {
             >
               Clear signature
             </button>
-          </div>
+          </Reveal>
 
           {/* Agreement text */}
-          <p className="font-body text-xs text-lyp-white/40 max-w-md leading-relaxed">
+          <p
+            className="portal-reveal font-body text-xs text-lyp-white/40 max-w-md leading-relaxed"
+            style={{ animationDelay: `${revealDelay(4)}ms` }}
+          >
             By clicking &ldquo;I Agree &amp; Sign&rdquo; you confirm that you
             have reviewed the selected services and pricing, and agree to the
             terms and conditions outlined in this proposal.
@@ -403,12 +429,12 @@ export default function SignaturePage() {
           )}
 
           {/* Action buttons */}
-          <div className="flex gap-3 max-w-md">
+          <Reveal index={5} className="flex gap-3 max-w-md">
             <button
               type="button"
               onClick={handleSign}
               disabled={!hasDrawn || !email || signState === "signing"}
-              className="flex-1 rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-colors hover:bg-lyp-maroon disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex-1 rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-maroon active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:active:scale-100"
             >
               {signState === "signing" ? (
                 <span className="flex items-center justify-center gap-2">
@@ -437,7 +463,7 @@ export default function SignaturePage() {
                 "I Agree & Sign"
               )}
             </button>
-          </div>
+          </Reveal>
         </div>
       )}
     </div>

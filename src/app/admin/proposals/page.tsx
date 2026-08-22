@@ -128,7 +128,7 @@ export default async function ProposalsPage() {
                 </th>
                 <th className={thClasses}>Total</th>
                 <th className={thClasses}>Created</th>
-                <th className={thClasses}>Portal Link</th>
+                <th className={thClasses}>Proposal Link</th>
                 <th className={thClasses}>Actions</th>
                 <th className={cn(thClasses, "text-right")}>ID</th>
               </tr>

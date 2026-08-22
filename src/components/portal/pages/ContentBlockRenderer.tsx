@@ -2,9 +2,69 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { ContentBlock } from "../ProposalContext";
 import MediaCarousel from "./MediaCarousel";
+import Reveal, { STEP } from "../Reveal";
+
+/**
+ * Interval between the ITEMS INSIDE a block — the rows of a list, the cells of
+ * a results grid. Tighter than the interval between blocks: a twelve-item list
+ * cascading at the full step would still be arriving long after the reader got
+ * there.
+ */
+const ITEM_STEP = 46;
 
 /** One radius for every content image, so nothing looks half-styled. */
 export const IMAGE_RADIUS = "rounded-xl";
+
+/* -------------------------------------------------------------------------
+   HOW WIDE EACH PICTURE ACTUALLY RENDERS.
+
+   `next/image` without `sizes` tells the browser nothing, so the browser
+   assumes the image is 100vw and takes the largest candidate in the srcset.
+   The portal's sources are 1600-2400px wide, so a 160px collage tile was
+   downloading a 640w file and an 80px client mark a 256w one. Every value
+   below is derived from the layout that draws it — the column fraction, the
+   container cap, or the literal pixel height — not guessed, and they live
+   here together so a layout change and its `sizes` cannot drift apart.
+
+   Anything under 384px resolves against Next's `imageSizes` ladder
+   (16/32/48/64/96/128/256/384); anything larger against `deviceSizes`
+   (640/750/828/1080/1200/1920/2048).
+   ------------------------------------------------------------------------- */
+export const SIZES = {
+  /**
+   * The main single image — the service-page picture rail and the two-column
+   * featured image. Both sit in a ~35-43% column of a max-w-[1400px] page,
+   * which is ~44vw at 1440 and narrower on wider screens.
+   */
+  main: "(min-width: 1024px) 44vw, 92vw",
+  /**
+   * The statement slide, where one picture carries the whole page and runs to
+   * 58vh tall with the width following the aspect ratio.
+   */
+  statement: "(min-width: 1024px) 60vw, 92vw",
+  /** The cover hero — half of a max-w-6xl (1152px) grid. */
+  cover: "(min-width: 1024px) 560px, 92vw",
+  /** One of the two overlapping device mockups: 62% of a ~24rem stage. */
+  offsetPair: "(min-width: 1024px) 240px, 200px",
+  /** The results page's device column — 38fr of the capped content row. */
+  resultsDevice: "(min-width: 1024px) 480px, 90vw",
+  /** A full-width `image` block inside the 7/12 text column. */
+  bodyImage: "(min-width: 1024px) 730px, 92vw",
+  /** Collage tile — hard-capped at max-w-[10rem]. */
+  collage: "160px",
+  /** A mark in a `logos` block — h-16, so ~200px of artwork. */
+  logo: "200px",
+  /** The circular client mark in a results row — 64px, 80px on tall screens. */
+  resultMark: "80px",
+  /** A press-banner logo — h-14, h-20 from md. */
+  pressLogo: "240px",
+  /** The results banner's brand mark — h-12 to h-16. */
+  bannerMark: "64px",
+  /** A circular platform mark on a service page — 41% of the picture rail. */
+  platformMark: "(min-width: 1024px) 250px, 40vw",
+  /** Platform marks demoted to a caption row beside a photograph. */
+  platformMarkSmall: "120px",
+} as const;
 
 /**
  * The height a page's MAIN SINGLE IMAGE is drawn at — the service-page picture
@@ -53,22 +113,33 @@ export const RHYTHM = {
 /** Comfortable measure for running copy (~70 characters per line). */
 const MEASURE = "max-w-[70ch]";
 
-function renderBlock(block: ContentBlock): ReactNode {
+/**
+ * @param base the delay (ms) the block itself arrives at. Items inside the
+ *   block cascade on from there, so a list reads top to bottom rather than
+ *   landing as one plate.
+ */
+function renderBlock(block: ContentBlock, base: number): ReactNode {
   if (block.type === "heading") {
     return (
-      <h2 className="font-heading text-2xl md:text-3xl text-lyp-white uppercase tracking-wide">
+      <Reveal
+        as="h2"
+        delay={base}
+        className="font-heading text-2xl md:text-3xl text-lyp-white uppercase tracking-wide"
+      >
         {String(block.content ?? "")}
-      </h2>
+      </Reveal>
     );
   }
 
   if (block.type === "paragraph") {
     return (
-      <p
+      <Reveal
+        as="p"
+        delay={base}
         className={`font-body text-base text-lyp-white/85 leading-relaxed ${MEASURE}`}
       >
         {String(block.content ?? "")}
-      </p>
+      </Reveal>
     );
   }
 
@@ -76,13 +147,15 @@ function renderBlock(block: ContentBlock): ReactNode {
     return (
       <ul className={`space-y-2 ${MEASURE}`}>
         {(block.content as string[]).map((item, i) => (
-          <li
+          <Reveal
+            as="li"
             key={i}
+            delay={base + i * ITEM_STEP}
             className="flex items-start gap-3 font-body text-base text-lyp-white/85"
           >
             <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-lyp-cherry" />
             {item}
-          </li>
+          </Reveal>
         ))}
       </ul>
     );
@@ -94,14 +167,16 @@ function renderBlock(block: ContentBlock): ReactNode {
         {(block.content as { url: string; alt: string }[])
           .filter((logo) => logo?.url)
           .map((logo, i) => (
-            <Image
-              key={i}
-              src={logo.url}
-              alt={logo.alt || "Logo"}
-              className="h-16 w-auto object-contain opacity-80 hover:opacity-100 transition-opacity"
-              width={200}
-              height={64}
-            />
+            <Reveal key={i} variant="pop" delay={base + i * ITEM_STEP}>
+              <Image
+                src={logo.url}
+                alt={logo.alt || "Logo"}
+                sizes={SIZES.logo}
+                className="h-16 w-auto object-contain opacity-80 transition-opacity duration-300 ease-brand hover:opacity-100"
+                width={200}
+                height={64}
+              />
+            </Reveal>
           ))}
       </div>
     );
@@ -119,10 +194,16 @@ function renderBlock(block: ContentBlock): ReactNode {
       // on a wide column.
       <div className="flex justify-start gap-2">
         {images.map((img, i) => (
-          <div key={i} className="aspect-square max-w-[10rem] flex-1">
+          <Reveal
+            key={i}
+            variant="lift"
+            delay={base + i * ITEM_STEP}
+            className="aspect-square max-w-[10rem] flex-1"
+          >
             <Image
               src={img.url}
               alt={img.alt || "Team photo"}
+              sizes={SIZES.collage}
               // NOTE: object-cover, and the radius is on the image itself
               // rather than a wrapper. These sources are 2:3 portrait, so
               // contain would letterbox them inside the square and the rounded
@@ -131,7 +212,7 @@ function renderBlock(block: ContentBlock): ReactNode {
               width={480}
               height={480}
             />
-          </div>
+          </Reveal>
         ))}
       </div>
     );
@@ -151,7 +232,11 @@ function renderBlock(block: ContentBlock): ReactNode {
       // pair and the bottom banner have to fit a 720px-tall laptop unscrolled.
       <div className="grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2 lg:gap-x-8 [@media(min-height:850px)]:gap-y-6">
         {results.map((result, i) => (
-          <div key={i} className="flex items-start gap-4 lg:gap-5">
+          <Reveal
+            key={i}
+            delay={base + i * ITEM_STEP}
+            className="flex items-start gap-4 lg:gap-5"
+          >
             {result.url && (
               // THE ONE PERMITTED object-cover ON A CONTENT IMAGE. The client
               // marks are meant to FILL a circle, so a non-square source has to
@@ -162,6 +247,7 @@ function renderBlock(block: ContentBlock): ReactNode {
               <Image
                 src={result.url}
                 alt={result.alt || "Client logo"}
+                sizes={SIZES.resultMark}
                 className="h-16 w-16 flex-shrink-0 rounded-full object-cover [@media(min-height:850px)]:h-20 [@media(min-height:850px)]:w-20"
                 width={160}
                 height={160}
@@ -177,7 +263,7 @@ function renderBlock(block: ContentBlock): ReactNode {
                 </p>
               )}
             </div>
-          </div>
+          </Reveal>
         ))}
       </div>
     );
@@ -188,33 +274,43 @@ function renderBlock(block: ContentBlock): ReactNode {
   if (block.type === "offset_image") return null;
 
   if (block.type === "media_carousel" && Array.isArray(block.content)) {
-    return <MediaCarousel items={block.content as { url: string; alt: string }[]} />;
+    return (
+      <Reveal variant="lift" delay={base}>
+        <MediaCarousel
+          items={block.content as { url: string; alt: string }[]}
+          sizes={SIZES.bodyImage}
+        />
+      </Reveal>
+    );
   }
 
   if (block.type === "image" && typeof block.content === "string") {
     return (
-      <div className={`overflow-hidden ${IMAGE_RADIUS}`}>
+      <Reveal variant="lift" delay={base} className={`overflow-hidden ${IMAGE_RADIUS}`}>
         <Image
           src={block.content}
           alt="Content image"
+          sizes={SIZES.bodyImage}
           className="mx-auto h-auto max-h-[60vh] w-full object-contain"
           width={800}
           height={600}
         />
-      </div>
+      </Reveal>
     );
   }
 
   return (
-    <div className={`font-body text-base text-lyp-white/60 ${MEASURE}`}>
+    <Reveal delay={base} className={`font-body text-base text-lyp-white/60 ${MEASURE}`}>
       {JSON.stringify(block.content)}
-    </div>
+    </Reveal>
   );
 }
 
 export default function ContentBlockRenderer({
   blocks,
   leadingGap = "",
+  revealFrom = 0,
+  revealStep = STEP,
 }: {
   blocks: ContentBlock[];
   /**
@@ -223,6 +319,14 @@ export default function ContentBlockRenderer({
    * from the same scale as every other gap.
    */
   leadingGap?: string;
+  /**
+   * Delay (ms) the FIRST block arrives at. The page has usually already spent
+   * two or three steps on its eyebrow, title and rule, so it hands the number
+   * it got up to down to the body copy and the cascade continues unbroken.
+   */
+  revealFrom?: number;
+  /** Interval between blocks. Dense pages tighten it. */
+  revealStep?: number;
 }) {
   // `offset_image` is layout data for the page's image column, not a block in
   // the text flow. Dropping it here (rather than rendering null) keeps it from
@@ -244,9 +348,12 @@ export default function ContentBlockRenderer({
                 ? RHYTHM.grouped
                 : RHYTHM.block;
 
+        // The reveal lives on the block's own element, not on this wrapper:
+        // the wrapper carries the rhythm margin, and nesting a fading box
+        // inside another fading box compounds the opacity into mush.
         return (
           <div key={block.id} className={gap}>
-            {renderBlock(block)}
+            {renderBlock(block, revealFrom + i * revealStep)}
           </div>
         );
       })}

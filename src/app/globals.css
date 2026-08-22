@@ -367,3 +367,131 @@
     animation: none;
   }
 }
+
+/* ---- Portal entry motion ------------------------------------------------
+   The proposal's component-level choreography. Every page part enters with
+   the same curve and the same physics; only the delay changes, so a slide
+   arrives in reading order rather than all at once.
+
+   Each keyframe declares only a `from` state and the classes run with
+   `animation-fill-mode: backwards`. Backwards holds that first frame during
+   the stagger delay and — unlike `both` — leaves NOTHING applied once the
+   animation ends, so no element is stranded on its own composited layer.
+   Nothing here animates anything but `transform` and `opacity`, and no
+   keyframe touches `filter` (a permanently applied filter forces a
+   composited layer that some mobile browsers rasterise below native
+   density — that bug is fixed and stays fixed).
+
+   Offsets are deliberately small. `.portal-scroll` is a real scroller, and a
+   transformed child contributes to its scrollable overflow, so a large
+   downward offset would flash a scrollbar mid-animation.
+   ------------------------------------------------------------------------ */
+
+@keyframes portal-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+}
+
+@keyframes portal-fall {
+  from {
+    opacity: 0;
+    transform: translate3d(0, -12px, 0);
+  }
+}
+
+@keyframes portal-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes portal-in-left {
+  from {
+    opacity: 0;
+    transform: translate3d(-18px, 0, 0);
+  }
+}
+
+@keyframes portal-in-right {
+  from {
+    opacity: 0;
+    transform: translate3d(18px, 0, 0);
+  }
+}
+
+@keyframes portal-lift {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.985);
+  }
+}
+
+@keyframes portal-rule {
+  from {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+}
+
+@keyframes portal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+
+.portal-reveal {
+  animation-duration: 620ms;
+  /* ease-brand — the same curve the Tailwind token registers. */
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+  animation-fill-mode: backwards;
+  animation-name: portal-rise;
+}
+
+.portal-reveal-fade {
+  animation-name: portal-fade;
+  animation-duration: 540ms;
+}
+
+.portal-reveal-fall {
+  animation-name: portal-fall;
+}
+
+.portal-reveal-left {
+  animation-name: portal-in-left;
+}
+
+.portal-reveal-right {
+  animation-name: portal-in-right;
+}
+
+/* Images carry more mass than a line of type, so they take longer. */
+.portal-reveal-lift {
+  animation-name: portal-lift;
+  animation-duration: 780ms;
+}
+
+/* A hairline draws from its left edge rather than fading in place. */
+.portal-reveal-rule {
+  animation-name: portal-rule;
+  animation-duration: 720ms;
+  transform-origin: left center;
+}
+
+.portal-reveal-pop {
+  animation-name: portal-pop;
+  animation-duration: 460ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* `!important` because the stagger delay is an inline style; killing the
+     name alone would still leave the element correct, but this makes the
+     neutralisation total and obvious. */
+  .portal-reveal {
+    animation-name: none !important;
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+  }
+}

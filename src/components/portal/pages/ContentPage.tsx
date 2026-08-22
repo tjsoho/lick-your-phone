@@ -7,7 +7,9 @@ import ContentBlockRenderer, {
   RHYTHM,
   IMAGE_RADIUS,
   MAIN_IMAGE,
+  SIZES,
 } from "./ContentBlockRenderer";
+import Reveal, { STEP, revealDelay } from "../Reveal";
 import PaymentPage from "./PaymentPage";
 import SignaturePage from "./SignaturePage";
 
@@ -28,7 +30,9 @@ export default function ContentPage({ page }: ContentPageProps) {
             <Image
               src={page.featuredImage}
               alt={page.title || "Proposal cover image"}
-              className="h-auto w-full max-h-[45vh] object-contain lg:max-h-[75vh]"
+              sizes={SIZES.cover}
+              className="portal-reveal portal-reveal-lift h-auto w-full max-h-[45vh] object-contain lg:max-h-[75vh]"
+              style={{ animationDelay: `${revealDelay(0)}ms` }}
               width={800}
               height={600}
               priority
@@ -41,26 +45,43 @@ export default function ContentPage({ page }: ContentPageProps) {
               page.featuredImage ? "" : "lg:col-span-2 lg:text-center"
             }`}
           >
-            <div
+            {/* The cover is the proposal's handshake, so it is the one
+                slide whose stagger is stretched: the mark lands, a beat, then
+                the client's own name. */}
+            <Reveal
+              index={1}
               className={`mb-8 flex justify-center ${
                 page.featuredImage ? "lg:justify-start" : ""
               }`}
             >
               <Logo onDark className="h-14 md:h-16" priority />
-            </div>
+            </Reveal>
 
-            <p className="font-body text-sm text-lyp-white/60 mb-3 tracking-[0.3em] uppercase">
+            <Reveal
+              as="p"
+              index={2}
+              className="font-body text-sm text-lyp-white/60 mb-3 tracking-[0.3em] uppercase"
+            >
               Proposal prepared for
-            </p>
-            <h2 className="font-heading text-4xl md:text-5xl text-lyp-white mb-2">
+            </Reveal>
+            <Reveal
+              as="h2"
+              index={3}
+              className="font-heading text-4xl md:text-5xl text-lyp-white mb-2"
+            >
               {proposal.clientName}
-            </h2>
-            <p className="font-body text-xl text-lyp-white/50">
+            </Reveal>
+            <Reveal
+              as="p"
+              index={4}
+              className="font-body text-xl text-lyp-white/50"
+            >
               {proposal.venueName}
-            </p>
+            </Reveal>
 
             {proposal.status === "signed" && (
-              <div
+              <Reveal
+                index={5}
                 className={`mt-8 flex flex-col items-center gap-3 ${
                   page.featuredImage ? "lg:items-start" : ""
                 }`}
@@ -74,11 +95,11 @@ export default function ContentPage({ page }: ContentPageProps) {
                     const idx = pages.findIndex((p) => p.slug === "summary");
                     if (idx !== -1) setCurrentPage(idx);
                   }}
-                  className="rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-colors hover:bg-lyp-cherry/90"
+                  className="rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
                 >
                   View Summary
                 </button>
-              </div>
+              </Reveal>
             )}
           </div>
         </div>
@@ -193,24 +214,36 @@ export default function ContentPage({ page }: ContentPageProps) {
       // object-contain means any source aspect ratio lands intact inside its
       // box rather than being cropped.
       <div className="relative mx-auto aspect-[3/4] w-full max-w-[20rem] lg:max-w-[24rem]">
-        <div className="absolute left-0 top-0 h-[82%] w-[62%]">
+        {/* The pair arrives as a pair — back mockup first, front one a beat
+            later, so the overlap reads as depth rather than as one flat plate. */}
+        <Reveal
+          variant="lift"
+          index={2}
+          className="absolute left-0 top-0 h-[82%] w-[62%]"
+        >
           <Image
             src={columnImages[0].url}
             alt={columnImages[0].alt || "Page illustration"}
+            sizes={SIZES.offsetPair}
             className={`mx-auto h-full w-auto max-w-full object-contain object-top ${IMAGE_RADIUS}`}
             width={600}
             height={1200}
           />
-        </div>
-        <div className="absolute bottom-0 right-0 h-[82%] w-[62%]">
+        </Reveal>
+        <Reveal
+          variant="lift"
+          index={3}
+          className="absolute bottom-0 right-0 h-[82%] w-[62%]"
+        >
           <Image
             src={columnImages[1].url}
             alt={columnImages[1].alt || "Page illustration"}
+            sizes={SIZES.offsetPair}
             className={`mx-auto h-full w-auto max-w-full object-contain object-bottom ${IMAGE_RADIUS}`}
             width={600}
             height={1200}
           />
-        </div>
+        </Reveal>
       </div>
     ) : hasImage ? (
       <Image
@@ -221,7 +254,9 @@ export default function ContentPage({ page }: ContentPageProps) {
         // object-contain so the image is never cropped. Whichever column is
         // taller still sets the grid row height, so a picture this size only
         // pushes the text down on a page whose copy is shorter than it.
-        className={`mx-auto ${MAIN_IMAGE}`}
+        sizes={SIZES.main}
+        className={`portal-reveal portal-reveal-lift mx-auto ${MAIN_IMAGE}`}
+        style={{ animationDelay: `${revealDelay(2)}ms` }}
         width={800}
         height={600}
       />
@@ -251,9 +286,13 @@ export default function ContentPage({ page }: ContentPageProps) {
         <div className="flex min-h-0 flex-1 flex-col justify-center px-6 py-6 md:px-10 lg:px-14 [@media(min-height:850px)]:py-8">
           <div className="mx-auto w-full max-w-[1400px]">
             {page.title && (
-              <h1 className="font-heading text-4xl uppercase leading-[1.02] tracking-tight text-lyp-white md:text-5xl xl:text-6xl">
+              <Reveal
+                as="h1"
+                index={0}
+                className="font-heading text-4xl uppercase leading-[1.02] tracking-tight text-lyp-white md:text-5xl xl:text-6xl"
+              >
                 {page.title}
-              </h1>
+              </Reveal>
             )}
 
             {/* 62/38 split. Fractional track sizes rather than col-spans so the
@@ -272,7 +311,10 @@ export default function ContentPage({ page }: ContentPageProps) {
               }`}
             >
               <div>
-                <ContentBlockRenderer blocks={resultsBlocks} />
+                <ContentBlockRenderer
+                  blocks={resultsBlocks}
+                  revealFrom={revealDelay(1)}
+                />
               </div>
 
               {columnImages.length > 0 && (
@@ -286,24 +328,34 @@ export default function ContentPage({ page }: ContentPageProps) {
                 <div className="flex items-center justify-center lg:h-[56vh]">
                   {columnImages.length >= 2 ? (
                     <div className="relative mx-auto aspect-[3/4] w-full max-w-[17rem] lg:h-full lg:w-auto lg:max-w-full">
-                      <div className="absolute left-0 top-0 h-[82%] w-[62%]">
+                      <Reveal
+                        variant="lift"
+                        index={2}
+                        className="absolute left-0 top-0 h-[82%] w-[62%]"
+                      >
                         <Image
                           src={columnImages[0].url}
                           alt={columnImages[0].alt || "Page illustration"}
+                          sizes={SIZES.offsetPair}
                           className={`mx-auto h-full w-auto max-w-full object-contain object-top ${IMAGE_RADIUS}`}
                           width={600}
                           height={1200}
                         />
-                      </div>
-                      <div className="absolute bottom-0 right-0 h-[82%] w-[62%]">
+                      </Reveal>
+                      <Reveal
+                        variant="lift"
+                        index={3}
+                        className="absolute bottom-0 right-0 h-[82%] w-[62%]"
+                      >
                         <Image
                           src={columnImages[1].url}
                           alt={columnImages[1].alt || "Page illustration"}
+                          sizes={SIZES.offsetPair}
                           className={`mx-auto h-full w-auto max-w-full object-contain object-bottom ${IMAGE_RADIUS}`}
                           width={600}
                           height={1200}
                         />
-                      </div>
+                      </Reveal>
                     </div>
                   ) : (
                     <Image
@@ -312,7 +364,9 @@ export default function ContentPage({ page }: ContentPageProps) {
                       // h-auto + w-auto + a max-height: the box tracks the
                       // photo exactly, so the radius lands on the artwork and
                       // never on letterbox space. No plate, border or shadow.
-                      className={`mx-auto h-auto max-h-[50vh] w-auto max-w-full object-contain lg:max-h-full ${IMAGE_RADIUS}`}
+                      sizes={SIZES.resultsDevice}
+                      className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[50vh] w-auto max-w-full object-contain lg:max-h-full ${IMAGE_RADIUS}`}
+                      style={{ animationDelay: `${revealDelay(2)}ms` }}
                       width={600}
                       height={1200}
                     />
@@ -326,7 +380,11 @@ export default function ContentPage({ page }: ContentPageProps) {
         {hasBanner && (
           // Full viewport width: this element is a direct child of the scroll
           // column, which is no longer capped, so `w-full` IS the viewport.
-          <div className="w-full bg-lyp-black px-6 md:px-10 lg:px-14">
+          <Reveal
+            variant="fade"
+            delay={revealDelay(6)}
+            className="w-full bg-lyp-black px-6 md:px-10 lg:px-14"
+          >
             {/* Padding outside the cap, cap inside — the same order as the
                 content above, so the mark's left edge lines up exactly with
                 the first column of result logos at every width. */}
@@ -335,6 +393,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                 <Image
                   src={bannerMark.url}
                   alt={bannerMark.alt || "LickYourPhone"}
+                  sizes={SIZES.bannerMark}
                   // Square source in, circle out: w-auto keeps the box on the
                   // artwork so the radius lands on the mark, not on letterbox.
                   className="h-12 w-auto max-w-full flex-shrink-0 rounded-full object-contain md:h-14 [@media(min-height:850px)]:h-16"
@@ -355,7 +414,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                 </div>
               )}
             </div>
-          </div>
+          </Reveal>
         )}
       </div>
     );
@@ -382,7 +441,9 @@ export default function ContentPage({ page }: ContentPageProps) {
           // kept for photographic sources; on artwork that is already a circle
           // on a transparent square it simply has nothing to round, which is
           // harmless.
-          className={`mx-auto ${MAIN_IMAGE}`}
+          sizes={SIZES.statement}
+          className={`portal-reveal portal-reveal-lift mx-auto ${MAIN_IMAGE}`}
+          style={{ animationDelay: `${revealDelay(0)}ms` }}
           width={1200}
           height={1200}
           priority
@@ -395,20 +456,28 @@ export default function ContentPage({ page }: ContentPageProps) {
       <div className="mx-auto flex min-h-full w-full max-w-[1400px] flex-col items-center justify-center px-8 py-8 text-center md:px-16 [@media(min-height:850px)]:py-10">
         {statementImage}
         {page.title && (
-          <h1
+          // The statement slide is the one place the title follows the image
+          // rather than leading it: the picture is the statement, the words
+          // are the caption, and the order they arrive in says so.
+          <Reveal
+            as="h1"
+            index={2}
             className={`mx-auto max-w-[16ch] text-balance font-heading text-5xl uppercase leading-[0.95] tracking-tight text-lyp-white md:text-7xl ${
               statementImage ? "mt-8 [@media(min-height:850px)]:mt-10" : ""
             }`}
           >
             {page.title}
-          </h1>
+          </Reveal>
         )}
         {/* Title-only pages (a service page reached without its service in the
             proposal) keep the cherry rule: on its own a lone centred title
             reads like a page that failed to load, and the rule gives it
             intent. With an image above, the image is the intent. */}
         {!statementImage && (
-          <div className="mx-auto mt-8 h-[3px] w-16 rounded-full bg-lyp-cherry" />
+          <div
+            className="portal-reveal portal-reveal-rule mx-auto mt-8 h-[3px] w-16 rounded-full bg-lyp-cherry"
+            style={{ animationDelay: `${revealDelay(3)}ms` }}
+          />
         )}
       </div>
     );
@@ -420,22 +489,28 @@ export default function ContentPage({ page }: ContentPageProps) {
         <div className="flex flex-1 flex-col justify-center px-6 pt-10 pb-8 md:px-12 lg:px-16">
           <div className="mx-auto flex w-full max-w-[1400px] flex-col items-center">
           {page.title && (
-            <h1 className="text-center font-heading text-4xl md:text-6xl leading-[1.02] text-lyp-white uppercase tracking-tight">
+            <Reveal
+              as="h1"
+              index={0}
+              className="text-center font-heading text-4xl md:text-6xl leading-[1.02] text-lyp-white uppercase tracking-tight"
+            >
               {page.title}
-            </h1>
+            </Reveal>
           )}
 
           {subheadBlocks.length > 0 && (
             <div className="mt-2 max-w-[46rem] space-y-2 text-center">
-              {subheadBlocks.map((b) => (
-                <p
+              {subheadBlocks.map((b, i) => (
+                <Reveal
+                  as="p"
                   key={b.id}
+                  index={1 + i}
                   className="font-body text-base leading-relaxed text-lyp-white/70 md:text-lg"
                 >
                   {typeof b.content === "string"
                     ? b.content
                     : String(b.content ?? "")}
-                </p>
+                </Reveal>
               ))}
             </div>
           )}
@@ -454,18 +529,25 @@ export default function ContentPage({ page }: ContentPageProps) {
                 page.title || subheadBlocks.length > 0 ? "mt-10" : ""
               }`}
             >
+              {/* The device row deals itself out left to right. */}
               {showcaseImages.map((img, i) => (
                 <Image
                   key={`${img.url}-${i}`}
                   src={img.url}
                   alt={img.alt || ""}
+                  // One grid column each inside a capped 1400px row, so the
+                  // render width is a clean fraction of the page.
+                  sizes={`(min-width: 1024px) ${Math.round(
+                    1300 / showcaseImages.length,
+                  )}px, ${Math.round(92 / showcaseImages.length)}vw`}
+                  style={{ animationDelay: `${revealDelay(2) + i * STEP}ms` }}
                   width={900}
                   height={1600}
                   priority={i === 0}
                   // object-contain inside a fixed column: mixed device aspects
                   // (portrait phones beside a landscape tablet) share a common
                   // height and nothing is ever cropped.
-                  className="mx-auto h-auto max-h-[46vh] w-full object-contain lg:max-h-[60vh]"
+                  className="portal-reveal portal-reveal-lift mx-auto h-auto max-h-[46vh] w-full object-contain lg:max-h-[60vh]"
                 />
               ))}
             </div>
@@ -482,20 +564,25 @@ export default function ContentPage({ page }: ContentPageProps) {
             every corner), which is exactly why a true-black banner is the right
             backing — the artwork edges disappear into it. */}
         {showcaseLogos.length > 0 && (
-          <div className="w-full bg-black">
+          <Reveal
+            variant="fade"
+            delay={revealDelay(2) + showcaseImages.length * STEP + 120}
+            className="w-full bg-black"
+          >
             <div className="mx-auto flex max-w-[100rem] flex-wrap items-center justify-center gap-x-10 gap-y-4 px-6 md:gap-x-16 md:px-10">
               {showcaseLogos.map((logo, i) => (
                 <Image
                   key={`${logo.url}-${i}`}
                   src={logo.url}
                   alt={logo.alt || ""}
+                  sizes={SIZES.pressLogo}
                   width={600}
                   height={240}
                   className="h-14 w-auto object-contain md:h-20"
                 />
               ))}
             </div>
-          </div>
+          </Reveal>
         )}
       </div>
     );
@@ -524,13 +611,18 @@ export default function ContentPage({ page }: ContentPageProps) {
               // ("Complimentary Visit") stay on one line; longer ones
               // ("Marketing Growth Strategy") break over two without any manual
               // line break. No current page title needs three lines.
-              <h1 className="max-w-[18ch] font-heading text-4xl md:text-6xl leading-[1.02] text-lyp-white text-balance uppercase tracking-tight">
+              <Reveal
+                as="h1"
+                index={0}
+                className="max-w-[18ch] font-heading text-4xl md:text-6xl leading-[1.02] text-lyp-white text-balance uppercase tracking-tight"
+              >
                 {page.title}
-              </h1>
+              </Reveal>
             )}
             <ContentBlockRenderer
               blocks={textBlocks}
               leadingGap={page.title ? RHYTHM.section : ""}
+              revealFrom={revealDelay(page.title ? 1 : 0)}
             />
           </div>
 
