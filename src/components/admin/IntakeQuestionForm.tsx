@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { Plus, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
 import {
   upsertQuestion,
   deleteQuestion,
@@ -59,11 +59,49 @@ interface IntakeQuestionFormData {
   }[];
 }
 
-const inputClasses =
-  "w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm text-lyp-black focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent";
+const EASE = "ease-brand";
+
+const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+
+const selectClasses = `${inputClasses} appearance-none pr-11`;
 
 const labelClasses =
-  "block font-heading text-sm font-semibold text-lyp-black mb-1";
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+
+const errorClasses = "mt-1.5 font-body text-[12px] text-lyp-cherry";
+
+const helperClasses = "font-body text-[12px] text-[#8A7A7A]";
+
+const cardClasses =
+  "rounded-2xl border border-[#EFE6E6] bg-lyp-white p-5 sm:p-6";
+
+const sectionHeadingClasses =
+  "font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black";
+
+const ghostAddClasses = `group inline-flex items-center gap-2 font-body text-[12px] font-semibold tracking-wide text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`;
+
+const primaryPill = `group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none`;
+
+const destructivePill = `group inline-flex items-center gap-3 rounded-full border border-lyp-cherry/15 bg-lyp-cherry/[0.04] py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-cherry transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:bg-lyp-cherry/[0.07] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50`;
+
+const pillIcon = `flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`;
+
+const destructivePillIcon = `flex h-8 w-8 items-center justify-center rounded-full bg-lyp-cherry/10 transition-transform duration-500 ${EASE} group-hover:scale-105`;
+
+const iconButtonClasses = `flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[#A89898] transition-colors duration-500 ${EASE} hover:bg-lyp-cherry/[0.06] hover:text-lyp-cherry`;
+
+/** Native selects need their own chevron once appearance is stripped. */
+function SelectShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      {children}
+      <ChevronDown
+        strokeWidth={1.5}
+        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A89898]"
+      />
+    </div>
+  );
+}
 
 export default function IntakeQuestionForm({
   question,
@@ -258,218 +296,221 @@ export default function IntakeQuestionForm({
   const otherQuestions = questions.filter((q) => q.id !== question?.id);
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-        <h2 className="font-heading text-lg font-bold text-lyp-black">
-          General Information
-        </h2>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="max-w-3xl space-y-5"
+    >
+      {/* ─────────────── General information ─────────────── */}
+      <section className={cn(cardClasses, "animate-rise")}>
+        <h2 className={sectionHeadingClasses}>General Information</h2>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="mt-5 space-y-5">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="page_number" className={labelClasses}>
+                Page Number
+              </label>
+              <input
+                id="page_number"
+                type="number"
+                min="1"
+                {...register("page_number", {
+                  required: "Page number is required",
+                })}
+                className={cn(inputClasses, "tabular-nums")}
+              />
+              {errors.page_number && (
+                <p className={errorClasses}>{errors.page_number.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="sequence" className={labelClasses}>
+                Sequence
+              </label>
+              <input
+                id="sequence"
+                type="number"
+                min="1"
+                {...register("sequence", { required: "Sequence is required" })}
+                className={cn(inputClasses, "tabular-nums")}
+              />
+              {errors.sequence && (
+                <p className={errorClasses}>{errors.sequence.message}</p>
+              )}
+            </div>
+          </div>
+
           <div>
-            <label htmlFor="page_number" className={labelClasses}>
-              Page Number
+            <label htmlFor="section" className={labelClasses}>
+              Section (Optional)
             </label>
             <input
-              id="page_number"
-              type="number"
-              min="1"
-              {...register("page_number", {
-                required: "Page number is required",
+              id="section"
+              type="text"
+              placeholder="e.g. Venue Details, Contact Info"
+              {...register("section")}
+              className={inputClasses}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="field_label" className={labelClasses}>
+              Field Label
+            </label>
+            <input
+              id="field_label"
+              type="text"
+              placeholder="e.g. What is your ABN?"
+              {...register("field_label", {
+                required: "Field label is required",
               })}
               className={inputClasses}
             />
-            {errors.page_number && (
-              <p className="text-red-600 text-xs mt-1">
-                {errors.page_number.message}
-              </p>
+            {errors.field_label && (
+              <p className={errorClasses}>{errors.field_label.message}</p>
             )}
           </div>
 
-          <div>
-            <label htmlFor="sequence" className={labelClasses}>
-              Sequence
-            </label>
-            <input
-              id="sequence"
-              type="number"
-              min="1"
-              {...register("sequence", { required: "Sequence is required" })}
-              className={inputClasses}
-            />
-            {errors.sequence && (
-              <p className="text-red-600 text-xs mt-1">
-                {errors.sequence.message}
-              </p>
-            )}
-          </div>
-        </div>
+          <div className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="field_type" className={labelClasses}>
+                Field Type
+              </label>
+              <SelectShell>
+                <select
+                  id="field_type"
+                  {...register("field_type", {
+                    required: "Field type is required",
+                  })}
+                  className={selectClasses}
+                >
+                  <option value="text">Text Input</option>
+                  <option value="textarea">Text Area</option>
+                  <option value="email">Email</option>
+                  <option value="phone">Phone</option>
+                  <option value="abn">ABN</option>
+                  <option value="address">Address</option>
+                  <option value="radio">Radio Options</option>
+                  <option value="checkbox">Checkbox Options</option>
+                  <option value="multiselect">Multiselect Dropdown</option>
+                  <option value="file">File Upload</option>
+                  <option value="matrix">Matrix Grid</option>
+                  <option value="repeatable_group">Repeatable Group</option>
+                  <option value="provider_picker">Provider Picker</option>
+                  <option value="static_content">Static Content</option>
+                </select>
+              </SelectShell>
+            </div>
 
-        <div>
-          <label htmlFor="section" className={labelClasses}>
-            Section (Optional)
-          </label>
-          <input
-            id="section"
-            type="text"
-            placeholder="e.g. Venue Details, Contact Info"
-            {...register("section")}
-            className={inputClasses}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="field_label" className={labelClasses}>
-            Field Label
-          </label>
-          <input
-            id="field_label"
-            type="text"
-            placeholder="e.g. What is your ABN?"
-            {...register("field_label", {
-              required: "Field label is required",
-            })}
-            className={inputClasses}
-          />
-          {errors.field_label && (
-            <p className="text-red-600 text-xs mt-1">
-              {errors.field_label.message}
-            </p>
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 items-end">
-          <div>
-            <label htmlFor="field_type" className={labelClasses}>
-              Field Type
-            </label>
-            <select
-              id="field_type"
-              {...register("field_type", {
-                required: "Field type is required",
-              })}
-              className={inputClasses}
-            >
-              <option value="text">Text Input</option>
-              <option value="textarea">Text Area</option>
-              <option value="email">Email</option>
-              <option value="phone">Phone</option>
-              <option value="abn">ABN</option>
-              <option value="address">Address</option>
-              <option value="radio">Radio Options</option>
-              <option value="checkbox">Checkbox Options</option>
-              <option value="multiselect">Multiselect Dropdown</option>
-              <option value="file">File Upload</option>
-              <option value="matrix">Matrix Grid</option>
-              <option value="repeatable_group">Repeatable Group</option>
-              <option value="provider_picker">Provider Picker</option>
-              <option value="static_content">Static Content</option>
-            </select>
-          </div>
-
-          <div className="flex items-center h-10 gap-2">
-            <input
-              id="required"
-              type="checkbox"
-              {...register("required")}
-              className="rounded border-gray-300 text-lyp-cherry focus:ring-lyp-cherry h-4 w-4"
-            />
             <label
               htmlFor="required"
-              className="font-body text-sm font-semibold text-lyp-black select-none"
+              className={`flex cursor-pointer items-center gap-3 rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 transition-all duration-500 ${EASE} hover:border-lyp-cherry/25`}
             >
-              Required field
+              <input
+                id="required"
+                type="checkbox"
+                {...register("required")}
+                className="h-4 w-4 flex-shrink-0 rounded accent-lyp-cherry"
+              />
+              <span className="select-none font-body text-[13px] font-medium text-lyp-black">
+                Required field
+              </span>
             </label>
           </div>
+
+          {(watchedFieldType === "text" || watchedFieldType === "email") && (
+            <div className="border-t border-[#F1E8E8] pt-5">
+              <label htmlFor="config.placeholder" className={labelClasses}>
+                Placeholder Text
+              </label>
+              <input
+                id="config.placeholder"
+                type="text"
+                placeholder={
+                  watchedFieldType === "text"
+                    ? "e.g. @yourbusiness"
+                    : "e.g. your@email.com"
+                }
+                {...register("config.placeholder")}
+                className={inputClasses}
+              />
+            </div>
+          )}
+
+          {watchedFieldType === "static_content" && (
+            <div className="border-t border-[#F1E8E8] pt-5">
+              <label htmlFor="config.content" className={labelClasses}>
+                Static Content
+              </label>
+              <textarea
+                id="config.content"
+                rows={4}
+                placeholder="Enter the static content to display to the user..."
+                {...register("config.content", {
+                  required:
+                    "Static content is required for Static Content fields",
+                })}
+                className={inputClasses}
+              />
+              {errors.config?.content && (
+                <p className={errorClasses}>{errors.config.content.message}</p>
+              )}
+            </div>
+          )}
+
+          {watchedFieldType === "provider_picker" && (
+            <div className="border-t border-[#F1E8E8] pt-5">
+              <label htmlFor="config.providerType" className={labelClasses}>
+                Provider Type
+              </label>
+              <SelectShell>
+                <select
+                  id="config.providerType"
+                  {...register("config.providerType")}
+                  className={selectClasses}
+                >
+                  <option value="photographer">Photographer</option>
+                  <option value="videographer">Videographer</option>
+                </select>
+              </SelectShell>
+            </div>
+          )}
         </div>
+      </section>
 
-        {(watchedFieldType === "text" || watchedFieldType === "email") && (
-          <div className="border-t pt-4">
-            <label htmlFor="config.placeholder" className={labelClasses}>
-              Placeholder Text
-            </label>
-            <input
-              id="config.placeholder"
-              type="text"
-              placeholder={
-                watchedFieldType === "text"
-                  ? "e.g. @yourbusiness"
-                  : "e.g. your@email.com"
-              }
-              {...register("config.placeholder")}
-              className={inputClasses}
-            />
-          </div>
-        )}
-
-        {watchedFieldType === "static_content" && (
-          <div className="border-t pt-4">
-            <label htmlFor="config.content" className={labelClasses}>
-              Static Content
-            </label>
-            <textarea
-              id="config.content"
-              rows={4}
-              placeholder="Enter the static content to display to the user..."
-              {...register("config.content", {
-                required:
-                  "Static content is required for Static Content fields",
-              })}
-              className={inputClasses}
-            />
-            {errors.config?.content && (
-              <p className="text-red-600 text-xs mt-1">
-                {errors.config.content.message}
-              </p>
-            )}
-          </div>
-        )}
-
-        {watchedFieldType === "provider_picker" && (
-          <div className="border-t pt-4">
-            <label htmlFor="config.providerType" className={labelClasses}>
-              Provider Type
-            </label>
-            <select
-              id="config.providerType"
-              {...register("config.providerType")}
-              className={inputClasses}
-            >
-              <option value="photographer">Photographer</option>
-              <option value="videographer">Videographer</option>
-            </select>
-          </div>
-        )}
-      </div>
-
-      {/* Choice options array builder */}
+      {/* ─────────────── Choice options array builder ─────────────── */}
       {isChoiceBased && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-heading text-lg font-bold text-lyp-black">
-              Options
-            </h2>
+        <section
+          className={cn(cardClasses, "animate-rise")}
+          style={{ animationDelay: "80ms" }}
+        >
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className={sectionHeadingClasses}>Options</h2>
             <button
               type="button"
               onClick={() => appendOption({ value: "" })}
-              className="flex items-center gap-1 text-sm font-body text-lyp-cherry hover:text-lyp-maroon transition-colors"
+              className={ghostAddClasses}
             >
-              <Plus className="h-4 w-4" /> Add Option
+              Add Option
+              <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
             </button>
           </div>
 
           {optionFields.length === 0 ? (
-            <p className="font-body text-sm text-gray-500">
+            <p className={cn(helperClasses, "mt-4")}>
               No options added yet. Choice-based types need at least one option.
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="mt-4 space-y-2.5">
               {optionFields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2">
-                  <span className="font-body text-xs text-gray-400 w-6">
+                <div key={field.id} className="flex items-center gap-2.5">
+                  <span className="w-6 flex-shrink-0 font-body text-[11px] tabular-nums text-[#A89898]">
                     #{index + 1}
                   </span>
                   <input
                     type="text"
+                    aria-label={`Option ${index + 1}`}
                     placeholder={`Option ${index + 1}`}
                     {...register(`options.${index}.value` as const, {
                       required: "Option text is required",
@@ -479,23 +520,31 @@ export default function IntakeQuestionForm({
                   <button
                     type="button"
                     onClick={() => removeOption(index)}
-                    className="text-red-500 hover:text-red-700 p-2 font-body text-sm"
+                    className={iconButtonClasses}
+                    title="Remove option"
+                    aria-label={`Remove option ${index + 1}`}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 strokeWidth={1.5} className="h-4 w-4" />
                   </button>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
       )}
 
-      {/* Visibility Conditions builder */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="font-heading text-lg font-bold text-lyp-black">
-            Visibility Conditions (OR Logic if multiple conditions)
-          </h2>
+      {/* ─────────────── Visibility conditions builder ─────────────── */}
+      <section
+        className={cn(cardClasses, "animate-rise")}
+        style={{ animationDelay: "140ms" }}
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className={sectionHeadingClasses}>Visibility Conditions</h2>
+            <p className={cn(helperClasses, "mt-1.5")}>
+              OR logic if multiple conditions.
+            </p>
+          </div>
           <button
             type="button"
             onClick={() =>
@@ -507,128 +556,158 @@ export default function IntakeQuestionForm({
                 condition_value: "",
               })
             }
-            className="flex items-center gap-1 text-sm font-body text-lyp-cherry hover:text-lyp-maroon transition-colors"
+            className={ghostAddClasses}
           >
-            <Plus className="h-4 w-4" /> Add Condition
+            Add Condition
+            <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
           </button>
         </div>
 
         {conditionFields.length === 0 ? (
-          <p className="font-body text-sm text-gray-500">
+          <p className={cn(helperClasses, "mt-4")}>
             Visible to all clients by default. Add conditions to show/hide based
             on details or responses.
           </p>
         ) : (
-          <div className="space-y-4">
+          <div className="mt-5 space-y-3">
             {conditionFields.map((field, index) => {
               const currentType = watchedConditions?.[index]?.condition_type;
               return (
                 <div
                   key={field.id}
-                  className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-3 relative"
+                  className="relative rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] p-4 sm:p-5"
                 >
                   <button
                     type="button"
                     onClick={() => removeCondition(index)}
-                    className="absolute top-2 right-2 text-red-500 hover:text-red-700 p-1.5"
+                    className={cn(iconButtonClasses, "absolute right-3 top-3")}
                     title="Remove condition"
+                    aria-label={`Remove condition ${index + 1}`}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 strokeWidth={1.5} className="h-4 w-4" />
                   </button>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pr-8">
+                  <div className="grid grid-cols-1 gap-4 pr-10 sm:grid-cols-2">
                     <div>
-                      <label className="block font-heading text-xs font-semibold text-lyp-black mb-1">
+                      <label
+                        htmlFor={`condition-${index}-type`}
+                        className={labelClasses}
+                      >
                         Condition Type
                       </label>
-                      <select
-                        {...register(
-                          `conditions.${index}.condition_type` as const,
-                        )}
-                        className={inputClasses}
-                      >
-                        <option value="service_signed">Service Signed</option>
-                        <option value="venue_state">Venue State</option>
-                        <option value="answer_equals">Answer Equals</option>
-                      </select>
+                      <SelectShell>
+                        <select
+                          id={`condition-${index}-type`}
+                          {...register(
+                            `conditions.${index}.condition_type` as const,
+                          )}
+                          className={cn(selectClasses, "bg-lyp-white")}
+                        >
+                          <option value="service_signed">Service Signed</option>
+                          <option value="venue_state">Venue State</option>
+                          <option value="answer_equals">Answer Equals</option>
+                        </select>
+                      </SelectShell>
                     </div>
 
                     {currentType === "service_signed" && (
                       <div>
-                        <label className="block font-heading text-xs font-semibold text-lyp-black mb-1">
+                        <label
+                          htmlFor={`condition-${index}-service`}
+                          className={labelClasses}
+                        >
                           Select Service
                         </label>
-                        <select
-                          {...register(
-                            `conditions.${index}.condition_service_id` as const,
-                            {
-                              required: "Service is required",
-                            },
-                          )}
-                          className={inputClasses}
-                        >
-                          <option value="">Choose Service...</option>
-                          {services.map((s) => (
-                            <option key={s.id} value={s.id}>
-                              {s.name}
-                            </option>
-                          ))}
-                        </select>
+                        <SelectShell>
+                          <select
+                            id={`condition-${index}-service`}
+                            {...register(
+                              `conditions.${index}.condition_service_id` as const,
+                              {
+                                required: "Service is required",
+                              },
+                            )}
+                            className={cn(selectClasses, "bg-lyp-white")}
+                          >
+                            <option value="">Choose Service...</option>
+                            {services.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name}
+                              </option>
+                            ))}
+                          </select>
+                        </SelectShell>
                       </div>
                     )}
 
                     {currentType === "venue_state" && (
                       <div>
-                        <label className="block font-heading text-xs font-semibold text-lyp-black mb-1">
+                        <label
+                          htmlFor={`condition-${index}-state`}
+                          className={labelClasses}
+                        >
                           Select State
                         </label>
-                        <select
-                          {...register(
-                            `conditions.${index}.condition_state_id` as const,
-                            {
-                              required: "State is required",
-                            },
-                          )}
-                          className={inputClasses}
-                        >
-                          <option value="">Choose State...</option>
-                          {states.map((s) => (
-                            <option key={s.id} value={s.id}>
-                              {s.name} ({s.code})
-                            </option>
-                          ))}
-                        </select>
+                        <SelectShell>
+                          <select
+                            id={`condition-${index}-state`}
+                            {...register(
+                              `conditions.${index}.condition_state_id` as const,
+                              {
+                                required: "State is required",
+                              },
+                            )}
+                            className={cn(selectClasses, "bg-lyp-white")}
+                          >
+                            <option value="">Choose State...</option>
+                            {states.map((s) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name} ({s.code})
+                              </option>
+                            ))}
+                          </select>
+                        </SelectShell>
                       </div>
                     )}
 
                     {currentType === "answer_equals" && (
                       <>
                         <div>
-                          <label className="block font-heading text-xs font-semibold text-lyp-black mb-1">
+                          <label
+                            htmlFor={`condition-${index}-question`}
+                            className={labelClasses}
+                          >
                             Select Question
                           </label>
-                          <select
-                            {...register(
-                              `conditions.${index}.condition_question_id` as const,
-                              {
-                                required: "Question is required",
-                              },
-                            )}
-                            className={inputClasses}
-                          >
-                            <option value="">Choose Question...</option>
-                            {otherQuestions.map((q) => (
-                              <option key={q.id} value={q.id}>
-                                {q.field_label}
-                              </option>
-                            ))}
-                          </select>
+                          <SelectShell>
+                            <select
+                              id={`condition-${index}-question`}
+                              {...register(
+                                `conditions.${index}.condition_question_id` as const,
+                                {
+                                  required: "Question is required",
+                                },
+                              )}
+                              className={cn(selectClasses, "bg-lyp-white")}
+                            >
+                              <option value="">Choose Question...</option>
+                              {otherQuestions.map((q) => (
+                                <option key={q.id} value={q.id}>
+                                  {q.field_label}
+                                </option>
+                              ))}
+                            </select>
+                          </SelectShell>
                         </div>
                         <div>
-                          <label className="block font-heading text-xs font-semibold text-lyp-black mb-1">
+                          <label
+                            htmlFor={`condition-${index}-value`}
+                            className={labelClasses}
+                          >
                             Expected Answer Value
                           </label>
                           <input
+                            id={`condition-${index}-value`}
                             type="text"
                             placeholder="e.g. Yes, No, 12"
                             {...register(
@@ -637,7 +716,7 @@ export default function IntakeQuestionForm({
                                 required: "Value is required",
                               },
                             )}
-                            className={inputClasses}
+                            className={cn(inputClasses, "bg-lyp-white")}
                           />
                         </div>
                       </>
@@ -648,35 +727,43 @@ export default function IntakeQuestionForm({
             })}
           </div>
         )}
-      </div>
+      </section>
 
-      {/* Form Buttons */}
-      <div className="flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={saving}
-          className={cn(
-            "bg-lyp-cherry text-white px-6 py-2 rounded-md font-body text-sm hover:bg-lyp-maroon transition-colors",
-            saving && "opacity-50 cursor-not-allowed",
-          )}
-        >
+      {/* ─────────────── Form buttons ─────────────── */}
+      <div
+        className="animate-rise flex flex-wrap items-center gap-3"
+        style={{ animationDelay: "200ms" }}
+      >
+        <button type="submit" disabled={saving} className={primaryPill}>
           {saving
             ? "Saving..."
             : isEditing
               ? "Update Question"
               : "Create Question"}
+          <span className={pillIcon}>
+            {saving ? (
+              <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" />
+            ) : (
+              <Check strokeWidth={1.5} className="h-4 w-4" />
+            )}
+          </span>
         </button>
+
         {isEditing && (
           <button
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className={cn(
-              "bg-red-600 text-white px-6 py-2 rounded-md font-body text-sm hover:bg-red-700 transition-colors",
-              deleting && "opacity-50 cursor-not-allowed",
-            )}
+            className={destructivePill}
           >
             {deleting ? "Deleting..." : "Delete Question"}
+            <span className={destructivePillIcon}>
+              {deleting ? (
+                <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 strokeWidth={1.5} className="h-4 w-4" />
+              )}
+            </span>
           </button>
         )}
       </div>

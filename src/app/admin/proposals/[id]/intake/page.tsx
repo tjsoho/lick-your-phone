@@ -2,6 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/utils/server";
 import { ArrowLeft, FileText, ExternalLink } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const EASE = "ease-brand";
+
+const thClasses =
+  "whitespace-nowrap px-3 py-2 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
 
 export default async function AdminIntakePage({
   params,
@@ -73,47 +79,71 @@ export default async function AdminIntakePage({
     "Proposal";
 
   return (
-    <div className="max-w-4xl">
-      <div className="mb-6">
+    <div className="mx-auto max-w-[64rem]">
+      {/* ─────────────── Header ─────────────── */}
+      <header className="animate-rise mb-6">
         <Link
           href={`/admin/proposals/${id}`}
-          className="text-sm text-gray-500 hover:text-lyp-cherry flex items-center gap-1 mb-3"
+          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
-          <ArrowLeft className="h-3 w-3" /> Back to proposal
+          <ArrowLeft
+            strokeWidth={1.5}
+            className={`h-3.5 w-3.5 transition-transform duration-500 ${EASE} group-hover:-translate-x-0.5`}
+          />
+          Back to proposal
         </Link>
-        <div className="flex items-center gap-3">
-          <FileText className="h-5 w-5 text-gray-400" />
-          <h1 className="text-2xl font-heading font-bold text-lyp-black">
-            Intake Responses — {clientName}
-          </h1>
+
+        <div className="mt-4 flex items-center gap-3">
+          <span className="h-px w-7 bg-lyp-cherry/30" />
+          <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
+            Intake
+          </span>
         </div>
-      </div>
+        <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
+          Intake Responses
+        </h1>
+        <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
+          {clientName}
+        </p>
+      </header>
 
       {questions.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-          <p className="text-sm text-gray-500">
+        <div
+          className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white px-8 py-12 text-center"
+          style={{ animationDelay: "80ms" }}
+        >
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
+            <FileText strokeWidth={1} className="h-6 w-6 text-lyp-cherry/60" />
+          </span>
+          <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
             No intake responses submitted yet.
           </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {grouped.map((group, gi) => (
-            <div
+            <section
               key={gi}
-              className="bg-white border border-gray-200 rounded-lg p-4"
+              className={`animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-5 transition-all duration-500 ${EASE} hover:shadow-[0_12px_28px_-16px_rgba(61,11,17,0.25)] sm:p-6`}
+              style={{ animationDelay: `${Math.min(80 + gi * 60, 260)}ms` }}
             >
               {group.section && (
-                <h2 className="text-sm font-heading font-semibold text-lyp-black mb-4 border-b border-gray-100 pb-2">
+                <h2 className="border-b border-[#F1E8E8] pb-3 font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
                   {group.section}
                 </h2>
               )}
-              <dl className="space-y-4">
+              <dl
+                className={cn(
+                  "grid gap-5 sm:grid-cols-2",
+                  group.section && "mt-5",
+                )}
+              >
                 {group.items.map((item, ii) => (
-                  <div key={ii}>
-                    <dt className="text-xs font-medium text-gray-500 mb-1">
+                  <div key={ii} className="min-w-0">
+                    <dt className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
                       {item.label}
                     </dt>
-                    <dd className="text-sm text-gray-900">
+                    <dd className="mt-1.5 break-words font-body text-[14px] text-lyp-black">
                       <ResponseValue
                         type={item.type}
                         value={item.value}
@@ -123,7 +153,7 @@ export default async function AdminIntakePage({
                   </div>
                 ))}
               </dl>
-            </div>
+            </section>
           ))}
         </div>
       )}
@@ -141,13 +171,13 @@ function ResponseValue({
   providers: { id: string; name: string }[];
 }) {
   if (value == null || value === "") {
-    return <span className="text-gray-400">—</span>;
+    return <span className="text-[#C3B5B5]">—</span>;
   }
 
   // File uploads: array of { name, url, size }
   if (type === "file" && Array.isArray(value)) {
     return (
-      <ul className="space-y-1">
+      <ul className="space-y-1.5">
         {value.map(
           (f: { name?: string; url?: string; size?: number }, i: number) => (
             <li key={i} className="flex items-center gap-2">
@@ -155,10 +185,10 @@ function ResponseValue({
                 href={f.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-lyp-cherry hover:underline flex items-center gap-1"
+                className={`inline-flex items-center gap-1.5 font-body text-[13px] font-medium text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
               >
                 {f.name ?? "File"}
-                <ExternalLink className="h-3 w-3" />
+                <ExternalLink strokeWidth={1.5} className="h-3 w-3" />
               </a>
             </li>
           ),
@@ -170,10 +200,15 @@ function ResponseValue({
   // Provider picker: array of { id, name, ... }
   if (type === "provider_picker" && Array.isArray(value)) {
     return (
-      <ul className="list-disc list-inside">
+      <ul className="space-y-1">
         {value.map((p: string, i: number) => {
           const provider = (providers ?? []).find((prov) => prov.id === p);
-          return <li key={i}>{provider?.name ?? p ?? "Unknown"}</li>;
+          return (
+            <li key={i} className="flex items-start gap-2">
+              <span className="mt-[7px] h-1 w-1 flex-shrink-0 rounded-full bg-lyp-cherry/40" />
+              {provider?.name ?? p ?? "Unknown"}
+            </li>
+          );
         })}
       </ul>
     );
@@ -187,7 +222,7 @@ function ResponseValue({
   // Matrix: object with nested {row: {col: val}} (e.g. opening hours)
   if (typeof value === "object" && value !== null) {
     const entries = Object.entries(value as Record<string, unknown>);
-    if (entries.length === 0) return <span className="text-gray-400">—</span>;
+    if (entries.length === 0) return <span className="text-[#C3B5B5]">—</span>;
 
     // Detect nested objects (matrix format)
     const firstVal = entries[0][1];
@@ -202,48 +237,59 @@ function ResponseValue({
         ),
       ];
       return (
-        <table className="text-xs w-full border border-gray-100 rounded">
-          <thead>
-            <tr className="bg-gray-50">
-              <th className="py-1.5 px-2 text-left font-medium text-gray-500"></th>
-              {cols.map((c) => (
-                <th
-                  key={c}
-                  className="py-1.5 px-2 text-left font-medium text-gray-500"
-                >
-                  {c}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map(([row, v]) => (
-              <tr key={row} className="border-t border-gray-50">
-                <td className="py-1.5 px-2 font-medium text-gray-700">{row}</td>
+        <div className="overflow-x-auto rounded-xl border border-[#EFE6E6]">
+          <table className="w-full font-body text-[12px]">
+            <thead>
+              <tr className="border-b border-[#F1E8E8]">
+                <th className={thClasses}></th>
                 {cols.map((c) => (
-                  <td key={c} className="py-1.5 px-2 text-gray-900">
-                    {String((v as Record<string, unknown>)[c] ?? "—")}
-                  </td>
+                  <th key={c} className={thClasses}>
+                    {c}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {entries.map(([row, v]) => (
+                <tr
+                  key={row}
+                  className="border-b border-[#F7F1F1] last:border-0"
+                >
+                  <td className="whitespace-nowrap px-3 py-2 font-medium text-lyp-black">
+                    {row}
+                  </td>
+                  {cols.map((c) => (
+                    <td
+                      key={c}
+                      className="whitespace-nowrap px-3 py-2 tabular-nums text-[#8A7A7A]"
+                    >
+                      {String((v as Record<string, unknown>)[c] ?? "—")}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       );
     }
 
     // Flat key-value object
     return (
-      <table className="text-xs w-full">
-        <tbody>
-          {entries.map(([k, v]) => (
-            <tr key={k} className="border-b border-gray-50">
-              <td className="py-1 pr-3 font-medium text-gray-600">{k}</td>
-              <td className="py-1">{String(v)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="overflow-x-auto">
+        <table className="w-full font-body text-[12.5px]">
+          <tbody>
+            {entries.map(([k, v]) => (
+              <tr key={k} className="border-b border-[#F7F1F1] last:border-0">
+                <td className="whitespace-nowrap py-1.5 pr-4 font-medium text-[#8A7A7A]">
+                  {k}
+                </td>
+                <td className="py-1.5 text-lyp-black">{String(v)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     );
   }
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { Check, ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import {
   createService,
   updateService,
@@ -50,10 +51,19 @@ interface ServiceFormProps {
   };
 }
 
-const inputClasses =
-  "w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm text-lyp-black focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent";
+const EASE = "ease-brand";
 
-const labelClasses = "block font-heading text-sm font-semibold text-lyp-black mb-1";
+const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+
+const labelClasses =
+  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+
+const errorClasses = "mt-1.5 font-body text-[11px] text-lyp-cherry";
+
+const cardClasses = "rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6";
+
+const sectionTitleClasses =
+  "font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black";
 
 export default function ServiceForm({ service }: ServiceFormProps) {
   const router = useRouter();
@@ -226,21 +236,25 @@ export default function ServiceForm({ service }: ServiceFormProps) {
     setItems: React.Dispatch<React.SetStateAction<ListItem[]>>
   ) {
     return (
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-heading text-lg font-bold text-lyp-black">{title}</h2>
+      <div className={cardClasses}>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className={sectionTitleClasses}>{title}</h2>
           <button
             type="button"
             onClick={() => addItem(items, setItems)}
-            className="text-sm font-body text-lyp-cherry hover:text-lyp-maroon transition-colors"
+            className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
           >
-            + Add Item
+            <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
+            Add Item
           </button>
         </div>
+
         {items.length === 0 ? (
-          <p className="font-body text-sm text-gray-500">No items yet.</p>
+          <p className="mt-4 font-body text-[13px] text-[#8A7A7A]">
+            No items yet.
+          </p>
         ) : (
-          <div className="space-y-2">
+          <div className="mt-4 space-y-2">
             {items.map((item, index) => (
               <div key={index} className="flex items-center gap-2">
                 <div className="flex flex-col">
@@ -248,27 +262,29 @@ export default function ServiceForm({ service }: ServiceFormProps) {
                     type="button"
                     onClick={() => moveItem(index, "up", items, setItems)}
                     disabled={index === 0}
+                    aria-label={`Move ${title} item ${index + 1} up`}
                     className={cn(
-                      "text-xs px-1 py-0.5 rounded",
+                      `rounded-full p-1 transition-colors duration-500 ${EASE}`,
                       index === 0
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-500 hover:text-lyp-cherry"
+                        ? "cursor-not-allowed text-[#E4D8D8]"
+                        : "text-[#A89898] hover:text-lyp-cherry"
                     )}
                   >
-                    &#9650;
+                    <ChevronUp strokeWidth={1.5} className="h-3.5 w-3.5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => moveItem(index, "down", items, setItems)}
                     disabled={index === items.length - 1}
+                    aria-label={`Move ${title} item ${index + 1} down`}
                     className={cn(
-                      "text-xs px-1 py-0.5 rounded",
+                      `rounded-full p-1 transition-colors duration-500 ${EASE}`,
                       index === items.length - 1
-                        ? "text-gray-300 cursor-not-allowed"
-                        : "text-gray-500 hover:text-lyp-cherry"
+                        ? "cursor-not-allowed text-[#E4D8D8]"
+                        : "text-[#A89898] hover:text-lyp-cherry"
                     )}
                   >
-                    &#9660;
+                    <ChevronDown strokeWidth={1.5} className="h-3.5 w-3.5" />
                   </button>
                 </div>
                 <input
@@ -277,13 +293,15 @@ export default function ServiceForm({ service }: ServiceFormProps) {
                   onChange={(e) => updateItemText(index, e.target.value, items, setItems)}
                   className={cn(inputClasses, "flex-1")}
                   placeholder="Item text"
+                  aria-label={`${title} item ${index + 1}`}
                 />
                 <button
                   type="button"
                   onClick={() => removeItem(index, items, setItems)}
-                  className="text-red-500 hover:text-red-700 text-sm font-body px-2 py-1"
+                  aria-label={`Remove ${title} item ${index + 1}`}
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-transparent text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/15 hover:bg-lyp-cherry/[0.04] hover:text-lyp-cherry`}
                 >
-                  Remove
+                  <Trash2 strokeWidth={1.5} className="h-3.5 w-3.5" />
                 </button>
               </div>
             ))}
@@ -294,9 +312,9 @@ export default function ServiceForm({ service }: ServiceFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSubmit(onSubmit)} className="max-w-2xl space-y-5">
       {/* Main fields */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+      <div className={cn(cardClasses, "space-y-5")}>
         <div>
           <label htmlFor="name" className={labelClasses}>
             Name
@@ -306,11 +324,9 @@ export default function ServiceForm({ service }: ServiceFormProps) {
             type="text"
             {...register("name", { required: "Name is required" })}
             onChange={handleNameChange}
-            className={inputClasses}
+            className={cn(inputClasses, "mt-2")}
           />
-          {errors.name && (
-            <p className="text-red-600 text-xs mt-1">{errors.name.message}</p>
-          )}
+          {errors.name && <p className={errorClasses}>{errors.name.message}</p>}
         </div>
 
         <div>
@@ -321,12 +337,14 @@ export default function ServiceForm({ service }: ServiceFormProps) {
             id="slug"
             type="text"
             {...register("slug", { required: "Slug is required" })}
-            className={inputClasses}
+            className={cn(
+              inputClasses,
+              "mt-2 font-mono",
+              isEditing && "text-[#8A7A7A]"
+            )}
             readOnly={isEditing}
           />
-          {errors.slug && (
-            <p className="text-red-600 text-xs mt-1">{errors.slug.message}</p>
-          )}
+          {errors.slug && <p className={errorClasses}>{errors.slug.message}</p>}
         </div>
 
         <div>
@@ -336,7 +354,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
           <select
             id="billing"
             {...register("billing", { required: "Billing is required" })}
-            className={inputClasses}
+            className={cn(inputClasses, "mt-2")}
           >
             <option value="one_off">One-off</option>
             <option value="recurring_monthly">Monthly</option>
@@ -352,7 +370,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
             id="term"
             type="text"
             {...register("term")}
-            className={inputClasses}
+            className={cn(inputClasses, "mt-2")}
           />
         </div>
 
@@ -365,7 +383,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
             type="number"
             step="0.01"
             {...register("target_price_dollars", { valueAsNumber: true })}
-            className={inputClasses}
+            className={cn(inputClasses, "mt-2 tabular-nums")}
           />
         </div>
 
@@ -380,7 +398,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
               min="0"
               max="100"
               {...register("discount_pct_display", { valueAsNumber: true })}
-              className={inputClasses}
+              className={cn(inputClasses, "mt-2 tabular-nums")}
             />
           </div>
           <div>
@@ -391,7 +409,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
               id="discount_window_hours"
               type="number"
               {...register("discount_window_hours", { valueAsNumber: true })}
-              className={inputClasses}
+              className={cn(inputClasses, "mt-2 tabular-nums")}
             />
           </div>
         </div>
@@ -405,7 +423,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
               id="price_display_period"
               type="text"
               {...register("price_display_period")}
-              className={inputClasses}
+              className={cn(inputClasses, "mt-2")}
             />
           </div>
           <div>
@@ -416,19 +434,22 @@ export default function ServiceForm({ service }: ServiceFormProps) {
               id="sequence"
               type="number"
               {...register("sequence", { valueAsNumber: true })}
-              className={inputClasses}
+              className={cn(inputClasses, "mt-2 tabular-nums")}
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5 rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-3">
           <input
             id="requires_other_service"
             type="checkbox"
             {...register("requires_other_service")}
-            className="rounded border-gray-300 text-lyp-cherry focus:ring-lyp-cherry"
+            className={`h-4 w-4 rounded border-[#E4D8D8] text-lyp-cherry transition-all duration-500 ${EASE} focus:ring-2 focus:ring-lyp-cherry/30 focus:ring-offset-0`}
           />
-          <label htmlFor="requires_other_service" className="font-body text-sm text-lyp-black">
+          <label
+            htmlFor="requires_other_service"
+            className="font-body text-[13px] text-lyp-black"
+          >
             Requires other service
           </label>
         </div>
@@ -441,28 +462,43 @@ export default function ServiceForm({ service }: ServiceFormProps) {
       {renderListSection("Client Obligations", obligations, setObligations)}
 
       {/* Actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="submit"
           disabled={saving}
           className={cn(
-            "bg-lyp-cherry text-white px-6 py-2 rounded-md font-body text-sm hover:bg-lyp-maroon transition-colors",
-            saving && "opacity-50 cursor-not-allowed"
+            `group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`,
+            saving && "cursor-not-allowed opacity-50"
           )}
         >
           {saving ? "Saving..." : isEditing ? "Update Service" : "Create Service"}
+          <span
+            className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}
+          >
+            {isEditing ? (
+              <Check strokeWidth={1.5} className="h-4 w-4" />
+            ) : (
+              <Plus strokeWidth={1.5} className="h-4 w-4" />
+            )}
+          </span>
         </button>
+
         {isEditing && (
           <button
             type="button"
             onClick={handleDelete}
             disabled={deleting}
             className={cn(
-              "bg-red-600 text-white px-6 py-2 rounded-md font-body text-sm hover:bg-red-700 transition-colors",
-              deleting && "opacity-50 cursor-not-allowed"
+              `group inline-flex items-center gap-3 rounded-full border border-lyp-cherry/15 bg-lyp-cherry/[0.04] py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-cherry transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 active:scale-[0.985]`,
+              deleting && "cursor-not-allowed opacity-50"
             )}
           >
             {deleting ? "Deleting..." : "Delete Service"}
+            <span
+              className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-cherry/[0.07] transition-transform duration-500 ${EASE} group-hover:scale-105`}
+            >
+              <Trash2 strokeWidth={1.5} className="h-4 w-4" />
+            </span>
           </button>
         )}
       </div>

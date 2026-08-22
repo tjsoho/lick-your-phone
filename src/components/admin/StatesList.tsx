@@ -3,8 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createState } from "@/server-actions/states";
-import { Plus, MapPin } from "lucide-react";
+import { Plus, MapPin, Check, X } from "lucide-react";
 import toast from "react-hot-toast";
+
+const EASE = "ease-brand";
+
+const thClasses =
+  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+
+const labelClasses =
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
 
 interface State {
   id: string;
@@ -46,29 +54,33 @@ export default function StatesList({ states }: Props) {
     }
   };
 
-  const inputClass =
-    "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry/30 focus:border-lyp-cherry";
+  const inputClass = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
   return (
     <div>
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
-          className="mb-4 inline-flex items-center gap-2 px-4 py-2 bg-lyp-cherry text-white rounded-lg text-sm font-semibold hover:bg-lyp-maroon transition-colors"
+          className={`group mb-4 inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`}
         >
-          <Plus className="h-4 w-4" />
           Add State
+          <span
+            className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}
+          >
+            <Plus strokeWidth={1.5} aria-hidden="true" className="h-4 w-4" />
+          </span>
         </button>
       )}
 
       {showForm && (
-        <div className="bg-white border border-gray-200 rounded-xl p-5 mb-4 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="mb-4 rounded-3xl border border-[#EFE6E6] bg-lyp-white p-6">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
+              <label htmlFor="state-code" className={labelClasses}>
                 Code
               </label>
               <input
+                id="state-code"
                 className={inputClass}
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
@@ -77,10 +89,11 @@ export default function StatesList({ states }: Props) {
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1">
+              <label htmlFor="state-name" className={labelClasses}>
                 Name
               </label>
               <input
+                id="state-name"
                 className={inputClass}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -88,13 +101,23 @@ export default function StatesList({ states }: Props) {
               />
             </div>
           </div>
-          <div className="flex gap-2">
+
+          <div className="mt-6 flex flex-wrap items-center gap-2.5 border-t border-[#F1E8E8] pt-5">
             <button
               onClick={handleCreate}
               disabled={saving}
-              className="px-4 py-2 bg-lyp-cherry text-white rounded-lg text-sm font-semibold hover:bg-lyp-maroon transition-colors disabled:opacity-50"
+              className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:opacity-50`}
             >
               {saving ? "Saving..." : "Add State"}
+              <span
+                className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}
+              >
+                <Check
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                  className="h-4 w-4"
+                />
+              </span>
             </button>
             <button
               onClick={() => {
@@ -102,46 +125,63 @@ export default function StatesList({ states }: Props) {
                 setCode("");
                 setName("");
               }}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
             >
               Cancel
+              <span
+                className={`flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
+              >
+                <X strokeWidth={1.5} aria-hidden="true" className="h-4 w-4" />
+              </span>
             </button>
           </div>
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white">
         {states.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 font-body">
-            <MapPin className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-            <p>No states configured yet.</p>
+          <div className="px-8 py-12 text-center">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
+              <MapPin
+                strokeWidth={1}
+                aria-hidden="true"
+                className="h-6 w-6 text-lyp-cherry/60"
+              />
+            </span>
+            <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+              No states configured yet.
+            </p>
+            <button
+              onClick={() => setShowForm(true)}
+              className={`mt-3 inline-block font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
+            >
+              Add your first state
+            </button>
           </div>
         ) : (
-          <table className="w-full text-sm font-body">
-            <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">
-                  Code
-                </th>
-                <th className="text-left px-4 py-3 font-semibold text-gray-600">
-                  Name
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {states.map((state) => (
-                <tr
-                  key={state.id}
-                  className="border-b border-gray-50 hover:bg-gray-50"
-                >
-                  <td className="px-4 py-3 font-mono font-semibold text-lyp-black">
-                    {state.code}
-                  </td>
-                  <td className="px-4 py-3 text-gray-700">{state.name}</td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-body text-[12.5px]">
+              <thead>
+                <tr className="border-b border-[#F1E8E8]">
+                  <th className={thClasses}>Code</th>
+                  <th className={thClasses}>Name</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {states.map((state) => (
+                  <tr
+                    key={state.id}
+                    className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
+                  >
+                    <td className="whitespace-nowrap px-5 py-3 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-lyp-black">
+                      {state.code}
+                    </td>
+                    <td className="px-5 py-3 text-[#8A7A7A]">{state.name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </div>

@@ -12,6 +12,23 @@ import {
 } from "@/server-actions/pages";
 import toast from "react-hot-toast";
 
+const EASE = "ease-brand";
+
+const thClasses =
+  "whitespace-nowrap px-4 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+
+/** Field chrome shared by the inline edit and create rows. */
+const ic =
+  `w-full rounded-xl border border-[#EFE6E6] bg-[#FBF8F8] px-3 py-2 font-body text-[12.5px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+
+const switchClasses =
+  "data-[state=checked]:bg-lyp-cherry data-[state=unchecked]:bg-[#EFE6E6]";
+
+const typePill = (type: string | null) =>
+  type === "service"
+    ? "bg-[#EDF1F7] text-[#5B7394]"
+    : "bg-[#F2EDED] text-[#8A7A7A]";
+
 interface PageItem {
   id: string;
   title: string | null;
@@ -178,12 +195,19 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
 
   if (pages.length === 0 && !addingNew) {
     return (
-      <div className="p-8 text-center text-gray-500 font-body">
-        <BookOpen className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-        <p>No content pages found.</p>
-        <button onClick={startAdd}
-          className="mt-4 inline-flex items-center gap-1.5 bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:bg-lyp-maroon transition-colors">
-          <Plus className="h-4 w-4" /> Add Page
+      <div className="px-8 py-12 text-center">
+        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
+          <BookOpen strokeWidth={1} className="h-6 w-6 text-lyp-cherry/60" />
+        </span>
+        <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+          No content pages yet.
+        </p>
+        <button
+          onClick={startAdd}
+          className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
+        >
+          <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
+          Add your first page
         </button>
       </div>
     );
@@ -191,41 +215,32 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
 
   return (
     <>
-    <table className="w-full text-sm font-body">
+    <div className="overflow-x-auto">
+    <table className="w-full font-body text-[12.5px]">
       <thead>
-        <tr className="border-b border-gray-100 bg-gray-50">
+        <tr className="border-b border-[#F1E8E8]">
           <th className="w-10 px-2 py-3" aria-label="Reorder" />
-          <th className="text-left px-4 py-3 font-semibold text-gray-600">
-            Title
-          </th>
-          <th className="text-left px-4 py-3 font-semibold text-gray-600">
-            Slug
-          </th>
-          <th className="text-left px-4 py-3 font-semibold text-gray-600">
-            Type
-          </th>
-          <th className="text-left px-4 py-3 font-semibold text-gray-600">
-            Order
-          </th>
-          <th className="text-left px-4 py-3 font-semibold text-gray-600">
-            Visible
-          </th>
-          <th className="text-right px-4 py-3 font-semibold text-gray-600">
-            Actions
-          </th>
+          <th className={thClasses}>Title</th>
+          <th className={thClasses}>Slug</th>
+          <th className={thClasses}>Type</th>
+          <th className={thClasses}>Order</th>
+          <th className={thClasses}>Visible</th>
+          <th className={`${thClasses} text-right`}>Actions</th>
         </tr>
       </thead>
       <tbody>
         {pages.map((page) => {
-          const ic =
-            "w-full px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry/30 focus:border-lyp-cherry";
           if (editingId === page.id) {
             return (
-              <tr key={page.id} className="border-b border-gray-50 bg-gray-50">
+              <tr
+                key={page.id}
+                className="border-b border-[#F7F1F1] bg-[#FBF8F8] last:border-0"
+              >
                 <td className="w-10 px-2 py-2" />
                 <td className="px-4 py-2">
                   <input
                     className={ic}
+                    aria-label="Page title"
                     value={editForm.title}
                     onChange={(e) =>
                       setEditForm((f) => ({ ...f, title: e.target.value }))
@@ -234,7 +249,8 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                 </td>
                 <td className="px-4 py-2">
                   <input
-                    className={ic + " font-mono text-xs"}
+                    className={ic + " font-mono text-[11px]"}
+                    aria-label="Page slug"
                     value={editForm.slug}
                     onChange={(e) =>
                       setEditForm((f) => ({ ...f, slug: e.target.value }))
@@ -244,6 +260,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                 <td className="px-4 py-2">
                   <select
                     className={ic}
+                    aria-label="Page type"
                     value={editForm.type}
                     onChange={(e) =>
                       setEditForm((f) => ({ ...f, type: e.target.value }))
@@ -255,7 +272,8 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                 </td>
                 <td className="px-4 py-2">
                   <input
-                    className={ic + " w-16"}
+                    className={ic + " w-20 tabular-nums"}
+                    aria-label="Page order"
                     type="number"
                     value={editForm.sequence}
                     onChange={(e) =>
@@ -271,29 +289,32 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                     checked={!!page.visible}
                     disabled={isPending && loadingId === page.id}
                     onCheckedChange={() => handleToggle(page.id, page.visible)}
-                    className="data-[state=checked]:bg-green-500"
+                    aria-label={`Toggle visibility for ${page.title ?? "page"}`}
+                    className={switchClasses}
                   />
                 </td>
                 <td className="px-4 py-2 text-right">
-                  <div className="flex items-center justify-end gap-1">
+                  <div className="flex items-center justify-end gap-1.5">
                     <button
                       onClick={handleSave}
                       disabled={saving}
-                      className="p-1.5 text-green-600 hover:text-green-800 transition-colors disabled:opacity-50"
+                      className={`rounded-full p-1.5 text-lyp-cherry transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.06] disabled:opacity-40`}
                       title="Save"
+                      aria-label="Save page"
                     >
                       {saving ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" />
                       ) : (
-                        <Check className="h-4 w-4" />
+                        <Check strokeWidth={1.5} className="h-4 w-4" />
                       )}
                     </button>
                     <button
                       onClick={cancelEdit}
-                      className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                      className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-black`}
                       title="Cancel"
+                      aria-label="Cancel editing"
                     >
-                      <X className="h-4 w-4" />
+                      <X strokeWidth={1.5} className="h-4 w-4" />
                     </button>
                   </div>
                 </td>
@@ -308,22 +329,24 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
               onDragOver={(e) => handleDragOver(e, page.id)}
               onDragEnd={handleDragEnd}
               onDrop={(e) => e.preventDefault()}
-              className={`border-b border-gray-50 transition-colors ${
+              className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} ${
                 dragId === page.id
-                  ? "bg-lyp-cherry/5 opacity-60"
-                  : "hover:bg-gray-50"
+                  ? "bg-lyp-cherry/[0.05] opacity-60"
+                  : "hover:bg-[#FBF8F8]"
               }`}
             >
               <td className="w-10 px-2 py-3">
                 <span
-                  className={`flex items-center justify-center text-gray-300 ${
+                  className={`flex items-center justify-center text-[#C3B5B5] transition-colors duration-500 ${EASE} ${
                     editingId || savingOrder
                       ? "cursor-not-allowed"
                       : "cursor-grab active:cursor-grabbing hover:text-lyp-cherry"
                   }`}
                   title="Drag to reorder"
+                  role="img"
+                  aria-label={`Drag to reorder ${page.title ?? "page"}`}
                 >
-                  <GripVertical className="h-4 w-4" />
+                  <GripVertical strokeWidth={1.5} className="h-4 w-4" />
                 </span>
               </td>
               <td className="px-4 py-3">
@@ -332,52 +355,60 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                   // Anchors are natively draggable, which would hijack the
                   // row's drag-to-reorder gesture.
                   draggable={false}
-                  className="font-medium text-lyp-black transition-colors duration-500 ease-brand hover:text-lyp-cherry"
+                  className={`font-medium text-lyp-black transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                   title="Edit page content"
                 >
                   {page.title ?? "Untitled"}
                 </Link>
               </td>
-              <td className="px-4 py-3 text-gray-500 font-mono text-xs">
-                {page.slug ?? "-"}
+              <td className="px-4 py-3 font-mono text-[11px] text-[#A89898]">
+                {page.slug ?? "—"}
               </td>
               <td className="px-4 py-3">
                 <span
-                  className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${page.type === "service" ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-700"}`}
+                  className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${typePill(page.type)}`}
                 >
                   {page.type ?? "content"}
                 </span>
               </td>
-              <td className="px-4 py-3 text-gray-600">{page.sequence}</td>
+              <td className="px-4 py-3 tabular-nums text-[#A89898]">
+                {page.sequence}
+              </td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={!!page.visible}
                     disabled={isPending && loadingId === page.id}
                     onCheckedChange={() => handleToggle(page.id, page.visible)}
-                    className="data-[state=checked]:bg-green-500"
+                    aria-label={`Toggle visibility for ${page.title ?? "page"}`}
+                    className={switchClasses}
                   />
                   {isPending && loadingId === page.id && (
-                    <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                    <Loader2
+                      strokeWidth={1.5}
+                      className="h-4 w-4 animate-spin text-lyp-cherry"
+                    />
                   )}
                 </div>
               </td>
               <td className="px-4 py-3 text-right">
-                <div className="flex items-center justify-end gap-1">
+                <div className="flex items-center justify-end gap-1.5">
                   <Link
                     href={`/admin/pages/${page.id}`}
-                    className="p-1.5 text-gray-400 hover:text-lyp-cherry transition-colors"
+                    className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                     title="Edit Page Content"
+                    aria-label={`Edit content of ${page.title ?? "page"}`}
                   >
-                    <FileEdit className="h-4 w-4" />
+                    <FileEdit strokeWidth={1.5} className="h-4 w-4" />
                   </Link>
 
                   <button
                     onClick={() => startEdit(page)}
-                    className="p-1.5 text-gray-400 hover:text-lyp-cherry transition-colors"
+                    className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                     title="Edit Row"
+                    aria-label={`Edit details of ${page.title ?? "page"}`}
                   >
-                    <Pencil className="h-4 w-4" />
+                    <Pencil strokeWidth={1.5} className="h-4 w-4" />
                   </button>
                 </div>
               </td>
@@ -385,7 +416,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
           );
         })}
         {addingNew && (
-          <tr className="border-b border-lyp-cherry/20 bg-lyp-cherry/5">
+          <tr className="border-b border-lyp-cherry/15 bg-lyp-cherry/[0.04] last:border-0">
             <td className="w-10 px-2 py-2" />
             <td className="px-4 py-2">
               <input
@@ -398,8 +429,9 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                     slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
                   }));
                 }}
-                className="w-full border border-gray-300 rounded px-2 py-1 text-sm font-body"
+                className={ic}
                 placeholder="Page title"
+                aria-label="New page title"
                 autoFocus
               />
             </td>
@@ -407,15 +439,17 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
               <input
                 value={newForm.slug}
                 onChange={(e) => setNewForm((f) => ({ ...f, slug: e.target.value }))}
-                className="w-full border border-gray-300 rounded px-2 py-1 text-sm font-mono"
+                className={ic + " font-mono text-[11px]"}
                 placeholder="page-slug"
+                aria-label="New page slug"
               />
             </td>
             <td className="px-4 py-2">
               <select
                 value={newForm.type}
                 onChange={(e) => setNewForm((f) => ({ ...f, type: e.target.value }))}
-                className="border border-gray-300 rounded px-2 py-1 text-sm font-body"
+                className={ic}
+                aria-label="New page type"
               >
                 <option value="content">content</option>
                 <option value="service">service</option>
@@ -426,26 +460,33 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                 type="number"
                 value={newForm.sequence}
                 onChange={(e) => setNewForm((f) => ({ ...f, sequence: Number(e.target.value) }))}
-                className="w-16 border border-gray-300 rounded px-2 py-1 text-sm font-body"
+                className={ic + " w-20 tabular-nums"}
+                aria-label="New page order"
               />
             </td>
             <td className="px-4 py-2" />
             <td className="px-4 py-2 text-right">
-              <div className="flex items-center justify-end gap-1">
+              <div className="flex items-center justify-end gap-1.5">
                 <button
                   onClick={handleAdd}
                   disabled={saving}
-                  className="p-1.5 text-green-600 hover:text-green-800 transition-colors disabled:opacity-50"
+                  className={`rounded-full p-1.5 text-lyp-cherry transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.06] disabled:opacity-40`}
                   title="Create"
+                  aria-label="Create page"
                 >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                  {saving ? (
+                    <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check strokeWidth={1.5} className="h-4 w-4" />
+                  )}
                 </button>
                 <button
                   onClick={() => { setAddingNew(false); setNewForm({ title: "", slug: "", type: "content", sequence: 0 }); }}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 transition-colors"
+                  className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-black`}
                   title="Cancel"
+                  aria-label="Cancel new page"
                 >
-                  <X className="h-4 w-4" />
+                  <X strokeWidth={1.5} className="h-4 w-4" />
                 </button>
               </div>
             </td>
@@ -453,23 +494,25 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
         )}
       </tbody>
     </table>
+    </div>
     {!addingNew && (
-      <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#F1E8E8] px-4 py-3">
         <button
           onClick={startAdd}
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-lyp-cherry font-body transition-colors"
+          className={`inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
         >
-          <Plus className="h-4 w-4" /> Add Page
+          <Plus strokeWidth={1.5} className="h-4 w-4" /> Add Page
         </button>
-        <span className="flex items-center gap-1.5 text-xs text-gray-400 font-body">
+        <span className="flex items-center gap-1.5 font-body text-[11px] text-[#A89898]">
           {savingOrder ? (
             <>
-              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving order…
+              <Loader2 strokeWidth={1.5} className="h-3.5 w-3.5 animate-spin text-lyp-cherry" />{" "}
+              Saving order…
             </>
           ) : (
             <>
-              <GripVertical className="h-3.5 w-3.5" /> Drag rows to reorder the
-              client-facing flow
+              <GripVertical strokeWidth={1.5} className="h-3.5 w-3.5 text-[#C3B5B5]" /> Drag rows to
+              reorder the client-facing flow
             </>
           )}
         </span>

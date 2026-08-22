@@ -1,7 +1,19 @@
 import { getVenues } from "@/server-actions/venues";
 import Link from "next/link";
-import { Plus, MapPin, Building, Search, Edit } from "lucide-react";
+import {
+  Plus,
+  MapPin,
+  Building,
+  Search,
+  Pencil,
+  AlertCircle,
+} from "lucide-react";
 import DeleteVenueButton from "./DeleteVenueButton";
+
+const EASE = "ease-brand";
+
+const thClasses =
+  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
 
 export default async function VenuesPage(props: {
   searchParams: Promise<{ q?: string }>;
@@ -12,8 +24,19 @@ export default async function VenuesPage(props: {
 
   if (error) {
     return (
-      <div className="p-8">
-        <div className="text-red-500">Error loading venues: {error}</div>
+      <div className="mx-auto max-w-[80rem]">
+        <div
+          role="alert"
+          className="animate-rise flex items-start gap-3 rounded-2xl border border-lyp-cherry/15 bg-lyp-cherry/[0.04] px-4 py-3.5"
+        >
+          <AlertCircle
+            strokeWidth={1.25}
+            className="mt-px h-4 w-4 flex-shrink-0 text-lyp-cherry"
+          />
+          <p className="font-body text-[13px] text-lyp-cherry">
+            Error loading venues: {error}
+          </p>
+        </div>
       </div>
     );
   }
@@ -27,104 +50,149 @@ export default async function VenuesPage(props: {
   });
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="mx-auto max-w-[80rem]">
+      <header className="animate-rise mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-lyp-black">
+          <div className="flex items-center gap-3">
+            <span className="h-px w-7 bg-lyp-cherry/30" />
+            <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
+              Locations
+            </span>
+          </div>
+          <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
             Venues
           </h1>
-          <p className="font-body text-gray-500 mt-1">
-            Manage locations for your clients
+          <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
+            Manage locations for your clients.
           </p>
         </div>
+
         <Link
           href="/admin/venues/new"
-          className="bg-lyp-cherry text-white px-4 py-2 rounded-lg font-body text-sm font-medium hover:bg-lyp-cherry/90 transition-colors flex items-center gap-2"
+          className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`}
         >
-          <Plus className="h-4 w-4" />
           Create Venue
+          <span
+            className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}
+          >
+            <Plus strokeWidth={1.5} className="h-4 w-4" />
+          </span>
         </Link>
-      </div>
+      </header>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
+      <div
+        className="animate-rise overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white"
+        style={{ animationDelay: "80ms" }}
+      >
+        <div className="border-b border-[#F1E8E8] p-4">
           <form className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <label htmlFor="venue-search" className="sr-only">
+              Search venues or clients
+            </label>
+            <Search
+              strokeWidth={1.5}
+              aria-hidden="true"
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#C3B5B5]"
+            />
             <input
+              id="venue-search"
               type="text"
               name="q"
               defaultValue={q}
               placeholder="Search venues or clients..."
-              className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-body focus:outline-none focus:ring-2 focus:ring-lyp-cherry/20 focus:border-lyp-cherry transition-all"
+              className={`w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] py-2.5 pl-11 pr-4 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`}
             />
           </form>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left font-body text-sm">
-            <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">Client</th>
-                <th className="px-6 py-4">State</th>
-                <th className="px-6 py-4">Address</th>
-                <th className="px-6 py-4 text-right">Actions</th>
+          <table className="w-full text-left font-body text-[12.5px]">
+            <thead>
+              <tr className="border-b border-[#F1E8E8]">
+                <th className={thClasses}>Name</th>
+                <th className={thClasses}>Client</th>
+                <th className={thClasses}>State</th>
+                <th className={thClasses}>Address</th>
+                <th className={`${thClasses} text-right`}>Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody>
               {filteredVenues.length === 0 ? (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-8 text-center text-gray-500"
-                  >
-                    No venues found.
+                  <td colSpan={5} className="px-8 py-12 text-center">
+                    <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
+                      <MapPin
+                        strokeWidth={1}
+                        aria-hidden="true"
+                        className="h-6 w-6 text-lyp-cherry/60"
+                      />
+                    </span>
+                    <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+                      No venues found.
+                    </p>
+                    <Link
+                      href="/admin/venues/new"
+                      className={`mt-3 inline-block font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
+                    >
+                      Create a venue
+                    </Link>
                   </td>
                 </tr>
               ) : (
                 filteredVenues.map((venue) => (
                   <tr
                     key={venue.id}
-                    className="hover:bg-gray-50/50 transition-colors group"
+                    className={`group border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
                   >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="h-4 w-4 text-gray-400" />
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2.5">
+                        <MapPin
+                          strokeWidth={1.5}
+                          aria-hidden="true"
+                          className="h-3.5 w-3.5 flex-shrink-0 text-[#C3B5B5]"
+                        />
                         <span className="font-medium text-lyp-black">
                           {venue.name}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
+                    <td className="px-5 py-3">
                       {venue.clients ? (
-                        <div className="flex items-center gap-2">
-                          <Building className="h-4 w-4 text-gray-400" />
-                          <span className="text-gray-600">
+                        <div className="flex items-center gap-2.5">
+                          <Building
+                            strokeWidth={1.5}
+                            aria-hidden="true"
+                            className="h-3.5 w-3.5 flex-shrink-0 text-[#C3B5B5]"
+                          />
+                          <span className="text-[#8A7A7A]">
                             {venue.clients.name}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-gray-400 italic">None</span>
+                        <span className="text-[#A89898]">None</span>
                       )}
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-2 py-1 rounded-md bg-gray-100 text-gray-700 text-xs font-medium">
+                    <td className="whitespace-nowrap px-5 py-3">
+                      <span className="inline-block rounded-full bg-[#F2EDED] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[#8A7A7A]">
                         {venue.states?.name || "Unknown"}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <span className="text-gray-500 truncate max-w-[200px] block">
-                        {venue.address || "-"}
+                    <td className="px-5 py-3">
+                      <span className="block max-w-[220px] truncate text-[#A89898]">
+                        {venue.address || "—"}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <td className="whitespace-nowrap px-5 py-3 text-right">
+                      <div
+                        className={`flex items-center justify-end gap-1 opacity-0 transition-opacity duration-500 ${EASE} focus-within:opacity-100 group-hover:opacity-100`}
+                      >
                         <Link
                           href={`/admin/venues/${venue.id}`}
-                          className="p-1.5 text-gray-400 hover:text-lyp-cherry rounded hover:bg-gray-100 transition-colors"
+                          aria-label={`Edit ${venue.name}`}
                           title="Edit"
+                          className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:bg-[#F7F1F1] hover:text-lyp-cherry focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-cherry/30`}
                         >
-                          <Edit className="h-4 w-4" />
+                          <Pencil strokeWidth={1.5} className="h-4 w-4" />
                         </Link>
                         <DeleteVenueButton id={venue.id} name={venue.name} />
                       </div>

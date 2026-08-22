@@ -12,16 +12,72 @@ import {
 } from "@/server-actions/clients";
 import { formatCents, formatDate } from "@/lib/format";
 import {
+  ArrowLeft,
   Check,
+  ChevronDown,
   Clock,
   AlertCircle,
   CreditCard,
   FileText,
   Download,
   ClipboardList,
+  MapPin,
+  Pencil,
+  Plus,
+  Users,
 } from "lucide-react";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 import PortalLinkCell from "@/components/admin/PortalLinkCell";
+
+const EASE = "ease-brand";
+
+const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+
+const selectClasses = `${fieldClasses} appearance-none pr-11`;
+
+const labelClasses =
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+
+const thClasses =
+  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+
+const primaryPill = `group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none`;
+
+const secondaryPill = `group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-5 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`;
+
+const plainPill = `inline-flex items-center rounded-full border border-[#EFE6E6] bg-lyp-white px-5 py-2.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`;
+
+const pillIcon = `flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`;
+
+const pillIconMuted = `flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`;
+
+const sectionHeading =
+  "font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black";
+
+const groupHeading =
+  "mb-2.5 flex items-center gap-1.5 font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+
+/** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
+const statusStyles: Record<string, string> = {
+  draft: "bg-[#F2EDED] text-[#8A7A7A]",
+  sent: "bg-[#EDF1F7] text-[#5B7394]",
+  intake_complete: "bg-[#FBF3E3] text-[#9A7B2E]",
+  signed: "bg-[#E9F2EC] text-[#4A7A5C]",
+  superseded: "bg-lyp-cherry/[0.07] text-lyp-cherry",
+};
+
+/** Native selects need their own chevron once appearance is stripped. */
+function SelectShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="relative">
+      {children}
+      <ChevronDown
+        strokeWidth={1.5}
+        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A89898]"
+      />
+    </div>
+  );
+}
 
 type State = { id: string; code: string; name: string };
 
@@ -149,58 +205,62 @@ function ClientInfoCard({
     return (
       <form
         onSubmit={handleSubmit(onSubmit)}
-        className="bg-white border border-gray-200 rounded-lg p-6 space-y-4"
+        className="rounded-3xl border border-[#EFE6E6] bg-lyp-white p-6 sm:p-7"
       >
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
-            <label className="block font-body text-sm font-medium text-lyp-black mb-1">
+            <label htmlFor="client-info-name" className={labelClasses}>
               Name
             </label>
             <input
+              id="client-info-name"
               {...register("name", { required: true })}
-              className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+              className={fieldClasses}
             />
           </div>
           <div>
-            <label className="block font-body text-sm font-medium text-lyp-black mb-1">
+            <label htmlFor="client-info-slug" className={labelClasses}>
               Slug
             </label>
             <input
+              id="client-info-slug"
               {...register("slug")}
-              className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+              className={fieldClasses}
             />
           </div>
           <div>
-            <label className="block font-body text-sm font-medium text-lyp-black mb-1">
+            <label htmlFor="client-info-entity" className={labelClasses}>
               Entity Name
             </label>
             <input
+              id="client-info-entity"
               {...register("entity_name")}
-              className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+              className={fieldClasses}
             />
           </div>
           <div>
-            <label className="block font-body text-sm font-medium text-lyp-black mb-1">
+            <label htmlFor="client-info-abn" className={labelClasses}>
               ABN
             </label>
             <input
+              id="client-info-abn"
               {...register("abn")}
-              className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+              className={`${fieldClasses} tabular-nums`}
             />
           </div>
         </div>
-        <div className="flex gap-3">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
-          >
+
+        <div className="mt-7 flex flex-wrap items-center gap-2.5 border-t border-[#F1E8E8] pt-6">
+          <button type="submit" disabled={isSubmitting} className={primaryPill}>
             {isSubmitting ? "Saving..." : "Save"}
+            <span className={pillIcon}>
+              <Check strokeWidth={1.5} className="h-4 w-4" />
+            </span>
           </button>
           <button
             type="button"
             onClick={() => setEditing(false)}
-            className="border border-gray-300 text-lyp-black px-4 py-2 rounded-md font-body text-sm hover:bg-gray-50 transition-colors"
+            className={plainPill}
           >
             Cancel
           </button>
@@ -210,34 +270,61 @@ function ClientInfoCard({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-heading font-bold text-lyp-black">
-          {client.name}
-        </h1>
+    <div className="rounded-3xl border border-[#EFE6E6] bg-lyp-white p-6 sm:p-7">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="h-px w-7 bg-lyp-cherry/30" />
+            <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
+              Client
+            </span>
+          </div>
+          <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
+            {client.name}
+          </h1>
+        </div>
         <button
           onClick={() => setEditing(true)}
-          className="border border-gray-300 text-lyp-black px-4 py-2 rounded-md font-body text-sm hover:bg-gray-50 transition-colors"
+          className={secondaryPill}
+          aria-label={`Edit ${client.name}`}
         >
           Edit
+          <span className={pillIconMuted}>
+            <Pencil strokeWidth={1.5} className="h-4 w-4" />
+          </span>
         </button>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 font-body text-sm">
+
+      <div className="mt-7 grid grid-cols-2 gap-5 border-t border-[#F1E8E8] pt-6 font-body md:grid-cols-4">
         <div>
-          <span className="text-gray-500">Entity</span>
-          <p className="text-lyp-black">{client.entity_name || "—"}</p>
+          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+            Entity
+          </p>
+          <p className="mt-1.5 text-[13px] text-lyp-black">
+            {client.entity_name || "—"}
+          </p>
         </div>
         <div>
-          <span className="text-gray-500">ABN</span>
-          <p className="text-lyp-black">{client.abn || "—"}</p>
+          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+            ABN
+          </p>
+          <p className="mt-1.5 text-[13px] tabular-nums text-lyp-black">
+            {client.abn || "—"}
+          </p>
         </div>
         <div>
-          <span className="text-gray-500">Slug</span>
-          <p className="text-lyp-black">{client.slug}</p>
+          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+            Slug
+          </p>
+          <p className="mt-1.5 text-[13px] text-lyp-black">{client.slug}</p>
         </div>
         <div>
-          <span className="text-gray-500">Created</span>
-          <p className="text-lyp-black">{formatDate(client.created_at)}</p>
+          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+            Created
+          </p>
+          <p className="mt-1.5 text-[13px] tabular-nums text-lyp-black">
+            {formatDate(client.created_at)}
+          </p>
         </div>
       </div>
     </div>
@@ -285,57 +372,60 @@ function VenueAddForm({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="border border-gray-200 rounded-lg p-4 mt-3 space-y-3 bg-gray-50"
+      className="mt-3 rounded-2xl border border-[#EFE6E6] bg-lyp-white p-5"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
-          <label className="block font-body text-xs font-medium text-lyp-black mb-1">
+          <label htmlFor="venue-name" className={labelClasses}>
             Name <span className="text-lyp-cherry">*</span>
           </label>
           <input
+            id="venue-name"
+            placeholder="Venue name"
             {...register("name", { required: true })}
-            className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+            className={fieldClasses}
           />
         </div>
         <div>
-          <label className="block font-body text-xs font-medium text-lyp-black mb-1">
+          <label htmlFor="venue-address" className={labelClasses}>
             Address
           </label>
           <input
+            id="venue-address"
+            placeholder="Street address"
             {...register("address")}
-            className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+            className={fieldClasses}
           />
         </div>
         <div>
-          <label className="block font-body text-xs font-medium text-lyp-black mb-1">
+          <label htmlFor="venue-state" className={labelClasses}>
             State <span className="text-lyp-cherry">*</span>
           </label>
-          <select
-            {...register("stateId", { required: true })}
-            className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
-          >
-            <option value="">Select state</option>
-            {states.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+          <SelectShell>
+            <select
+              id="venue-state"
+              {...register("stateId", { required: true })}
+              className={selectClasses}
+            >
+              <option value="">Select state</option>
+              {states.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </SelectShell>
         </div>
       </div>
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
-        >
+
+      <div className="mt-6 flex flex-wrap items-center gap-2.5">
+        <button type="submit" disabled={isSubmitting} className={primaryPill}>
           {isSubmitting ? "Adding..." : "Add Venue"}
+          <span className={pillIcon}>
+            <Plus strokeWidth={1.5} className="h-4 w-4" />
+          </span>
         </button>
-        <button
-          type="button"
-          onClick={onDone}
-          className="border border-gray-300 text-lyp-black px-4 py-2 rounded-md font-body text-sm hover:bg-gray-50 transition-colors"
-        >
+        <button type="button" onClick={onDone} className={plainPill}>
           Cancel
         </button>
       </div>
@@ -392,69 +482,75 @@ function ContactAddForm({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="border border-gray-200 rounded-lg p-4 mt-3 space-y-3 bg-gray-50"
+      className="mt-3 rounded-2xl border border-[#EFE6E6] bg-lyp-white p-5"
     >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         <div>
-          <label className="block font-body text-xs font-medium text-lyp-black mb-1">
+          <label htmlFor="contact-first-name" className={labelClasses}>
             First Name <span className="text-lyp-cherry">*</span>
           </label>
           <input
+            id="contact-first-name"
+            placeholder="First name"
             {...register("firstName", { required: true })}
-            className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+            className={fieldClasses}
           />
         </div>
         <div>
-          <label className="block font-body text-xs font-medium text-lyp-black mb-1">
+          <label htmlFor="contact-last-name" className={labelClasses}>
             Last Name <span className="text-lyp-cherry">*</span>
           </label>
           <input
+            id="contact-last-name"
+            placeholder="Last name"
             {...register("lastName", { required: true })}
-            className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+            className={fieldClasses}
           />
         </div>
         <div>
-          <label className="block font-body text-xs font-medium text-lyp-black mb-1">
+          <label htmlFor="contact-email" className={labelClasses}>
             Email
           </label>
           <input
+            id="contact-email"
+            placeholder="name@example.com"
             {...register("email")}
             type="email"
-            className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+            className={fieldClasses}
           />
         </div>
         <div>
-          <label className="block font-body text-xs font-medium text-lyp-black mb-1">
+          <label htmlFor="contact-phone" className={labelClasses}>
             Phone
           </label>
           <input
+            id="contact-phone"
+            placeholder="Phone number"
             {...register("phone")}
-            className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+            className={`${fieldClasses} tabular-nums`}
           />
         </div>
         <div>
-          <label className="block font-body text-xs font-medium text-lyp-black mb-1">
+          <label htmlFor="contact-role" className={labelClasses}>
             Role
           </label>
           <input
+            id="contact-role"
+            placeholder="e.g. Venue Manager"
             {...register("role")}
-            className="w-full border border-gray-300 rounded px-3 py-2 font-body text-sm focus:outline-none focus:ring-2 focus:ring-lyp-cherry"
+            className={fieldClasses}
           />
         </div>
       </div>
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors disabled:opacity-50"
-        >
+
+      <div className="mt-6 flex flex-wrap items-center gap-2.5">
+        <button type="submit" disabled={isSubmitting} className={primaryPill}>
           {isSubmitting ? "Adding..." : "Add Contact"}
+          <span className={pillIcon}>
+            <Plus strokeWidth={1.5} className="h-4 w-4" />
+          </span>
         </button>
-        <button
-          type="button"
-          onClick={onDone}
-          className="border border-gray-300 text-lyp-black px-4 py-2 rounded-md font-body text-sm hover:bg-gray-50 transition-colors"
-        >
+        <button type="button" onClick={onDone} className={plainPill}>
           Cancel
         </button>
       </div>
@@ -462,11 +558,44 @@ function ContactAddForm({
   );
 }
 
-export default function ClientDetailView({
-  client,
-  states,
-  appUrl,
-}: Props) {
+/** Muted tonal payment states — matches the proposals list vocabulary. */
+function PaymentLine({ status }: { status: string }) {
+  const map: Record<
+    string,
+    { icon: typeof Check; color: string; label: string }
+  > = {
+    details_captured: {
+      icon: Check,
+      color: "text-[#4A7A5C]",
+      label: "Details captured",
+    },
+    settled: { icon: Check, color: "text-[#4A7A5C]", label: "Settled" },
+    pending: { icon: Clock, color: "text-[#9A7B2E]", label: "Pending" },
+    scheduled: { icon: Clock, color: "text-[#5B7394]", label: "Scheduled" },
+    dishonoured: {
+      icon: AlertCircle,
+      color: "text-lyp-cherry",
+      label: "Dishonoured",
+    },
+    failed: { icon: AlertCircle, color: "text-lyp-cherry", label: "Failed" },
+  };
+
+  const entry = map[status];
+  if (!entry)
+    return <p className="font-body text-[13px] text-[#8A7A7A]">{status}</p>;
+
+  const Icon = entry.icon;
+  return (
+    <p
+      className={`flex items-center gap-1.5 font-body text-[13px] font-medium ${entry.color}`}
+    >
+      <Icon strokeWidth={1.75} className="h-3.5 w-3.5" />
+      {entry.label}
+    </p>
+  );
+}
+
+export default function ClientDetailView({ client, states, appUrl }: Props) {
   const router = useRouter();
   const [showVenueForm, setShowVenueForm] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
@@ -476,79 +605,101 @@ export default function ClientDetailView({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-[80rem]">
       {/* Back link */}
-      <Link
-        href="/admin/clients"
-        className="text-lyp-cherry font-body text-sm hover:underline"
-      >
-        &larr; Back to Clients
-      </Link>
+      <div className="animate-rise">
+        <Link
+          href="/admin/clients"
+          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+        >
+          <ArrowLeft
+            strokeWidth={1.5}
+            className={`h-3.5 w-3.5 transition-transform duration-500 ${EASE} group-hover:-translate-x-0.5`}
+          />
+          Back to Clients
+        </Link>
+      </div>
 
       {/* Client Info */}
-      <ClientInfoCard client={client} onUpdated={refresh} />
+      <div className="animate-rise mt-5">
+        <ClientInfoCard client={client} onUpdated={refresh} />
+      </div>
 
       {/* Venues */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-heading font-bold text-lyp-black">
-            Venues
-          </h2>
+      <section
+        className="animate-rise mt-8"
+        style={{ animationDelay: "80ms" }}
+      >
+        <div className="mb-3.5 flex flex-wrap items-end justify-between gap-3">
+          <h2 className={sectionHeading}>Venues</h2>
           {!showVenueForm && (
             <button
               onClick={() => setShowVenueForm(true)}
-              className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors"
+              className={secondaryPill}
             >
               Add Venue
+              <span className={pillIconMuted}>
+                <Plus strokeWidth={1.5} className="h-4 w-4" />
+              </span>
             </button>
           )}
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
-                  Name
-                </th>
-                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
-                  Address
-                </th>
-                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
-                  State
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {client.venues && client.venues.length > 0 ? (
-                client.venues.map((venue) => (
-                  <tr
-                    key={venue.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-body text-sm text-lyp-black">
-                      {venue.name}
-                    </td>
-                    <td className="px-4 py-3 font-body text-sm text-gray-700">
-                      {venue.address || "—"}
-                    </td>
-                    <td className="px-4 py-3 font-body text-sm text-gray-700">
-                      {venue.states?.name || "—"}
+        <div className="overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-body text-[12.5px]">
+              <thead>
+                <tr className="border-b border-[#F1E8E8]">
+                  <th className={thClasses}>Name</th>
+                  <th className={thClasses}>Address</th>
+                  <th className={thClasses}>State</th>
+                </tr>
+              </thead>
+              <tbody>
+                {client.venues && client.venues.length > 0 ? (
+                  client.venues.map((venue) => (
+                    <tr
+                      key={venue.id}
+                      className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
+                    >
+                      <td className="whitespace-nowrap px-5 py-3 font-medium text-lyp-black">
+                        {venue.name}
+                      </td>
+                      <td className="px-5 py-3 text-[#8A7A7A]">
+                        {venue.address || "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                        {venue.states?.name || "—"}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={3} className="px-8 py-12 text-center">
+                      <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
+                        <MapPin
+                          strokeWidth={1}
+                          className="h-6 w-6 text-lyp-cherry/60"
+                        />
+                      </span>
+                      <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+                        No venues yet.
+                      </p>
+                      {!showVenueForm && (
+                        <button
+                          onClick={() => setShowVenueForm(true)}
+                          className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
+                        >
+                          Add the first venue
+                          <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={3}
-                    className="px-4 py-6 text-center font-body text-sm text-gray-500"
-                  >
-                    No venues yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {showVenueForm && (
@@ -564,84 +715,92 @@ export default function ClientDetailView({
       </section>
 
       {/* Contacts */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-heading font-bold text-lyp-black">
-            Contacts
-          </h2>
+      <section
+        className="animate-rise mt-8"
+        style={{ animationDelay: "140ms" }}
+      >
+        <div className="mb-3.5 flex flex-wrap items-end justify-between gap-3">
+          <h2 className={sectionHeading}>Contacts</h2>
           {!showContactForm && (
             <button
               onClick={() => setShowContactForm(true)}
-              className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors"
+              className={secondaryPill}
             >
               Add Contact
+              <span className={pillIconMuted}>
+                <Plus strokeWidth={1.5} className="h-4 w-4" />
+              </span>
             </button>
           )}
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
-                  First Name
-                </th>
-                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
-                  Last Name
-                </th>
-                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
-                  Email
-                </th>
-                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
-                  Phone
-                </th>
-                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
-                  Role
-                </th>
-                <th className="px-4 py-3 font-heading text-sm font-semibold text-lyp-black">
-                  Primary
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {client.contacts && client.contacts.length > 0 ? (
-                client.contacts.map((contact) => (
-                  <tr
-                    key={contact.id}
-                    className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-4 py-3 font-body text-sm text-lyp-black">
-                      {contact.first_name}
-                    </td>
-                    <td className="px-4 py-3 font-body text-sm text-lyp-black">
-                      {contact.last_name}
-                    </td>
-                    <td className="px-4 py-3 font-body text-sm text-gray-700">
-                      {contact.email || "—"}
-                    </td>
-                    <td className="px-4 py-3 font-body text-sm text-gray-700">
-                      {contact.phone || "—"}
-                    </td>
-                    <td className="px-4 py-3 font-body text-sm text-gray-700">
-                      {contact.role || "—"}
-                    </td>
-                    <td className="px-4 py-3 font-body text-sm text-gray-700">
-                      {contact.is_primary ? "Yes" : "No"}
+        <div className="overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-body text-[12.5px]">
+              <thead>
+                <tr className="border-b border-[#F1E8E8]">
+                  <th className={thClasses}>First Name</th>
+                  <th className={thClasses}>Last Name</th>
+                  <th className={thClasses}>Email</th>
+                  <th className={thClasses}>Phone</th>
+                  <th className={thClasses}>Role</th>
+                  <th className={thClasses}>Primary</th>
+                </tr>
+              </thead>
+              <tbody>
+                {client.contacts && client.contacts.length > 0 ? (
+                  client.contacts.map((contact) => (
+                    <tr
+                      key={contact.id}
+                      className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
+                    >
+                      <td className="whitespace-nowrap px-5 py-3 font-medium text-lyp-black">
+                        {contact.first_name}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3 font-medium text-lyp-black">
+                        {contact.last_name}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                        {contact.email || "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#8A7A7A]">
+                        {contact.phone || "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                        {contact.role || "—"}
+                      </td>
+                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                        {contact.is_primary ? "Yes" : "No"}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-8 py-12 text-center">
+                      <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
+                        <Users
+                          strokeWidth={1}
+                          className="h-6 w-6 text-lyp-cherry/60"
+                        />
+                      </span>
+                      <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+                        No contacts yet.
+                      </p>
+                      {!showContactForm && (
+                        <button
+                          onClick={() => setShowContactForm(true)}
+                          className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
+                        >
+                          Add the first contact
+                          <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-6 text-center font-body text-sm text-gray-500"
-                  >
-                    No contacts yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {showContactForm && (
@@ -656,29 +815,26 @@ export default function ClientDetailView({
       </section>
 
       {/* Proposals */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-heading font-bold text-lyp-black">
-            Proposals
-          </h2>
+      <section
+        className="animate-rise mt-8 pb-2"
+        style={{ animationDelay: "200ms" }}
+      >
+        <div className="mb-3.5 flex flex-wrap items-end justify-between gap-3">
+          <h2 className={sectionHeading}>Proposals</h2>
           <Link
             href={`/admin/proposals/new?clientId=${client.id}`}
-            className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:opacity-90 transition-colors"
+            className={primaryPill}
           >
             New Proposal
+            <span className={pillIcon}>
+              <Plus strokeWidth={1.5} className="h-4 w-4" />
+            </span>
           </Link>
         </div>
 
         {client.proposals && client.proposals.length > 0 ? (
           <div className="space-y-4">
             {client.proposals.map((proposal) => {
-              const statusStyles: Record<string, string> = {
-                draft: "bg-gray-100 text-gray-700",
-                sent: "bg-blue-100 text-blue-700",
-                signed: "bg-green-100 text-green-700",
-                superseded: "bg-red-100 text-red-700",
-              };
-
               const payment = proposal.payments?.[0];
               const contract = proposal.documents?.find(
                 (d) => d.type === "contract",
@@ -689,56 +845,63 @@ export default function ClientDetailView({
               return (
                 <div
                   key={proposal.id}
-                  className="bg-white border border-gray-200 rounded-lg overflow-hidden"
+                  className={`overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white transition-shadow duration-500 ${EASE} hover:shadow-[0_12px_28px_-16px_rgba(61,11,17,0.25)]`}
                 >
                   {/* Proposal header */}
-                  <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#F1E8E8] px-5 py-4">
+                    <div className="flex flex-wrap items-center gap-3">
                       <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize ${statusStyles[proposal.status] ?? ""}`}
+                        className={`inline-block rounded-full px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] ${
+                          statusStyles[proposal.status] ??
+                          "bg-[#F2EDED] text-[#8A7A7A]"
+                        }`}
                       >
-                        {proposal.status}
+                        {String(proposal.status ?? "—").replace(/_/g, " ")}
                       </span>
-                      <span className="font-body text-sm text-gray-500">
+                      <span className="font-body text-[12.5px] tabular-nums text-[#A89898]">
                         Created {formatDate(proposal.created_at)}
                       </span>
                       {proposal.signed_at && (
-                        <span className="font-body text-sm text-green-600">
+                        <span className="font-body text-[12.5px] tabular-nums text-[#4A7A5C]">
                           Signed {formatDate(proposal.signed_at)}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      {proposal.total_snapshot_cents != null && (
-                        <span className="font-heading text-lg text-lyp-black">
-                          {formatCents(proposal.total_snapshot_cents)}
-                          <span className="font-body text-xs text-gray-400 ml-1">
-                            + GST
-                          </span>
+                    {proposal.total_snapshot_cents != null && (
+                      <span className="font-heading text-[18px] font-bold tracking-[-0.02em] tabular-nums text-lyp-black">
+                        {formatCents(proposal.total_snapshot_cents)}
+                        <span className="ml-1.5 font-body text-[10px] font-medium uppercase tracking-[0.18em] text-[#C3B5B5]">
+                          + GST
                         </span>
-                      )}
-                    </div>
+                      </span>
+                    )}
                   </div>
 
-                  <div className="px-5 py-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 gap-6 px-5 py-5 md:grid-cols-2 lg:grid-cols-4">
                     {/* Services held */}
                     <div>
-                      <h3 className="font-heading text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <ClipboardList className="h-3.5 w-3.5" />
+                      <h3 className={groupHeading}>
+                        <ClipboardList
+                          strokeWidth={1.5}
+                          className="h-3.5 w-3.5"
+                        />
                         Services
                       </h3>
                       {lineItems.length > 0 ? (
-                        <ul className="space-y-1">
+                        <ul className="space-y-1.5">
                           {lineItems.map((item) => (
                             <li
                               key={item.id}
-                              className="font-body text-sm text-lyp-black flex items-center justify-between"
+                              className="flex items-center justify-between gap-3 font-body text-[13px] text-lyp-black"
                             >
                               <span className="flex items-center gap-1.5">
-                                <Check className="h-3 w-3 text-green-500 shrink-0" />
+                                <Check
+                                  strokeWidth={1.75}
+                                  className="h-3 w-3 shrink-0 text-[#4A7A5C]"
+                                />
                                 {item.services?.name ?? "—"}
                               </span>
-                              <span className="text-gray-500 text-xs">
+                              <span className="text-[12px] tabular-nums text-[#A89898]">
                                 {formatCents(item.price_snapshot_cents)}
                                 {item.billing === "recurring_monthly" && "/mo"}
                               </span>
@@ -746,7 +909,7 @@ export default function ClientDetailView({
                           ))}
                         </ul>
                       ) : (
-                        <p className="font-body text-sm text-gray-400">
+                        <p className="font-body text-[13px] text-[#C3B5B5]">
                           No services selected
                         </p>
                       )}
@@ -754,8 +917,8 @@ export default function ClientDetailView({
 
                     {/* Agreement */}
                     <div>
-                      <h3 className="font-heading text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <FileText className="h-3.5 w-3.5" />
+                      <h3 className={groupHeading}>
+                        <FileText strokeWidth={1.5} className="h-3.5 w-3.5" />
                         Agreement
                       </h3>
                       {contract ? (
@@ -764,22 +927,25 @@ export default function ClientDetailView({
                             href={contract.file_url ?? "#"}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="font-body text-sm text-lyp-cherry hover:underline flex items-center gap-1.5"
+                            className={`flex items-center gap-1.5 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
                           >
-                            <Download className="h-3.5 w-3.5" />
+                            <Download
+                              strokeWidth={1.5}
+                              className="h-3.5 w-3.5"
+                            />
                             Download Contract
                           </a>
-                          <p className="font-body text-xs text-gray-400">
+                          <p className="font-body text-[11px] tabular-nums text-[#A89898]">
                             Generated {formatDate(contract.created_at)}
                           </p>
                         </div>
                       ) : proposal.status === "signed" ? (
-                        <p className="font-body text-sm text-amber-600 flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5" />
+                        <p className="flex items-center gap-1.5 font-body text-[13px] font-medium text-[#9A7B2E]">
+                          <Clock strokeWidth={1.75} className="h-3.5 w-3.5" />
                           Generating...
                         </p>
                       ) : (
-                        <p className="font-body text-sm text-gray-400">
+                        <p className="font-body text-[13px] text-[#C3B5B5]">
                           Awaiting signature
                         </p>
                       )}
@@ -787,59 +953,22 @@ export default function ClientDetailView({
 
                     {/* Payment status */}
                     <div>
-                      <h3 className="font-heading text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <CreditCard className="h-3.5 w-3.5" />
+                      <h3 className={groupHeading}>
+                        <CreditCard strokeWidth={1.5} className="h-3.5 w-3.5" />
                         Payment
                       </h3>
                       {payment ? (
                         <div className="space-y-1">
-                          <p className="font-body text-sm text-lyp-black flex items-center gap-1.5">
-                            {payment.status === "details_captured" && (
-                              <>
-                                <Check className="h-3.5 w-3.5 text-green-500" />
-                                Details captured
-                              </>
-                            )}
-                            {payment.status === "settled" && (
-                              <>
-                                <Check className="h-3.5 w-3.5 text-green-500" />
-                                Settled
-                              </>
-                            )}
-                            {payment.status === "pending" && (
-                              <>
-                                <Clock className="h-3.5 w-3.5 text-amber-500" />
-                                Pending
-                              </>
-                            )}
-                            {payment.status === "dishonoured" && (
-                              <>
-                                <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                                Dishonoured
-                              </>
-                            )}
-                            {payment.status === "failed" && (
-                              <>
-                                <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                                Failed
-                              </>
-                            )}
-                            {payment.status === "scheduled" && (
-                              <>
-                                <Clock className="h-3.5 w-3.5 text-blue-500" />
-                                Scheduled
-                              </>
-                            )}
-                          </p>
+                          <PaymentLine status={payment.status} />
                           {payment.card_last_four && (
-                            <p className="font-body text-xs text-gray-500">
+                            <p className="font-body text-[11px] tabular-nums text-[#A89898]">
                               {payment.card_brand ?? "Card"} ending{" "}
                               {payment.card_last_four}
                             </p>
                           )}
                         </div>
                       ) : (
-                        <p className="font-body text-sm text-gray-400">
+                        <p className="font-body text-[13px] text-[#C3B5B5]">
                           {proposal.status === "signed"
                             ? "Awaiting payment"
                             : "Not yet signed"}
@@ -849,17 +978,20 @@ export default function ClientDetailView({
 
                     {/* Intake status */}
                     <div>
-                      <h3 className="font-heading text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                        <ClipboardList className="h-3.5 w-3.5" />
+                      <h3 className={groupHeading}>
+                        <ClipboardList
+                          strokeWidth={1.5}
+                          className="h-3.5 w-3.5"
+                        />
                         Intake
                       </h3>
                       {hasIntake ? (
-                        <p className="font-body text-sm text-green-600 flex items-center gap-1.5">
-                          <Check className="h-3.5 w-3.5" />
+                        <p className="flex items-center gap-1.5 font-body text-[13px] font-medium text-[#4A7A5C]">
+                          <Check strokeWidth={1.75} className="h-3.5 w-3.5" />
                           Completed
                         </p>
                       ) : (
-                        <p className="font-body text-sm text-gray-400">
+                        <p className="font-body text-[13px] text-[#C3B5B5]">
                           {proposal.status === "signed"
                             ? "Awaiting intake"
                             : "Not yet signed"}
@@ -870,8 +1002,8 @@ export default function ClientDetailView({
 
                   {/* Portal link — clickable, opens the client's proposal */}
                   {proposal.status !== "superseded" && proposal.token && (
-                    <div className="flex items-center gap-3 px-5 py-3 border-t border-gray-100 bg-gray-50">
-                      <span className="font-body text-xs text-gray-500 shrink-0">
+                    <div className="flex items-center gap-3 border-t border-[#F1E8E8] bg-[#FBF8F8] px-5 py-3">
+                      <span className="shrink-0 font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
                         Portal link
                       </span>
                       <PortalLinkCell
@@ -881,10 +1013,8 @@ export default function ClientDetailView({
                   )}
 
                   {/* Internal Notes */}
-                  <div className="px-5 py-4 border-t border-gray-100 bg-gray-50/50">
-                    <h4 className="font-heading text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
-                      Internal Notes
-                    </h4>
+                  <div className="border-t border-[#F1E8E8] bg-[#FBF8F8]/60 px-5 py-4">
+                    <h4 className={groupHeading}>Internal Notes</h4>
                     <ProposalInternalNotes
                       proposalId={proposal.id}
                       initialNotes={proposal.internal_notes}
@@ -895,8 +1025,20 @@ export default function ClientDetailView({
             })}
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-            <p className="font-body text-sm text-gray-500">No proposals yet.</p>
+          <div className="rounded-2xl border border-[#EFE6E6] bg-lyp-white px-8 py-12 text-center">
+            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
+              <FileText strokeWidth={1} className="h-6 w-6 text-lyp-cherry/60" />
+            </span>
+            <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+              No proposals yet.
+            </p>
+            <Link
+              href={`/admin/proposals/new?clientId=${client.id}`}
+              className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
+            >
+              Create the first proposal
+              <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
+            </Link>
           </div>
         )}
       </section>

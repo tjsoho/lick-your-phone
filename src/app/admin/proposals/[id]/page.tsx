@@ -18,6 +18,7 @@ import {
   ClipboardCheck,
   DollarSign,
   Activity,
+  Receipt,
 } from "lucide-react";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 
@@ -70,27 +71,38 @@ interface AuditMetadata {
   [key: string]: unknown;
 }
 
+const EASE = "ease-brand";
+
+const thClasses =
+  "whitespace-nowrap px-4 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+
+/** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const statusStyles: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700",
-  sent: "bg-blue-100 text-blue-700",
-  signed: "bg-green-100 text-green-700",
-  superseded: "bg-red-100 text-red-700",
+  draft: "bg-[#F2EDED] text-[#8A7A7A]",
+  sent: "bg-[#EDF1F7] text-[#5B7394]",
+  intake_complete: "bg-[#FBF3E3] text-[#9A7B2E]",
+  signed: "bg-[#E9F2EC] text-[#4A7A5C]",
+  superseded: "bg-lyp-cherry/[0.07] text-lyp-cherry",
 };
 
 const paymentStatusMap: Record<
   string,
   { icon: typeof Check; color: string; label: string }
 > = {
-  details_captured: { icon: Check, color: "text-green-600", label: "Captured" },
-  scheduled: { icon: Clock, color: "text-blue-600", label: "Scheduled" },
-  pending: { icon: Clock, color: "text-amber-600", label: "Pending" },
-  settled: { icon: Check, color: "text-green-600", label: "Settled" },
+  details_captured: {
+    icon: Check,
+    color: "text-[#4A7A5C]",
+    label: "Captured",
+  },
+  scheduled: { icon: Clock, color: "text-[#5B7394]", label: "Scheduled" },
+  pending: { icon: Clock, color: "text-[#9A7B2E]", label: "Pending" },
+  settled: { icon: Check, color: "text-[#4A7A5C]", label: "Settled" },
   dishonoured: {
     icon: AlertCircle,
-    color: "text-red-600",
+    color: "text-lyp-cherry",
     label: "Dishonoured",
   },
-  failed: { icon: AlertCircle, color: "text-red-600", label: "Failed" },
+  failed: { icon: AlertCircle, color: "text-lyp-cherry", label: "Failed" },
 };
 
 const eventDetails: Record<
@@ -98,20 +110,20 @@ const eventDetails: Record<
   {
     title: string;
     color: string;
-    icon: React.ComponentType<{ className?: string }>;
+    icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
     getDescription: (metadata: AuditMetadata) => string;
   }
 > = {
   PROPOSAL_SENT: {
     title: "Proposal Sent",
-    color: "bg-blue-50 text-blue-700 border-blue-200",
+    color: "border-[#E2E8F1] bg-[#EDF1F7] text-[#5B7394]",
     icon: Send,
     getDescription: (meta) =>
       `Sent to ${meta?.clientEmail || meta?.clientName || "Client"}`,
   },
   PROPOSAL_SIGNED: {
     title: "Proposal Signed",
-    color: "bg-green-50 text-green-700 border-green-200",
+    color: "border-[#DCE9E1] bg-[#E9F2EC] text-[#4A7A5C]",
     icon: FileSignature,
     getDescription: (meta) =>
       `Signed by ${meta?.signerEmail || meta?.clientName || "Client"}. Total: ${
@@ -120,7 +132,7 @@ const eventDetails: Record<
   },
   INTAKE_COMPLETED: {
     title: "Intake Completed",
-    color: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    color: "border-[#E4E2F0] bg-[#F0EEF8] text-[#6B6394]",
     icon: ClipboardCheck,
     getDescription: (meta) =>
       `${meta?.isEdit ? "Updated" : "Submitted"} by ${
@@ -129,21 +141,21 @@ const eventDetails: Record<
   },
   PAYMENT_CAPTURED: {
     title: "Payment Details Captured",
-    color: "bg-amber-50 text-amber-700 border-amber-200",
+    color: "border-[#F0E4C9] bg-[#FBF3E3] text-[#9A7B2E]",
     icon: CreditCard,
     getDescription: (meta) =>
       `Payment details captured for ${meta?.clientName || "Client"}.`,
   },
   PAYMENT_SUCCEEDED: {
     title: "Payment Succeeded",
-    color: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    color: "border-[#DCE9E1] bg-[#E9F2EC] text-[#4A7A5C]",
     icon: DollarSign,
     getDescription: (meta) =>
       `Payment of ${meta?.amount ? formatCents(meta.amount) : "—"} succeeded.`,
   },
   PAYMENT_FAILED: {
     title: "Payment Failed",
-    color: "bg-rose-50 text-rose-700 border-rose-200",
+    color: "border-lyp-cherry/15 bg-lyp-cherry/[0.06] text-lyp-cherry",
     icon: AlertCircle,
     getDescription: (meta) =>
       `Payment of ${meta?.amount ? formatCents(meta.amount) : "—"} failed.`,
@@ -157,16 +169,24 @@ function StatusBadge({
   status?: string;
   map: typeof paymentStatusMap;
 }) {
-  if (!status) return <span className="text-gray-400 text-xs">—</span>;
+  if (!status)
+    return <span className="font-body text-[12px] text-[#C3B5B5]">—</span>;
   const entry = map[status];
   if (!entry)
-    return <span className="text-gray-500 text-xs capitalize">{status}</span>;
+    return (
+      <span className="font-body text-[12px] capitalize text-[#8A7A7A]">
+        {status}
+      </span>
+    );
   const Icon = entry.icon;
   return (
     <span
-      className={cn("flex items-center gap-1 text-xs font-medium", entry.color)}
+      className={cn(
+        "flex items-center gap-1.5 font-body text-[12px] font-medium",
+        entry.color,
+      )}
     >
-      <Icon className="h-3 w-3" />
+      <Icon strokeWidth={1.75} className="h-3 w-3" />
       {entry.label}
     </span>
   );
@@ -198,227 +218,300 @@ export default async function ProposalDetailPage({
   const notes = (proposal.internal_notes ?? []) as unknown as InternalNote[];
 
   return (
-    <div className="max-w-4xl">
-      {/* Header */}
-      <div className="mb-6">
+    <div className="mx-auto max-w-[64rem]">
+      {/* ─────────────── Header ─────────────── */}
+      <header className="animate-rise mb-6">
         <Link
           href="/admin/proposals"
-          className="text-sm text-gray-500 hover:text-lyp-cherry flex items-center gap-1 mb-3"
+          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
-          <ArrowLeft className="h-3 w-3" /> Back to proposals
+          <ArrowLeft
+            strokeWidth={1.5}
+            className={`h-3.5 w-3.5 transition-transform duration-500 ${EASE} group-hover:-translate-x-0.5`}
+          />
+          Back to proposals
         </Link>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-heading font-bold text-lyp-black">
-              {proposal.clients?.name ?? "Proposal"}
-            </h1>
-            <span
-              className={cn(
-                "inline-block px-2 py-0.5 rounded-full text-xs font-body font-medium capitalize",
-                statusStyles[proposal.status] ?? "bg-gray-100 text-gray-700",
-              )}
-            >
-              {proposal.status}
-            </span>
+
+        <div className="mt-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="h-px w-7 bg-lyp-cherry/30" />
+              <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
+                Proposal
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <h1 className="font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
+                {proposal.clients?.name ?? "Proposal"}
+              </h1>
+              <span
+                className={cn(
+                  "inline-block rounded-full px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em]",
+                  statusStyles[proposal.status] ?? "bg-[#F2EDED] text-[#8A7A7A]",
+                )}
+              >
+                {String(proposal.status ?? "—").replace(/_/g, " ")}
+              </span>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex flex-wrap items-center gap-2.5">
             {proposal.status === "draft" && (
               <Link
                 href={`/admin/proposals/${id}/edit`}
-                className="flex items-center gap-1 text-sm text-gray-600 hover:text-lyp-cherry border border-gray-200 rounded-md px-3 py-1.5"
+                className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-5 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
               >
-                <Pencil className="h-3.5 w-3.5" /> Edit
+                Edit
+                <span
+                  className={`flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
+                >
+                  <Pencil strokeWidth={1.5} className="h-3.5 w-3.5" />
+                </span>
               </Link>
             )}
             {proposal.status !== "superseded" && (
               <Link
                 href={`/admin/proposals/${id}/edit?mode=supersede`}
-                className="flex items-center gap-1 text-sm text-gray-600 hover:text-blue-600 border border-gray-200 rounded-md px-3 py-1.5"
+                className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-5 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
               >
-                <Copy className="h-3.5 w-3.5" /> Supersede
+                Supersede
+                <span
+                  className={`flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
+                >
+                  <Copy strokeWidth={1.5} className="h-3.5 w-3.5" />
+                </span>
               </Link>
             )}
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Info grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      {/* ─────────────── Summary ─────────────── */}
+      <dl
+        className="animate-rise mb-8 grid grid-cols-2 gap-3 md:grid-cols-4"
+        style={{ animationDelay: "80ms" }}
+      >
         <InfoCard label="Client" value={proposal.clients?.name} />
         <InfoCard label="Venue" value={proposal.venues?.name} />
         <InfoCard
           label="Total"
+          numeric
           value={
             proposal.total_snapshot_cents != null
               ? formatCents(proposal.total_snapshot_cents)
               : "—"
           }
         />
-        <InfoCard label="Created" value={formatDate(proposal.created_at)} />
+        <InfoCard
+          label="Created"
+          numeric
+          value={formatDate(proposal.created_at)}
+        />
         {proposal.signed_at && (
-          <InfoCard label="Signed" value={formatDate(proposal.signed_at)} />
+          <InfoCard
+            label="Signed"
+            numeric
+            value={formatDate(proposal.signed_at)}
+          />
         )}
         {proposal.signer_email && (
           <InfoCard label="Signer" value={proposal.signer_email} />
         )}
-      </div>
+      </dl>
 
-      {/* Line items */}
-      <Section title="Line Items">
+      {/* ─────────────── Line items ─────────────── */}
+      <Section title="Line Items" delay="140ms" flush>
         {lineItems.length === 0 ? (
-          <p className="text-sm text-gray-400">No line items.</p>
+          <EmptyRow icon={Receipt} message="No line items." />
         ) : (
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="py-2 font-semibold">Service</th>
-                <th className="py-2 font-semibold">Billing</th>
-                <th className="py-2 font-semibold text-right">Price</th>
-                <th className="py-2 font-semibold">Term</th>
-                <th className="py-2 font-semibold text-right">Subtotal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lineItems.map((li) => (
-                <tr key={li.id} className="border-b border-gray-100">
-                  <td className="py-2">
-                    {li.services?.name}{" "}
-                    {li.service_tiers?.name && `(${li.service_tiers.name})`}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-body text-[12.5px]">
+              <thead>
+                <tr className="border-b border-[#F1E8E8]">
+                  <th className={thClasses}>Service</th>
+                  <th className={thClasses}>Billing</th>
+                  <th className={thClasses}>Term</th>
+                  <th className={cn(thClasses, "text-right")}>Price</th>
+                  <th className={cn(thClasses, "text-right")}>Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lineItems.map((li) => (
+                  <tr
+                    key={li.id}
+                    className={`border-b border-[#F7F1F1] transition-colors duration-500 ${EASE} hover:bg-[#FBF8F8]`}
+                  >
+                    <td className="px-4 py-3 font-medium text-lyp-black">
+                      {li.services?.name}{" "}
+                      {li.service_tiers?.name && `(${li.service_tiers.name})`}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 capitalize text-[#8A7A7A]">
+                      {li.billing ?? "—"}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[#8A7A7A]">
+                      {li.billing_cycle_snapshot_months} Months
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-lyp-black">
+                      {formatCents(li.price_snapshot_cents)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-lyp-black">
+                      {formatCents(
+                        li.price_snapshot_cents *
+                          (li.billing_cycle_snapshot_months || 1),
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                <tr>
+                  <td
+                    colSpan={4}
+                    className="px-4 py-3 text-right font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]"
+                  >
+                    Total
                   </td>
-                  <td className="py-2 capitalize">{li.billing ?? "—"}</td>
-                  <td className="py-2">
-                    {li.billing_cycle_snapshot_months} Months
-                  </td>
-                  <td className="py-2 text-right">
-                    {formatCents(li.price_snapshot_cents)}
-                  </td>
-                  <td className="py-2 text-right">
-                    {formatCents(
-                      li.price_snapshot_cents *
-                        (li.billing_cycle_snapshot_months || 1),
-                    )}
+                  <td className="whitespace-nowrap px-4 py-3 text-right font-heading text-[15px] font-bold tabular-nums tracking-[-0.02em] text-lyp-black">
+                    {formatCents(proposal.total_snapshot_cents ?? 0)}
                   </td>
                 </tr>
-              ))}
-              <tr>
-                <td colSpan={4} className="py-2 font-semibold text-right">
-                  Total
-                </td>
-                <td className="py-2 text-right font-semibold">
-                  {formatCents(proposal.total_snapshot_cents ?? 0)}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         )}
       </Section>
 
-      {/* Payments */}
-      <Section title="Payments">
+      {/* ─────────────── Payments ─────────────── */}
+      <Section title="Payments" delay="200ms">
         {payments.length === 0 ? (
-          <p className="text-sm text-gray-400">No payments recorded.</p>
+          <EmptyRow icon={CreditCard} message="No payments recorded." />
         ) : (
-          payments.map((payment) => (
-            <div
-              key={payment.id}
-              className="border border-gray-200 rounded-lg p-4 mb-4 last:mb-0"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <CreditCard className="h-4 w-4 text-gray-400" />
-                  <span className="text-sm font-medium">
-                    {payment.card_brand ?? "Card"} ••••{" "}
-                    {payment.card_last_four ?? "????"}
-                  </span>
-                  {payment.card_expiry && (
-                    <span className="text-xs text-gray-400">
-                      Exp {payment.card_expiry}
+          <div className="space-y-4">
+            {payments.map((payment) => (
+              <div
+                key={payment.id}
+                className="rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] p-4 sm:p-5"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-lyp-cherry/[0.06] ring-1 ring-lyp-cherry/10">
+                      <CreditCard
+                        strokeWidth={1.25}
+                        className="h-3.5 w-3.5 text-lyp-cherry"
+                      />
                     </span>
-                  )}
+                    <span className="font-body text-[13px] font-medium text-lyp-black">
+                      {payment.card_brand ?? "Card"} ••••{" "}
+                      <span className="tabular-nums">
+                        {payment.card_last_four ?? "????"}
+                      </span>
+                    </span>
+                    {payment.card_expiry && (
+                      <span className="font-body text-[11px] tabular-nums text-[#A89898]">
+                        Exp {payment.card_expiry}
+                      </span>
+                    )}
+                  </div>
+                  <StatusBadge status={payment.status} map={paymentStatusMap} />
                 </div>
-                <StatusBadge status={payment.status} map={paymentStatusMap} />
+
+                <h3 className="mt-5 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
+                  Payment Schedule
+                </h3>
+
+                {payment.payment_schedules &&
+                payment.payment_schedules.length > 0 ? (
+                  <div className="mt-2 overflow-x-auto">
+                    <table className="w-full text-left font-body text-[12px]">
+                      <thead>
+                        <tr className="border-b border-[#F1E8E8]">
+                          <th className={thClasses}>Date</th>
+                          <th className={thClasses}>Description</th>
+                          <th className={cn(thClasses, "text-right")}>
+                            Amount
+                          </th>
+                          <th className={thClasses}>Pinch ID</th>
+                          <th className={cn(thClasses, "text-right")}>
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payment.payment_schedules.map((sched) => (
+                          <tr
+                            key={sched.id}
+                            className="border-b border-[#F7F1F1] last:border-0"
+                          >
+                            <td className="whitespace-nowrap px-4 py-2.5 tabular-nums text-lyp-black">
+                              {formatDate(sched.scheduled_date)}
+                            </td>
+                            <td className="px-4 py-2.5 text-[#8A7A7A]">
+                              {sched.description || "—"}
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-lyp-black">
+                              {formatCents(sched.amount_cents)}
+                            </td>
+                            <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[11px] text-[#C3B5B5]">
+                              {sched.pinch_payment_id
+                                ? sched.pinch_payment_id.slice(0, 12) + "…"
+                                : "—"}
+                            </td>
+                            <td className="px-4 py-2.5">
+                              <span className="flex justify-end">
+                                <StatusBadge
+                                  status={sched.status}
+                                  map={paymentStatusMap}
+                                />
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+
+                        <tr>
+                          <td
+                            colSpan={2}
+                            className="px-4 py-2.5 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]"
+                          >
+                            Total
+                          </td>
+                          <td className="whitespace-nowrap px-4 py-2.5 text-right font-body text-[13px] font-semibold tabular-nums text-lyp-black">
+                            {formatCents(
+                              payment.payment_schedules.reduce(
+                                (sum, sched) => sum + sched.amount_cents,
+                                0,
+                              ),
+                            )}
+                          </td>
+                          <td colSpan={2}></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="mt-2 font-body text-[12px] text-[#A89898]">
+                    No scheduled payments.
+                  </p>
+                )}
               </div>
-
-              {/* Payment schedules */}
-              <h3 className="text-xs font-semibold text-gray-500 mt-2 mb-1">
-                Payment Schedule
-              </h3>
-              {payment.payment_schedules &&
-              payment.payment_schedules.length > 0 ? (
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="border-b border-gray-100 text-gray-500">
-                      <th className="py-1.5 font-medium">Date</th>
-                      <th className="py-1.5 font-medium">Description</th>
-                      <th className="py-1.5 font-medium">Amount</th>
-                      <th className="py-1.5 font-medium">Pinch ID</th>
-                      <th className="py-1.5 font-medium text-right">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {payment.payment_schedules.map((sched) => (
-                      <tr key={sched.id} className="border-b border-gray-50">
-                        <td className="py-1.5">
-                          {formatDate(sched.scheduled_date)}
-                        </td>
-                        <td className="py-1.5">{sched.description || "—"}</td>
-                        <td className="py-1.5">
-                          {formatCents(sched.amount_cents)}
-                        </td>
-                        <td className="py-1.5 text-gray-400 font-mono">
-                          {sched.pinch_payment_id
-                            ? sched.pinch_payment_id.slice(0, 12) + "…"
-                            : "—"}
-                        </td>
-                        <td className="py-1.5 text-right">
-                          <StatusBadge
-                            status={sched.status}
-                            map={paymentStatusMap}
-                          />
-                        </td>
-                      </tr>
-                    ))}
-
-                    <tr>
-                      <td colSpan={2} className="py-1.5 font-semibold">
-                        Total
-                      </td>
-                      <td className="py-1.5 font-semibold">
-                        {formatCents(
-                          payment.payment_schedules.reduce(
-                            (sum, sched) => sum + sched.amount_cents,
-                            0,
-                          ),
-                        )}
-                      </td>
-                      <td colSpan={2}></td>
-                    </tr>
-                  </tbody>
-                </table>
-              ) : (
-                <p className="text-xs text-gray-400">No scheduled payments.</p>
-              )}
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </Section>
 
-      {/* Notes */}
-      <Section title="Internal Notes">
+      {/* ─────────────── Notes ─────────────── */}
+      <Section title="Internal Notes" delay="240ms">
         <ProposalInternalNotes proposalId={id} initialNotes={notes} />
       </Section>
 
-      {/* Activity Timeline */}
-      <Section title="Activity Timeline">
+      {/* ─────────────── Activity Timeline ─────────────── */}
+      <Section title="Activity Timeline" delay="280ms">
         {events.length === 0 ? (
-          <p className="text-sm text-gray-400">No activity recorded yet.</p>
+          <EmptyRow icon={Activity} message="No activity recorded yet." />
         ) : (
-          <div className="relative border-l border-gray-200 ml-4 pl-6 space-y-6">
+          <div className="relative ml-4 space-y-6 border-l border-[#F1E8E8] pl-6">
             {events.map((event) => {
               const meta = (event.metadata || {}) as AuditMetadata;
               const config = eventDetails[event.action] || {
                 title: event.action.replace(/_/g, " "),
-                color: "bg-gray-50 text-gray-600 border-gray-200",
+                color: "border-[#EFE6E6] bg-[#F7F1F1] text-[#8A7A7A]",
                 icon: Activity,
                 getDescription: (m: AuditMetadata) =>
                   m && Object.keys(m).length > 0
@@ -431,27 +524,27 @@ export default async function ProposalDetailPage({
                   {/* Timeline dot */}
                   <span
                     className={cn(
-                      "absolute -left-[35px] top-0.5 flex h-6 w-6 items-center justify-center rounded-full border bg-white shadow-sm",
+                      "absolute -left-[37px] top-0.5 flex h-6 w-6 items-center justify-center rounded-full border",
                       config.color,
                     )}
                   >
-                    <Icon className="h-3.5 w-3.5" />
+                    <Icon strokeWidth={1.5} className="h-3.5 w-3.5" />
                   </span>
 
                   {/* Timeline content */}
                   <div>
-                    <div className="flex items-center gap-2">
-                      <h4 className="text-sm font-semibold text-gray-900 capitalize">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h4 className="font-heading text-[14px] font-bold capitalize tracking-[-0.01em] text-lyp-black">
                         {config.title}
                       </h4>
-                      <span className="text-[10px] uppercase tracking-wider text-gray-400 font-semibold bg-gray-100 px-1.5 py-0.5 rounded">
+                      <span className="rounded-full bg-[#F7F1F1] px-2 py-0.5 font-body text-[9px] font-medium uppercase tracking-[0.18em] text-[#A89898]">
                         {event.actor_type}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500 mt-0.5">
+                    <p className="mt-1 font-body text-[13px] leading-relaxed text-[#8A7A7A]">
                       {config.getDescription(meta)}
                     </p>
-                    <p className="text-xs text-gray-400 mt-1 font-mono">
+                    <p className="mt-1.5 font-body text-[11px] tabular-nums text-[#C3B5B5]">
                       {formatDateTime(event.created_at)}
                     </p>
                   </div>
@@ -465,11 +558,47 @@ export default async function ProposalDetailPage({
   );
 }
 
-function InfoCard({ label, value }: { label: string; value?: string | null }) {
+function InfoCard({
+  label,
+  value,
+  numeric = false,
+}: {
+  label: string;
+  value?: string | null;
+  numeric?: boolean;
+}) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-      <p className="text-xs text-gray-500 font-medium mb-1">{label}</p>
-      <p className="text-sm font-body text-lyp-black">{value ?? "—"}</p>
+    <div
+      className={`rounded-2xl border border-[#EFE6E6] bg-lyp-white px-4 py-3.5 transition-all duration-500 ${EASE} hover:shadow-[0_12px_28px_-16px_rgba(61,11,17,0.25)]`}
+    >
+      <dt className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
+        {label}
+      </dt>
+      <dd
+        className={cn(
+          "mt-1.5 break-words font-body text-[14px] text-lyp-black",
+          numeric && "tabular-nums",
+        )}
+      >
+        {value ?? "—"}
+      </dd>
+    </div>
+  );
+}
+
+function EmptyRow({
+  icon: Icon,
+  message,
+}: {
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
+  message: string;
+}) {
+  return (
+    <div className="px-6 py-10 text-center">
+      <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
+        <Icon strokeWidth={1} className="h-5 w-5 text-lyp-cherry/60" />
+      </span>
+      <p className="mt-4 font-body text-[13px] text-[#8A7A7A]">{message}</p>
     </div>
   );
 }
@@ -477,18 +606,27 @@ function InfoCard({ label, value }: { label: string; value?: string | null }) {
 function Section({
   title,
   children,
+  delay,
+  flush = false,
 }: {
   title: string;
   children: React.ReactNode;
+  delay: string;
+  flush?: boolean;
 }) {
   return (
-    <div className="mb-8">
-      <h2 className="text-lg font-heading font-semibold text-lyp-black mb-3">
+    <section className="animate-rise mb-8" style={{ animationDelay: delay }}>
+      <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
         {title}
       </h2>
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
+      <div
+        className={cn(
+          "mt-3.5 overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white",
+          !flush && "p-5",
+        )}
+      >
         {children}
       </div>
-    </div>
+    </section>
   );
 }

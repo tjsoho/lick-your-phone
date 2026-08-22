@@ -21,6 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 import Logo from "@/components/Logo";
 
+const EASE = "ease-brand";
+
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
   { label: "Proposals", icon: FileText, href: "/admin/proposals" },
@@ -63,16 +65,16 @@ export default function Sidebar({ userEmail }: SidebarProps) {
       {/* Mobile hamburger button */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-lyp-black text-white shadow-lg"
+        className={`fixed left-4 top-4 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-lyp-black text-lyp-white shadow-[0_10px_30px_-12px_rgba(61,11,17,0.5)] transition-transform duration-500 lg:hidden ${EASE} active:scale-95`}
         aria-label="Open menu"
       >
-        <Menu className="h-5 w-5" />
+        <Menu strokeWidth={1.5} className="h-4 w-4" />
       </button>
 
       {/* Mobile overlay */}
       {mobileOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/50 z-40"
+          className="fixed inset-0 z-40 bg-lyp-black/40 backdrop-blur-[2px] lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
@@ -80,13 +82,13 @@ export default function Sidebar({ userEmail }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-40 h-screen bg-lyp-black text-white flex flex-col transition-all duration-300",
+          `fixed left-0 top-0 z-40 flex h-screen flex-col bg-lyp-black font-body text-lyp-white transition-all duration-500 ${EASE}`,
           collapsed ? "w-[72px]" : "w-64",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
       >
         {/* Header */}
-        <div className="border-b border-white/10 p-3">
+        <div className="border-b border-lyp-white/[0.08] p-3">
           {/* The logo gets its own full-width row so it is not competing with
               the controls for horizontal space. */}
           {!collapsed && (
@@ -101,20 +103,21 @@ export default function Sidebar({ userEmail }: SidebarProps) {
             {/* Close on mobile */}
             <button
               onClick={() => setMobileOpen(false)}
-              className="lg:hidden p-1 rounded hover:bg-white/10"
+              className={`flex h-7 w-7 items-center justify-center rounded-full text-lyp-white/60 transition-colors duration-500 lg:hidden ${EASE} hover:bg-lyp-white/10 hover:text-lyp-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-white/40`}
               aria-label="Close menu"
             >
-              <X className="h-5 w-5" />
+              <X strokeWidth={1.5} className="h-4 w-4" />
             </button>
             {/* Collapse on desktop */}
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:block p-1 rounded hover:bg-white/10"
+              className={`hidden h-7 w-7 items-center justify-center rounded-full text-lyp-white/60 transition-colors duration-500 lg:flex ${EASE} hover:bg-lyp-white/10 hover:text-lyp-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-white/40`}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               <ChevronLeft
+                strokeWidth={1.5}
                 className={cn(
-                  "h-5 w-5 transition-transform",
+                  `h-4 w-4 transition-transform duration-500 ${EASE}`,
                   collapsed && "rotate-180",
                 )}
               />
@@ -123,7 +126,12 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 overflow-y-auto">
+        <nav className="flex-1 overflow-y-auto py-4">
+          {!collapsed && (
+            <p className="px-5 pb-2.5 text-[9px] font-medium uppercase tracking-[0.28em] text-lyp-white/30">
+              Manage
+            </p>
+          )}
           <ul className="space-y-1 px-2">
             {navItems.map((item) => {
               const Icon = item.icon;
@@ -134,15 +142,21 @@ export default function Sidebar({ userEmail }: SidebarProps) {
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                      `flex items-center gap-3 rounded-full px-3 py-2.5 text-[12.5px] font-medium tracking-wide transition-all duration-500 ${EASE} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-white/40`,
+                      collapsed && "justify-center",
                       active
-                        ? "bg-lyp-cherry text-white"
-                        : "text-gray-300 hover:bg-white/10 hover:text-white",
+                        ? "bg-lyp-cherry text-lyp-white shadow-[0_10px_28px_-12px_rgba(178,38,38,0.7)]"
+                        : "text-lyp-white/60 hover:bg-lyp-white/[0.07] hover:text-lyp-white",
                     )}
                     title={collapsed ? item.label : undefined}
+                    aria-current={active ? "page" : undefined}
+                    aria-label={collapsed ? item.label : undefined}
                   >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    {!collapsed && <span>{item.label}</span>}
+                    <Icon
+                      strokeWidth={1.5}
+                      className="h-[18px] w-[18px] flex-shrink-0"
+                    />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
                   </AdminLink>
                 </li>
               );
@@ -151,16 +165,22 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         </nav>
 
         {/* Footer / User */}
-        <div className="border-t border-white/10 p-4">
+        <div className="border-t border-lyp-white/[0.08] p-3">
           {!collapsed && userEmail && (
-            <p className="text-xs text-gray-400 truncate mb-2">{userEmail}</p>
+            <p className="mb-2 truncate px-3 text-[11px] text-lyp-white/40">
+              {userEmail}
+            </p>
           )}
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white w-full transition-colors"
+            className={cn(
+              `flex w-full items-center gap-3 rounded-full px-3 py-2 text-[12.5px] font-medium tracking-wide text-lyp-white/60 transition-all duration-500 ${EASE} hover:bg-lyp-white/[0.07] hover:text-lyp-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-white/40`,
+              collapsed && "justify-center",
+            )}
             title={collapsed ? "Logout" : undefined}
+            aria-label={collapsed ? "Logout" : undefined}
           >
-            <LogOut className="h-5 w-5 flex-shrink-0" />
+            <LogOut strokeWidth={1.5} className="h-[18px] w-[18px] flex-shrink-0" />
             {!collapsed && <span>Logout</span>}
           </button>
         </div>

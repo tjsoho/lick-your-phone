@@ -3,7 +3,9 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { sendProposal } from "@/server-actions/proposals";
-import { SendIcon } from "lucide-react";
+import { Loader2, SendIcon } from "lucide-react";
+
+const EASE = "ease-brand";
 
 export default function SendProposalButton({
   proposalId,
@@ -15,6 +17,7 @@ export default function SendProposalButton({
   const [loading, setLoading] = useState(false);
 
   const isDraft = status === "draft";
+  const label = isDraft ? "Send proposal link" : "Resend proposal link";
 
   async function handleSend() {
     setLoading(true);
@@ -33,16 +36,17 @@ export default function SendProposalButton({
   return (
     <button
       type="button"
-      title={isDraft ? "Send proposal link" : "Resend proposal link"}
+      title={label}
+      aria-label={label}
       onClick={handleSend}
       disabled={loading}
-      className="disabled:opacity-50 disabled:cursor-not-allowed"
+      className={`group inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#EFE6E6] bg-lyp-white text-[#A89898] outline-none transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:bg-lyp-cherry/[0.04] hover:text-lyp-cherry focus-visible:ring-2 focus-visible:ring-lyp-cherry/40 active:scale-[0.94] disabled:cursor-not-allowed disabled:opacity-50`}
     >
-      <SendIcon
-        className={
-          "h-4 w-4 text-gray-500 hover:text-blue-600 transition-colors"
-        }
-      />
+      {loading ? (
+        <Loader2 strokeWidth={1.75} className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <SendIcon strokeWidth={1.5} className="h-3.5 w-3.5" />
+      )}
     </button>
   );
 }

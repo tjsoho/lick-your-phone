@@ -24,6 +24,11 @@ interface IntakeQuestionsListProps {
   })[];
 }
 
+const EASE = "ease-brand";
+
+const thClasses =
+  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+
 export default function IntakeQuestionsList({
   questions,
 }: IntakeQuestionsListProps) {
@@ -137,22 +142,25 @@ export default function IntakeQuestionsList({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {sortedPageNumbers.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
-          <HelpCircle className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <h3 className="font-heading text-lg font-bold text-lyp-black mb-1">
+        <div className="rounded-2xl border border-[#EFE6E6] bg-lyp-white px-8 py-14 text-center">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
+            <HelpCircle strokeWidth={1} className="h-6 w-6 text-lyp-cherry/60" />
+          </span>
+          <h3 className="mt-5 font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
             No questions yet
           </h3>
-          <p className="font-body text-sm text-gray-500 mb-4">
+          <p className="mx-auto mt-2 max-w-sm font-body text-[13px] text-[#8A7A7A]">
             Create your first onboarding question to guide clients through
             registration.
           </p>
           <Link
             href="/admin/intake-questions/new"
-            className="inline-flex items-center gap-2 bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:bg-lyp-maroon transition-colors"
+            className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
           >
-            <Plus className="h-4 w-4" /> Add Question
+            Add Question
+            <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
           </Link>
         </div>
       ) : (
@@ -161,109 +169,103 @@ export default function IntakeQuestionsList({
           return (
             <div
               key={pNum}
-              className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm"
+              className="overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white"
             >
-              <div className="bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-                <h2 className="font-heading text-lg font-bold text-lyp-black">
+              <div className="flex items-center justify-between gap-4 border-b border-[#F1E8E8] px-5 py-4">
+                <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
                   Page {pNum}
                 </h2>
-                <span className="font-body text-xs bg-gray-200 text-gray-700 px-2.5 py-1 rounded-full font-semibold">
+                <span className="rounded-full bg-[#F7F1F1] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] tabular-nums text-[#8A7A7A]">
                   {pageQuestions.length}{" "}
                   {pageQuestions.length === 1 ? "Question" : "Questions"}
                 </span>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left font-body text-[12.5px]">
                   <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50/50">
-                      <th className="px-6 py-3 font-heading text-xs font-semibold text-gray-500 uppercase tracking-wider w-16 text-center">
-                        Seq
-                      </th>
-                      <th className="px-6 py-3 font-heading text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Field Label
-                      </th>
-                      <th className="px-6 py-3 font-heading text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Type
-                      </th>
-                      <th className="px-6 py-3 font-heading text-xs font-semibold text-gray-500 uppercase tracking-wider text-center">
-                        Required
-                      </th>
-                      <th className="px-6 py-3 font-heading text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                        Conditions
-                      </th>
-                      <th className="px-6 py-3 font-heading text-xs font-semibold text-gray-500 uppercase tracking-wider w-36 text-center">
+                    <tr className="border-b border-[#F1E8E8]">
+                      <th className={cn(thClasses, "w-16 text-center")}>Seq</th>
+                      <th className={thClasses}>Field Label</th>
+                      <th className={thClasses}>Type</th>
+                      <th className={cn(thClasses, "text-center")}>Required</th>
+                      <th className={thClasses}>Conditions</th>
+                      <th className={cn(thClasses, "w-36 text-center")}>
                         Reorder
                       </th>
-                      <th className="px-6 py-3 font-heading text-xs font-semibold text-gray-500 uppercase tracking-wider w-24 text-right">
+                      <th className={cn(thClasses, "w-24 text-right")}>
                         Actions
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody>
                     {pageQuestions.map((q, idx) => {
                       const hasConditions =
                         q.intake_conditions && q.intake_conditions.length > 0;
                       return (
                         <tr
                           key={q.id}
-                          className="hover:bg-gray-50/50 transition-colors"
+                          className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
                         >
-                          <td className="px-6 py-4 font-body text-sm text-gray-500 text-center font-mono">
+                          <td className="px-5 py-3 text-center tabular-nums text-[#A89898]">
                             {q.sequence}
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="font-body text-sm font-semibold text-lyp-black">
+                          <td className="px-5 py-3">
+                            <div className="font-medium text-lyp-black">
                               {q.field_label}
                             </div>
                             {q.section && (
-                              <div className="font-body text-xs text-gray-400 mt-0.5">
+                              <div className="mt-0.5 font-body text-[11px] text-[#A89898]">
                                 Section: {q.section}
                               </div>
                             )}
                           </td>
-                          <td className="px-6 py-4 font-body text-sm text-gray-600">
+                          <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
                             {getFieldTypeLabel(q.field_type)}
                           </td>
-                          <td className="px-6 py-4 text-center">
+                          <td className="whitespace-nowrap px-5 py-3 text-center">
                             {q.required ? (
-                              <span className="font-body text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded font-semibold">
+                              <span className="inline-block rounded-full bg-lyp-cherry/[0.07] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] text-lyp-cherry">
                                 Yes
                               </span>
                             ) : (
-                              <span className="font-body text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">
+                              <span className="inline-block rounded-full bg-[#F2EDED] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] text-[#8A7A7A]">
                                 No
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-4">
+                          <td className="whitespace-nowrap px-5 py-3">
                             {hasConditions ? (
-                              <span className="font-body text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full font-semibold">
+                              <span className="inline-block rounded-full bg-[#FBF3E3] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] tabular-nums text-[#9A7B2E]">
                                 {q.intake_conditions?.length || 0}{" "}
                                 {q.intake_conditions?.length === 1
                                   ? "condition"
                                   : "conditions"}
                               </span>
                             ) : (
-                              <span className="font-body text-xs text-gray-400">
+                              <span className="font-body text-[12px] text-[#C3B5B5]">
                                 —
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center justify-center gap-1">
+                          <td className="px-5 py-3">
+                            <div className="flex items-center justify-center gap-1.5">
                               <button
                                 onClick={() => handleMove(q.id, "up", pNum)}
                                 disabled={idx === 0 || reordering}
                                 className={cn(
-                                  "p-1.5 rounded border transition-colors",
+                                  `flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-500 ${EASE}`,
                                   idx === 0
-                                    ? "border-gray-100 text-gray-300 cursor-not-allowed bg-gray-50/50"
-                                    : "border-gray-200 text-gray-600 hover:text-lyp-cherry hover:border-lyp-cherry/30 bg-white",
+                                    ? "cursor-not-allowed border-[#F1E8E8] bg-[#FBF8F8] text-[#D8CACA]"
+                                    : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/25 hover:text-lyp-cherry",
                                 )}
                                 title="Move up"
+                                aria-label={`Move ${q.field_label} up`}
                               >
-                                <ArrowUp className="h-3.5 w-3.5" />
+                                <ArrowUp
+                                  strokeWidth={1.5}
+                                  className="h-3.5 w-3.5"
+                                />
                               </button>
                               <button
                                 onClick={() => handleMove(q.id, "down", pNum)}
@@ -271,34 +273,40 @@ export default function IntakeQuestionsList({
                                   idx === pageQuestions.length - 1 || reordering
                                 }
                                 className={cn(
-                                  "p-1.5 rounded border transition-colors",
+                                  `flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-500 ${EASE}`,
                                   idx === pageQuestions.length - 1
-                                    ? "border-gray-100 text-gray-300 cursor-not-allowed bg-gray-50/50"
-                                    : "border-gray-200 text-gray-600 hover:text-lyp-cherry hover:border-lyp-cherry/30 bg-white",
+                                    ? "cursor-not-allowed border-[#F1E8E8] bg-[#FBF8F8] text-[#D8CACA]"
+                                    : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/25 hover:text-lyp-cherry",
                                 )}
                                 title="Move down"
+                                aria-label={`Move ${q.field_label} down`}
                               >
-                                <ArrowDown className="h-3.5 w-3.5" />
+                                <ArrowDown
+                                  strokeWidth={1.5}
+                                  className="h-3.5 w-3.5"
+                                />
                               </button>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
+                          <td className="px-5 py-3 text-right">
+                            <div className="flex items-center justify-end gap-2.5">
                               <Link
                                 href={`/admin/intake-questions/${q.id}`}
-                                className="p-1.5 text-gray-500 hover:text-lyp-cherry transition-colors"
+                                className={`text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                                 title="Edit question"
+                                aria-label={`Edit ${q.field_label}`}
                               >
-                                <Edit className="h-4 w-4" />
+                                <Edit strokeWidth={1.5} className="h-4 w-4" />
                               </Link>
                               <button
                                 onClick={() =>
                                   handleDelete(q.id, q.field_label)
                                 }
-                                className="p-1.5 text-gray-500 hover:text-red-600 transition-colors"
+                                className={`text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                                 title="Delete question"
+                                aria-label={`Delete ${q.field_label}`}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 strokeWidth={1.5} className="h-4 w-4" />
                               </button>
                             </div>
                           </td>

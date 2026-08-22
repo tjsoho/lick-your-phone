@@ -72,26 +72,28 @@ export default function PageTitleForm({
   if (!editing) {
     return (
       <div className="group flex items-center gap-2">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-lyp-black">
+        <div className="min-w-0">
+          <h1 className="mt-3 truncate font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
             {saved.title || "Untitled Page"}
           </h1>
-          <p className="text-sm text-gray-500 font-mono">/{saved.slug}</p>
+          <p className="mt-1.5 truncate font-mono text-[11px] text-[#A89898]">
+            /{saved.slug}
+          </p>
         </div>
         <button
           onClick={() => setEditing(true)}
           title="Edit title and slug"
           aria-label="Edit title and slug"
-          className={`rounded-lg p-2 text-gray-400 opacity-0 transition-all duration-300 ${EASE} group-hover:opacity-100 hover:bg-gray-100 hover:text-lyp-cherry focus:opacity-100`}
+          className={`mt-3 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#EFE6E6] text-[#A89898] opacity-0 transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry focus:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-cherry/30 group-hover:opacity-100`}
         >
-          <Pencil className="h-4 w-4" />
+          <Pencil strokeWidth={1.5} className="h-3.5 w-3.5" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="mt-3 flex flex-wrap items-center gap-2">
       <div className="flex flex-col gap-1.5">
         <input
           value={title}
@@ -104,7 +106,7 @@ export default function PageTitleForm({
           }}
           placeholder="Page title"
           aria-label="Page title"
-          className="w-[22rem] max-w-full rounded-lg border border-gray-300 px-3 py-1.5 font-heading text-xl font-bold text-lyp-black focus:border-lyp-cherry focus:outline-none focus:ring-2 focus:ring-lyp-cherry/30 disabled:opacity-50"
+          className={`w-[22rem] max-w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:font-body placeholder:text-[15px] placeholder:font-medium placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`}
         />
         <input
           value={slug}
@@ -116,7 +118,7 @@ export default function PageTitleForm({
           }}
           placeholder="page-slug"
           aria-label="Page slug"
-          className="w-[22rem] max-w-full rounded-lg border border-gray-300 px-3 py-1 font-mono text-xs text-gray-600 focus:border-lyp-cherry focus:outline-none focus:ring-2 focus:ring-lyp-cherry/30 disabled:opacity-50"
+          className={`w-[22rem] max-w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2 font-mono text-[11px] text-[#8A7A7A] outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`}
         />
       </div>
 
@@ -125,12 +127,12 @@ export default function PageTitleForm({
         disabled={saving}
         title="Save"
         aria-label="Save"
-        className="rounded-lg p-2 text-green-600 transition-colors hover:bg-green-50 disabled:opacity-50"
+        className={`flex h-9 w-9 items-center justify-center rounded-full bg-lyp-cherry text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-95 disabled:opacity-40 disabled:shadow-none`}
       >
         {saving ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" />
         ) : (
-          <Check className="h-4 w-4" />
+          <Check strokeWidth={1.5} className="h-4 w-4" />
         )}
       </button>
       <button
@@ -138,9 +140,9 @@ export default function PageTitleForm({
         disabled={saving}
         title="Cancel"
         aria-label="Cancel"
-        className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:opacity-50"
+        className={`flex h-9 w-9 items-center justify-center rounded-full border border-[#EFE6E6] bg-lyp-white text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95 disabled:opacity-40`}
       >
-        <X className="h-4 w-4" />
+        <X strokeWidth={1.5} className="h-4 w-4" />
       </button>
     </div>
   );

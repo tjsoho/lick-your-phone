@@ -1,8 +1,10 @@
 import { getVenueById, getReferenceData } from "@/server-actions/venues";
 import VenueForm from "@/components/admin/venues/VenueForm";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { notFound } from "next/navigation";
+
+const EASE = "ease-brand";
 
 export default async function EditVenuePage(props: {
   params: Promise<{ id: string }>;
@@ -22,20 +24,34 @@ export default async function EditVenuePage(props: {
   const states = refRes.data?.states || [];
 
   return (
-    <div className="p-8 max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-2">
+    <div className="mx-auto max-w-3xl">
+      <header className="animate-rise mb-6">
         <Link
           href="/admin/venues"
-          className="text-gray-500 hover:text-lyp-black transition-colors"
+          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
-          <ChevronLeft className="h-5 w-5" />
+          <ArrowLeft
+            strokeWidth={1.5}
+            aria-hidden="true"
+            className={`h-3.5 w-3.5 transition-transform duration-500 ${EASE} group-hover:-translate-x-0.5`}
+          />
+          Venues
         </Link>
-        <h1 className="font-heading text-2xl font-bold text-lyp-black">
+
+        <div className="mt-4 flex items-center gap-3">
+          <span className="h-px w-7 bg-lyp-cherry/30" />
+          <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
+            Location
+          </span>
+        </div>
+        <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
           Edit Venue
         </h1>
-      </div>
+      </header>
 
-      <VenueForm venue={venue} clients={clients} states={states} />
+      <div className="animate-rise" style={{ animationDelay: "80ms" }}>
+        <VenueForm venue={venue} clients={clients} states={states} />
+      </div>
     </div>
   );
 }

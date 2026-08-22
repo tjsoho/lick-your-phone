@@ -2,13 +2,21 @@
 
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { Plus, Edit, Trash2, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  ChevronUp,
+  ChevronDown,
+  Layers,
+} from "lucide-react";
 import {
   getTiersByServiceId,
   deleteTier,
   reorderTiers,
 } from "@/server-actions/service-tiers";
 import { formatCents } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import TierForm from "./TierForm";
 
 interface Tier {
@@ -24,6 +32,13 @@ interface Tier {
 interface ServiceTiersSectionProps {
   serviceId: string;
 }
+
+const EASE = "ease-brand";
+
+const thClasses =
+  "whitespace-nowrap px-4 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+
+const iconButtonClasses = `flex h-7 w-7 items-center justify-center rounded-full border border-transparent text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/15 hover:bg-lyp-cherry/[0.04] hover:text-lyp-cherry disabled:cursor-not-allowed disabled:border-transparent disabled:bg-transparent disabled:text-[#E4D8D8]`;
 
 export default function ServiceTiersSection({
   serviceId,
@@ -79,13 +94,13 @@ export default function ServiceTiersSection({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6">
+      <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="font-heading text-lg font-bold text-lyp-black">
+          <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
             Service Pricing Tiers
           </h2>
-          <p className="font-body text-xs text-gray-500">
+          <p className="mt-1.5 font-body text-[12px] text-[#8A7A7A]">
             Manage the pricing options for this service.
           </p>
         </div>
@@ -95,120 +110,144 @@ export default function ServiceTiersSection({
             setEditingTier(null);
             setIsModalOpen(true);
           }}
-          className="flex items-center gap-1 bg-lyp-cherry text-white px-3 py-1.5 rounded-md font-body text-sm hover:bg-lyp-maroon transition-colors"
+          className={`group inline-flex items-center gap-2.5 rounded-full bg-lyp-cherry py-1 pl-4 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`}
         >
-          <Plus className="w-4 h-4" />
           Add Tier
+          <span
+            className={`flex h-7 w-7 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}
+          >
+            <Plus strokeWidth={1.5} className="h-4 w-4" />
+          </span>
         </button>
       </div>
 
       {loading && tiers.length === 0 ? (
-        <div className="text-center py-6 text-gray-500 font-body text-sm">
-          Loading tiers...
-        </div>
+        <p className="mt-6 py-6 text-center font-body text-[13px] text-[#A89898]">
+          Loading tiers…
+        </p>
       ) : tiers.length === 0 ? (
-        <div className="text-center py-6 text-gray-500 font-body text-sm border border-dashed border-gray-200 rounded-md">
-          No tiers created yet. &quot;Click Add Tier&quot; to create one.
+        <div className="mt-6 rounded-2xl border border-dashed border-[#EFE6E6] px-6 py-10 text-center">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
+            <Layers strokeWidth={1} className="h-5 w-5 text-lyp-cherry/60" />
+          </span>
+          <p className="mt-4 font-body text-[13px] text-[#8A7A7A]">
+            No tiers created yet.
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingTier(null);
+              setIsModalOpen(true);
+            }}
+            className={`mt-3 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
+          >
+            Add your first tier
+          </button>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="px-4 py-2 font-heading text-xs font-semibold text-lyp-black uppercase tracking-wider">
-                  Sequence
-                </th>
-                <th className="px-4 py-2 font-heading text-xs font-semibold text-lyp-black uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-4 py-2 font-heading text-xs font-semibold text-lyp-black uppercase tracking-wider">
-                  Slug
-                </th>
-                <th className="px-4 py-2 font-heading text-xs font-semibold text-lyp-black uppercase tracking-wider">
-                  Price (AUD)
-                </th>
-                <th className="px-4 py-2 font-heading text-xs font-semibold text-lyp-black uppercase tracking-wider">
-                  Billing Cycle
-                </th>
-                <th className="px-4 py-2 font-heading text-xs font-semibold text-lyp-black uppercase tracking-wider text-right">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {tiers.map((tier, index) => (
-                <tr
-                  key={tier.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors font-body text-sm text-lyp-black"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() => handleMove(index, "up")}
-                        disabled={index === 0}
-                        className="p-1 rounded text-gray-400 hover:text-lyp-cherry hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                      >
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleMove(index, "down")}
-                        disabled={index === tiers.length - 1}
-                        className="p-1 rounded text-gray-400 hover:text-lyp-cherry hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent"
-                      >
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      </button>
-                      <span className="text-gray-500 font-mono text-xs ml-1">
-                        {tier.sequence}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-semibold">{tier.name}</td>
-                  <td className="px-4 py-3 text-gray-600 font-mono text-xs">
-                    {tier.slug}
-                  </td>
-                  <td className="px-4 py-3">
-                    {formatCents(tier.target_price_cents)}
-                  </td>
-                  <td className="px-4 py-3">
-                    {tier.billing_cycle_months}{" "}
-                    {tier.billing_cycle_months === 1 ? "month" : "months"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditingTier(tier);
-                          setIsModalOpen(true);
-                        }}
-                        className="p-1.5 text-gray-500 hover:text-lyp-cherry hover:bg-gray-100 rounded transition-colors"
-                        title="Edit Tier"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(tier.id, tier.name)}
-                        className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded transition-colors"
-                        title="Delete Tier"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </td>
+        <div className="mt-5 overflow-hidden rounded-2xl border border-[#EFE6E6]">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left font-body text-[12.5px]">
+              <thead>
+                <tr className="border-b border-[#F1E8E8]">
+                  <th className={thClasses}>Sequence</th>
+                  <th className={thClasses}>Name</th>
+                  <th className={thClasses}>Slug</th>
+                  <th className={thClasses}>Price (AUD)</th>
+                  <th className={thClasses}>Billing Cycle</th>
+                  <th className={cn(thClasses, "text-right")}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {tiers.map((tier, index) => (
+                  <tr
+                    key={tier.id}
+                    className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
+                  >
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleMove(index, "up")}
+                          disabled={index === 0}
+                          aria-label={`Move ${tier.name} up`}
+                          className={iconButtonClasses}
+                        >
+                          <ChevronUp strokeWidth={1.5} className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleMove(index, "down")}
+                          disabled={index === tiers.length - 1}
+                          aria-label={`Move ${tier.name} down`}
+                          className={iconButtonClasses}
+                        >
+                          <ChevronDown
+                            strokeWidth={1.5}
+                            className="h-3.5 w-3.5"
+                          />
+                        </button>
+                        <span className="ml-1 font-mono text-[11px] tabular-nums text-[#A89898]">
+                          {tier.sequence}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium text-lyp-black">
+                      {tier.name}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] text-[#A89898]">
+                      {tier.slug}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 font-medium tabular-nums text-lyp-black">
+                      {formatCents(tier.target_price_cents)}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[#8A7A7A]">
+                      {tier.billing_cycle_months}{" "}
+                      {tier.billing_cycle_months === 1 ? "month" : "months"}
+                    </td>
+                    <td className="whitespace-nowrap px-4 py-3">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setEditingTier(tier);
+                            setIsModalOpen(true);
+                          }}
+                          className={iconButtonClasses}
+                          aria-label={`Edit tier ${tier.name}`}
+                          title="Edit tier"
+                        >
+                          <Pencil strokeWidth={1.5} className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(tier.id, tier.name)}
+                          className={iconButtonClasses}
+                          aria-label={`Delete tier ${tier.name}`}
+                          title="Delete tier"
+                        >
+                          <Trash2 strokeWidth={1.5} className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-xl">
-            <h3 className="font-heading text-lg font-bold text-lyp-black mb-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-lyp-black/40 p-4 backdrop-blur-[2px]">
+          <div className="w-full max-w-md rounded-3xl border border-[#EFE6E6] bg-lyp-white p-6 shadow-[0_24px_60px_-24px_rgba(61,11,17,0.35)]">
+            <div className="flex items-center gap-3">
+              <span className="h-px w-7 bg-lyp-cherry/30" />
+              <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
+                Pricing Tier
+              </span>
+            </div>
+            <h3 className="mb-5 mt-3 font-heading text-[20px] font-bold leading-[1.1] tracking-[-0.02em] text-lyp-black">
               {editingTier ? "Edit Pricing Tier" : "Add Pricing Tier"}
             </h3>
             <TierForm

@@ -22,9 +22,15 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
         toastOptions={{
           duration: 3000,
           style: {
-            background: "#000",
-            color: "#fff",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
+            background: "#1A1113",
+            color: "#FBF8F8",
+            border: "1px solid rgba(251, 248, 248, 0.12)",
+            borderRadius: "9999px",
+            padding: "10px 18px",
+            fontSize: "13px",
+            fontWeight: 500,
+            letterSpacing: "0.01em",
+            boxShadow: "0 18px 40px -20px rgba(61, 11, 17, 0.55)",
           },
         }}
       />

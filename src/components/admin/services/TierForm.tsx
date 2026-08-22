@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
+import { Check, Plus } from "lucide-react";
 import { createSlug } from "@/utils/create-slug";
 import { upsertTier } from "@/server-actions/service-tiers";
+import { cn } from "@/lib/utils";
 
 interface TierFormData {
   name: string;
@@ -30,11 +32,14 @@ interface TierFormProps {
   onCancel: () => void;
 }
 
-const inputClasses =
-  "w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm text-lyp-black focus:outline-none focus:ring-2 focus:ring-lyp-cherry focus:border-transparent";
+const EASE = "ease-brand";
+
+const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
 const labelClasses =
-  "block font-heading text-sm font-semibold text-lyp-black mb-1";
+  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+
+const errorClasses = "mt-1.5 font-body text-[11px] text-lyp-cherry";
 
 export default function TierForm({
   serviceId,
@@ -103,11 +108,9 @@ export default function TierForm({
           type="text"
           {...register("name", { required: "Name is required" })}
           onChange={handleNameChange}
-          className={inputClasses}
+          className={cn(inputClasses, "mt-2")}
         />
-        {errors.name && (
-          <p className="text-red-600 text-xs mt-1">{errors.name.message}</p>
-        )}
+        {errors.name && <p className={errorClasses}>{errors.name.message}</p>}
       </div>
 
       <div>
@@ -118,11 +121,9 @@ export default function TierForm({
           id="tier-slug"
           type="text"
           {...register("slug", { required: "Slug is required" })}
-          className={inputClasses}
+          className={cn(inputClasses, "mt-2 font-mono")}
         />
-        {errors.slug && (
-          <p className="text-red-600 text-xs mt-1">{errors.slug.message}</p>
-        )}
+        {errors.slug && <p className={errorClasses}>{errors.slug.message}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
@@ -140,10 +141,10 @@ export default function TierForm({
               valueAsNumber: true,
               validate: (val) => !isNaN(val) || "Must be a valid number",
             })}
-            className={inputClasses}
+            className={cn(inputClasses, "mt-2 tabular-nums")}
           />
           {errors.target_price_dollars && (
-            <p className="text-red-600 text-xs mt-1">
+            <p className={errorClasses}>
               {errors.target_price_dollars.message}
             </p>
           )}
@@ -164,30 +165,42 @@ export default function TierForm({
                 (Number.isInteger(val) && val >= 1) ||
                 "Must be at least 1 month",
             })}
-            className={inputClasses}
+            className={cn(inputClasses, "mt-2 tabular-nums")}
           />
           {errors.billing_cycle_months && (
-            <p className="text-red-600 text-xs mt-1">
+            <p className={errorClasses}>
               {errors.billing_cycle_months.message}
             </p>
           )}
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-4">
+      <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2">
         <button
           type="button"
           onClick={onCancel}
-          className="px-4 py-2 border border-gray-300 rounded-md font-body text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+          className={`inline-flex items-center rounded-full border border-[#EFE6E6] bg-lyp-white px-5 py-2 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={saving}
-          className="bg-lyp-cherry text-white px-4 py-2 rounded-md font-body text-sm hover:bg-lyp-maroon transition-colors disabled:opacity-50"
+          className={cn(
+            `group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-5 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`,
+            saving && "cursor-not-allowed opacity-50"
+          )}
         >
           {saving ? "Saving..." : isEditing ? "Save Changes" : "Add Tier"}
+          <span
+            className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}
+          >
+            {isEditing ? (
+              <Check strokeWidth={1.5} className="h-4 w-4" />
+            ) : (
+              <Plus strokeWidth={1.5} className="h-4 w-4" />
+            )}
+          </span>
         </button>
       </div>
     </form>

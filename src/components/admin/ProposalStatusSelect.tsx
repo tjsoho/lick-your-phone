@@ -5,6 +5,9 @@ import toast from "react-hot-toast";
 import { updateProposal } from "@/server-actions/proposals";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { ChevronDown } from "lucide-react";
+
+const EASE = "ease-brand";
 
 const statuses = [
   "draft",
@@ -14,12 +17,13 @@ const statuses = [
   "intake_complete",
 ] as const;
 
+/** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const statusStyles: Record<string, string> = {
-  draft: "bg-gray-100 text-gray-700 border-gray-300",
-  sent: "bg-blue-100 text-blue-700 border-blue-300",
-  signed: "bg-green-100 text-green-700 border-green-300",
-  superseded: "bg-red-100 text-red-700 border-red-300",
-  intake_complete: "bg-green-100 text-green-700 border-green-300",
+  draft: "bg-[#F2EDED] text-[#8A7A7A] ring-[#E6DBDB]",
+  sent: "bg-[#EDF1F7] text-[#5B7394] ring-[#DCE4EF]",
+  signed: "bg-[#E9F2EC] text-[#4A7A5C] ring-[#D6E6DC]",
+  superseded: "bg-lyp-cherry/[0.07] text-lyp-cherry ring-lyp-cherry/15",
+  intake_complete: "bg-[#FBF3E3] text-[#9A7B2E] ring-[#F0E4C9]",
 };
 
 export default function ProposalStatusSelect({
@@ -50,22 +54,35 @@ export default function ProposalStatusSelect({
     router.refresh();
   }
 
+  const tone =
+    statusStyles[currentStatus] ?? "bg-[#F2EDED] text-[#8A7A7A] ring-[#E6DBDB]";
+
   return (
-    <select
-      value={currentStatus}
-      onChange={handleChange}
-      disabled={loading || disabled}
-      className={cn(
-        "text-xs font-body font-medium capitalize rounded-full px-2 py-0.5 border cursor-pointer appearance-none pr-5 disabled:opacity-50",
-        statusStyles[currentStatus] ??
-          "bg-gray-100 text-gray-700 border-gray-300",
-      )}
-    >
-      {statuses.map((s) => (
-        <option key={s} value={s}>
-          {s}
-        </option>
-      ))}
-    </select>
+    <span className="relative inline-flex items-center">
+      <select
+        aria-label="Proposal status"
+        value={currentStatus}
+        onChange={handleChange}
+        disabled={loading || disabled}
+        className={cn(
+          "cursor-pointer appearance-none rounded-full py-1 pl-2.5 pr-7 font-body text-[10px] font-medium uppercase tracking-[0.14em] outline-none ring-1 transition-all duration-500",
+          EASE,
+          "focus-visible:ring-2 focus-visible:ring-lyp-cherry/40",
+          "disabled:cursor-default disabled:opacity-70",
+          tone,
+        )}
+      >
+        {statuses.map((s) => (
+          <option key={s} value={s}>
+            {s.replace(/_/g, " ")}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        strokeWidth={1.75}
+        aria-hidden="true"
+        className="pointer-events-none absolute right-2 h-3 w-3 text-[#A89898]"
+      />
+    </span>
   );
 }
