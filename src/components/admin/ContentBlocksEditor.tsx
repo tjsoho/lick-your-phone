@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import {
   Plus,
   Trash2,
@@ -11,19 +11,47 @@ import {
   Pencil,
   X,
   Check,
-  Upload,
+  Images,
 } from "lucide-react";
 import {
   upsertContentBlock,
   deleteContentBlock,
 } from "@/server-actions/pages";
-import { uploadImage } from "@/utils/storage";
+import MediaLibraryModal from "./MediaLibraryModal";
 import toast from "react-hot-toast";
 
-const BLOCK_TYPES = ["heading", "paragraph", "list", "image", "logos", "media_carousel", "custom"] as const;
+const BLOCK_TYPES = ["heading", "paragraph", "list", "image", "logos", "media_carousel", "collage", "results", "offset_image", "custom"] as const;
 type BlockType = (typeof BLOCK_TYPES)[number];
 
-interface LogoItem { url: string; alt: string }
+/** Block types whose content is stored as a `{ url, alt }[]` and edited with LogosEditor. */
+const IMAGE_LIST_TYPES = ["logos", "media_carousel", "collage", "results", "offset_image"] as const;
+
+/** Image-list types that also carry a per-item body of copy in `text`. */
+const withCopy = (t: string | null) => t === "results";
+const isImageListType = (t: string | null): boolean =>
+  IMAGE_LIST_TYPES.includes(t as (typeof IMAGE_LIST_TYPES)[number]);
+
+const addLabelFor = (t: string | null) =>
+  t === "media_carousel"
+    ? "Add media"
+    : t === "collage" || t === "offset_image"
+    ? "Add image"
+    : t === "results"
+    ? "Add result"
+    : "Add logo";
+
+const imageListLabel = (t: string | null) =>
+  t === "media_carousel"
+    ? "Carousel images with alt text"
+    : t === "collage"
+    ? "Collage images with alt text — shown as a row (4 across on desktop, 2 on mobile)"
+    : t === "results"
+    ? "Client results — a circular logo plus the result copy, laid out two across on desktop"
+    : t === "offset_image"
+    ? "Sits over this page's featured image to form the offset pair on the right. Add one image; the featured image is the other half."
+    : "Logo images with alt text";
+
+interface LogoItem { url: string; alt: string; text?: string }
 
 interface Block {
   id: string;
@@ -41,11 +69,8 @@ const ic =
   "w-full border border-gray-300 rounded-md px-3 py-2 font-body text-sm text-lyp-black focus:outline-none focus:ring-2 focus:ring-lyp-cherry/30 focus:border-lyp-cherry";
 
 function contentToString(content: unknown, type?: string | null): string {
-  if (type === "logos" && Array.isArray(content)) {
-    return (content as LogoItem[]).map((l) => l.alt || l.url).join(", ");
-  }
-  if (type === "media_carousel" && Array.isArray(content)) {
-    return (content as LogoItem[]).map((l) => l.alt || l.url).join(", ");
+  if (isImageListType(type ?? null) && Array.isArray(content)) {
+    return (content as LogoItem[]).map((l) => l.text || l.alt || l.url).join(", ");
   }
   if (typeof content === "string") return content;
   if (Array.isArray(content)) return content.join("\n");
@@ -62,10 +87,10 @@ function stringToContent(type: string | null, raw: string): unknown {
 }
 
 const typeLabel = (t: string | null) =>
-  ({ heading: "Heading", paragraph: "Paragraph", list: "List", image: "Image", logos: "Logos", media_carousel: "Media Carousel", custom: "Custom" }[t ?? ""] ?? t ?? "unknown");
+  ({ heading: "Heading", paragraph: "Paragraph", list: "List", image: "Image", logos: "Logos", media_carousel: "Media Carousel", collage: "Image Collage", results: "Client Results", offset_image: "Offset Image", custom: "Custom" }[t ?? ""] ?? t ?? "unknown");
 
 const typeBadge = (t: string | null) =>
-  ({ heading: "bg-purple-100 text-purple-700", paragraph: "bg-gray-100 text-gray-700", list: "bg-blue-100 text-blue-700", image: "bg-green-100 text-green-700", logos: "bg-pink-100 text-pink-700", media_carousel: "bg-teal-100 text-teal-700", custom: "bg-yellow-100 text-yellow-700" }[t ?? ""] ?? "bg-gray-100 text-gray-700");
+  ({ heading: "bg-purple-100 text-purple-700", paragraph: "bg-gray-100 text-gray-700", list: "bg-blue-100 text-blue-700", image: "bg-green-100 text-green-700", logos: "bg-pink-100 text-pink-700", media_carousel: "bg-teal-100 text-teal-700", collage: "bg-orange-100 text-orange-700", results: "bg-emerald-100 text-emerald-700", offset_image: "bg-indigo-100 text-indigo-700", custom: "bg-yellow-100 text-yellow-700" }[t ?? ""] ?? "bg-gray-100 text-gray-700");
 
 function BlockTextarea({ type, value, onChange }: { type: string; value: string; onChange: (v: string) => void }) {
   return (
@@ -79,32 +104,21 @@ function BlockTextarea({ type, value, onChange }: { type: string; value: string;
 }
 
 function ImageUploadEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    const result = await uploadImage(file);
-    setUploading(false);
-    if (result.error) { toast.error(result.error.message); return; }
-    onChange(result.url);
-  };
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   return (
     <div className="space-y-2">
       <label className="block text-xs text-gray-500 font-body">Block image</label>
       {value ? (
         <div className="space-y-2">
-          <div className="w-full max-w-xs rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+          <div className="w-full max-w-xs rounded-lg overflow-hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={value} alt="Block image" className="w-full h-auto object-contain max-h-48" />
           </div>
           <div className="flex items-center gap-3">
-            <button onClick={() => fileRef.current?.click()} disabled={uploading}
+            <button onClick={() => setLibraryOpen(true)}
               className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-lyp-cherry font-body">
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Replace
+              <Images className="h-4 w-4" /> Replace
             </button>
             <button onClick={() => onChange("")}
               className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-red-600 font-body">
@@ -113,14 +127,19 @@ function ImageUploadEditor({ value, onChange }: { value: string; onChange: (v: s
           </div>
         </div>
       ) : (
-        <button onClick={() => fileRef.current?.click()} disabled={uploading}
+        <button onClick={() => setLibraryOpen(true)}
           className="w-full max-w-xs h-32 rounded-lg border-2 border-dashed border-gray-300 hover:border-lyp-cherry/50 flex flex-col items-center justify-center gap-2 text-gray-400 transition-colors">
-          {uploading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Upload className="h-6 w-6" />}
-          <span className="text-sm font-body">{uploading ? "Uploading…" : "Upload image"}</span>
+          <Images className="h-6 w-6" />
+          <span className="text-sm font-body">Choose from library</span>
         </button>
       )}
-      <input ref={fileRef} type="file" accept="image/*" className="hidden"
-        onChange={(e) => { handleUpload(e); if (fileRef.current) fileRef.current.value = ""; }} />
+
+      <MediaLibraryModal
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        onSelect={onChange}
+        title="Block Image"
+      />
     </div>
   );
 }
@@ -132,64 +151,86 @@ function TypeSelect({ value, onChange }: { value: BlockType; onChange: (v: Block
     </select>
   );
 }
-function LogosEditor({ logos, onChange, addLabel = "Add logo" }: { logos: LogoItem[]; onChange: (v: LogoItem[]) => void; addLabel?: string }) {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+/**
+ * Editor for every `{ url, alt }[]` block type.
+ *
+ * `showText` adds a per-row multi-line field for the `text` property, which is
+ * what the `results` block stores alongside each client logo. Every other
+ * image-list type leaves `text` untouched.
+ */
+function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo images with alt text", showText = false }: { logos: LogoItem[]; onChange: (v: LogoItem[]) => void; addLabel?: string; label?: string; showText?: boolean }) {
+  // null = closed. A number replaces that row's image; "add" appends a new
+  // row per image chosen, so several can be added in one visit.
+  const [library, setLibrary] = useState<number | "add" | null>(null);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploadingIdx(idx);
-    const result = await uploadImage(file);
-    setUploadingIdx(null);
-    if (result.error) { toast.error(result.error.message); return; }
+  // The modal fires onSelect once per image. Appending from a ref rather than
+  // from `logos` avoids each call overwriting the previous one's result, since
+  // the prop has not re-rendered yet between calls.
+  const pendingRef = useRef<LogoItem[] | null>(null);
+
+  const handlePick = (url: string) => {
+    if (library === "add") {
+      const base = pendingRef.current ?? logos;
+      const next = [...base, showText ? { url, alt: "", text: "" } : { url, alt: "" }];
+      pendingRef.current = next;
+      onChange(next);
+      return;
+    }
+    if (library === null) return;
     const updated = [...logos];
-    updated[idx] = { ...updated[idx], url: result.url };
+    updated[library] = { ...updated[library], url };
     onChange(updated);
   };
 
-  const addRow = () => onChange([...logos, { url: "", alt: "" }]);
+  const addRow = () => onChange([...logos, showText ? { url: "", alt: "", text: "" } : { url: "", alt: "" }]);
   const removeRow = (i: number) => onChange(logos.filter((_, j) => j !== i));
-  const updateAlt = (i: number, alt: string) => {
+  const updateField = (i: number, field: "alt" | "text", value: string) => {
     const updated = [...logos];
-    updated[i] = { ...updated[i], alt };
+    updated[i] = { ...updated[i], [field]: value };
     onChange(updated);
   };
 
   return (
     <div className="space-y-3">
-      <label className="block text-xs text-gray-500 font-body">Logo images with alt text</label>
+      <label className="block text-xs text-gray-500 font-body">{label}</label>
       {logos.map((logo, i) => (
-        <div key={i} className="flex items-center gap-3 p-2 border border-gray-200 rounded-lg bg-white">
+        <div key={i} className={`flex gap-3 p-2 border border-gray-200 rounded-lg bg-white ${showText ? "items-start" : "items-center"}`}>
           {logo.url ? (
-            <div className="w-16 h-16 rounded border border-gray-200 overflow-hidden bg-gray-50 flex-shrink-0">
+            <div className={`w-16 h-16 overflow-hidden flex-shrink-0 ${showText ? "rounded-full" : "rounded"}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={logo.url} alt={logo.alt || "Logo"} className="w-full h-full object-contain" />
             </div>
           ) : (
             <button
-              onClick={() => { fileRef.current?.setAttribute("data-idx", String(i)); fileRef.current?.click(); }}
-              disabled={uploadingIdx === i}
-              className="w-16 h-16 rounded border-2 border-dashed border-gray-300 hover:border-lyp-cherry/50 flex items-center justify-center text-gray-400 flex-shrink-0"
+              onClick={() => setLibrary(i)}
+              className={`w-16 h-16 border-2 border-dashed border-gray-300 hover:border-lyp-cherry/50 flex items-center justify-center text-gray-400 flex-shrink-0 ${showText ? "rounded-full" : "rounded"}`}
             >
-              {uploadingIdx === i ? <Loader2 className="h-5 w-5 animate-spin" /> : <Upload className="h-5 w-5" />}
+              <Images className="h-5 w-5" />
             </button>
           )}
           <div className="flex-1 min-w-0 space-y-1">
             <input
               type="text"
               value={logo.alt}
-              onChange={(e) => updateAlt(i, e.target.value)}
+              onChange={(e) => updateField(i, "alt", e.target.value)}
               placeholder="Alt text"
               className={ic + " text-xs"}
             />
+            {showText && (
+              <textarea
+                value={logo.text ?? ""}
+                onChange={(e) => updateField(i, "text", e.target.value)}
+                rows={2}
+                placeholder="Result copy — e.g. 40% increase in bookings! The Truffle campaign was sold out within one hour."
+                className={ic + " text-xs"}
+              />
+            )}
             {logo.url && (
               <button
-                onClick={() => { fileRef.current?.setAttribute("data-idx", String(i)); fileRef.current?.click(); }}
-                disabled={uploadingIdx === i}
+                onClick={() => setLibrary(i)}
                 className="flex items-center gap-1 text-xs text-gray-400 hover:text-lyp-cherry font-body"
               >
-                {uploadingIdx === i ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />} Replace
+                <Images className="h-3 w-3" /> Replace
               </button>
             )}
           </div>
@@ -198,24 +239,86 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo" }: { logos: LogoIt
           </button>
         </div>
       ))}
-      <input
-        ref={fileRef}
-        type="file"
-        accept="image/*"
-        className="hidden"
-        onChange={(e) => {
-          const idx = Number(fileRef.current?.getAttribute("data-idx") ?? 0);
-          handleUpload(e, idx);
-          if (fileRef.current) fileRef.current.value = "";
+      <MediaLibraryModal
+        open={library !== null}
+        onClose={() => {
+          setLibrary(null);
+          pendingRef.current = null;
         }}
+        onSelect={handlePick}
+        multiple={library === "add"}
+        title={library === "add" ? "Add Images" : "Replace Image"}
       />
-      <button onClick={addRow} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-lyp-cherry font-body">
-        <Plus className="h-4 w-4" /> {addLabel}
-      </button>
+      <div className="flex flex-wrap items-center gap-4">
+        <button
+          onClick={() => {
+            pendingRef.current = null;
+            setLibrary("add");
+          }}
+          className="flex items-center gap-1.5 text-sm text-lyp-cherry hover:opacity-70 font-body font-semibold"
+        >
+          <Images className="h-4 w-4" /> Add images from library
+        </button>
+        <button onClick={addRow} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-lyp-cherry font-body">
+          <Plus className="h-4 w-4" /> {addLabel}
+        </button>
+      </div>
     </div>
   );
 }
 
+
+/**
+ * Collapsed preview of a block's content.
+ *
+ * Image blocks show thumbnails: a row of storage URLs is unreadable and tells
+ * you nothing about what the block actually contains.
+ */
+function BlockPreview({ block }: { block: Block }) {
+  const type = block.type;
+
+  if (isImageListType(type) && Array.isArray(block.content)) {
+    const items = (block.content as LogoItem[]).filter((i) => i?.url);
+    if (items.length === 0)
+      return <p className="font-body text-sm text-gray-400">(no images yet)</p>;
+
+    const shown = items.slice(0, 8);
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        {shown.map((item, i) => (
+          <span
+            key={`${item.url}-${i}`}
+            className="h-12 w-12 overflow-hidden rounded-md flex-shrink-0"
+            title={item.alt || item.url.split("/").pop()}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={item.url} alt={item.alt || ""} className="h-full w-full object-contain" />
+          </span>
+        ))}
+        {items.length > shown.length && (
+          <span className="font-body text-xs text-gray-400">
+            +{items.length - shown.length} more
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  if (type === "image" && typeof block.content === "string" && block.content.trim()) {
+    return (
+      <span className="inline-block h-12 w-12 overflow-hidden rounded-md">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={block.content} alt="" className="h-full w-full object-contain" />
+      </span>
+    );
+  }
+
+  return (
+    <p className="font-body text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">
+      {contentToString(block.content, block.type) || "(empty)"}
+    </p>
+  );
+}
 
 function BlockRow({ block, idx, total, onEdit, onDelete, onMove }: {
   block: Block; idx: number; total: number;
@@ -229,7 +332,7 @@ function BlockRow({ block, idx, total, onEdit, onDelete, onMove }: {
           <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-semibold ${typeBadge(block.type)}`}>{typeLabel(block.type)}</span>
           <span className="text-xs text-gray-400 font-mono">#{block.sequence}</span>
         </div>
-        <p className="font-body text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">{contentToString(block.content, block.type) || "(empty)"}</p>
+        <BlockPreview block={block} />
       </div>
       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
         <button onClick={() => onMove("up")} disabled={idx === 0} className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30" title="Move up"><ArrowUp className="h-4 w-4" /></button>
@@ -256,18 +359,19 @@ export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEdit
   const [newLogos, setNewLogos] = useState<LogoItem[]>([]);
 
   const getEditContent = (type: BlockType) =>
-    type === "logos" || type === "media_carousel" ? editLogos : stringToContent(type, editContent);
+    isImageListType(type) ? editLogos : stringToContent(type, editContent);
 
   const getNewContent = (type: BlockType) =>
-    type === "logos" || type === "media_carousel" ? newLogos : stringToContent(type, newContent);
+    isImageListType(type) ? newLogos : stringToContent(type, newContent);
 
   const startEdit = (block: Block) => {
     setEditingId(block.id);
     const t = (block.type ?? "paragraph") as BlockType;
     setEditType(t);
-    if ((t === "logos" || t === "media_carousel") && Array.isArray(block.content)) {
+    if (isImageListType(t) && Array.isArray(block.content)) {
       setEditLogos(block.content as LogoItem[]);
     } else {
+      setEditLogos([]);
       setEditContent(contentToString(block.content, block.type));
     }
   };
@@ -348,8 +452,8 @@ export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEdit
                 <TypeSelect value={editType} onChange={setEditType} />
                 <span className="text-xs text-gray-400 font-mono">seq: {block.sequence}</span>
               </div>
-              {editType === "logos" || editType === "media_carousel"
-                ? <LogosEditor logos={editLogos} onChange={setEditLogos} addLabel={editType === "media_carousel" ? "Add media" : "Add logo"} />
+              {isImageListType(editType)
+                ? <LogosEditor logos={editLogos} onChange={setEditLogos} addLabel={addLabelFor(editType)} label={imageListLabel(editType)} showText={withCopy(editType)} />
                 : editType === "image"
                 ? <ImageUploadEditor value={editContent} onChange={setEditContent} />
                 : <BlockTextarea type={editType} value={editContent} onChange={setEditContent} />
@@ -379,8 +483,8 @@ export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEdit
             <TypeSelect value={newType} onChange={setNewType} />
             <span className="text-xs text-gray-400 font-body">New block</span>
           </div>
-          {newType === "logos" || newType === "media_carousel"
-            ? <LogosEditor logos={newLogos} onChange={setNewLogos} addLabel={newType === "media_carousel" ? "Add media" : "Add logo"} />
+          {isImageListType(newType)
+            ? <LogosEditor logos={newLogos} onChange={setNewLogos} addLabel={addLabelFor(newType)} label={imageListLabel(newType)} showText={withCopy(newType)} />
             : newType === "image"
             ? <ImageUploadEditor value={newContent} onChange={setNewContent} />
             : <BlockTextarea type={newType} value={newContent} onChange={setNewContent} />

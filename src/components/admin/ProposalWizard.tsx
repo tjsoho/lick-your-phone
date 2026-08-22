@@ -67,7 +67,7 @@ function slugify(name: string): string {
 
 const steps = ["Client", "Location", "Notes", "Review"];
 
-const EASE = "ease-[cubic-bezier(0.32,0.72,0,1)]";
+const EASE = "ease-brand";
 
 const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-3 font-body text-[14px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] hover:border-[#E2D2D2] focus:border-lyp-cherry/40 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`;
 

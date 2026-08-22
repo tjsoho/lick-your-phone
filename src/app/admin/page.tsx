@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { formatCents, formatDate } from "@/lib/format";
 
-const EASE = "ease-[cubic-bezier(0.32,0.72,0,1)]";
+const EASE = "ease-brand";
 
 /** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const statusStyles: Record<string, string> = {

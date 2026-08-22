@@ -8,9 +8,21 @@ const AUTO_INTERVAL = 5000;
 
 interface MediaCarouselProps {
   items: { url: string; alt: string }[];
+  /**
+   * Fill the height of the parent instead of running at the image's own size.
+   * ServicePage uses this for the media well under the pricing card, where the
+   * carousel has to live inside whatever height the page has left over.
+   */
+  frame?: boolean;
+  /** Overrides the slide image classes. Only meaningful with `frame`. */
+  imageClassName?: string;
 }
 
-export default function MediaCarousel({ items }: MediaCarouselProps) {
+export default function MediaCarousel({
+  items,
+  frame = false,
+  imageClassName,
+}: MediaCarouselProps) {
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
   const len = items.length;
@@ -28,21 +40,33 @@ export default function MediaCarousel({ items }: MediaCarouselProps) {
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-2xl border border-lyp-white/10"
+      className={`relative w-full overflow-hidden ${
+        frame ? "flex h-full min-h-0 items-end" : ""
+      }`}
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
       {/* Slides */}
       <div
-        className="flex transition-transform duration-500 ease-in-out"
+        className={`flex transition-transform duration-500 ease-in-out ${
+          frame ? "h-full w-full items-end pb-9" : ""
+        }`}
         style={{ transform: `translateX(-${current * 100}%)` }}
       >
         {items.map((item, i) => (
-          <div key={i} className="w-full flex-shrink-0">
+          <div
+            key={i}
+            className={`w-full flex-shrink-0 ${
+              frame ? "flex h-full items-end justify-center" : ""
+            }`}
+          >
             <Image
               src={item.url}
               alt={item.alt || "Media"}
-              className="w-full h-auto object-cover aspect-video"
+              className={
+                imageClassName ??
+                "mx-auto h-auto max-h-[60vh] w-full object-contain"
+              }
               width={800}
               height={450}
               priority={i === 0}
@@ -56,14 +80,18 @@ export default function MediaCarousel({ items }: MediaCarouselProps) {
         <>
           <button
             onClick={prev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+            className={`absolute left-2 -translate-y-1/2 rounded-full bg-lyp-black/70 p-1.5 text-lyp-white backdrop-blur-sm transition-colors hover:bg-lyp-black/85 ${
+              frame ? "top-[calc(50%-1.125rem)]" : "top-1/2"
+            }`}
             aria-label="Previous"
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
           <button
             onClick={next}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-black/40 p-1.5 text-white backdrop-blur-sm transition-colors hover:bg-black/60"
+            className={`absolute right-2 -translate-y-1/2 rounded-full bg-lyp-black/70 p-1.5 text-lyp-white backdrop-blur-sm transition-colors hover:bg-lyp-black/85 ${
+              frame ? "top-[calc(50%-1.125rem)]" : "top-1/2"
+            }`}
             aria-label="Next"
           >
             <ChevronRight className="h-5 w-5" />
@@ -73,13 +101,15 @@ export default function MediaCarousel({ items }: MediaCarouselProps) {
 
       {/* Dots */}
       {len > 1 && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+        <div className={`absolute left-1/2 flex -translate-x-1/2 gap-1.5 rounded-full bg-lyp-black/60 px-2 py-1.5 backdrop-blur-sm ${
+            frame ? "bottom-1" : "bottom-3"
+          }`}>
           {items.map((_, i) => (
             <button
               key={i}
               onClick={() => setCurrent(i)}
               className={`h-2 w-2 rounded-full transition-colors ${
-                i === current ? "bg-white" : "bg-white/40"
+                i === current ? "bg-lyp-white" : "bg-lyp-white/70"
               }`}
               aria-label={`Slide ${i + 1}`}
             />

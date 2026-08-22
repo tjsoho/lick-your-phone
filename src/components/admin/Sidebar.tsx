@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import AdminLink from "@/components/admin/AdminLink";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import {
@@ -19,6 +19,7 @@ import {
   CircleQuestionMarkIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Logo from "@/components/Logo";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, href: "/admin" },
@@ -85,32 +86,40 @@ export default function Sidebar({ userEmail }: SidebarProps) {
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
+        <div className="border-b border-white/10 p-3">
+          {/* The logo gets its own full-width row so it is not competing with
+              the controls for horizontal space. */}
           {!collapsed && (
-            <span className="font-heading text-lg font-bold tracking-tight">
-              LickYourPhone
-            </span>
+            <Logo onDark fullWidth className="" priority />
           )}
-          {/* Close on mobile */}
-          <button
-            onClick={() => setMobileOpen(false)}
-            className="lg:hidden p-1 rounded hover:bg-white/10"
+          <div
+            className={cn(
+              "flex items-center",
+              collapsed ? "justify-center" : "mt-2 justify-end",
+            )}
           >
-            <X className="h-5 w-5" />
-          </button>
-          {/* Collapse on desktop */}
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="hidden lg:block p-1 rounded hover:bg-white/10"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          >
-            <ChevronLeft
-              className={cn(
-                "h-5 w-5 transition-transform",
-                collapsed && "rotate-180",
-              )}
-            />
-          </button>
+            {/* Close on mobile */}
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="lg:hidden p-1 rounded hover:bg-white/10"
+              aria-label="Close menu"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            {/* Collapse on desktop */}
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden lg:block p-1 rounded hover:bg-white/10"
+              aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              <ChevronLeft
+                className={cn(
+                  "h-5 w-5 transition-transform",
+                  collapsed && "rotate-180",
+                )}
+              />
+            </button>
+          </div>
         </div>
 
         {/* Navigation */}
@@ -121,7 +130,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
               const active = isActive(item.href);
               return (
                 <li key={item.href}>
-                  <Link
+                  <AdminLink
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
                     className={cn(
@@ -134,7 +143,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
                   >
                     <Icon className="h-5 w-5 flex-shrink-0" />
                     {!collapsed && <span>{item.label}</span>}
-                  </Link>
+                  </AdminLink>
                 </li>
               );
             })}

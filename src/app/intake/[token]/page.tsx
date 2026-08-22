@@ -5,6 +5,7 @@ import type { ProposalData } from "@/components/portal/ProposalContext";
 import { getIntakeQuestions } from "@/server-actions/intake";
 import { getServices } from "@/server-actions/services";
 import { getProposalLineItems } from "@/server-actions/proposals";
+import PortalBackground from "@/components/portal/PortalBackground";
 
 export const dynamic = "force-dynamic";
 
@@ -165,7 +166,9 @@ export default async function IntakeRoutePage({ params }: Props) {
   // ponytail: ProposalProvider used here to give IntakePage access to selections for condition eval.
   // If intake grows, extract a lighter context.
   return (
-    <div className="h-dvh portal-bg">
+    <div className="relative h-dvh bg-[#050203]">
+      <PortalBackground />
+      <div className="relative z-10 h-full">
       <ProposalProvider
         proposal={proposalData}
         pages={[]}
@@ -178,6 +181,7 @@ export default async function IntakeRoutePage({ params }: Props) {
           existingResponses={intakeResponses}
         />
       </ProposalProvider>
+      </div>
     </div>
   );
 }

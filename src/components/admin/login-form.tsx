@@ -4,7 +4,7 @@ import login from "@/server-actions/admin";
 import { ArrowRight, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { useState } from "react";
 
-const EASE = "ease-[cubic-bezier(0.32,0.72,0,1)]";
+const EASE = "ease-brand";
 
 const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-5 py-3.5 font-body text-[15px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] hover:border-[#E2D2D2] focus:border-lyp-cherry/40 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`;
 

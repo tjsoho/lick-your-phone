@@ -21,6 +21,7 @@ import {
   ClipboardList,
 } from "lucide-react";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
+import PortalLinkCell from "@/components/admin/PortalLinkCell";
 
 type State = { id: string; code: string; name: string };
 
@@ -98,6 +99,8 @@ type Client = {
 type Props = {
   client: Client;
   states: State[];
+  /** Absolute base URL, resolved server-side, for building portal links. */
+  appUrl: string;
 };
 
 function ClientInfoCard({
@@ -459,7 +462,11 @@ function ContactAddForm({
   );
 }
 
-export default function ClientDetailView({ client, states }: Props) {
+export default function ClientDetailView({
+  client,
+  states,
+  appUrl,
+}: Props) {
   const router = useRouter();
   const [showVenueForm, setShowVenueForm] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
@@ -861,15 +868,15 @@ export default function ClientDetailView({ client, states }: Props) {
                     </div>
                   </div>
 
-                  {/* Portal link */}
-                  {proposal.status !== "superseded" && (
-                    <div className="px-5 py-3 border-t border-gray-100 bg-gray-50">
-                      <p className="font-body text-xs text-gray-500">
-                        Portal link:{" "}
-                        <code className="bg-gray-200 px-1.5 py-0.5 rounded text-xs">
-                          /portal/{proposal.token}
-                        </code>
-                      </p>
+                  {/* Portal link — clickable, opens the client's proposal */}
+                  {proposal.status !== "superseded" && proposal.token && (
+                    <div className="flex items-center gap-3 px-5 py-3 border-t border-gray-100 bg-gray-50">
+                      <span className="font-body text-xs text-gray-500 shrink-0">
+                        Portal link
+                      </span>
+                      <PortalLinkCell
+                        url={`${appUrl}/portal/${proposal.token}`}
+                      />
                     </div>
                   )}
 

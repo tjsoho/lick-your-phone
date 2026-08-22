@@ -15,7 +15,24 @@ import {
 
 export interface ContentBlock {
   id: string;
-  type: "heading" | "paragraph" | "image" | "list" | "custom" | "logos" | "media_carousel" | null;
+  type:
+    | "heading"
+    | "paragraph"
+    | "image"
+    | "list"
+    | "custom"
+    | "logos"
+    | "media_carousel"
+    | "collage"
+    /** `{ url, alt, text }[]` — client logo + result copy, laid out two across. */
+    | "results"
+    /**
+     * `{ url, alt }[]` — the image that overlaps the page's featured image to
+     * form the offset pair in the page's image column. Consumed by ContentPage,
+     * never rendered inline in the text column.
+     */
+    | "offset_image"
+    | null;
   content: unknown;
   sequence: number | null;
 }

@@ -1,10 +1,15 @@
 "use client";
 
-import { useTransition, useState } from "react";
+import { useTransition, useState, useRef } from "react";
 import Link from "next/link";
-import { BookOpen, Loader2, Pencil, X, Check, FileEdit, Plus } from "lucide-react";
+import { BookOpen, Loader2, Pencil, X, Check, FileEdit, Plus, GripVertical } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import { togglePageVisibility, updatePage, createPage } from "@/server-actions/pages";
+import {
+  togglePageVisibility,
+  updatePage,
+  createPage,
+  reorderPages,
+} from "@/server-actions/pages";
 import toast from "react-hot-toast";
 
 interface PageItem {
@@ -32,6 +37,57 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
     sequence: 0,
   });
   const [saving, setSaving] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  // dragend fires after several dragover re-renders, so read the live list
+  // from a ref rather than a possibly stale closure.
+  const pagesRef = useRef(pages);
+  pagesRef.current = pages;
+  const orderBeforeDrag = useRef<PageItem[] | null>(null);
+
+  const handleDragStart = (id: string) => {
+    setDragId(id);
+    orderBeforeDrag.current = pagesRef.current;
+  };
+
+  const handleDragOver = (e: React.DragEvent, overId: string) => {
+    e.preventDefault();
+    if (!dragId || dragId === overId) return;
+    setPages((prev) => {
+      const from = prev.findIndex((p) => p.id === dragId);
+      const to = prev.findIndex((p) => p.id === overId);
+      if (from === -1 || to === -1 || from === to) return prev;
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
+  };
+
+  const handleDragEnd = async () => {
+    setDragId(null);
+    const before = orderBeforeDrag.current;
+    orderBeforeDrag.current = null;
+    if (!before) return;
+
+    const ids = pagesRef.current.map((p) => p.id);
+    if (before.map((p) => p.id).join() === ids.join()) return; // nothing moved
+
+    setSavingOrder(true);
+    const res = await reorderPages(ids);
+    setSavingOrder(false);
+
+    if (res.error) {
+      toast.error(res.error);
+      setPages(before); // rollback
+      return;
+    }
+    // Sequence numbers are now positional, so mirror that locally.
+    setPages((prev) => prev.map((p, i) => ({ ...p, sequence: i })));
+    toast.success("Page order updated");
+  };
+
   const [addingNew, setAddingNew] = useState(false);
   const [newForm, setNewForm] = useState({
     title: "",
@@ -138,6 +194,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
     <table className="w-full text-sm font-body">
       <thead>
         <tr className="border-b border-gray-100 bg-gray-50">
+          <th className="w-10 px-2 py-3" aria-label="Reorder" />
           <th className="text-left px-4 py-3 font-semibold text-gray-600">
             Title
           </th>
@@ -165,6 +222,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
           if (editingId === page.id) {
             return (
               <tr key={page.id} className="border-b border-gray-50 bg-gray-50">
+                <td className="w-10 px-2 py-2" />
                 <td className="px-4 py-2">
                   <input
                     className={ic}
@@ -245,10 +303,40 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
           return (
             <tr
               key={page.id}
-              className="border-b border-gray-50 hover:bg-gray-50"
+              draggable={!editingId && !savingOrder}
+              onDragStart={() => handleDragStart(page.id)}
+              onDragOver={(e) => handleDragOver(e, page.id)}
+              onDragEnd={handleDragEnd}
+              onDrop={(e) => e.preventDefault()}
+              className={`border-b border-gray-50 transition-colors ${
+                dragId === page.id
+                  ? "bg-lyp-cherry/5 opacity-60"
+                  : "hover:bg-gray-50"
+              }`}
             >
-              <td className="px-4 py-3 font-medium text-lyp-black">
-                {page.title ?? "Untitled"}
+              <td className="w-10 px-2 py-3">
+                <span
+                  className={`flex items-center justify-center text-gray-300 ${
+                    editingId || savingOrder
+                      ? "cursor-not-allowed"
+                      : "cursor-grab active:cursor-grabbing hover:text-lyp-cherry"
+                  }`}
+                  title="Drag to reorder"
+                >
+                  <GripVertical className="h-4 w-4" />
+                </span>
+              </td>
+              <td className="px-4 py-3">
+                <Link
+                  href={`/admin/pages/${page.id}`}
+                  // Anchors are natively draggable, which would hijack the
+                  // row's drag-to-reorder gesture.
+                  draggable={false}
+                  className="font-medium text-lyp-black transition-colors duration-500 ease-brand hover:text-lyp-cherry"
+                  title="Edit page content"
+                >
+                  {page.title ?? "Untitled"}
+                </Link>
               </td>
               <td className="px-4 py-3 text-gray-500 font-mono text-xs">
                 {page.slug ?? "-"}
@@ -298,6 +386,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
         })}
         {addingNew && (
           <tr className="border-b border-lyp-cherry/20 bg-lyp-cherry/5">
+            <td className="w-10 px-2 py-2" />
             <td className="px-4 py-2">
               <input
                 value={newForm.title}
@@ -365,13 +454,25 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
       </tbody>
     </table>
     {!addingNew && (
-      <div className="px-4 py-3 border-t border-gray-100">
+      <div className="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-4">
         <button
           onClick={startAdd}
           className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-lyp-cherry font-body transition-colors"
         >
           <Plus className="h-4 w-4" /> Add Page
         </button>
+        <span className="flex items-center gap-1.5 text-xs text-gray-400 font-body">
+          {savingOrder ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving order…
+            </>
+          ) : (
+            <>
+              <GripVertical className="h-3.5 w-3.5" /> Drag rows to reorder the
+              client-facing flow
+            </>
+          )}
+        </span>
       </div>
     )}
     </>

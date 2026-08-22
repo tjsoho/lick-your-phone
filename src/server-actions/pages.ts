@@ -21,6 +21,35 @@ export async function togglePageVisibility(id: string, visible: boolean) {
   }
 }
 
+/**
+ * Persist a new page order.
+ *
+ * Takes the full list of page ids in their intended order and writes
+ * sequence 0..n-1. The portal renders dynamically and already sorts by
+ * sequence, so the new order shows up there on the next request.
+ */
+export async function reorderPages(orderedIds: string[]) {
+  try {
+    if (orderedIds.length === 0) return { error: null };
+
+    const supabase = await createClient();
+
+    const results = await Promise.all(
+      orderedIds.map((id, index) =>
+        supabase.from("pages").update({ sequence: index }).eq("id", id),
+      ),
+    );
+
+    const failed = results.find((r) => r.error);
+    if (failed?.error) throw failed.error;
+
+    revalidatePath("/admin/pages");
+    return { error: null };
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+}
+
 export async function createPage(fields: {
   title: string;
   slug: string;
@@ -49,23 +78,43 @@ export async function createPage(fields: {
   }
 }
 
+/**
+ * Partial update. Only the keys actually passed are written.
+ *
+ * This used to spread `featured_image: fields.featured_image ?? null`, so any
+ * caller that edited just the title — the inline row editor on the pages list
+ * did exactly that — silently wiped the page's featured image and reset its
+ * image position.
+ */
 export async function updatePage(
   id: string,
-  fields: { title: string; slug: string; type: string; sequence: number; featured_image?: string; image_position?: string },
+  fields: {
+    title?: string;
+    slug?: string;
+    type?: string;
+    sequence?: number;
+    featured_image?: string | null;
+    image_position?: string;
+  },
 ) {
   try {
     const supabase = await createClient();
+
+    const patch: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+    };
+    if (fields.title !== undefined) patch.title = fields.title;
+    if (fields.slug !== undefined) patch.slug = fields.slug;
+    if (fields.type !== undefined) patch.type = fields.type;
+    if (fields.sequence !== undefined) patch.sequence = fields.sequence;
+    if (fields.featured_image !== undefined)
+      patch.featured_image = fields.featured_image;
+    if (fields.image_position !== undefined)
+      patch.image_position = fields.image_position;
+
     const { data, error } = await supabase
       .from("pages")
-      .update({
-        title: fields.title,
-        slug: fields.slug,
-        type: fields.type,
-        sequence: fields.sequence,
-        featured_image: fields.featured_image ?? null,
-        image_position: fields.image_position ?? "right",
-        updated_at: new Date().toISOString(),
-      })
+      .update(patch)
       .eq("id", id)
       .select("id, slug, title, type, sequence, visible, featured_image, image_position")
       .single();

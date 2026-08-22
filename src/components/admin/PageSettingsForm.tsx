@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { Loader2, ImageIcon, Upload, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Loader2, ImageIcon, Images, Trash2 } from "lucide-react";
 import { updatePageImage } from "@/server-actions/pages";
-import { uploadImage } from "@/utils/storage";
+import MediaLibraryModal from "./MediaLibraryModal";
 import toast from "react-hot-toast";
 
 interface PageSettingsFormProps {
@@ -19,23 +19,7 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition }: Page
   const [image, setImage] = useState(initialImage ?? "");
   const [position, setPosition] = useState(initialPosition);
   const [saving, setSaving] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setUploading(true);
-    const result = await uploadImage(file);
-    setUploading(false);
-    if (result.error) {
-      toast.error(result.error.message);
-    } else {
-      setImage(result.url);
-      toast.success("Image uploaded");
-    }
-    if (fileRef.current) fileRef.current.value = "";
-  };
+  const [libraryOpen, setLibraryOpen] = useState(false);
 
   const handleRemove = () => setImage("");
 
@@ -62,9 +46,9 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition }: Page
               Image
             </label>
             {image ? (
-              <div className="relative w-full aspect-video rounded-lg border border-gray-200 overflow-hidden bg-gray-50">
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image} alt="Featured" className="w-full h-full object-cover" />
+                <img src={image} alt="Featured" className="w-full h-full object-contain" />
                 <button
                   onClick={handleRemove}
                   className="absolute top-2 right-2 p-1.5 rounded-md bg-black/50 text-white hover:bg-black/70 transition-colors"
@@ -75,34 +59,19 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition }: Page
               </div>
             ) : (
               <button
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
+                onClick={() => setLibraryOpen(true)}
                 className="w-full aspect-video rounded-lg border-2 border-dashed border-gray-300 hover:border-lyp-cherry/50 flex flex-col items-center justify-center gap-2 text-gray-400 hover:text-gray-500 transition-colors"
               >
-                {uploading ? (
-                  <Loader2 className="h-8 w-8 animate-spin" />
-                ) : (
-                  <>
-                    <Upload className="h-8 w-8" />
-                    <span className="font-body text-sm">Click to upload</span>
-                  </>
-                )}
+                <Images className="h-8 w-8" />
+                <span className="font-body text-sm">Choose from library</span>
               </button>
             )}
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              onChange={handleUpload}
-              className="hidden"
-            />
             {image && (
               <button
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                className="mt-2 flex items-center gap-1.5 text-sm text-gray-500 hover:text-lyp-cherry font-body transition-colors disabled:opacity-50"
+                onClick={() => setLibraryOpen(true)}
+                className="mt-2 flex items-center gap-1.5 text-sm text-gray-500 hover:text-lyp-cherry font-body transition-colors"
               >
-                {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+                <Images className="h-3.5 w-3.5" />
                 Replace image
               </button>
             )}
@@ -130,6 +99,13 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition }: Page
         {saving && <Loader2 className="h-4 w-4 animate-spin" />}
         Save Image Settings
       </button>
+
+      <MediaLibraryModal
+        open={libraryOpen}
+        onClose={() => setLibraryOpen(false)}
+        onSelect={setImage}
+        title="Featured Image"
+      />
     </div>
   );
 }

@@ -70,12 +70,12 @@ export default function ProviderPickerField({
               )}
 
               {provider.image_url && (
-                <div className="mb-3 h-32 w-full overflow-hidden rounded-lg bg-lyp-white/5">
+                <div className="mb-3 h-32 w-full overflow-hidden rounded-lg">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={provider.image_url}
                     alt={provider.name}
-                    className="h-full w-full object-cover"
+                    className="h-full w-full object-contain"
                   />
                 </div>
               )}

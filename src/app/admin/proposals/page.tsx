@@ -17,7 +17,7 @@ import ProposalStatusSelect from "@/components/admin/ProposalStatusSelect";
 import SendProposalButton from "@/components/admin/SendProposalButton";
 import PortalLinkCell from "@/components/admin/PortalLinkCell";
 
-const EASE = "ease-[cubic-bezier(0.32,0.72,0,1)]";
+const EASE = "ease-brand";
 
 const thClasses =
   "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";

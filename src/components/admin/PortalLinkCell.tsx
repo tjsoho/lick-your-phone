@@ -4,7 +4,7 @@ import { Check, Copy, ExternalLink } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 
-const EASE = "ease-[cubic-bezier(0.32,0.72,0,1)]";
+const EASE = "ease-brand";
 
 export default function PortalLinkCell({ url }: { url: string | null }) {
   const [copied, setCopied] = useState(false);

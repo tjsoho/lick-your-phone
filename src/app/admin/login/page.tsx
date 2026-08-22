@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { CreditCard, FileText, PenLine } from "lucide-react";
 import LoginForm from "@/components/admin/login-form";
+import Logo from "@/components/Logo";
 
 /**
  * Optional photo behind the brand panel. Drop a file into /public and set the
@@ -50,17 +51,10 @@ export default function Login() {
 
         <div className="relative z-10 mx-auto flex w-full max-w-[29rem] flex-col justify-between">
           {/* Wordmark lockup */}
-          <div className="animate-rise flex items-center gap-3.5">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-lyp-white/10 font-heading text-base font-bold text-lyp-white ring-1 ring-lyp-white/20">
-              L
-            </span>
-            <span>
-              <span className="block font-heading text-lg font-bold leading-none tracking-tight text-lyp-white">
-                LickYourPhone
-              </span>
-              <span className="mt-1.5 block font-body text-[9px] font-medium uppercase tracking-[0.3em] text-lyp-gold/60">
-                Admin Console
-              </span>
+          <div className="animate-rise">
+            <Logo onDark className="h-9" priority />
+            <span className="mt-3 block font-body text-[9px] font-medium uppercase tracking-[0.3em] text-lyp-gold/60">
+              Admin Console
             </span>
           </div>
 
@@ -92,7 +86,7 @@ export default function Login() {
                   key={title}
                   className="group flex items-center gap-5 border-t border-lyp-white/[0.09] py-4 last:border-b"
                 >
-                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-lyp-white/[0.06] ring-1 ring-lyp-white/[0.12] transition-transform duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:scale-105">
+                  <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-lyp-white/[0.06] ring-1 ring-lyp-white/[0.12] transition-transform duration-700 ease-brand group-hover:scale-105">
                     <Icon
                       strokeWidth={1}
                       className="h-[18px] w-[18px] text-[#f0c9c9]"
@@ -124,13 +118,8 @@ export default function Login() {
       <section className="relative flex min-h-dvh items-center justify-center bg-lyp-white px-6 py-16 sm:px-10 lg:min-h-0">
         <div className="w-full max-w-[25rem]">
           {/* Stands in for the brand panel below lg */}
-          <div className="animate-rise mb-12 flex items-center justify-center gap-3.5 lg:hidden">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-lyp-cherry font-heading text-base font-bold text-lyp-white">
-              L
-            </span>
-            <span className="font-heading text-lg font-bold tracking-tight text-lyp-black">
-              LickYourPhone
-            </span>
+          <div className="animate-rise mb-12 flex justify-center lg:hidden">
+            <Logo className="h-10" priority />
           </div>
 
           <LoginForm />

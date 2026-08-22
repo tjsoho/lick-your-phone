@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { getPageWithBlocks } from "@/server-actions/pages";
 import { ContentBlocksEditor } from "@/components/admin/ContentBlocksEditor";
 import { PageSettingsForm } from "@/components/admin/PageSettingsForm";
+import PageTitleForm from "@/components/admin/PageTitleForm";
 
 export default async function EditPagePage({
   params,
@@ -27,12 +28,11 @@ export default async function EditPagePage({
         >
           <ArrowLeft className="h-5 w-5 text-gray-600" />
         </Link>
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-lyp-black">
-            {page.title ?? "Untitled Page"}
-          </h1>
-          <p className="text-sm text-gray-500 font-mono">/{page.slug}</p>
-        </div>
+        <PageTitleForm
+          pageId={id}
+          initialTitle={page.title ?? ""}
+          initialSlug={page.slug ?? ""}
+        />
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">

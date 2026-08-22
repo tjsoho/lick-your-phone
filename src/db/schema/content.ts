@@ -3,7 +3,7 @@ import { relations } from 'drizzle-orm'
 import { services } from './services'
 
 export const pageTypeEnum = pgEnum('page_type', ['service', 'content'])
-export const contentBlockTypeEnum = pgEnum('content_block_type', ['heading', 'paragraph', 'image', 'list', 'custom', 'logos'])
+export const contentBlockTypeEnum = pgEnum('content_block_type', ['heading', 'paragraph', 'image', 'list', 'custom', 'logos', 'media_carousel', 'collage', 'results', 'offset_image'])
 
 export const imagePositionEnum = pgEnum('image_position', ['left', 'right'])
 

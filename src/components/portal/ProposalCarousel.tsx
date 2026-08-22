@@ -16,27 +16,56 @@ import ContentPage from "./pages/ContentPage";
 import SummaryPage from "./pages/SummaryPage";
 import PaymentPage from "./pages/PaymentPage";
 import SignaturePage from "./pages/SignaturePage";
+import PortalBackground from "./PortalBackground";
+
+/**
+ * The reading-width cap used to sit on the scroll column, which meant nothing
+ * inside a page could ever be wider than 1400px — a full-bleed band was
+ * impossible. The cap now belongs to each page, so a page that wants to run
+ * edge to edge simply does not apply it.
+ */
+function Capped({ children }: { children: React.ReactNode }) {
+  return <div className="mx-auto h-full w-full max-w-[1400px]">{children}</div>;
+}
 
 function PageRenderer({ page }: { page: PageData }) {
   const { services } = useProposal();
 
   if (page.type === "service" && page.serviceId) {
     const service = services.find((s) => s.id === page.serviceId);
-    if (service) return <ServicePage service={service} page={page} />;
+    if (service)
+      return (
+        <Capped>
+          <ServicePage service={service} page={page} />
+        </Capped>
+      );
   }
 
   if (page.slug === "summary") {
-    return <SummaryPage />;
+    return (
+      <Capped>
+        <SummaryPage />
+      </Capped>
+    );
   }
 
   if (page.slug === "payment") {
-    return <PaymentPage />;
+    return (
+      <Capped>
+        <PaymentPage />
+      </Capped>
+    );
   }
 
   if (page.slug === "signature") {
-    return <SignaturePage />;
+    return (
+      <Capped>
+        <SignaturePage />
+      </Capped>
+    );
   }
 
+  // ContentPage caps itself, so its showcase layout can be full-bleed.
   return <ContentPage page={page} />;
 }
 
@@ -75,17 +104,18 @@ function CarouselInner() {
   const topPad = showRunningTotal ? "pt-[52px]" : "";
 
   return (
-    <div className="relative flex h-dvh flex-col portal-bg">
+    <div className="relative flex h-dvh flex-col bg-[#050203]">
+      <PortalBackground />
       {showRunningTotal && <RunningTotal />}
 
-      <div className={`flex-1 overflow-hidden pb-[56px] ${topPad}`}>
-        <div className="portal-scroll mx-auto h-full max-w-[1400px]">
+      <div className={`relative z-10 flex-1 overflow-hidden pb-[56px] ${topPad}`}>
+        <div className="portal-scroll h-full w-full">
           <motion.div
             key={page.id}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.25 }}
-            className="h-full"
+            className="h-full w-full"
           >
             <PageRenderer page={page} />
           </motion.div>

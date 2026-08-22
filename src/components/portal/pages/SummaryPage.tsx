@@ -135,7 +135,7 @@ export default function SummaryPage() {
                 return (
                   <div
                     key={item.id}
-                    className="rounded-lg border border-lyp-white/10 bg-lyp-white/5 overflow-hidden"
+                    className="overflow-hidden"
                   >
                     {/* Collapsed row */}
                     <button
