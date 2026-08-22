@@ -56,6 +56,13 @@ const config: Config = {
         heading: ["var(--font-fira-sans)", "Fira Sans", "sans-serif"],
         body: ["var(--font-montserrat)", "Montserrat", "sans-serif"],
       },
+      // Named so they compile. Tailwind rejects `ease-[cubic-bezier(...)]`
+      // as ambiguous, so those arbitrary classes emitted no CSS at all and
+      // every transition silently fell back to the default curve.
+      transitionTimingFunction: {
+        brand: "cubic-bezier(0.32, 0.72, 0, 1)",
+        standard: "cubic-bezier(0.4, 0, 0.2, 1)",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },

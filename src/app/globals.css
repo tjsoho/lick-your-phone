@@ -91,8 +91,20 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
+  /* Pending indicator that only becomes visible after 1s.
+     Fast navigations unmount it before it ever paints, so there is no flicker
+     on quick pages and no "did my click register?" on slow ones. */
+  .pending-delayed {
+    opacity: 0;
+    animation: pending-in 180ms ease-out 1000ms forwards;
+  }
+
   .animate-rise {
-    animation: rise 900ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    /* `backwards`, not `both`: `both` leaves the final keyframe's
+       filter: blur(0) applied permanently, and any filter other than `none`
+       forces the element onto its own composited layer, which some mobile
+       browsers rasterise below native density — soft text. */
+    animation: rise 900ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
   }
 
   .portal-scroll {
@@ -115,6 +127,12 @@
   }
 }
 
+@keyframes pending-in {
+  to {
+    opacity: 1;
+  }
+}
+
 @keyframes rise {
   from {
     opacity: 0;
@@ -128,8 +146,224 @@
   }
 }
 
+/* ---- Portal smoke drift -------------------------------------------------
+   The field must read as *constantly* moving, so every transform loop is a
+   closed circular path played at `linear` speed: the layer never decelerates
+   into a turnaround and 0% === 100%, so the loop is seamless.
+
+   Each smoke field is two nested boxes orbiting at different radii, periods
+   and directions. The sum of two circles with incommensurate periods traces
+   an epicycle, so the composite motion never repeats on a period the eye can
+   latch onto and never looks like one rigid slide.
+
+   Offsets are percentages of each layer's own box. Layer A orbits at most
+   4% + 2% = 6% of a box that overhangs the viewport by 20% on every side;
+   layer B at most 5% + 2.5% = 7.5% of a box that overhangs by 32%. Both stay
+   far inside their margin (and the constant scale() only adds to it), so no
+   edge is ever exposed.
+
+   Only transform/opacity animate — never the SVG filter, which would force a
+   full-screen re-rasterisation every frame.                                */
+
+.portal-smoke-a,
+.portal-smoke-a-inner,
+.portal-smoke-b,
+.portal-smoke-b-inner,
+.portal-core {
+  will-change: transform, opacity;
+}
+
+.portal-smoke-a {
+  animation: portal-orbit-a 28s linear infinite;
+}
+
+.portal-smoke-a-inner {
+  animation:
+    portal-orbit-a-inner 19s linear infinite,
+    portal-glow-a 12s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+
+.portal-smoke-b {
+  animation: portal-orbit-b 46s linear infinite;
+}
+
+.portal-smoke-b-inner {
+  animation:
+    portal-orbit-b-inner 31s linear infinite,
+    portal-glow-b 17s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
+}
+
+.portal-core {
+  animation: portal-breathe 15s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+/* Clockwise, radius 4%. */
+@keyframes portal-orbit-a {
+  0% {
+    transform: translate3d(4%, 0, 0) scale(1.1);
+  }
+  12.5% {
+    transform: translate3d(2.83%, 2.83%, 0) scale(1.1);
+  }
+  25% {
+    transform: translate3d(0, 4%, 0) scale(1.1);
+  }
+  37.5% {
+    transform: translate3d(-2.83%, 2.83%, 0) scale(1.1);
+  }
+  50% {
+    transform: translate3d(-4%, 0, 0) scale(1.1);
+  }
+  62.5% {
+    transform: translate3d(-2.83%, -2.83%, 0) scale(1.1);
+  }
+  75% {
+    transform: translate3d(0, -4%, 0) scale(1.1);
+  }
+  87.5% {
+    transform: translate3d(2.83%, -2.83%, 0) scale(1.1);
+  }
+  100% {
+    transform: translate3d(4%, 0, 0) scale(1.1);
+  }
+}
+
+/* Counter-clockwise, radius 2% — turns A's circle into an epicycle. */
+@keyframes portal-orbit-a-inner {
+  0% {
+    transform: translate3d(0, 2%, 0);
+  }
+  12.5% {
+    transform: translate3d(1.41%, 1.41%, 0);
+  }
+  25% {
+    transform: translate3d(2%, 0, 0);
+  }
+  37.5% {
+    transform: translate3d(1.41%, -1.41%, 0);
+  }
+  50% {
+    transform: translate3d(0, -2%, 0);
+  }
+  62.5% {
+    transform: translate3d(-1.41%, -1.41%, 0);
+  }
+  75% {
+    transform: translate3d(-2%, 0, 0);
+  }
+  87.5% {
+    transform: translate3d(-1.41%, 1.41%, 0);
+  }
+  100% {
+    transform: translate3d(0, 2%, 0);
+  }
+}
+
+/* Counter-clockwise, radius 5% — opposite direction to A for parallax. */
+@keyframes portal-orbit-b {
+  0% {
+    transform: translate3d(-5%, 0, 0) scale(1.07);
+  }
+  12.5% {
+    transform: translate3d(-3.54%, 3.54%, 0) scale(1.07);
+  }
+  25% {
+    transform: translate3d(0, 5%, 0) scale(1.07);
+  }
+  37.5% {
+    transform: translate3d(3.54%, 3.54%, 0) scale(1.07);
+  }
+  50% {
+    transform: translate3d(5%, 0, 0) scale(1.07);
+  }
+  62.5% {
+    transform: translate3d(3.54%, -3.54%, 0) scale(1.07);
+  }
+  75% {
+    transform: translate3d(0, -5%, 0) scale(1.07);
+  }
+  87.5% {
+    transform: translate3d(-3.54%, -3.54%, 0) scale(1.07);
+  }
+  100% {
+    transform: translate3d(-5%, 0, 0) scale(1.07);
+  }
+}
+
+/* Clockwise, radius 2.5%. */
+@keyframes portal-orbit-b-inner {
+  0% {
+    transform: translate3d(0, -2.5%, 0);
+  }
+  12.5% {
+    transform: translate3d(1.77%, -1.77%, 0);
+  }
+  25% {
+    transform: translate3d(2.5%, 0, 0);
+  }
+  37.5% {
+    transform: translate3d(1.77%, 1.77%, 0);
+  }
+  50% {
+    transform: translate3d(0, 2.5%, 0);
+  }
+  62.5% {
+    transform: translate3d(-1.77%, 1.77%, 0);
+  }
+  75% {
+    transform: translate3d(-2.5%, 0, 0);
+  }
+  87.5% {
+    transform: translate3d(-1.77%, -1.77%, 0);
+  }
+  100% {
+    transform: translate3d(0, -2.5%, 0);
+  }
+}
+
+/* Density shimmer. Reverses, but it rides on top of the non-stop orbits and
+   runs on a period that shares no factor with them, so the field never
+   settles into a pose. */
+@keyframes portal-glow-a {
+  from {
+    opacity: 0.82;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes portal-glow-b {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.78;
+  }
+}
+
+@keyframes portal-breathe {
+  0%,
+  100% {
+    opacity: 0.72;
+    transform: translateY(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1.09);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-rise {
+    animation: none;
+  }
+
+  .portal-smoke-a,
+  .portal-smoke-a-inner,
+  .portal-smoke-b,
+  .portal-smoke-b-inner,
+  .portal-core {
     animation: none;
   }
 }

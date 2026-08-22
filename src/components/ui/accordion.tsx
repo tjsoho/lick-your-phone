@@ -37,7 +37,7 @@ const AccordionTrigger = React.forwardRef<
             <AccordionPrimitive.Trigger
                 ref={ref}
                 className={cn(
-                    "flex flex-1 items-center justify-between py-2 text-left text-[15px] font-semibold leading-6 transition-all [&>svg]:transition-all [&>svg]:duration-500 [&>svg]:ease-[cubic-bezier(0.4,0,0.2,1)] hover:[&>svg]:rotate-90",
+                    "flex flex-1 items-center justify-between py-2 text-left text-[15px] font-semibold leading-6 transition-all [&>svg]:transition-all [&>svg]:duration-500 [&>svg]:ease-standard hover:[&>svg]:rotate-90",
                     className,
                 )}
                 onPointerDown={() => setIsOpen(!isOpen)}
@@ -51,7 +51,7 @@ const AccordionTrigger = React.forwardRef<
                             size={20}
                             strokeWidth={2.5}
                             className={cn(
-                                "shrink-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group-hover:rotate-90 text-lyp-cherry rounded-full border border-lyp-cherry p-2 w-8 h-8",
+                                "shrink-0 transition-all duration-500 ease-standard group-hover:rotate-90 text-lyp-cherry rounded-full border border-lyp-cherry p-2 w-8 h-8",
                                 isOpen
                                     ? "opacity-0 rotate-90"
                                     : "opacity-100 rotate-0",
@@ -62,7 +62,7 @@ const AccordionTrigger = React.forwardRef<
                             size={20}
                             strokeWidth={2.5}
                             className={cn(
-                                "shrink-0 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] absolute top-0 left-0 group-hover:rotate-90 text-lyp-cherry rounded-full border border-lyp-cherry p-2 w-8 h-8",
+                                "shrink-0 transition-all duration-500 ease-standard absolute top-0 left-0 group-hover:rotate-90 text-lyp-cherry rounded-full border border-lyp-cherry p-2 w-8 h-8",
                                 isOpen
                                     ? "opacity-100 rotate-0"
                                     : "opacity-0 rotate-90",
@@ -83,7 +83,7 @@ const AccordionContent = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
     <AccordionPrimitive.Content
         ref={ref}
-        className="overflow-hidden text-sm transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
+        className="overflow-hidden text-sm transition-all duration-500 ease-standard data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down"
         {...props}
     >
         <div className={cn("pb-2 pt-0", className)}>{children}</div>

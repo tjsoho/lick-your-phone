@@ -1,3 +1,4 @@
+import type { Metadata, Viewport } from "next";
 import { Fira_Sans, Montserrat } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
@@ -15,6 +16,24 @@ const montserrat = Montserrat({
   variable: "--font-montserrat",
   display: "swap",
 });
+
+export const metadata: Metadata = {
+  title: "LickYourPhone",
+  description: "Client proposals and onboarding.",
+};
+
+/**
+ * Without this, no viewport meta is emitted at all — mobile browsers then lay
+ * the page out at a virtual ~980px and scale the result down to fit, which is
+ * what makes text look soft on a phone instead of sharp.
+ * `viewportFit: "cover"` also lets the dvh units used across the portal reach
+ * under the notch/home indicator.
+ */
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
 
 export default function RootLayout({
   children,
