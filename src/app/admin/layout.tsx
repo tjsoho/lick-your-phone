@@ -1,5 +1,5 @@
 import { Toaster } from "react-hot-toast";
-import { createClient } from "@/utils/server";
+import { headers } from "next/headers";
 import Sidebar from "@/components/admin/Sidebar";
 
 interface AdminLayoutProps {
@@ -7,17 +7,12 @@ interface AdminLayoutProps {
 }
 
 export default async function AdminLayout({ children }: AdminLayoutProps) {
-  let userEmail: string | undefined;
-
-  try {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    userEmail = user?.email ?? undefined;
-  } catch {
-    // Not logged in - will be caught by middleware
-  }
+  // Middleware has already verified the session on every /admin request and
+  // forwards the email, so this avoids a second auth round trip per
+  // navigation. It is display-only — access is enforced by middleware and by
+  // row-level security on the data itself.
+  const userEmail =
+    (await headers()).get("x-admin-user-email") || undefined;
 
   // Login page renders without sidebar
   return (

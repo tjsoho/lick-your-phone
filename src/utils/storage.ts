@@ -1,83 +1,58 @@
 "use client";
 
 import { createClient } from "./client";
+import { compressImage } from "./image-compression";
 
 const supabase = createClient();
 
 // Constants
 const BUCKET_NAME = "site-images";
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+/** Per-file ceiling, checked before compression. */
+export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+
+/** Ceiling for a single multi-file selection, checked before compression. */
+export const MAX_BATCH_SIZE = 50 * 1024 * 1024; // 50MB
+
+export interface MediaItem {
+	name: string;
+	url: string;
+	size: number;
+	createdAt: string | null;
+}
 
 /**
- * Get all images from the storage bucket
+ * List every image in the media library, newest first.
+ *
+ * Supabase's list() defaults to 100 rows, which silently truncates a growing
+ * library, so the limit is raised and the sort is explicit.
  */
-export async function getAllImages(): Promise<string[]> {
-	console.log("Fetching all images from bucket:", BUCKET_NAME);
-
+export async function getAllImages(): Promise<MediaItem[]> {
 	try {
-		// Check if bucket exists first
-		console.log("Checking for bucket existence...");
-		const { data: buckets, error: bucketError } =
-			await supabase.storage.listBuckets();
-
-		if (bucketError) {
-			console.error("Error listing buckets:", bucketError);
-			console.error("Bucket error details:", {
-				message: bucketError.message,
-			});
-			return [];
-		}
-
-		console.log(
-			"Available buckets:",
-			buckets?.map((b) => b.name),
-		);
-
-		// If bucket doesn't exist, we can't create it from the client side
-		// It must be created from the Supabase dashboard
-		if (!buckets?.some((b) => b.name === BUCKET_NAME)) {
-			console.error(
-				`Bucket "${BUCKET_NAME}" not found. Please create it in the Supabase dashboard.`,
-			);
-			console.log(
-				"You need to:",
-				[
-					"1. Go to Supabase Dashboard",
-					"2. Select Storage from the sidebar",
-					"3. Click 'New Bucket'",
-					"4. Enter 'site-images' as the name",
-					"5. Make sure to set it as public",
-				].join("\n"),
-			);
-			return [];
-		}
-
-		console.log(`Found bucket "${BUCKET_NAME}", proceeding with operation...`);
-
-		const { data, error } = await supabase.storage.from(BUCKET_NAME).list();
+		const { data, error } = await supabase.storage.from(BUCKET_NAME).list("", {
+			limit: 1000,
+			sortBy: { column: "created_at", order: "desc" },
+		});
 
 		if (error) {
-			console.error("Error listing files:", error);
+			console.error("Failed to list media library:", error.message);
 			return [];
 		}
 
-		if (!data) {
-			console.log("No files found in bucket");
-			return [];
-		}
-
-		console.log(
-			"Found files:",
-			data.map((f) => f.name),
-		);
+		if (!data) return [];
 
 		return data
 			.filter((file) => !file.name.startsWith("."))
+			.filter((file) => /\.(png|jpe?g|gif|webp|avif|svg)$/i.test(file.name))
 			.map((file) => {
 				const {
 					data: { publicUrl },
 				} = supabase.storage.from(BUCKET_NAME).getPublicUrl(file.name);
-				return publicUrl;
+				return {
+					name: file.name,
+					url: publicUrl,
+					size: file.metadata?.size ?? 0,
+					createdAt: file.created_at ?? null,
+				};
 			});
 	} catch (error) {
 		console.error("Error in getAllImages:", error);
@@ -88,6 +63,10 @@ export async function getAllImages(): Promise<string[]> {
 export interface UploadResult {
 	url: string;
 	error: Error | null;
+	/** Bytes as chosen by the user, before compression. */
+	originalSize: number;
+	/** Bytes actually stored. */
+	uploadedSize: number;
 }
 
 /**
@@ -109,6 +88,8 @@ export async function uploadImage(file: File): Promise<UploadResult> {
 			return {
 				url: "",
 				error: new Error(`Authentication error: ${sessionError.message}`),
+				originalSize: file.size,
+				uploadedSize: 0,
 			};
 		}
 
@@ -117,34 +98,56 @@ export async function uploadImage(file: File): Promise<UploadResult> {
 			return {
 				url: "",
 				error: new Error("Must be authenticated to upload files"),
+				originalSize: file.size,
+				uploadedSize: 0,
 			};
 		}
 
 		console.log("User authenticated successfully:", session.user?.email);
 
 		if (file.size > MAX_FILE_SIZE) {
-			return { url: "", error: new Error("File size must be less than 5MB") };
+			return {
+				url: "",
+				error: new Error(
+					`"${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)}MB — the limit is 50MB`,
+				),
+				originalSize: file.size,
+				uploadedSize: 0,
+			};
 		}
 
+		// Downscale and re-encode before the bytes ever leave the browser.
+		const { file: upload, originalSize } = await compressImage(file);
+
 		const timestamp = new Date().getTime();
-		const fileName = `${timestamp}-${file.name}`;
+		const fileName = `${timestamp}-${upload.name}`;
 		console.log("Generated filename:", fileName);
 
 		console.log("Attempting upload to bucket:", BUCKET_NAME);
 		const { data, error } = await supabase.storage
 			.from(BUCKET_NAME)
-			.upload(fileName, file, {
+			.upload(fileName, upload, {
 				cacheControl: "3600",
 				upsert: true,
 			});
 
 		if (error) {
 			console.error("Upload error:", error);
-			return { url: "", error: new Error(error.message) };
+			return {
+				url: "",
+				error: new Error(error.message),
+				originalSize,
+				uploadedSize: 0,
+			};
 		}
 
 		if (!data?.path) {
-			return { url: "", error: new Error("Upload failed - no path returned") };
+			return {
+				url: "",
+				error: new Error("Upload failed - no path returned"),
+				originalSize,
+				uploadedSize: 0,
+			};
 		}
 
 		console.log("Upload successful, getting public URL");
@@ -152,13 +155,19 @@ export async function uploadImage(file: File): Promise<UploadResult> {
 			data: { publicUrl },
 		} = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path);
 
-		console.log("Generated public URL:", publicUrl);
-		return { url: publicUrl, error: null };
+		return {
+			url: publicUrl,
+			error: null,
+			originalSize,
+			uploadedSize: upload.size,
+		};
 	} catch (error) {
 		console.error("Unexpected error during upload:", error);
 		return {
 			url: "",
 			error: error instanceof Error ? error : new Error("Unknown upload error"),
+			originalSize: file.size,
+			uploadedSize: 0,
 		};
 	}
 }
