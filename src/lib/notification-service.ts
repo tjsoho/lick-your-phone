@@ -26,6 +26,7 @@ interface PayloadMap {
     contractUrl: string;
     intakeUrl: string;
     signerEmail: string;
+    proposalId: string;
     services: { name: string; billing: string; term: string | null }[];
   };
   PAYMENT_FAILED: {

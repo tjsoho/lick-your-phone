@@ -29,6 +29,7 @@ export async function onProposalSigned(ctx: IntegrationContext) {
       venueName: ctx.venueName,
       venueAddress: "", // Assuming venue address is not available in the context
     },
+    proposalId: ctx.proposalId,
     contractUrl: ctx.documentUrl,
     totalAmount: ctx.totalCents,
     intakeUrl: `${appUrl}/portal/${ctx.proposalId}`,
