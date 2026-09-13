@@ -11,6 +11,7 @@ import {
   deleteService,
   updateServiceInclusions,
   updateServiceObligations,
+  updateServiceDisclaimers,
 } from "@/server-actions/services";
 import { createSlug } from "@/utils/create-slug";
 import { useAutosave } from "@/hooks/use-autosave";
@@ -50,6 +51,7 @@ interface ServiceFormProps {
     sequence?: number;
     service_inclusions?: { text: string; sequence: number }[];
     service_client_obligations?: { text: string; sequence: number }[];
+    service_disclaimers?: { text: string; sequence: number }[];
   };
 }
 
@@ -78,6 +80,9 @@ export default function ServiceForm({ service }: ServiceFormProps) {
   );
   const [obligations, setObligations] = useState<ListItem[]>(
     service?.service_client_obligations?.sort((a, b) => a.sequence - b.sequence) ?? []
+  );
+  const [disclaimers, setDisclaimers] = useState<ListItem[]>(
+    service?.service_disclaimers?.sort((a, b) => a.sequence - b.sequence) ?? []
   );
 
   const {
@@ -112,14 +117,14 @@ export default function ServiceForm({ service }: ServiceFormProps) {
   // because there is nothing to save into until the service exists.
   const savedSlugRef = useRef(service?.slug ?? "");
   const { status: autosaveStatus } = useAutosave(
-    { values: formValues, inclusions, obligations },
-    async ({ values, inclusions: incl, obligations: obl }) => {
+    { values: formValues, inclusions, obligations, disclaimers },
+    async ({ values, inclusions: incl, obligations: obl, disclaimers: disc }) => {
       if (!service) return { error: null };
       const { error } = await updateService(service.id, {
         name: values.name,
         slug: values.slug,
         billing: values.billing,
-        term: values.term || undefined,
+        term: values.term || null,
         target_price_cents: Math.round(Number(values.target_price_dollars) * 100),
         discount_pct: Number(values.discount_pct_display) / 100,
         discount_window_hours: Number(values.discount_window_hours) || undefined,
@@ -145,6 +150,14 @@ export default function ServiceForm({ service }: ServiceFormProps) {
           .map((item, i) => ({ text: item.text, sequence: i })),
       );
       if (oblError) return { error: oblError };
+
+      const { error: discError } = await updateServiceDisclaimers(
+        service.id,
+        disc
+          .filter((item) => item.text.trim())
+          .map((item, i) => ({ text: item.text, sequence: i })),
+      );
+      if (discError) return { error: discError };
 
       // The slug is this page's own address, so follow it when it changes.
       if (values.slug && values.slug !== savedSlugRef.current) {
@@ -199,6 +212,12 @@ export default function ServiceForm({ service }: ServiceFormProps) {
         );
         if (oblError) throw new Error(oblError);
 
+        const { error: discError } = await updateServiceDisclaimers(
+          service.id,
+          disclaimers.map((item, i) => ({ text: item.text, sequence: i }))
+        );
+        if (discError) throw new Error(discError);
+
         toast.success("Service updated");
       } else {
         const { data: created, error } = await createService(payload);
@@ -212,6 +231,12 @@ export default function ServiceForm({ service }: ServiceFormProps) {
           await updateServiceObligations(
             created.id,
             obligations.map((item, i) => ({ text: item.text, sequence: i }))
+          );
+          await updateServiceDisclaimers(
+            created.id,
+            disclaimers
+              .filter((item) => item.text.trim())
+              .map((item, i) => ({ text: item.text, sequence: i }))
           );
         }
 
@@ -514,6 +539,9 @@ export default function ServiceForm({ service }: ServiceFormProps) {
 
       {/* Client Obligations */}
       {renderListSection("Client Obligations", obligations, setObligations)}
+
+      {/* Disclaimers — the small print under the slide's inclusions */}
+      {renderListSection("Disclaimers", disclaimers, setDisclaimers)}
 
       {/* Actions */}
       <div className="flex flex-wrap items-center gap-3">

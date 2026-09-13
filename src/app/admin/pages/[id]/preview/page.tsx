@@ -3,6 +3,10 @@ import { createClient } from "@/utils/server";
 import { mapPages, mapServices } from "@/app/portal/[token]/mappers";
 import PagePreviewSurface from "@/components/admin/PagePreviewSurface";
 import type { ProposalData } from "@/components/portal/ProposalContext";
+import {
+  getAgreementSettings,
+  getTermsClauses,
+} from "@/server-actions/agreement-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -21,11 +25,16 @@ export default async function PagePreviewRoute({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: pageRaw }, { data: servicesRaw }] = await Promise.all([
+  const [
+    { data: pageRaw },
+    { data: servicesRaw },
+    agreementSettings,
+    termsClauses,
+  ] = await Promise.all([
     supabase
       .from("pages")
       .select(
-        `id, type, slug, title, sequence, service_id, featured_image, image_position,
+        `id, type, slug, title, sequence, service_id, featured_image, image_position, copy,
          content_blocks ( id, type, content, sequence )`,
       )
       .eq("id", id)
@@ -42,6 +51,8 @@ export default async function PagePreviewRoute({
          service_disclaimers ( id, text, sequence )`,
       )
       .order("sequence", { ascending: true }),
+    getAgreementSettings(),
+    getTermsClauses(),
   ]);
 
   if (!pageRaw) return notFound();
@@ -67,6 +78,11 @@ export default async function PagePreviewRoute({
       proposal={proposal}
       page={page}
       services={services}
+      agreement={{
+        termsClauses,
+        postSignatureText: agreementSettings.postSignatureText,
+        portalCopy: agreementSettings.portalCopy,
+      }}
     />
   );
 }

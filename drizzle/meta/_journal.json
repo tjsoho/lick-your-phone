@@ -43,6 +43,13 @@
       "when": 1789327328030,
       "tag": "0005_nifty_lady_ursula",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1789330705143,
+      "tag": "0006_light_nightmare",
+      "breakpoints": true
     }
   ]
 }

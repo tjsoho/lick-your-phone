@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ProposalProvider,
+  type AgreementCopy,
   type PageData,
   type ProposalData,
 } from "@/components/portal/ProposalContext";
+import { SLUG_KINDS, type CopyOverrides } from "@/lib/portal-copy";
 import { PageRenderer } from "@/components/portal/ProposalCarousel";
 import PortalBackground from "@/components/portal/PortalBackground";
 
@@ -15,6 +17,7 @@ export type PageDraft = {
   featuredImage: string | null;
   imagePosition: "left" | "right" | null;
   contentBlocks: PageData["contentBlocks"];
+  copy: CopyOverrides;
 };
 
 type Props = {
@@ -23,6 +26,8 @@ type Props = {
   // Loosely typed on purpose: the shape comes straight from the portal's own
   // service query and is only ever handed back to the portal's renderer.
   services: React.ComponentProps<typeof ProposalProvider>["services"];
+  /** The saved agreement settings, including the workspace-wide wording. */
+  agreement: AgreementCopy;
 };
 
 export const PREVIEW_MESSAGE = "lyp:page-draft";
@@ -39,6 +44,7 @@ export default function PagePreviewSurface({
   proposal,
   page,
   services,
+  agreement,
 }: Props) {
   const [draft, setDraft] = useState<PageData>(page);
 
@@ -54,6 +60,7 @@ export default function PagePreviewSurface({
         featuredImage: payload.featuredImage,
         imagePosition: payload.imagePosition ?? prev.imagePosition,
         contentBlocks: payload.contentBlocks,
+        copy: payload.copy ?? prev.copy,
       }));
     }
 
@@ -67,12 +74,24 @@ export default function PagePreviewSurface({
     return () => window.removeEventListener("message", handleMessage);
   }, []);
 
+  // Structural pages also read their wording by slug, so feed the draft in
+  // there too.
+  const pageCopy = useMemo(
+    () =>
+      draft.slug && SLUG_KINDS[draft.slug]
+        ? { [draft.slug]: draft.copy ?? {} }
+        : {},
+    [draft.slug, draft.copy],
+  );
+
   return (
     <ProposalProvider
       proposal={proposal}
+      agreement={agreement}
       pages={[draft]}
       services={services}
       initialSelections={[]}
+      pageCopy={pageCopy}
     >
       <div className="relative flex h-dvh flex-col overflow-hidden bg-[#050203]">
         <PortalBackground />

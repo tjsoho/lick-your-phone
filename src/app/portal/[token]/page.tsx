@@ -9,6 +9,7 @@ import {
   getAgreementSettings,
   getTermsClauses,
 } from "@/server-actions/agreement-settings";
+import { resolveCopy, type CopyOverrides } from "@/lib/portal-copy";
 
 export const dynamic = "force-dynamic";
 
@@ -29,26 +30,37 @@ export default async function PortalPage({ params }: Props) {
   const { token } = await params;
   const supabase = await createClient();
 
-  // 1. Validate token
-  const { data: proposal, error: proposalError } = await supabase
-    .from("proposals")
-    .select(
-      `
+  // 1. Validate token. Agreement settings load alongside it, because even the
+  //    broken-link screens use the workspace's wording.
+  const [
+    { data: proposal, error: proposalError },
+    agreementSettings,
+    termsClauses,
+  ] = await Promise.all([
+    supabase
+      .from("proposals")
+      .select(
+        `
       id, token, status, signed_at, discount_expires_at, discount_timer_active,
       client:clients!client_id ( id, name, contact_name ),
       venue:venues!venue_id ( id, name ),
       payments(*),
       proposal_line_items(*)
     `,
-    )
-    .eq("token", token)
-    .single();
+      )
+      .eq("token", token)
+      .single(),
+    getAgreementSettings(),
+    getTermsClauses(),
+  ]);
+
+  const { portalCopy } = agreementSettings;
 
   if (proposalError || !proposal) {
     return (
       <ErrorScreen
-        title="Link Not Found"
-        message="This link is invalid or has expired. Please contact your account manager for an updated link."
+        title={resolveCopy("global", "linkNotFoundTitle", portalCopy)}
+        message={resolveCopy("global", "linkNotFoundBody", portalCopy)}
       />
     );
   }
@@ -56,8 +68,8 @@ export default async function PortalPage({ params }: Props) {
   if (proposal.status === "superseded") {
     return (
       <ErrorScreen
-        title="Link Replaced"
-        message="A newer version has been sent to you. Please check your email for the latest link, or contact your account manager."
+        title={resolveCopy("global", "linkReplacedTitle", portalCopy)}
+        message={resolveCopy("global", "linkReplacedBody", portalCopy)}
       />
     );
   }
@@ -67,7 +79,7 @@ export default async function PortalPage({ params }: Props) {
   const { data: pagesRaw } = await supabase
     .from("pages")
     .select(
-      `id, type, slug, title, sequence, service_id, visible, featured_image, image_position,
+      `id, type, slug, title, sequence, service_id, visible, featured_image, image_position, copy,
        content_blocks ( id, type, content, sequence )`,
     )
     .order("sequence", { ascending: true });
@@ -133,6 +145,17 @@ export default async function PortalPage({ params }: Props) {
 
   const pages: PageData[] = mapPages(visiblePagesRaw);
 
+  // Wording for the structural pages, keyed by slug. Taken from every page,
+  // hidden ones included: payment and onboarding wording is still needed
+  // when those steps aren't slides in this deck.
+  const pageCopy: Record<string, CopyOverrides> = {};
+  for (const page of (pagesRaw ?? []) as Array<{
+    slug: string | null;
+    copy: CopyOverrides | null;
+  }>) {
+    if (page.slug) pageCopy[page.slug] = page.copy ?? {};
+  }
+
   // A discount set on the proposal wins over the service's standing one.
   const discountByService = new Map<string, number>();
   for (const page of (pagesRaw ?? []) as Array<{
@@ -163,18 +186,15 @@ export default async function PortalPage({ params }: Props) {
     tierId: item.service_tier_id,
   }));
 
-  const [agreementSettings, termsClauses] = await Promise.all([
-    getAgreementSettings(),
-    getTermsClauses(),
-  ]);
-
   return (
     <ProposalCarousel
       proposal={proposalData}
       agreement={{
         termsClauses,
         postSignatureText: agreementSettings.postSignatureText,
+        portalCopy,
       }}
+      pageCopy={pageCopy}
       pages={pages}
       services={services}
       savedSelections={savedSelections}

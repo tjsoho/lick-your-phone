@@ -17,6 +17,8 @@ export const pages = pgTable('pages', {
   featuredImage: text('featured_image'),
   imagePosition: imagePositionEnum('image_position').default('right'),
   serviceId: uuid('service_id').references(() => services.id),
+  /** Overrides for the page's fixed wording, keyed by slot. See src/lib/portal-copy. */
+  copy: jsonb('copy').$type<Record<string, string>>().default({}).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
@@ -55,5 +57,7 @@ export const agreementSettings = pgTable('agreement_settings', {
   countersignatureImage: text('countersignature_image'),
   countersignatureName: text('countersignature_name'),
   countersignatureTitle: text('countersignature_title'),
+  /** Workspace-wide portal wording (the `global` copy kind), keyed by slot. */
+  portalCopy: jsonb('portal_copy').$type<Record<string, string>>().default({}).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })

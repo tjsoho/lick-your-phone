@@ -6,6 +6,8 @@ import { getIntakeQuestions } from "@/server-actions/intake";
 import { getServices } from "@/server-actions/services";
 import { getProposalLineItems } from "@/server-actions/proposals";
 import PortalBackground from "@/components/portal/PortalBackground";
+import { getAgreementSettings } from "@/server-actions/agreement-settings";
+import { resolveCopy, type CopyOverrides } from "@/lib/portal-copy";
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,14 @@ interface Props {
 export default async function IntakeRoutePage({ params }: Props) {
   const { token } = await params;
   const supabase = await createClient();
+
+  // Wording first: the error screens below are client-facing too. The
+  // onboarding page's own, plus the workspace-wide set.
+  const [{ data: intakePage }, agreementSettings] = await Promise.all([
+    supabase.from("pages").select("copy").eq("slug", "intake").maybeSingle(),
+    getAgreementSettings(),
+  ]);
+  const intakeCopy = (intakePage?.copy as CopyOverrides | null) ?? {};
 
   // 1. Validate token
   const { data: proposal, error: proposalError } = await supabase
@@ -55,11 +65,10 @@ export default async function IntakeRoutePage({ params }: Props) {
     return (
       <div className="flex h-dvh flex-col items-center justify-center bg-lyp-black px-6 text-center">
         <h1 className="font-heading text-4xl text-lyp-cherry mb-4">
-          Link Not Found
+          {resolveCopy("intake", "linkNotFoundTitle", intakeCopy)}
         </h1>
         <p className="font-body text-lyp-white/60 max-w-sm">
-          This intake link is invalid or has expired. Please contact your
-          account manager for an updated link.
+          {resolveCopy("intake", "linkNotFoundBody", intakeCopy)}
         </p>
       </div>
     );
@@ -113,11 +122,10 @@ export default async function IntakeRoutePage({ params }: Props) {
     return (
       <div className="flex h-dvh flex-col items-center justify-center bg-lyp-black px-6 text-center">
         <h1 className="font-heading text-4xl text-lyp-cherry mb-4">
-          Error Loading Services
+          {resolveCopy("intake", "servicesErrorTitle", intakeCopy)}
         </h1>
         <p className="font-body text-lyp-white/60 max-w-sm">
-          There was an error loading the services for this proposal. Please
-          contact your account manager for assistance.
+          {resolveCopy("intake", "servicesErrorBody", intakeCopy)}
         </p>
       </div>
     );
@@ -181,6 +189,12 @@ export default async function IntakeRoutePage({ params }: Props) {
         pages={[]}
         services={services}
         initialSelections={selections}
+        pageCopy={{ intake: intakeCopy }}
+        agreement={{
+          termsClauses: [],
+          postSignatureText: agreementSettings.postSignatureText,
+          portalCopy: agreementSettings.portalCopy,
+        }}
       >
         <IntakePage
           questions={intakeQuestions}

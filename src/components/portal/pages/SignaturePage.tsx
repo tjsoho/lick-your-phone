@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import { useProposal } from "../ProposalContext";
+import { useCopy, useProposal } from "../ProposalContext";
 import { signProposal } from "@/server-actions/signature";
 import Reveal, { revealDelay } from "../Reveal";
 import { X } from "lucide-react";
@@ -18,6 +18,7 @@ export default function SignaturePage() {
     setCurrentPage,
     paymentCaptured,
   } = useProposal();
+  const t = useCopy("signature");
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [termsOpen, setTermsOpen] = useState(false);
@@ -205,7 +206,7 @@ export default function SignaturePage() {
           </svg>
         </Reveal>
         <h1 className="portal-reveal font-heading text-3xl md:text-5xl text-lyp-white mb-4" style={{ animationDelay: `${revealDelay(1)}ms` }}>
-          Agreement Signed
+          {t("signedTitle")}
         </h1>
         <p className="portal-reveal font-body text-sm text-lyp-white/60 max-w-sm mb-8" style={{ animationDelay: `${revealDelay(2)}ms` }}>
           {agreement.postSignatureText}
@@ -231,7 +232,7 @@ export default function SignaturePage() {
                   d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              Download Contract PDF
+              {t("downloadButton")}
             </a>
           )}
           {paymentPageIndex !== -1 && !paymentCaptured && (
@@ -239,7 +240,7 @@ export default function SignaturePage() {
               onClick={() => setCurrentPage(paymentPageIndex)}
               className="inline-flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon justify-center"
             >
-              Add your payment details
+              {t("addPaymentButton")}
             </button>
           )}
         </Reveal>
@@ -274,7 +275,7 @@ export default function SignaturePage() {
           </svg>
         </Reveal>
         <h1 className="portal-reveal font-heading text-3xl md:text-5xl text-lyp-white mb-4" style={{ animationDelay: `${revealDelay(1)}ms` }}>
-          Agreement Signed
+          {t("signedTitle")}
         </h1>
         <p className="portal-reveal font-body text-sm text-lyp-white/60 max-w-sm mb-8" style={{ animationDelay: `${revealDelay(2)}ms` }}>
           {agreement.postSignatureText}
@@ -300,7 +301,7 @@ export default function SignaturePage() {
                   d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
               </svg>
-              Download Contract PDF
+              {t("downloadButton")}
             </a>
           )}
           {paymentPageIndex !== -1 && !paymentCaptured && (
@@ -308,7 +309,7 @@ export default function SignaturePage() {
               onClick={() => setCurrentPage(paymentPageIndex)}
               className="inline-flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon justify-center"
             >
-              Add your payment details
+              {t("addPaymentButton")}
             </button>
           )}
         </Reveal>
@@ -329,27 +330,27 @@ export default function SignaturePage() {
         index={0}
         className="font-heading text-3xl md:text-5xl text-lyp-white mb-2"
       >
-        Sign Your Agreement
+        {t("heading")}
       </Reveal>
       <Reveal
         as="p"
         index={1}
         className="font-body text-sm text-lyp-white/50 mb-6"
       >
-        Review and sign to confirm your selected services.
+        {t("intro")}
       </Reveal>
 
       {noSelections ? (
         <div className="flex flex-1 flex-col items-center justify-center">
           <Reveal as="p" index={2} className="font-body text-lyp-white/40 text-lg">
-            No services selected.
+            {t("noServicesTitle")}
           </Reveal>
           <Reveal
             as="p"
             index={3}
             className="font-body text-lyp-white/30 text-sm mt-2"
           >
-            Go back and select at least one service before signing.
+            {t("noServicesBody")}
           </Reveal>
         </div>
       ) : (
@@ -360,7 +361,7 @@ export default function SignaturePage() {
               htmlFor="signer-email"
               className="block font-body text-sm text-lyp-white/70 mb-2"
             >
-              Your email address
+              {t("emailLabel")}
             </label>
             <input
               id="signer-email"
@@ -387,7 +388,7 @@ export default function SignaturePage() {
               would offset that rect for anyone who starts drawing mid-entry. */}
           <Reveal variant="fade" index={3}>
             <p className="font-body text-sm text-lyp-white/70 mb-2">
-              Draw your signature below
+              {t("signatureLabel")}
             </p>
             <div className="w-full max-w-md rounded-xl border-2 border-lyp-white/20 bg-lyp-white/5 overflow-hidden">
               <canvas
@@ -409,7 +410,7 @@ export default function SignaturePage() {
               disabled={signState === "signing"}
               className="mt-2 font-body text-xs text-lyp-white/40 underline hover:text-lyp-white/60 transition-colors disabled:opacity-30"
             >
-              Clear signature
+              {t("clearButton")}
             </button>
           </Reveal>
 
@@ -418,16 +419,15 @@ export default function SignaturePage() {
             className="portal-reveal font-body text-xs text-lyp-white/40 max-w-md leading-relaxed"
             style={{ animationDelay: `${revealDelay(4)}ms` }}
           >
-            By clicking &ldquo;I Agree &amp; Sign&rdquo; you confirm that you
-            have reviewed the selected services and pricing, and agree to the{" "}
+            {t("agreementText")}{" "}
             <button
               type="button"
               onClick={() => setTermsOpen(true)}
               className="font-semibold text-lyp-white/80 underline underline-offset-2 transition-colors hover:text-lyp-cherry"
             >
-              terms and conditions
+              {t("termsLinkText")}
             </button>
-            .
+            {t("agreementTextAfter")}
           </p>
 
           {/* Terms, read in place rather than navigating away mid-signature */}
@@ -445,7 +445,7 @@ export default function SignaturePage() {
               >
                 <div className="flex items-center justify-between gap-4 border-b border-lyp-white/10 px-6 py-4">
                   <h2 className="font-heading text-lg text-lyp-white">
-                    Terms &amp; Conditions
+                    {t("termsTitle")}
                   </h2>
                   <button
                     type="button"
@@ -460,7 +460,7 @@ export default function SignaturePage() {
                 <div className="overflow-y-auto px-6 py-5">
                   {agreement.termsClauses.length === 0 ? (
                     <p className="font-body text-sm text-lyp-white/50">
-                      No terms have been published yet.
+                      {t("termsEmpty")}
                     </p>
                   ) : (
                     <ol className="space-y-3">
@@ -485,7 +485,7 @@ export default function SignaturePage() {
                     onClick={() => setTermsOpen(false)}
                     className="rounded-lg bg-lyp-cherry px-5 py-2 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon"
                   >
-                    Close
+                    {t("termsCloseButton")}
                   </button>
                 </div>
               </div>
@@ -528,10 +528,10 @@ export default function SignaturePage() {
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                     />
                   </svg>
-                  Signing...
+                  {t("signingButton")}
                 </span>
               ) : (
-                "I Agree & Sign"
+                t("signButton")
               )}
             </button>
           </Reveal>

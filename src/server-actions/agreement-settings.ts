@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/server";
 import { revalidatePath } from "next/cache";
+import type { CopyOverrides } from "@/lib/portal-copy";
 
 export type AgreementSettings = {
   termsAndConditions: string;
@@ -9,6 +10,8 @@ export type AgreementSettings = {
   countersignatureImage: string | null;
   countersignatureName: string;
   countersignatureTitle: string;
+  /** Workspace-wide portal wording (the `global` copy kind). */
+  portalCopy: CopyOverrides;
 };
 
 /** Used when the row is missing, so a contract never renders empty. */
@@ -19,6 +22,7 @@ const FALLBACK: AgreementSettings = {
   countersignatureImage: null,
   countersignatureName: "",
   countersignatureTitle: "",
+  portalCopy: {},
 };
 
 /**
@@ -31,7 +35,7 @@ export async function getAgreementSettings(): Promise<AgreementSettings> {
     const { data, error } = await supabase
       .from("agreement_settings")
       .select(
-        "terms_and_conditions, post_signature_text, countersignature_image, countersignature_name, countersignature_title",
+        "terms_and_conditions, post_signature_text, countersignature_image, countersignature_name, countersignature_title, portal_copy",
       )
       .eq("id", 1)
       .maybeSingle();
@@ -45,6 +49,7 @@ export async function getAgreementSettings(): Promise<AgreementSettings> {
       countersignatureImage: data.countersignature_image ?? null,
       countersignatureName: data.countersignature_name ?? "",
       countersignatureTitle: data.countersignature_title ?? "",
+      portalCopy: (data.portal_copy as CopyOverrides | null) ?? {},
     };
   } catch {
     return FALLBACK;
@@ -57,6 +62,7 @@ export async function updateAgreementSettings(patch: {
   countersignature_image?: string | null;
   countersignature_name?: string;
   countersignature_title?: string;
+  portal_copy?: CopyOverrides;
 }) {
   try {
     const supabase = await createClient();

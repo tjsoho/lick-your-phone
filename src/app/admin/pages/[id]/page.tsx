@@ -45,14 +45,17 @@ export default async function EditPagePage({
   // Service pages send you to the service record for pricing, so fetch the
   // slug that link needs.
   let serviceSlug: string | null = null;
+  // The slide shows the service's name, so the title field starts from it.
+  let serviceName: string | null = null;
   if (serviceId) {
     const supabase = await createClient();
     const { data: service } = await supabase
       .from("services")
-      .select("slug")
+      .select("slug, name")
       .eq("id", serviceId)
       .single();
     serviceSlug = service?.slug ?? null;
+    serviceName = service?.name ?? null;
   }
 
   return (
@@ -96,8 +99,11 @@ export default async function EditPagePage({
         initialImage={(record.featured_image as string | null) ?? null}
         initialPosition={(record.image_position as string | null) ?? "right"}
         initialBlocks={blocks}
+        initialCopy={(record.copy as Record<string, string> | null) ?? {}}
         isServicePage={!!serviceId}
+        serviceId={serviceId}
         serviceSlug={serviceSlug}
+        serviceName={serviceName}
       />
     </div>
   );

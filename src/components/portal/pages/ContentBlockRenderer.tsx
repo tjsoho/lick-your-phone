@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { resolveCopy } from "@/lib/portal-copy";
 import { ContentBlock } from "../ProposalContext";
 import MediaCarousel from "./MediaCarousel";
 import Reveal, { STEP } from "../Reveal";
@@ -117,8 +118,13 @@ const MEASURE = "max-w-[70ch]";
  * @param base the delay (ms) the block itself arrives at. Items inside the
  *   block cascade on from there, so a list reads top to bottom rather than
  *   landing as one plate.
+ * @param resultsLabel the editable label above each result.
  */
-function renderBlock(block: ContentBlock, base: number): ReactNode {
+function renderBlock(
+  block: ContentBlock,
+  base: number,
+  resultsLabel: string,
+): ReactNode {
   if (block.type === "heading") {
     return (
       <Reveal
@@ -255,7 +261,7 @@ function renderBlock(block: ContentBlock, base: number): ReactNode {
             )}
             <div className="min-w-0 pt-0.5">
               <p className="font-heading text-[11px] font-bold uppercase tracking-[0.2em] text-lyp-white lg:text-xs">
-                Results
+                {resultsLabel}
               </p>
               {result.text && (
                 <p className="mt-1 font-body text-[13px] leading-snug text-lyp-white/80 lg:text-sm lg:leading-snug">
@@ -311,6 +317,7 @@ export default function ContentBlockRenderer({
   leadingGap = "",
   revealFrom = 0,
   revealStep = STEP,
+  resultsLabel = resolveCopy("results", "resultsLabel"),
 }: {
   blocks: ContentBlock[];
   /**
@@ -327,6 +334,11 @@ export default function ContentBlockRenderer({
   revealFrom?: number;
   /** Interval between blocks. Dense pages tighten it. */
   revealStep?: number;
+  /**
+   * The label above each result. This component has no page to read wording
+   * from, so the page passes it down; unset, it is the registry default.
+   */
+  resultsLabel?: string;
 }) {
   // `offset_image` is layout data for the page's image column, not a block in
   // the text flow. Dropping it here (rather than rendering null) keeps it from
@@ -353,7 +365,7 @@ export default function ContentBlockRenderer({
         // inside another fading box compounds the opacity into mush.
         return (
           <div key={block.id} className={gap}>
-            {renderBlock(block, revealFrom + i * revealStep)}
+            {renderBlock(block, revealFrom + i * revealStep, resultsLabel)}
           </div>
         );
       })}

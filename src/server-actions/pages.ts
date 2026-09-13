@@ -2,6 +2,7 @@
 
 import { createClient } from "@/utils/server";
 import { revalidatePath } from "next/cache";
+import type { CopyOverrides } from "@/lib/portal-copy";
 
 export async function togglePageVisibility(id: string, visible: boolean) {
   try {
@@ -133,7 +134,7 @@ export async function getPageWithBlocks(id: string) {
     const { data, error } = await supabase
       .from("pages")
       .select(
-        `id, slug, title, type, sequence, visible, service_id, featured_image, image_position,
+        `id, slug, title, type, sequence, visible, service_id, featured_image, image_position, copy,
          content_blocks ( id, type, content, sequence )`
       )
       .eq("id", id)
@@ -236,6 +237,33 @@ export async function updatePageImage(
   }
 }
 
+/**
+ * Replace a page's wording overrides.
+ *
+ * Blank values are dropped rather than stored, so clearing a field falls back
+ * to the default instead of rendering nothing.
+ */
+export async function updatePageCopy(pageId: string, copy: CopyOverrides) {
+  try {
+    const cleaned = Object.fromEntries(
+      Object.entries(copy).filter(
+        ([, value]) => typeof value === "string" && value.trim() !== "",
+      ),
+    );
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("pages")
+      .update({ copy: cleaned, updated_at: new Date().toISOString() })
+      .eq("id", pageId);
+
+    if (error) throw error;
+    revalidatePath(`/admin/pages/${pageId}`);
+    return { error: null };
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+}
 
 /**
  * Pages the portal addresses by slug. Removing one leaves the presentation

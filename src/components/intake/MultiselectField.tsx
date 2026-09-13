@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, X } from "lucide-react";
+import { useCopy } from "@/components/portal/ProposalContext";
 import type { FieldProps } from "./types";
 
 export default function MultiselectField({
@@ -13,6 +14,7 @@ export default function MultiselectField({
   const selected = (value as string[]) ?? [];
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const t = useCopy("intake");
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -50,8 +52,8 @@ export default function MultiselectField({
         >
           <span className={selected.length === 0 ? "text-lyp-white/30" : ""}>
             {selected.length === 0
-              ? "Select options..."
-              : `${selected.length} selected`}
+              ? t("multiselectEmpty")
+              : t("multiselectCount", { count: selected.length })}
           </span>
           <ChevronDown
             className={`h-4 w-4 text-lyp-white/40 transition-transform ${open ? "rotate-180" : ""}`}

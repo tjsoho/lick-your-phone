@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus, Trash2 } from "lucide-react";
+import { useCopy } from "@/components/portal/ProposalContext";
 import type { FieldProps } from "./types";
 
 interface SubField {
@@ -18,6 +19,7 @@ export default function RepeatableGroupField({
   value,
   onChange,
 }: FieldProps) {
+  const t = useCopy("intake");
   const config = (question.config as unknown as GroupConfig) ?? {
     subFields: [],
   };
@@ -60,7 +62,7 @@ export default function RepeatableGroupField({
           >
             <div className="flex items-center justify-between">
               <span className="font-body text-xs text-lyp-white/40">
-                Entry {i + 1}
+                {t("groupEntryLabel", { number: i + 1 })}
               </span>
               <button
                 type="button"
@@ -101,7 +103,7 @@ export default function RepeatableGroupField({
           className="flex items-center gap-2 rounded-lg border border-dashed border-lyp-white/20 px-4 py-3 font-body text-sm text-lyp-white/60 transition-colors hover:border-lyp-cherry hover:text-lyp-cherry"
         >
           <Plus className="h-4 w-4" />
-          Add another
+          {t("groupAddButton")}
         </button>
       </div>
     </div>

@@ -1,0 +1,26 @@
+import type { CopySlot } from "./types";
+
+export const INTAKE_COPY: CopySlot[] = [
+  { key: "stepProgress", label: "Step counter", default: "Step {current} of {total}", hint: "{current} and {total} are replaced with numbers." },
+  { key: "backButton", label: "Back button", default: "Back" },
+  { key: "continueButton", label: "Continue button", default: "Continue" },
+  { key: "submitButton", label: "Submit button", default: "Submit" },
+  { key: "doneTitle", label: "Finished: title", default: "All Done!" },
+  { key: "doneBody", label: "Finished: message", default: "Thank you for completing the onboarding form. Your dedicated marketer will be in touch to schedule your onboarding call.", multiline: true },
+  { key: "editResponses", label: "Edit responses link", default: "Want to edit your responses?" },
+  { key: "addressStateOption", label: "Address: state dropdown", default: "State" },
+  { key: "fileDropPrompt", label: "File upload: prompt", default: "Drop files here or click to browse" },
+  { key: "fileUploading", label: "File upload: uploading", default: "Uploading..." },
+  { key: "multiselectEmpty", label: "Multi-select: nothing chosen", default: "Select options..." },
+  { key: "multiselectCount", label: "Multi-select: count", default: "{count} selected", hint: "{count} is replaced with a number." },
+  { key: "providersNoneTitle", label: "Provider picker: none available", default: "No providers available for your area yet." },
+  { key: "providersNoneBody", label: "Provider picker: none available, message", default: "Nothing to do here — continue to the next step and your account manager will arrange this with you directly.", multiline: true },
+  { key: "providerPortfolioLink", label: "Provider picker: portfolio link", default: "Portfolio" },
+  { key: "groupEntryLabel", label: "Repeating group: entry heading", default: "Entry {number}", hint: "{number} is replaced with the entry's position." },
+  { key: "groupAddButton", label: "Repeating group: add button", default: "Add another" },
+  { key: "sameAsLabel", label: "\"Same as\" checkbox", default: "Same as above", hint: "Used when the question's own same-as setting doesn't name a label." },
+  { key: "linkNotFoundTitle", label: "Broken link: title", default: "Link Not Found" },
+  { key: "linkNotFoundBody", label: "Broken link: message", default: "This onboarding link is invalid or has expired. Please contact your account manager for an updated link.", multiline: true },
+  { key: "servicesErrorTitle", label: "Loading problem: title", default: "Error Loading Services" },
+  { key: "servicesErrorBody", label: "Loading problem: message", default: "There was an error loading your services. Please contact your account manager for assistance.", multiline: true },
+];

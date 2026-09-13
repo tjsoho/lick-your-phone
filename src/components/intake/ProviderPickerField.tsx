@@ -1,6 +1,7 @@
 "use client";
 
 import { ExternalLink, Check } from "lucide-react";
+import { useCopy } from "@/components/portal/ProposalContext";
 import type { FieldProps } from "./types";
 
 export default function ProviderPickerField({
@@ -9,6 +10,7 @@ export default function ProviderPickerField({
   onChange,
   providers,
 }: FieldProps) {
+  const t = useCopy("intake");
   const selected = (value as string[]) ?? [];
   const providerType = (question.config as Record<string, string>)
     ?.providerType;
@@ -40,11 +42,10 @@ export default function ProviderPickerField({
           {question.field_label}
         </label>
         <p className="font-body text-sm text-lyp-white/70">
-          No providers available for your area yet.
+          {t("providersNoneTitle")}
         </p>
         <p className="font-body text-sm text-lyp-white/60">
-          Nothing to do here — continue to the next step and your account
-          manager will arrange this with you directly.
+          {t("providersNoneBody")}
         </p>
       </div>
     );
@@ -111,7 +112,7 @@ export default function ProviderPickerField({
                     onClick={(e) => e.stopPropagation()}
                     className="flex items-center gap-1 font-body text-xs text-lyp-white/40 hover:text-lyp-white transition-colors"
                   >
-                    Portfolio
+                    {t("providerPortfolioLink")}
                     <ExternalLink className="h-3 w-3" />
                   </a>
                 )}

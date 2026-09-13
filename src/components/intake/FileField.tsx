@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useMemo } from "react";
 import { Upload, X, FileIcon } from "lucide-react";
 import { uploadIntakeFile } from "@/server-actions/intake";
+import { useCopy } from "@/components/portal/ProposalContext";
 import type { FieldProps } from "./types";
 
 interface UploadedFile {
@@ -17,6 +18,7 @@ export default function FileField({ question, value, onChange }: FieldProps) {
   const [dragOver, setDragOver] = useState(false);
   const [error, setError] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = useCopy("intake");
 
   const upload = useCallback(
     async (fileList: FileList) => {
@@ -88,7 +90,7 @@ export default function FileField({ question, value, onChange }: FieldProps) {
       >
         <Upload className="mb-2 h-8 w-8 text-lyp-white/40" />
         <p className="font-body text-sm text-lyp-white/60">
-          {uploading ? "Uploading..." : "Drop files here or click to browse"}
+          {uploading ? t("fileUploading") : t("fileDropPrompt")}
         </p>
         <input
           ref={inputRef}

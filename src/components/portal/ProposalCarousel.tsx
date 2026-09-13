@@ -7,11 +7,13 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   ProposalProvider,
   useProposal,
+  useCopy,
   type ProposalData,
   type PageData,
   type Selection,
   type AgreementCopy,
 } from "./ProposalContext";
+import type { CopyOverrides } from "@/lib/portal-copy";
 import RunningTotal from "./RunningTotal";
 import DiscountCountdown from "./DiscountCountdown";
 import ServicePage from "./pages/ServicePage";
@@ -178,6 +180,7 @@ function CarouselInner() {
     discountLive,
   } = useProposal();
   const reduceMotion = useReducedMotion();
+  const t = useCopy("global");
 
   // Direction is resolved DURING render, not in an effect: the incoming slide
   // has to know which way it is travelling on the very first frame it paints.
@@ -324,7 +327,7 @@ function CarouselInner() {
             className={`${backLocked ? "invisible " : ""}group flex items-center gap-1.5 rounded-lg border border-lyp-white/20 px-4 py-2 font-body text-sm text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-white/10 active:scale-[0.97] disabled:opacity-20 motion-reduce:transition-none motion-reduce:active:scale-100`}
           >
             <ChevronLeft className="h-5 w-5 transition-transform duration-300 ease-brand group-hover:-translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
-            Back
+            {t("backButton")}
           </button>
 
           {/* The counter re-keys on the page index, so the number itself
@@ -335,7 +338,7 @@ function CarouselInner() {
               className="portal-reveal portal-reveal-fade inline-block tabular-nums"
               style={{ animationDelay: "0ms", animationDuration: "420ms" }}
             >
-              {currentPage + 1} / {pages.length}
+              {t("pageCounter", { current: currentPage + 1, total: pages.length })}
             </span>
           </span>
 
@@ -344,7 +347,7 @@ function CarouselInner() {
             disabled={currentPage === pages.length - 1}
             className="group flex items-center gap-1.5 rounded-lg bg-lyp-cherry px-5 py-2 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] disabled:opacity-20 motion-reduce:transition-none motion-reduce:active:scale-100"
           >
-            Next
+            {t("nextButton")}
             <ChevronRight className="h-5 w-5 transition-transform duration-300 ease-brand group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
           </button>
         </div>
@@ -361,6 +364,8 @@ export interface ProposalCarouselProps {
   savedSelections?: Selection[] | null;
   paymentCaptured?: boolean;
   discountOverrides?: Record<string, number>;
+  /** Wording overrides for the structural pages, keyed by slug. */
+  pageCopy?: Record<string, CopyOverrides>;
 }
 
 export default function ProposalCarousel({
@@ -371,6 +376,7 @@ export default function ProposalCarousel({
   savedSelections,
   paymentCaptured,
   discountOverrides,
+  pageCopy,
 }: ProposalCarouselProps) {
   return (
     <ProposalProvider
@@ -381,6 +387,7 @@ export default function ProposalCarousel({
       initialSelections={savedSelections ?? undefined}
       paymentCaptured={paymentCaptured}
       discountOverrides={discountOverrides}
+      pageCopy={pageCopy}
     >
       <CarouselInner />
     </ProposalProvider>

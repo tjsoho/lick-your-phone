@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { updatePage } from "@/server-actions/pages";
+import { updateService } from "@/server-actions/services";
 import { useAutosave } from "@/hooks/use-autosave";
 import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 
@@ -17,22 +18,35 @@ interface PageTitleFormProps {
   pageId: string;
   initialTitle: string;
   initialSlug: string;
+  /**
+   * Set on a service page. The slide, summary and contract all show the
+   * service's name rather than the page title, so the title field edits both.
+   */
+  serviceId?: string;
+  /** The service's current name, shown in place of the page title if given. */
+  initialServiceName?: string;
 }
 
 /**
  * Title and slug, saved as you type.
  *
  * Sends only `title` and `slug` — `updatePage` applies a partial patch, so the
- * featured image and image position are left untouched.
+ * featured image and image position are left untouched. On a service page the
+ * title is also written to `services.name`; the service slug is never touched.
  */
 export default function PageTitleForm({
   pageId,
   initialTitle,
   initialSlug,
   onDraftChange,
+  serviceId,
+  initialServiceName,
 }: PageTitleFormProps) {
   const router = useRouter();
-  const [title, setTitle] = useState(initialTitle);
+  const isService = !!serviceId;
+  const [title, setTitle] = useState(
+    isService ? (initialServiceName ?? initialTitle) : initialTitle,
+  );
   const [slug, setSlug] = useState(initialSlug);
 
   useEffect(() => {
@@ -47,6 +61,10 @@ export default function PageTitleForm({
     { title: title.trim(), slug: slug.trim() },
     async (value) => {
       const res = await updatePage(pageId, value);
+      if (!res.error && serviceId) {
+        const svc = await updateService(serviceId, { name: value.title });
+        if (svc.error) return { error: svc.error };
+      }
       if (!res.error) {
         // The slug is part of the portal URL, so let the rest of the page
         // catch up rather than trusting local state.
@@ -63,7 +81,7 @@ export default function PageTitleForm({
     <div>
       <div className="mb-5 flex items-center justify-between gap-3">
         <h2 className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
-          Title &amp; Address
+          {isService ? "Name" : "Title"} &amp; Address
         </h2>
         <SaveStatusBadge status={status} />
       </div>
@@ -71,15 +89,20 @@ export default function PageTitleForm({
       <div className="space-y-4">
         <div>
           <label htmlFor="page-title" className={labelClasses}>
-            Page Title
+            {isService ? "Service name" : "Page Title"}
           </label>
           <input
             id="page-title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Page title"
+            placeholder={isService ? "Service name" : "Page title"}
             className={fieldClasses}
           />
+          {isService && (
+            <p className="mt-1.5 font-body text-[11px] text-[#A89898]">
+              Shown on the slide, the summary and the contract.
+            </p>
+          )}
         </div>
 
         <div>

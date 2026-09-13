@@ -1,5 +1,6 @@
 "use client";
 
+import { useCopy } from "@/components/portal/ProposalContext";
 import type { FieldProps } from "./types";
 
 interface AddressValue {
@@ -17,6 +18,7 @@ export default function AddressField({
   value,
   onChange,
 }: FieldProps) {
+  const t = useCopy("intake");
   const addr: AddressValue = (value as AddressValue) ?? {
     street: "",
     city: "",
@@ -61,7 +63,7 @@ export default function AddressField({
             className={inputClass}
           >
             <option className="text-black" value="">
-              State
+              {t("addressStateOption")}
             </option>
             {AU_STATES.map((s) => (
               <option className="text-black" key={s} value={s}>

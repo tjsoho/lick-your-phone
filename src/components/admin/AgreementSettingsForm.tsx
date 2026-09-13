@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Images, PenLine, Trash2 } from "lucide-react";
+import { FileText, Images, PenLine, Trash2, Type } from "lucide-react";
 import MediaLibraryModal from "./MediaLibraryModal";
 import { updateAgreementSettings } from "@/server-actions/agreement-settings";
 import { useAutosave } from "@/hooks/use-autosave";
 import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
+import { CopyFields, cleanCopy } from "@/components/admin/PageWordingForm";
+import type { CopyOverrides } from "@/lib/portal-copy";
 
 const EASE = "ease-brand";
 
@@ -20,6 +22,7 @@ type Props = {
   initialImage: string | null;
   initialName: string;
   initialTitle: string;
+  initialPortalCopy: CopyOverrides;
 };
 
 function Card({
@@ -69,6 +72,7 @@ export default function AgreementSettingsForm({
   initialImage,
   initialName,
   initialTitle,
+  initialPortalCopy,
 }: Props) {
   const [terms, setTerms] = useState(initialTerms);
   const [postSignature, setPostSignature] = useState(initialPostSignature);
@@ -76,6 +80,7 @@ export default function AgreementSettingsForm({
   const [name, setName] = useState(initialName);
   const [title, setTitle] = useState(initialTitle);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [portalCopy, setPortalCopy] = useState(initialPortalCopy);
 
   const termsStatus = useAutosave(terms, async (value) =>
     updateAgreementSettings({ terms_and_conditions: value }),
@@ -93,6 +98,10 @@ export default function AgreementSettingsForm({
         countersignature_name: value.name,
         countersignature_title: value.title,
       }),
+  ).status;
+
+  const wordingStatus = useAutosave(cleanCopy(portalCopy), async (value) =>
+    updateAgreementSettings({ portal_copy: value }),
   ).status;
 
   const clauseCount = terms.split("\n").filter((l) => l.trim()).length;
@@ -221,6 +230,21 @@ export default function AgreementSettingsForm({
           aria-label="Post-signature message"
           className={`${fieldClasses} resize-y leading-relaxed`}
           placeholder="Thank you for signing…"
+        />
+      </Card>
+
+      <Card
+        icon={Type}
+        title="Client Portal Wording"
+        description="Buttons, price bar and link messages that appear on every slide rather than belonging to one page. Leave a field empty to use the wording shown in it."
+        status={<SaveStatusBadge status={wordingStatus} />}
+        delay="200ms"
+      >
+        <CopyFields
+          kinds={["global"]}
+          value={portalCopy}
+          onChange={setPortalCopy}
+          idPrefix="settings"
         />
       </Card>
 

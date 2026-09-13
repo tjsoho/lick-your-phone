@@ -21,6 +21,7 @@ export function mapPages(raw: any[]): PageData[] {
     imagePosition: p.image_position as PageData["imagePosition"],
     sequence: p.sequence,
     serviceId: p.service_id,
+    copy: p.copy ?? {},
     contentBlocks: cast<ContentBlock>(p.content_blocks).sort(bySeq),
   }));
 }

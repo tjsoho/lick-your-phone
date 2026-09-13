@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Check, ChevronDown, X } from "lucide-react";
-import { useProposal } from "../ProposalContext";
+import { useCopy, useProposal } from "../ProposalContext";
 import { cn } from "@/lib/utils";
 import Reveal, { STEP, revealDelay } from "../Reveal";
 
@@ -33,6 +33,7 @@ export default function SummaryPage() {
     deselectService,
     paymentCaptured,
   } = useProposal();
+  const t = useCopy("summary");
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -120,28 +121,27 @@ export default function SummaryPage() {
           index={0}
           className="font-heading text-3xl md:text-5xl text-lyp-white mb-2 uppercase tracking-tight"
         >
-          Your Summary
+          {t("heading")}
         </Reveal>
         <Reveal
           as="p"
           index={1}
           className="font-body text-sm text-lyp-white/75 mb-8"
         >
-          Here&apos;s everything you&apos;ve selected. Tap a service to see
-          details.
+          {t("intro")}
         </Reveal>
 
         {selectedServices.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
             <Reveal as="p" index={2} className="font-body text-lyp-white/70 text-lg">
-              No services selected yet.
+              {t("emptyTitle")}
             </Reveal>
             <Reveal
               as="p"
               index={3}
               className="font-body text-lyp-white/60 text-sm mt-2"
             >
-              Browse the pages to add the services you want.
+              {t("emptyBody")}
             </Reveal>
           </div>
         ) : (
@@ -182,7 +182,7 @@ export default function SummaryPage() {
                       <div className="flex items-center gap-2 shrink-0 ml-3 sm:gap-3 sm:ml-4">
                         {item.billing === "in_kind" ? (
                           <span className="font-body text-sm text-lyp-cherry">
-                            Complimentary
+                            {t("complimentary")}
                           </span>
                         ) : (
                           <span className="font-heading text-base text-lyp-white">
@@ -194,8 +194,8 @@ export default function SummaryPage() {
                             {formatCents(item.monthlyTarget)}
                             <span className="font-body text-xs text-lyp-white/70 ml-0.5">
                               {item.billing === "recurring_monthly"
-                                ? "/mo"
-                                : " one-off"}
+                                ? t("perMonthShort")
+                                : ` ${t("oneOffShort")}`}
                             </span>
                           </span>
                         )}
@@ -215,15 +215,17 @@ export default function SummaryPage() {
                       <div className="portal-reveal border-t border-lyp-white/10 px-5 py-4 space-y-4">
                         {item.isWeekly && (
                           <p className="font-body text-xs text-lyp-white/70">
-                            {formatCents(item.displayTarget)}/week (
-                            {formatCents(item.monthlyTarget)}/month)
+                            {t("weeklyBreakdown", {
+                              weekly: formatCents(item.displayTarget),
+                              monthly: formatCents(item.monthlyTarget),
+                            })}
                           </p>
                         )}
 
                         {item.inclusions.length > 0 && (
                           <div>
                             <p className="font-heading text-xs text-lyp-cherry uppercase tracking-wider mb-2">
-                              What&apos;s Included
+                              {t("includedHeading")}
                             </p>
                             <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
                               {item.inclusions
@@ -251,7 +253,7 @@ export default function SummaryPage() {
                         {item.clientObligations.length > 0 && (
                           <div>
                             <p className="font-heading text-xs text-lyp-white/70 uppercase tracking-wider mb-2">
-                              Your Commitments
+                              {t("commitmentsHeading")}
                             </p>
                             <ul className="space-y-1">
                               {item.clientObligations
@@ -287,7 +289,7 @@ export default function SummaryPage() {
                             className="flex items-center gap-2 rounded-lg border border-lyp-white/15 px-4 py-2 font-body text-xs text-lyp-white/85 transition-colors hover:border-lyp-cherry/40 hover:text-lyp-cherry"
                           >
                             <X className="h-3.5 w-3.5" />
-                            Remove this
+                            {t("removeButton")}
                           </button>
                         )}
                       </div>
@@ -305,7 +307,7 @@ export default function SummaryPage() {
             >
               <div className="rounded-xl border border-lyp-white/10 bg-lyp-white/5 p-6 space-y-4">
                 <h3 className="font-heading text-lg text-lyp-white text-center mb-3">
-                  Investment Summary
+                  {t("cardTitle")}
                 </h3>
 
                 <div className="space-y-3">
@@ -322,12 +324,14 @@ export default function SummaryPage() {
                         <div className="flex flex-col items-end shrink-0">
                           <span className="font-body text-xs text-lyp-white/90">
                             {item.billing === "in_kind" ? (
-                              "Free"
+                              t("free")
                             ) : (
                               <>
                                 {formatCents(item.monthlyTarget)}
                                 {item.billing === "recurring_monthly" && (
-                                  <span className="text-lyp-white/75">/mo</span>
+                                  <span className="text-lyp-white/75">
+                                    {t("perMonthShort")}
+                                  </span>
                                 )}
                               </>
                             )}
@@ -339,14 +343,15 @@ export default function SummaryPage() {
                               recurring one. */}
                           {item.billing === "recurring_monthly" ? (
                             <span className="font-body text-[10px] text-lyp-white/70 mt-0.5">
-                              for {item.billingCycleMonths}{" "}
                               {item.billingCycleMonths === 1
-                                ? "month"
-                                : "months"}
+                                ? t("forOneMonth")
+                                : t("forMonths", {
+                                    months: item.billingCycleMonths,
+                                  })}
                             </span>
                           ) : item.billing === "one_off" ? (
                             <span className="font-body text-[10px] text-lyp-white/70 mt-0.5">
-                              one-off payment
+                              {t("oneOffPayment")}
                             </span>
                           ) : null}
                         </div>
@@ -360,18 +365,20 @@ export default function SummaryPage() {
                     <>
                       <div className="flex justify-between">
                         <span className="font-body text-xs text-lyp-white/75">
-                          Full price
+                          {t("fullPrice")}
                         </span>
                         <span className="font-body text-xs text-lyp-white/70 line-through">
-                          {formatCents(monthlyFull)}/mo
+                          {formatCents(monthlyFull)}
+                          {t("perMonthShort")}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-body text-xs text-lyp-gold">
-                          You save
+                          {t("youSave")}
                         </span>
                         <span className="font-body text-xs text-lyp-gold">
-                          -{formatCents(monthlySavings)}/mo
+                          -{formatCents(monthlySavings)}
+                          {t("perMonthShort")}
                         </span>
                       </div>
                     </>
@@ -380,12 +387,12 @@ export default function SummaryPage() {
                   {monthlyTotal > 0 && (
                     <div className="flex justify-between items-baseline gap-3 pt-1">
                       <span className="font-heading text-sm text-lyp-white">
-                        Monthly Total
+                        {t("monthlyTotal")}
                       </span>
                       <span className="whitespace-nowrap font-heading text-2xl text-lyp-white">
                         {formatCents(monthlyTotal)}
                         <span className="font-body text-xs text-lyp-white/75 ml-1">
-                          /mo + GST
+                          {t("gstSuffixMonthly")}
                         </span>
                       </span>
                     </div>
@@ -400,7 +407,9 @@ export default function SummaryPage() {
                             : "font-heading text-sm text-lyp-white"
                         }
                       >
-                        {oneOffCount === 1 ? "One-off payment" : "One-off payments"}
+                        {oneOffCount === 1
+                          ? t("oneOffTotalSingle")
+                          : t("oneOffTotalPlural")}
                       </span>
                       <span
                         className={cn(
@@ -417,7 +426,7 @@ export default function SummaryPage() {
                         )}
                         {formatCents(oneOffTotal)}
                         <span className="font-body text-xs text-lyp-white/75 ml-1">
-                          + GST
+                          {t("gstSuffix")}
                         </span>
                       </span>
                     </div>
@@ -425,7 +434,7 @@ export default function SummaryPage() {
 
                   {monthlyTotal === 0 && oneOffTotal === 0 && (
                     <p className="pt-1 text-center font-heading text-sm text-lyp-white">
-                      Complimentary
+                      {t("complimentary")}
                     </p>
                   )}
                 </div>
@@ -434,11 +443,10 @@ export default function SummaryPage() {
                   <div className="mt-2 flex flex-col items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-5 py-4">
                     <span className="inline-flex items-center gap-2 font-body text-sm text-green-400">
                       <span className="h-2 w-2 rounded-full bg-green-400" />
-                      Payment details captured
+                      {t("paymentCapturedTitle")}
                     </span>
                     <p className="font-body text-xs text-lyp-white/75 text-center">
-                      Your payment information is on file. No further action
-                      needed.
+                      {t("paymentCapturedBody")}
                     </p>
                   </div>
                 ) : proposal.status === "signed" ? (
@@ -446,7 +454,7 @@ export default function SummaryPage() {
                     onClick={() => setCurrentPage(paymentIdx)}
                     className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 mt-2"
                   >
-                    Add your payment details
+                    {t("addPaymentButton")}
                   </button>
                 ) : (
                   signatureIdx >= 0 && (
@@ -454,7 +462,7 @@ export default function SummaryPage() {
                       onClick={() => setCurrentPage(signatureIdx)}
                       className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 mt-2"
                     >
-                      Proceed to Signature
+                      {t("proceedButton")}
                     </button>
                   )
                 )}

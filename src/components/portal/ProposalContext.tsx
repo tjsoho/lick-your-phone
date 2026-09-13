@@ -10,6 +10,11 @@ import {
 } from "react";
 import { useDiscountTimerLive } from "./DiscountCountdown";
 import {
+  resolveCopy,
+  type CopyKind,
+  type CopyOverrides,
+} from "@/lib/portal-copy";
+import {
   DISCOUNT_GRACE_MS,
   isDiscountLive,
   priceServices,
@@ -53,6 +58,8 @@ export interface PageData {
   featuredImage: string | null;
   imagePosition: "left" | "right" | null;
   contentBlocks: ContentBlock[];
+  /** Overrides for this page's fixed wording, keyed by slot. See src/lib/portal-copy. */
+  copy?: CopyOverrides;
 }
 
 export interface ProposalData {
@@ -78,6 +85,8 @@ export interface ProposalData {
 export interface AgreementCopy {
   termsClauses: string[];
   postSignatureText: string;
+  /** Workspace-wide wording shown on every slide (the `global` copy kind). */
+  portalCopy?: CopyOverrides;
 }
 
 export interface Selection {
@@ -100,6 +109,9 @@ interface ProposalContextValue {
 
   /** Terms and confirmation wording, authored in Agreement Settings. */
   agreement: AgreementCopy;
+
+  /** Wording overrides for the structural pages, keyed by slug (cover, summary, …). */
+  pageCopy: Record<string, CopyOverrides>;
 
   selections: Selection[];
   isSelected: (serviceId: string) => boolean;
@@ -159,10 +171,17 @@ interface ProviderProps {
   paymentCaptured?: boolean;
   /** Per-proposal discounts by service id, set in the dashboard's Presentation section. */
   discountOverrides?: Record<string, number>;
+  /**
+   * Wording overrides for the structural pages, keyed by slug. Separate from
+   * `pages` because some of those pages (payment, onboarding) aren't in the
+   * slide deck at every stage but their wording is still needed.
+   */
+  pageCopy?: Record<string, CopyOverrides>;
   children: ReactNode;
 }
 
 const NO_OVERRIDES: Record<string, number> = {};
+const NO_PAGE_COPY: Record<string, CopyOverrides> = {};
 
 export function ProposalProvider({
   proposal: initialProposal,
@@ -173,6 +192,7 @@ export function ProposalProvider({
   children,
   paymentCaptured = false,
   discountOverrides = NO_OVERRIDES,
+  pageCopy = NO_PAGE_COPY,
 }: ProviderProps) {
   const [proposal, setProposal] = useState<ProposalData>(initialProposal);
 
@@ -341,6 +361,7 @@ export function ProposalProvider({
     setCurrentPage,
     selections,
     agreement: agreement ?? { termsClauses: [], postSignatureText: "" },
+    pageCopy,
     discountLive,
     isSelected,
     selectedTierId,
@@ -358,5 +379,35 @@ export function ProposalProvider({
     <ProposalContext.Provider value={value}>
       {children}
     </ProposalContext.Provider>
+  );
+}
+
+/**
+ * Editable wording for a part of the portal.
+ *
+ * - `global`: workspace-wide wording (Settings).
+ * - `service` / `results`: pass the page, since each page has its own wording.
+ * - `cover`, `summary`, `signature`, `payment`, `intake`: found by slug, so
+ *   the page argument is optional.
+ *
+ * Returns `t(key, vars?)`, which falls back to the registered default. Works
+ * outside a provider too, returning defaults.
+ */
+export function useCopy(
+  kind: CopyKind,
+  page?: { copy?: CopyOverrides } | null,
+) {
+  const ctx = useContext(ProposalContext);
+  const overrides =
+    kind === "global"
+      ? ctx?.agreement.portalCopy
+      : page
+        ? page.copy
+        : ctx?.pageCopy[kind];
+
+  return useCallback(
+    (key: string, vars?: Record<string, string | number>) =>
+      resolveCopy(kind, key, overrides, vars),
+    [kind, overrides],
   );
 }

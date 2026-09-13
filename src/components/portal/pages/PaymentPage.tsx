@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import toast from "react-hot-toast";
-import { useProposal } from "../ProposalContext";
+import { useCopy, useProposal } from "../ProposalContext";
 import { capturePaymentDetails } from "@/server-actions/payment";
 import Link from "next/link";
 import Reveal, { revealDelay } from "../Reveal";
@@ -118,6 +118,8 @@ export default function PaymentPage() {
 /* ------------------------------------------------------------------ */
 
 function NoPaymentRequired() {
+  const t = useCopy("payment");
+
   return (
     <div className="flex h-full flex-col items-center justify-center px-6 text-center">
       <Reveal
@@ -143,14 +145,13 @@ function NoPaymentRequired() {
         className="portal-reveal font-heading text-3xl md:text-5xl text-lyp-white mb-4"
         style={{ animationDelay: `${revealDelay(1)}ms` }}
       >
-        No Payment Required
+        {t("noPaymentTitle")}
       </h1>
       <p
         className="portal-reveal font-body text-sm text-lyp-white/60 max-w-md"
         style={{ animationDelay: `${revealDelay(2)}ms` }}
       >
-        Your selected services are complimentary. No payment details are needed
-        at this time.
+        {t("noPaymentBody")}
       </p>
     </div>
   );
@@ -167,6 +168,7 @@ function PaymentForm({
   proposalId: string;
   proposalToken: string;
 }) {
+  const t = useCopy("payment");
   const [stage, setStage] = useState<Stage>("form");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -186,11 +188,11 @@ function PaymentForm({
   useEffect(() => {
     if (stage !== "success" || announcedRef.current) return;
     announcedRef.current = true;
-    toast.success("Payment accepted", {
+    toast.success(t("acceptedToast"), {
       id: "payment-accepted",
       position: "bottom-right",
     });
-  }, [stage]);
+  }, [stage, t]);
 
   // Form state
   const [cardNumber, setCardNumber] = useState("");
@@ -333,14 +335,13 @@ function PaymentForm({
           className="portal-reveal font-heading text-3xl md:text-5xl text-lyp-white mb-4"
           style={{ animationDelay: `${revealDelay(1)}ms` }}
         >
-          Payment Details Saved
+          {t("savedTitle")}
         </h1>
         <p
           className="portal-reveal font-body text-sm text-lyp-white/60 max-w-md"
           style={{ animationDelay: `${revealDelay(2)}ms` }}
         >
-          Your card has been securely saved. Payments will be scheduled
-          according to your agreement.
+          {t("savedBody")}
         </p>
 
         <Link
@@ -348,7 +349,7 @@ function PaymentForm({
           style={{ animationDelay: `${revealDelay(3)}ms` }}
           className="portal-reveal block mt-6 w-fit rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:active:scale-100"
         >
-          Access Onboarding Form
+          {t("onboardingButton")}
         </Link>
       </div>
     );
@@ -362,14 +363,14 @@ function PaymentForm({
         index={0}
         className="font-heading text-3xl md:text-5xl text-lyp-white mb-2 text-center"
       >
-        Payment Details
+        {t("heading")}
       </Reveal>
       <Reveal
         as="p"
         index={1}
         className="font-body text-sm text-lyp-white/50 mb-8 text-center max-w-md"
       >
-        Your card will be securely tokenised. No charges will be made today.
+        {t("intro")}
       </Reveal>
 
       <form
@@ -380,7 +381,7 @@ function PaymentForm({
         {/* Cardholder Name */}
         <Reveal index={2}>
           <label className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block">
-            Cardholder Name
+            {t("cardholderLabel")}
           </label>
           <input
             type="text"
@@ -396,7 +397,7 @@ function PaymentForm({
         {/* Card Number */}
         <Reveal index={3}>
           <label className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block">
-            Card Number
+            {t("cardNumberLabel")}
           </label>
           <div className="relative">
             <input
@@ -422,7 +423,7 @@ function PaymentForm({
         <Reveal index={4} className="grid grid-cols-2 gap-4">
           <div>
             <label className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block">
-              Expiry
+              {t("expiryLabel")}
             </label>
             <input
               type="text"
@@ -440,7 +441,7 @@ function PaymentForm({
           </div>
           <div>
             <label className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block">
-              CVC
+              {t("cvcLabel")}
             </label>
             <input
               type="text"
@@ -493,12 +494,12 @@ function PaymentForm({
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                 />
               </svg>
-              Saving...
+              {t("savingButton")}
             </span>
           ) : stage === "error" ? (
-            "Try Again"
+            t("tryAgainButton")
           ) : (
-            "Save Payment Details"
+            t("saveButton")
           )}
         </button>
 
@@ -507,9 +508,7 @@ function PaymentForm({
           className="portal-reveal portal-reveal-fade font-body text-xs text-lyp-white/30 text-center leading-relaxed"
           style={{ animationDelay: `${revealDelay(6)}ms` }}
         >
-          Your card details are securely tokenised and never touch our servers.
-          Payments are processed by Pinch Payments, an Australian PCI-DSS
-          compliant payment provider.
+          {t("securityNote")}
         </p>
       </form>
     </div>

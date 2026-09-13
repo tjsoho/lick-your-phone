@@ -37,7 +37,11 @@ export function useAutosave<T>(
 
   useEffect(() => {
     if (!enabled) return;
-    if (serialised === savedRef.current) return;
+    if (serialised === savedRef.current) {
+      // Typed a change and put it back before it saved: nothing is pending.
+      setStatus((current) => (current === "pending" ? "idle" : current));
+      return;
+    }
 
     setStatus("pending");
 

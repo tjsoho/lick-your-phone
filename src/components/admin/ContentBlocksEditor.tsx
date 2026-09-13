@@ -463,7 +463,7 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
   };
 
   // The open block writes itself as you type; Done just closes the editor.
-  const { status: blockStatus } = useAutosave(
+  const { status: blockStatus, markSaved: markBlockSaved } = useAutosave(
     editingId
       ? { id: editingId, type: editType, content: getEditContent(editType) }
       : null,
@@ -500,6 +500,8 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
     if (res.data) {
       setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, ...res.data } : b)));
       setEditingId(null);
+      // Saved just now, so closing the editor has nothing left pending.
+      markBlockSaved(null, { silent: true });
     }
   };
 

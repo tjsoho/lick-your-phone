@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Clock } from "lucide-react";
 import { splitRemaining } from "@/lib/countdown";
 import { cn } from "@/lib/utils";
+import { useCopy } from "./ProposalContext";
 
 /** setTimeout overflows past ~24.8 days, so long timers re-check in steps. */
 const MAX_TIMEOUT = 2 ** 31 - 1;
@@ -101,6 +102,8 @@ export default function DiscountCountdown({
   expiresAt: string;
   className?: string;
 }) {
+  const t = useCopy("global");
+
   return (
     <div
       role="timer"
@@ -114,8 +117,8 @@ export default function DiscountCountdown({
         className="h-3.5 w-3.5 flex-shrink-0 text-lyp-cherry"
       />
       <span className="whitespace-nowrap font-body text-[10px] uppercase tracking-[0.18em] text-lyp-white/60 sm:text-[11px]">
-        <span className="hidden sm:inline">Your discount ends in</span>
-        <span className="sm:hidden">Discount ends in</span>
+        <span className="hidden sm:inline">{t("discountEndsIn")}</span>
+        <span className="sm:hidden">{t("discountEndsInShort")}</span>
       </span>
       <CountdownClock expiresAt={expiresAt} className="text-sm" />
     </div>

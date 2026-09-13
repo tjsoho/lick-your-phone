@@ -1,12 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { ExternalLink, Monitor, Smartphone } from "lucide-react";
 import { ContentBlocksEditor } from "@/components/admin/ContentBlocksEditor";
 import { PageSettingsForm } from "@/components/admin/PageSettingsForm";
 import PageTitleForm from "@/components/admin/PageTitleForm";
 import { PREVIEW_MESSAGE } from "@/components/admin/PagePreviewSurface";
+import PageWordingForm from "@/components/admin/PageWordingForm";
+import ServiceTextEditor from "@/components/admin/ServiceTextEditor";
+import { copyKindsForPage, type CopyOverrides } from "@/lib/portal-copy";
 
 const EASE = "ease-brand";
 
@@ -24,8 +27,12 @@ type Props = {
   initialImage: string | null;
   initialPosition: string;
   initialBlocks: Block[];
+  initialCopy: CopyOverrides;
   isServicePage: boolean;
+  serviceId: string | null;
   serviceSlug: string | null;
+  /** The service's own name, which the slide shows instead of the page title. */
+  serviceName?: string | null;
 };
 
 /** The slide is designed for a wide screen; the frame renders at that size
@@ -42,14 +49,33 @@ export default function PageEditorWorkspace({
   initialImage,
   initialPosition,
   initialBlocks,
+  initialCopy,
   isServicePage,
+  serviceId,
   serviceSlug,
+  serviceName,
 }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
   const [scale, setScale] = useState(0.4);
+  // Service text isn't part of the posted draft, so saving it reloads the frame.
+  const [frameKey, setFrameKey] = useState(0);
+  const [hasResultsBlock, setHasResultsBlock] = useState(() =>
+    initialBlocks.some((b) => b.type === "results"),
+  );
+
+  // Adding a results block brings its wording group with it.
+  const copyKinds = useMemo(
+    () =>
+      copyKindsForPage({
+        slug: initialSlug,
+        type: isServicePage ? "service" : "content",
+        hasResultsBlock,
+      }),
+    [initialSlug, isServicePage, hasResultsBlock],
+  );
 
   // The draft lives here so the three editors below can each own their own
   // fields while the preview sees the page as a whole.
@@ -58,6 +84,7 @@ export default function PageEditorWorkspace({
     featuredImage: initialImage,
     imagePosition: initialPosition,
     contentBlocks: initialBlocks,
+    copy: initialCopy,
   });
 
   const post = useCallback(() => {
@@ -119,10 +146,25 @@ export default function PageEditorWorkspace({
   const handleBlocks = useCallback(
     (contentBlocks: Block[]) => {
       draftRef.current = { ...draftRef.current, contentBlocks };
+      setHasResultsBlock(contentBlocks.some((b) => b.type === "results"));
       post();
     },
     [post],
   );
+
+  const handleCopy = useCallback(
+    (copy: CopyOverrides) => {
+      draftRef.current = { ...draftRef.current, copy };
+      post();
+    },
+    [post],
+  );
+
+  const reloadPreview = useCallback(() => {
+    // The reloaded frame announces itself again, which re-sends the draft.
+    setReady(false);
+    setFrameKey((key) => key + 1);
+  }, []);
 
   return (
     <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -136,6 +178,8 @@ export default function PageEditorWorkspace({
             pageId={pageId}
             initialTitle={initialTitle}
             initialSlug={initialSlug}
+            serviceId={serviceId ?? undefined}
+            initialServiceName={serviceName ?? undefined}
             onDraftChange={handleTitle}
           />
         </section>
@@ -163,19 +207,43 @@ export default function PageEditorWorkspace({
             <p className="mt-2 font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
               This page&rsquo;s price, tiers, inclusions, client obligations and
               disclaimers come from the service record, so they stay consistent
-              wherever the service appears. Edits there show up in the preview.
+              wherever the service appears. Edit the wording here; prices and
+              tiers live on the service record.
             </p>
+            {serviceSlug && (
+              <div className="mt-5">
+                <ServiceTextEditor
+                  serviceSlug={serviceSlug}
+                  onSaved={reloadPreview}
+                />
+              </div>
+            )}
             <Link
               href={
                 serviceSlug ? `/admin/services/${serviceSlug}` : "/admin/services"
               }
               className={`mt-4 inline-flex items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-2 font-body text-[12.5px] font-semibold text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
             >
-              Edit pricing &amp; inclusions
+              Edit prices &amp; terms
               <ExternalLink strokeWidth={1.5} className="h-3.5 w-3.5" />
             </Link>
           </section>
         )}
+
+        {/* Kept mounted while empty, so removing and re-adding a results block
+            doesn't reset the form to stale saved wording. */}
+        <section
+          hidden={copyKinds.length === 0}
+          className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
+          style={{ animationDelay: "225ms" }}
+        >
+          <PageWordingForm
+            pageId={pageId}
+            kinds={copyKinds}
+            initialCopy={initialCopy}
+            onDraftChange={handleCopy}
+          />
+        </section>
 
         <section
           className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
@@ -232,6 +300,7 @@ export default function PageEditorWorkspace({
           style={{ height: frame.height * scale }}
         >
           <iframe
+            key={frameKey}
             ref={frameRef}
             src={`/admin/pages/${pageId}/preview`}
             title="Live preview of this page"

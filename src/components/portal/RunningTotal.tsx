@@ -1,7 +1,7 @@
 "use client"
 
 import { Clock } from "lucide-react"
-import { useProposal } from "./ProposalContext"
+import { useCopy, useProposal } from "./ProposalContext"
 import { CountdownClock } from "./DiscountCountdown"
 
 function formatCents(cents: number): string {
@@ -24,6 +24,7 @@ export default function RunningTotal({
 } = {}) {
   const { selectedCount, totalListCents, totalTargetCents, totalDiscountCents } =
     useProposal()
+  const t = useCopy("global")
 
   if (selectedCount === 0) return null
 
@@ -45,7 +46,7 @@ export default function RunningTotal({
             {selectedCount}
           </span>
           <span className="whitespace-nowrap font-body text-sm text-lyp-white">
-            {selectedCount === 1 ? "service" : "services"} selected
+            {t(selectedCount === 1 ? "servicesSelectedOne" : "servicesSelectedMany")}
           </span>
         </div>
         {countdownEndsAt && (
@@ -55,7 +56,7 @@ export default function RunningTotal({
           >
             <Clock strokeWidth={1.5} className="h-3.5 w-3.5 flex-shrink-0" />
             <span className="whitespace-nowrap uppercase tracking-[0.16em]">
-              Discount ends in
+              {t("discountEndsInShort")}
             </span>
             <CountdownClock
               expiresAt={countdownEndsAt}
@@ -78,7 +79,7 @@ export default function RunningTotal({
             {formatCents(totalTargetCents)}
           </span>
           <span className="whitespace-nowrap font-body text-[11px] text-lyp-white/70 sm:text-xs">
-            + GST per month
+            {t("perMonthGst")}
           </span>
         </div>
       </div>

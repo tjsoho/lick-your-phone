@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight, Check, Loader2 } from "lucide-react";
-import { useProposal } from "../ProposalContext";
+import { useCopy, useProposal } from "../ProposalContext";
 import {
   TextField,
   TextareaField,
@@ -29,6 +29,8 @@ import Reveal, { revealDelay } from "../Reveal";
  * mechanism works for any section without naming question ids in code:
  *   { "same_as": { "label": "Same as director",
  *                  "pairs": [["First Name", "Director First Name"]] } }
+ *
+ * An empty `label` falls back to the editable "Same as above" wording.
  */
 type SameAsConfig = {
   label: string;
@@ -41,7 +43,7 @@ function readSameAs(config: unknown): SameAsConfig | null {
   const { label, pairs } = raw as { label?: unknown; pairs?: unknown };
   if (!Array.isArray(pairs) || pairs.length === 0) return null;
   return {
-    label: typeof label === "string" && label ? label : "Same as above",
+    label: typeof label === "string" ? label : "",
     pairs: pairs.filter(
       (p): p is [string, string] =>
         Array.isArray(p) && p.length === 2 && p.every((x) => typeof x === "string"),
@@ -129,6 +131,7 @@ export default function IntakePage({
   existingResponses,
 }: IntakePageProps) {
   const { proposal, selections } = useProposal();
+  const t = useCopy("intake");
   const [sameAsOn, setSameAsOn] = useState<Record<string, boolean>>({});
   const [responses, setResponses] = useState<Record<string, unknown>>(
     existingResponses ?? {},
@@ -359,11 +362,10 @@ export default function IntakePage({
           <Check className="h-8 w-8 text-lyp-cherry" />
         </div>
         <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-4">
-          All Done!
+          {t("doneTitle")}
         </h1>
         <p className="font-body text-lyp-white/60 max-w-md mb-8">
-          Thank you for completing the onboarding form. Your dedicated marketer will
-          be in touch to schedule your onboarding call.
+          {t("doneBody")}
         </p>
         <button
           type="button"
@@ -373,7 +375,7 @@ export default function IntakePage({
           }}
           className="font-body text-sm text-lyp-cherry hover:text-lyp-cherry/80 transition-colors"
         >
-          Want to edit your responses?
+          {t("editResponses")}
         </button>
       </div>
     );
@@ -405,7 +407,10 @@ export default function IntakePage({
       <div className="flex-shrink-0 px-6 pt-6">
         <div className="flex items-center justify-between mb-2">
           <span className="font-body text-xs text-lyp-white/40">
-            Step {currentVisibleIndex + 1} of {totalVisiblePages}
+            {t("stepProgress", {
+              current: currentVisibleIndex + 1,
+              total: totalVisiblePages,
+            })}
           </span>
         </div>
         <div className="h-1 w-full overflow-hidden rounded-full bg-lyp-white/10">
@@ -468,7 +473,7 @@ export default function IntakePage({
                         className="h-4 w-4 cursor-pointer accent-lyp-cherry"
                       />
                       <span className="font-body text-sm text-lyp-white/70">
-                        {section.sameAs.label}
+                        {section.sameAs.label || t("sameAsLabel")}
                       </span>
                     </label>
                   </Reveal>
@@ -523,7 +528,7 @@ export default function IntakePage({
               className="group flex items-center gap-1 font-body text-sm text-lyp-white/60 transition-colors duration-300 ease-brand hover:text-lyp-white disabled:opacity-20"
             >
               <ChevronLeft className="h-4 w-4 transition-transform duration-300 ease-brand group-hover:-translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
-              Back
+              {t("backButton")}
             </button>
           )}
 
@@ -534,7 +539,7 @@ export default function IntakePage({
             className="group flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isLastPage ? "Submit" : "Continue"}
+            {t(isLastPage ? "submitButton" : "continueButton")}
             {!isLastPage && (
               <ChevronRight className="h-4 w-4 transition-transform duration-300 ease-brand group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
             )}

@@ -3,7 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
-import { PageData, useProposal, type ContentBlock } from "../ProposalContext";
+import {
+  PageData,
+  useCopy,
+  useProposal,
+  type ContentBlock,
+} from "../ProposalContext";
 import { cn } from "@/lib/utils";
 import ContentBlockRenderer, {
   IMAGE_RADIUS,
@@ -302,6 +307,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
     selectedCount,
     discountLive,
   } = useProposal();
+  const t = useCopy("service", page);
   // The carousel shows the running-total bar as soon as anything is selected,
   // which changes how much air already sits above the masthead.
   // The discount countdown is a top bar too, so it counts the same way.
@@ -352,7 +358,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   const displayList = listFromTarget(displayTarget, service.discount_pct);
   const hasDiscount = service.discount_pct != null && service.discount_pct > 0;
   const periodLabel =
-    service.price_display_period === "week" ? "per week" : "per month";
+    service.price_display_period === "week" ? t("perWeek") : t("perMonth");
   const savingsCents = displayList - displayTarget;
 
   const { images, logos, textBlocks } = collectMedia(page);
@@ -448,7 +454,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
         className="data-[state=checked]:bg-lyp-cherry"
       />
       <span className="font-heading text-[11px] font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:850px)]:text-xs">
-        {isInKind ? "Paid in kind" : selected ? "Added" : "I want this"}
+        {isInKind ? t("paidInKind") : selected ? t("added") : t("wantThis")}
       </span>
     </Reveal>
   );
@@ -483,7 +489,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
               delay={D_EYEBROW}
               className={`font-heading text-[10px] font-semibold uppercase tracking-[0.42em] [@media(min-height:850px)]:text-[11px] ${ROSE}`}
             >
-              Media Menu
+              {t("eyebrow")}
             </Reveal>
             <Reveal
               as="h1"
@@ -550,7 +556,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   delay={D_INDEX}
                   className={`${CAPTION} ${ROSE}`}
                 >
-                  What&apos;s Included
+                  {t("includedHeading")}
                 </Reveal>
                 <ul
                   className={cn(
@@ -616,7 +622,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   delay={D_OBLIGATIONS}
                   className={`${CAPTION} ${ROSE}`}
                 >
-                  Your Commitments
+                  {t("commitmentsHeading")}
                 </Reveal>
                 {/* A run, not a list. These are short items — setting them as
                     one flowing line with rose dividers costs a fraction of the
@@ -706,11 +712,14 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   stackOffer && "flex flex-wrap items-center gap-x-4 gap-y-2",
                 )}
               >
-                <h2 className={`${CAPTION} ${ROSE}`}>Investment</h2>
+                <h2 className={`${CAPTION} ${ROSE}`}>
+                  {t("investmentHeading")}
+                </h2>
                 {hasDiscount && (
                   <p className={cn(!stackOffer && "mt-2", "inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-heading text-[10px] font-semibold uppercase tracking-[0.18em] text-lyp-gold ring-1 ring-inset ring-lyp-gold/45 [@media(min-height:850px)]:text-[11px]")}>
-                    {Math.round((service.discount_pct ?? 0) * 100)}% off
-                    &mdash; limited time
+                    {t("discountBadge", {
+                      pct: Math.round((service.discount_pct ?? 0) * 100),
+                    })}
                   </p>
                 )}
                 {/* The lock note sits beside the price rather than under it,
@@ -718,8 +727,8 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 {isDisabled && (
                   <p className="mt-2 max-w-[15rem] font-body text-[10px] leading-[1.4] text-lyp-white/75 [@media(min-height:850px)]:text-[11px]">
                     {proposal.status === "signed"
-                      ? "This has already been signed. Services can no longer be changed."
-                      : "This service requires at least one other service to be selected first."}
+                      ? t("signedNote")
+                      : t("requiresOtherNote")}
                   </p>
                 )}
                 {stackOffer && <div className="ml-auto">{wantToggle}</div>}
@@ -730,7 +739,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   <p
                     className={`font-heading text-[20px] leading-tight [@media(min-height:850px)]:text-[26px] ${ROSE}`}
                   >
-                    Complimentary
+                    {t("complimentary")}
                   </p>
                 </div>
               ) : hasTiers ? (
@@ -791,7 +800,9 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                               </span>
                               {tierSaving > 0 && (
                                 <span className="whitespace-nowrap text-[10px] text-lyp-gold">
-                                  Save {formatCents(tierSaving)}
+                                  {t("saveAmount", {
+                                    amount: formatCents(tierSaving),
+                                  })}
                                 </span>
                               )}
                             </span>
@@ -799,7 +810,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                           <span className="mt-1 block whitespace-nowrap font-heading text-[19px] leading-none tabular-nums text-lyp-white [@media(min-height:850px)]:text-[23px]">
                             {formatCents(tier.target_price_cents)}
                             <span className="ml-1.5 font-body text-[10px] uppercase tracking-[0.12em] text-lyp-white/75">
-                              + GST {periodLabel}
+                              {t("plusGst")} {periodLabel}
                             </span>
                           </span>
                         </button>
@@ -811,13 +822,13 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   <div>
                     {hasDiscount && (
                       <p className="font-body text-[13px] leading-none text-lyp-white/70 line-through [@media(min-height:850px)]:text-sm">
-                        {formatCents(displayList)} + GST
+                        {formatCents(displayList)} {t("plusGst")}
                       </p>
                     )}
                     <p className="mt-1.5 font-heading text-[32px] leading-none tabular-nums text-lyp-white [@media(min-height:850px)]:text-[42px]">
                       {formatCents(displayTarget)}
                       <span className="ml-1.5 text-[15px] text-lyp-white/80 [@media(min-height:850px)]:text-[18px]">
-                        + GST
+                        {t("plusGst")}
                       </span>
                     </p>
                     <p className="mt-1.5 font-body text-[10px] uppercase tracking-[0.22em] text-lyp-white/75 [@media(min-height:850px)]:text-[11px]">
@@ -826,7 +837,10 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   </div>
                   {hasDiscount && savingsCents > 0 && (
                     <p className="pb-1 font-body text-[11px] text-lyp-gold [@media(min-height:850px)]:text-xs">
-                      Saving {formatCents(savingsCents)} + GST {periodLabel}
+                      {t("savingLine", {
+                        amount: formatCents(savingsCents),
+                        period: periodLabel,
+                      })}
                     </p>
                   )}
                 </div>

@@ -34,6 +34,8 @@ interface LogoProps {
    */
   fullWidth?: boolean;
   priority?: boolean;
+  /** Replacement artwork, e.g. the portal cover's editable logo. */
+  src?: string;
 }
 
 export default function Logo({
@@ -41,10 +43,11 @@ export default function Logo({
   className = "h-9",
   fullWidth = false,
   priority = false,
+  src = LOGO_SRC,
 }: LogoProps) {
   const image = (
     <Image
-      src={LOGO_SRC}
+      src={src}
       alt="LickYourPhone Media"
       width={LOGO_W}
       height={LOGO_H}

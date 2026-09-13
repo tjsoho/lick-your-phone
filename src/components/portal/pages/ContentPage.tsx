@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Logo from "@/components/Logo";
-import { useProposal, type PageData } from "../ProposalContext";
+import { useCopy, useProposal, type PageData } from "../ProposalContext";
 import ContentBlockRenderer, {
   RHYTHM,
   IMAGE_RADIUS,
@@ -19,6 +19,9 @@ interface ContentPageProps {
 
 export default function ContentPage({ page }: ContentPageProps) {
   const { proposal, pages, setCurrentPage } = useProposal();
+  // Called before the slug branches below so the hook order never changes.
+  const tCover = useCopy("cover", page);
+  const tResults = useCopy("results", page);
   const slug = page.slug;
 
   if (slug === "cover") {
@@ -54,7 +57,12 @@ export default function ContentPage({ page }: ContentPageProps) {
                 page.featuredImage ? "lg:justify-start" : ""
               }`}
             >
-              <Logo onDark className="h-14 md:h-16" priority />
+              <Logo
+                onDark
+                src={tCover("logo")}
+                className="h-14 md:h-16"
+                priority
+              />
             </Reveal>
 
             <Reveal
@@ -62,7 +70,7 @@ export default function ContentPage({ page }: ContentPageProps) {
               index={2}
               className="font-body text-sm text-lyp-white/60 mb-3 tracking-[0.3em] uppercase"
             >
-              Prepared for
+              {tCover("preparedFor")}
             </Reveal>
             {/* The venue is the account, the contact is the person reading
                 this. Show the venue first, then who it is addressed to. */}
@@ -92,7 +100,7 @@ export default function ContentPage({ page }: ContentPageProps) {
               >
                 <span className="inline-flex items-center gap-2 rounded-full bg-green-500/15 px-4 py-1.5 font-body text-sm text-green-400 ring-1 ring-green-500/30">
                   <span className="h-2 w-2 rounded-full bg-green-400" />
-                  Signed
+                  {tCover("signedBadge")}
                 </span>
                 <button
                   onClick={() => {
@@ -101,7 +109,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                   }}
                   className="rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
                 >
-                  View Summary
+                  {tCover("viewSummaryButton")}
                 </button>
               </Reveal>
             )}
@@ -318,6 +326,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                 <ContentBlockRenderer
                   blocks={resultsBlocks}
                   revealFrom={revealDelay(1)}
+                  resultsLabel={tResults("resultsLabel")}
                 />
               </div>
 
