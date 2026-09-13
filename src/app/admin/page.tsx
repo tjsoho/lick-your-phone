@@ -8,8 +8,9 @@ import {
   Plus,
   ArrowRight,
   ArrowUpRight,
+  PenLine,
 } from "lucide-react";
-import { formatCents, formatDate } from "@/lib/format";
+import { formatCents, formatDate, formatStatus } from "@/lib/format";
 
 const EASE = "ease-brand";
 
@@ -154,18 +155,6 @@ export default async function AdminDashboard() {
           </Link>
 
           <Link
-            href="/admin/clients/new"
-            className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1 pl-5 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
-          >
-            Add Client
-            <span
-              className={`flex h-7 w-7 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
-            >
-              <Plus strokeWidth={1.5} className="h-4 w-4" />
-            </span>
-          </Link>
-
-          <Link
             href="/admin/services"
             className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1 pl-5 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
           >
@@ -174,6 +163,18 @@ export default async function AdminDashboard() {
               className={`flex h-7 w-7 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
             >
               <Package strokeWidth={1.5} className="h-4 w-4" />
+            </span>
+          </Link>
+
+          <Link
+            href="/admin/settings"
+            className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1 pl-5 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
+          >
+            Terms &amp; Signature
+            <span
+              className={`flex h-7 w-7 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
+            >
+              <PenLine strokeWidth={1.5} className="h-4 w-4" />
             </span>
           </Link>
         </div>
@@ -264,7 +265,7 @@ export default async function AdminDashboard() {
                             "bg-[#F2EDED] text-[#8A7A7A]"
                           }`}
                         >
-                          {String(proposal.status ?? "—").replace(/_/g, " ")}
+                          {formatStatus(proposal.status)}
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-5 py-3 font-medium tabular-nums text-lyp-black">

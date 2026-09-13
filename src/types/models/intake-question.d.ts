@@ -2,6 +2,8 @@ declare interface IntakeQuestion {
   id: string;
   page_number: number;
   section: string | null;
+  section_subtitle?: string | null;
+  hidden?: boolean;
   field_label: string;
   field_type: string;
   options: string[] | null;

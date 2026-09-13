@@ -2,7 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import React from "react";
 import { getProposal } from "@/server-actions/proposals";
-import { formatCents, formatDate, formatDateTime } from "@/lib/format";
+import {
+  formatCents,
+  formatDate,
+  formatDateTime,
+  formatStatus,
+} from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { createAdminClient } from "@/utils/server";
 import {
@@ -21,6 +26,8 @@ import {
   Receipt,
 } from "lucide-react";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
+import ProposalPresentationEditor from "@/components/admin/ProposalPresentationEditor";
+import { getProposalPresentation } from "@/server-actions/proposal-presentation";
 
 interface ProposalLineItem {
   id: string;
@@ -131,7 +138,7 @@ const eventDetails: Record<
       }`,
   },
   INTAKE_COMPLETED: {
-    title: "Intake Completed",
+    title: "Onboarding Completed",
     color: "border-[#E4E2F0] bg-[#F0EEF8] text-[#6B6394]",
     icon: ClipboardCheck,
     getDescription: (meta) =>
@@ -217,6 +224,12 @@ export default async function ProposalDetailPage({
   const payments = (proposal.payments ?? []) as unknown as Payment[];
   const notes = (proposal.internal_notes ?? []) as unknown as InternalNote[];
 
+  const { data: presentationPages } = await getProposalPresentation(id);
+
+  // Notes are captured after signing, so the review section stays shut until then.
+  const isOnboardingComplete = proposal.status === "intake_complete";
+  const isSigned = proposal.status === "signed" || isOnboardingComplete;
+
   return (
     <div className="mx-auto max-w-[64rem]">
       {/* ─────────────── Header ─────────────── */}
@@ -250,7 +263,7 @@ export default async function ProposalDetailPage({
                   statusStyles[proposal.status] ?? "bg-[#F2EDED] text-[#8A7A7A]",
                 )}
               >
-                {String(proposal.status ?? "—").replace(/_/g, " ")}
+                {formatStatus(proposal.status)}
               </span>
             </div>
           </div>
@@ -496,9 +509,103 @@ export default async function ProposalDetailPage({
         )}
       </Section>
 
-      {/* ─────────────── Notes ─────────────── */}
-      <Section title="Internal Notes" delay="240ms">
-        <ProposalInternalNotes proposalId={id} initialNotes={notes} />
+      {/* ─────────────── Presentation ─────────────── */}
+      <Section title="Presentation" delay="220ms">
+        <ProposalPresentationEditor
+          proposalId={id}
+          initialPages={presentationPages ?? []}
+        />
+      </Section>
+
+      {/* ─────────────── Post-Signature Review ─────────────── */}
+      <Section title="Post-Signature Review" delay="240ms">
+        {!isSigned ? (
+          <div className="space-y-5">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#F7F1F1]">
+                <Clock strokeWidth={1.25} className="h-4 w-4 text-[#A89898]" />
+              </span>
+              <p className="font-body text-[13px] leading-relaxed text-[#8A7A7A]">
+                Opens once the client signs. Sales confirms the onboarding form
+                here and adds the internal notes the team needs.
+              </p>
+            </div>
+
+            {/* Superseding carries notes over, so show them rather than
+                hiding the team's own words until the client signs again. */}
+            {notes.length > 0 && (
+              <div className="rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] px-4 py-3.5">
+                <p className="mb-2.5 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
+                  Notes carried over
+                </p>
+                <ul className="space-y-2.5">
+                  {notes.map((note) => (
+                    <li
+                      key={note.id}
+                      className="border-l-2 border-[#EFE6E6] pl-3 font-body text-[13px] leading-relaxed text-[#8A7A7A]"
+                    >
+                      {note.content}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Onboarding form check */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] px-4 py-3.5">
+              <div className="flex items-start gap-3">
+                <span
+                  className={cn(
+                    "mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full",
+                    isOnboardingComplete
+                      ? "bg-lyp-cherry/[0.08]"
+                      : "bg-[#F7F1F1]",
+                  )}
+                >
+                  <ClipboardCheck
+                    strokeWidth={1.25}
+                    className={cn(
+                      "h-4 w-4",
+                      isOnboardingComplete
+                        ? "text-lyp-cherry"
+                        : "text-[#A89898]",
+                    )}
+                  />
+                </span>
+                <div>
+                  <p className="font-body text-[13px] font-semibold text-lyp-black">
+                    Onboarding form
+                  </p>
+                  <p className="mt-0.5 font-body text-[12px] text-[#8A7A7A]">
+                    {isOnboardingComplete
+                      ? "Submitted by the client — check it has everything the team needs."
+                      : "Not submitted yet. Chase the client before briefing the team."}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href={`/admin/proposals/${id}/intake`}
+                className={`inline-flex flex-shrink-0 items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-2 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
+              >
+                Review form
+              </Link>
+            </div>
+
+            {/* Internal notes */}
+            <div>
+              <p className="mb-1 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
+                Internal Notes
+              </p>
+              <p className="mb-3.5 font-body text-[12px] text-[#8A7A7A]">
+                What the delivery team needs to know. These feed the ClickUp
+                brief.
+              </p>
+              <ProposalInternalNotes proposalId={id} initialNotes={notes} />
+            </div>
+          </div>
+        )}
       </Section>
 
       {/* ─────────────── Activity Timeline ─────────────── */}

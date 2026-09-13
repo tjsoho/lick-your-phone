@@ -49,3 +49,6 @@ Thumbs.db
 
 # bootstrap
 .bootstrap.log
+
+# playwright-mcp session artifacts
+.playwright-mcp/

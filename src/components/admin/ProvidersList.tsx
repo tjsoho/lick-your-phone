@@ -6,6 +6,8 @@ import { createProvider, updateProvider } from "@/server-actions/providers";
 import { Plus, Pencil, Camera, Video, Check, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatCents } from "@/lib/format";
+import { useAutosave } from "@/hooks/use-autosave";
+import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 
 const EASE = "ease-brand";
 
@@ -41,6 +43,24 @@ export default function ProvidersList({ providers, states }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+
+  // An open provider saves as you type; Done closes it.
+  const { status: autosaveStatus, markSaved } = useAutosave(
+    { editingId, form },
+    async ({ editingId: id, form: f }) => {
+      if (!id) return { error: null };
+      const { error } = await updateProvider(id, {
+        name: f.name,
+        type: f.type,
+        description: f.description || undefined,
+        portfolio_url: f.portfolio_url || undefined,
+        price_cents: f.price_cents || 0,
+        state_ids: f.state_ids,
+      });
+      return { error };
+    },
+    { enabled: !!editingId && !!form.name.trim() },
+  );
 
   const handleCreate = async () => {
     if (!form.name.trim()) {
@@ -90,9 +110,7 @@ export default function ProvidersList({ providers, states }: Props) {
   };
 
   const startEdit = (p: Provider) => {
-    setEditingId(p.id);
-    setShowForm(false);
-    setForm({
+    const next = {
       name: p.name,
       type: p.type ?? "photographer",
       description: p.description ?? "",
@@ -102,7 +120,12 @@ export default function ProvidersList({ providers, states }: Props) {
         (p.provider_states
           ?.map((ps) => ps.states?.id)
           .filter(Boolean) as string[]) ?? [],
-    });
+    };
+    // Opening the editor isn't an edit, so don't save until something changes.
+    markSaved({ editingId: p.id, form: next }, { silent: true });
+    setEditingId(p.id);
+    setShowForm(false);
+    setForm(next);
   };
 
   const cancelEdit = () => {
@@ -112,7 +135,11 @@ export default function ProvidersList({ providers, states }: Props) {
 
   const inputClass = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
-  const renderForm = (onSubmit: () => void, submitLabel: string) => (
+  const renderForm = (
+    onSubmit: () => void,
+    submitLabel: string,
+    editing = false,
+  ) => (
     <div className="mb-4 rounded-3xl border border-[#EFE6E6] bg-lyp-white p-6">
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
         <div>
@@ -223,6 +250,9 @@ export default function ProvidersList({ providers, states }: Props) {
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-2.5 border-t border-[#F1E8E8] pt-5">
+        {editing ? (
+          <SaveStatusBadge status={autosaveStatus} />
+        ) : (
         <button
           onClick={onSubmit}
           disabled={saving}
@@ -235,14 +265,16 @@ export default function ProvidersList({ providers, states }: Props) {
             <Check strokeWidth={1.5} aria-hidden="true" className="h-4 w-4" />
           </span>
         </button>
+        )}
         <button
           onClick={() => {
             setShowForm(false);
             cancelEdit();
+            if (editing) router.refresh();
           }}
           className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
         >
-          Cancel
+          {editing ? "Done" : "Cancel"}
           <span
             className={`flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
           >
@@ -317,7 +349,7 @@ export default function ProvidersList({ providers, states }: Props) {
                   >
                     {editingId === provider.id ? (
                       <td colSpan={5} className="p-4">
-                        {renderForm(handleUpdate, "Update Provider")}
+                        {renderForm(handleUpdate, "Update Provider", true)}
                       </td>
                     ) : (
                       <>

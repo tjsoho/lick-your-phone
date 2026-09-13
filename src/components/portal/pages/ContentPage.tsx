@@ -29,7 +29,7 @@ export default function ContentPage({ page }: ContentPageProps) {
           {page.featuredImage && (
             <Image
               src={page.featuredImage}
-              alt={page.title || "Proposal cover image"}
+              alt={page.title || "Cover image"}
               sizes={SIZES.cover}
               className="portal-reveal portal-reveal-lift h-auto w-full max-h-[45vh] object-contain lg:max-h-[75vh]"
               style={{ animationDelay: `${revealDelay(0)}ms` }}
@@ -62,22 +62,26 @@ export default function ContentPage({ page }: ContentPageProps) {
               index={2}
               className="font-body text-sm text-lyp-white/60 mb-3 tracking-[0.3em] uppercase"
             >
-              Proposal prepared for
+              Prepared for
             </Reveal>
+            {/* The venue is the account, the contact is the person reading
+                this. Show the venue first, then who it is addressed to. */}
             <Reveal
               as="h2"
               index={3}
               className="font-heading text-4xl md:text-5xl text-lyp-white mb-2"
             >
-              {proposal.clientName}
-            </Reveal>
-            <Reveal
-              as="p"
-              index={4}
-              className="font-body text-xl text-lyp-white/50"
-            >
               {proposal.venueName}
             </Reveal>
+            {proposal.contactName && (
+              <Reveal
+                as="p"
+                index={4}
+                className="font-body text-xl text-lyp-white/50"
+              >
+                {proposal.contactName}
+              </Reveal>
+            )}
 
             {proposal.status === "signed" && (
               <Reveal
@@ -88,7 +92,7 @@ export default function ContentPage({ page }: ContentPageProps) {
               >
                 <span className="inline-flex items-center gap-2 rounded-full bg-green-500/15 px-4 py-1.5 font-body text-sm text-green-400 ring-1 ring-green-500/30">
                   <span className="h-2 w-2 rounded-full bg-green-400" />
-                  Proposal signed
+                  Signed
                 </span>
                 <button
                   onClick={() => {

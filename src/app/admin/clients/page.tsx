@@ -27,10 +27,10 @@ export default async function ClientsPage() {
         </div>
 
         <Link
-          href="/admin/clients/new"
+          href="/admin/proposals/new"
           className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`}
         >
-          Add Client
+          New Proposal
           <span
             className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}
           >
@@ -62,9 +62,9 @@ export default async function ClientsPage() {
           <table className="w-full text-left font-body text-[12.5px]">
             <thead>
               <tr className="border-b border-[#F1E8E8]">
-                <th className={thClasses}>Name</th>
-                <th className={thClasses}>Entity</th>
-                <th className={thClasses}>ABN</th>
+                <th className={thClasses}>Venue</th>
+                <th className={thClasses}>Client</th>
+                <th className={thClasses}>Email</th>
                 <th className={thClasses}>Venues</th>
                 <th className={thClasses}>Created</th>
               </tr>
@@ -75,8 +75,8 @@ export default async function ClientsPage() {
                   (client: {
                     id: string;
                     name: string;
-                    entity_name?: string;
-                    abn?: string;
+                    contact_name?: string;
+                    email?: string;
                     created_at: string;
                     venues: { id: string; name: string }[];
                   }) => (
@@ -93,10 +93,10 @@ export default async function ClientsPage() {
                         </Link>
                       </td>
                       <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
-                        {client.entity_name || "—"}
+                        {client.contact_name || "—"}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#8A7A7A]">
-                        {client.abn || "—"}
+                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                        {client.email || "—"}
                       </td>
                       <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#8A7A7A]">
                         {client.venues?.length ?? 0}
@@ -120,10 +120,10 @@ export default async function ClientsPage() {
                       No clients yet.
                     </p>
                     <Link
-                      href="/admin/clients/new"
+                      href="/admin/proposals/new"
                       className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
                     >
-                      Add your first client
+                      Create your first proposal
                       <ArrowRight strokeWidth={1.5} className="h-3.5 w-3.5" />
                     </Link>
                   </td>

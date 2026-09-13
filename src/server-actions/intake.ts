@@ -23,6 +23,7 @@ export async function getIntakeQuestions(): Promise<{
         required,
         sequence,
         config,
+        section_subtitle,
         intake_conditions!intake_conditions_question_id_intake_questions_id_fk (
           id,
           condition_type,
@@ -33,6 +34,8 @@ export async function getIntakeQuestions(): Promise<{
         )
       `,
       )
+      // Hidden questions stay in the database but never reach a client.
+      .eq("hidden", false)
       .order("page_number", { ascending: true })
       .order("sequence", { ascending: true });
 

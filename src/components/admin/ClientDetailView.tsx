@@ -10,7 +10,9 @@ import {
   createVenue,
   createContact,
 } from "@/server-actions/clients";
-import { formatCents, formatDate } from "@/lib/format";
+import { formatCents, formatDate, formatStatus } from "@/lib/format";
+import { useAutosave } from "@/hooks/use-autosave";
+import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 import {
   ArrowLeft,
   Check,
@@ -144,6 +146,7 @@ type Client = {
   id: string;
   name: string;
   slug: string;
+  contact_name?: string;
   abn?: string;
   entity_name?: string;
   created_at: string;
@@ -170,24 +173,47 @@ function ClientInfoCard({
   const {
     register,
     handleSubmit,
-    formState: { isSubmitting },
+    watch,
   } = useForm({
     defaultValues: {
       name: client.name,
+      contact_name: client.contact_name ?? "",
       entity_name: client.entity_name ?? "",
       abn: client.abn ?? "",
       slug: client.slug,
     },
   });
 
+  // Details save themselves while the card is open; Done just closes it.
+  const clientValues = watch();
+  const { status: autosaveStatus } = useAutosave(
+    clientValues,
+    async (v) => {
+      const { error } = await updateClient(client.id, {
+        name: v.name,
+        contact_name: v.contact_name || undefined,
+        entity_name: v.entity_name || undefined,
+        abn: v.abn || undefined,
+        slug: v.slug,
+      });
+      return { error };
+    },
+    {
+      enabled:
+        editing && !!clientValues.name?.trim() && !!clientValues.slug?.trim(),
+    },
+  );
+
   async function onSubmit(values: {
     name: string;
+    contact_name: string;
     entity_name: string;
     abn: string;
     slug: string;
   }) {
     const { error } = await updateClient(client.id, {
       name: values.name,
+      contact_name: values.contact_name || undefined,
       entity_name: values.entity_name || undefined,
       abn: values.abn || undefined,
       slug: values.slug,
@@ -210,11 +236,21 @@ function ClientInfoCard({
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
             <label htmlFor="client-info-name" className={labelClasses}>
-              Name
+              Venue Name
             </label>
             <input
               id="client-info-name"
               {...register("name", { required: true })}
+              className={fieldClasses}
+            />
+          </div>
+          <div>
+            <label htmlFor="client-info-contact" className={labelClasses}>
+              Client Full Name
+            </label>
+            <input
+              id="client-info-contact"
+              {...register("contact_name")}
               className={fieldClasses}
             />
           </div>
@@ -251,19 +287,20 @@ function ClientInfoCard({
         </div>
 
         <div className="mt-7 flex flex-wrap items-center gap-2.5 border-t border-[#F1E8E8] pt-6">
-          <button type="submit" disabled={isSubmitting} className={primaryPill}>
-            {isSubmitting ? "Saving..." : "Save"}
+          <button
+            type="button"
+            onClick={() => {
+              setEditing(false);
+              onUpdated();
+            }}
+            className={primaryPill}
+          >
+            Done
             <span className={pillIcon}>
               <Check strokeWidth={1.5} className="h-4 w-4" />
             </span>
           </button>
-          <button
-            type="button"
-            onClick={() => setEditing(false)}
-            className={plainPill}
-          >
-            Cancel
-          </button>
+          <SaveStatusBadge status={autosaveStatus} />
         </div>
       </form>
     );
@@ -856,7 +893,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                           "bg-[#F2EDED] text-[#8A7A7A]"
                         }`}
                       >
-                        {String(proposal.status ?? "—").replace(/_/g, " ")}
+                        {formatStatus(proposal.status)}
                       </span>
                       <span className="font-body text-[12.5px] tabular-nums text-[#A89898]">
                         Created {formatDate(proposal.created_at)}
@@ -983,7 +1020,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                           strokeWidth={1.5}
                           className="h-3.5 w-3.5"
                         />
-                        Intake
+                        Onboarding
                       </h3>
                       {hasIntake ? (
                         <p className="flex items-center gap-1.5 font-body text-[13px] font-medium text-[#4A7A5C]">

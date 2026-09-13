@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   Plus,
   Trash2,
@@ -19,6 +19,8 @@ import {
   deleteContentBlock,
 } from "@/server-actions/pages";
 import MediaLibraryModal from "./MediaLibraryModal";
+import { useAutosave } from "@/hooks/use-autosave";
+import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 import toast from "react-hot-toast";
 
 const EASE = "ease-brand";
@@ -66,6 +68,12 @@ interface Block {
 interface ContentBlocksEditorProps {
   pageId: string;
   initialBlocks: Block[];
+  /**
+   * Fires on every keystroke with the blocks as they would render, including
+   * the block currently being edited and any unsaved new one, so a live
+   * preview shows the typing rather than the last save.
+   */
+  onDraftChange?: (blocks: Block[]) => void;
 }
 
 const ic =
@@ -378,7 +386,7 @@ function BlockRow({ block, idx, total, onEdit, onDelete, onMove }: {
 
 
 
-export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEditorProps) {
+export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: ContentBlocksEditorProps) {
   const [blocks, setBlocks] = useState<Block[]>(initialBlocks);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editType, setEditType] = useState<BlockType>("paragraph");
@@ -396,6 +404,52 @@ export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEdit
   const getNewContent = (type: BlockType) =>
     isImageListType(type) ? newLogos : stringToContent(type, newContent);
 
+  // What the page looks like right now, saved or not.
+  const draftBlocks = useMemo(() => {
+    let draft = blocks;
+
+    if (editingId) {
+      draft = draft.map((b) =>
+        b.id === editingId
+          ? { ...b, type: editType, content: getEditContent(editType) }
+          : b,
+      );
+    }
+
+    if (addingNew) {
+      const maxSequence = draft.reduce(
+        (max, b) => Math.max(max, b.sequence ?? 0),
+        -1,
+      );
+      draft = [
+        ...draft,
+        {
+          id: "draft-new-block",
+          type: newType,
+          content: getNewContent(newType),
+          sequence: maxSequence + 1,
+        },
+      ];
+    }
+
+    return draft;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    blocks,
+    editingId,
+    editType,
+    editContent,
+    editLogos,
+    addingNew,
+    newType,
+    newContent,
+    newLogos,
+  ]);
+
+  useEffect(() => {
+    onDraftChange?.(draftBlocks);
+  }, [draftBlocks, onDraftChange]);
+
   const startEdit = (block: Block) => {
     setEditingId(block.id);
     const t = (block.type ?? "paragraph") as BlockType;
@@ -408,6 +462,31 @@ export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEdit
     }
   };
 
+  // The open block writes itself as you type; Done just closes the editor.
+  const { status: blockStatus } = useAutosave(
+    editingId
+      ? { id: editingId, type: editType, content: getEditContent(editType) }
+      : null,
+    async (value) => {
+      if (!value) return { error: null };
+      const existing = blocks.find((b) => b.id === value.id);
+      const res = await upsertContentBlock({
+        id: value.id,
+        page_id: pageId,
+        type: value.type,
+        content: value.content,
+        sequence: existing?.sequence ?? 0,
+      });
+      if (res.data) {
+        setBlocks((prev) =>
+          prev.map((b) => (b.id === value.id ? { ...b, ...res.data } : b)),
+        );
+      }
+      return { error: res.error };
+    },
+    { enabled: !!editingId },
+  );
+
   const handleSave = async (blockId: string) => {
     setSaving(true);
     const existing = blocks.find((b) => b.id === blockId);
@@ -419,7 +498,6 @@ export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEdit
     setSaving(false);
     if (res.error) { toast.error(res.error); return; }
     if (res.data) {
-      toast.success("Block updated");
       setBlocks((prev) => prev.map((b) => (b.id === blockId ? { ...b, ...res.data } : b)));
       setEditingId(null);
     }
@@ -472,6 +550,7 @@ export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEdit
           <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
             Content Blocks
           </h2>
+          <SaveStatusBadge status={blockStatus} />
         </div>
         <button onClick={() => setAddingNew(true)} disabled={addingNew}
           className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none`}>
@@ -514,21 +593,15 @@ export function ContentBlocksEditor({ pageId, initialBlocks }: ContentBlocksEdit
                 ? <ImageUploadEditor value={editContent} onChange={setEditContent} />
                 : <BlockTextarea type={editType} value={editContent} onChange={setEditContent} />
               }
-              <div className="flex flex-wrap items-center gap-2.5">
+              <div className="flex flex-wrap items-center gap-3">
                 <button onClick={() => handleSave(block.id)} disabled={saving}
                   className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none`}>
-                  Save
+                  Done
                   <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}>
                     {saving ? <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" /> : <Check strokeWidth={1.5} className="h-4 w-4" />}
                   </span>
                 </button>
-                <button onClick={() => setEditingId(null)}
-                  className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}>
-                  Cancel
-                  <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}>
-                    <X strokeWidth={1.5} className="h-4 w-4" />
-                  </span>
-                </button>
+                <SaveStatusBadge status={blockStatus} />
               </div>
             </div>
           ) : (

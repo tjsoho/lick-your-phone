@@ -1,14 +1,20 @@
 "use client";
 
-import { useState } from "react";
-import { Loader2, ImageIcon, Images, Trash2, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ImageIcon, Images, Trash2 } from "lucide-react";
 import { updatePageImage } from "@/server-actions/pages";
 import MediaLibraryModal from "./MediaLibraryModal";
-import toast from "react-hot-toast";
+import { useAutosave } from "@/hooks/use-autosave";
+import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 
 const EASE = "ease-brand";
 
 interface PageSettingsFormProps {
+  /** Called whenever the image or its side changes, for the live preview. */
+  onDraftChange?: (draft: {
+    featuredImage: string | null;
+    imagePosition: string;
+  }) => void;
   pageId: string;
   initialImage: string | null;
   initialPosition: string;
@@ -20,34 +26,37 @@ const ic =
 const labelClasses =
   "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
 
-export function PageSettingsForm({ pageId, initialImage, initialPosition }: PageSettingsFormProps) {
+export function PageSettingsForm({ pageId, initialImage, initialPosition, onDraftChange }: PageSettingsFormProps) {
   const [image, setImage] = useState(initialImage ?? "");
   const [position, setPosition] = useState(initialPosition);
-  const [saving, setSaving] = useState(false);
   const [libraryOpen, setLibraryOpen] = useState(false);
+
+  useEffect(() => {
+    onDraftChange?.({ featuredImage: image || null, imagePosition: position });
+  }, [image, position, onDraftChange]);
 
   const handleRemove = () => setImage("");
 
-  const handleSave = async () => {
-    setSaving(true);
-    const res = await updatePageImage(pageId, {
-      featured_image: image.trim() || null,
-      image_position: position,
-    });
-    setSaving(false);
-    if (res.error) toast.error(res.error);
-    else toast.success("Image settings saved");
-  };
+  const { status } = useAutosave(
+    { featured_image: image.trim() || null, image_position: position },
+    async (value) => {
+      const res = await updatePageImage(pageId, value);
+      return { error: res.error };
+    },
+  );
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center gap-2.5">
-        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-lyp-cherry/[0.06] ring-1 ring-lyp-cherry/10">
-          <ImageIcon strokeWidth={1.25} className="h-4 w-4 text-lyp-cherry" />
-        </span>
-        <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
-          Featured Image
-        </h2>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-lyp-cherry/[0.06] ring-1 ring-lyp-cherry/10">
+            <ImageIcon strokeWidth={1.25} className="h-4 w-4 text-lyp-cherry" />
+          </span>
+          <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
+            Featured Image
+          </h2>
+        </div>
+        <SaveStatusBadge status={status} />
       </div>
 
       <div className="grid grid-cols-1 items-start gap-5 md:grid-cols-2">
@@ -109,23 +118,6 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition }: Page
           </select>
         </div>
       </div>
-
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none`}
-      >
-        Save Image Settings
-        <span
-          className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}
-        >
-          {saving ? (
-            <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" />
-          ) : (
-            <Check strokeWidth={1.5} className="h-4 w-4" />
-          )}
-        </span>
-      </button>
 
       <MediaLibraryModal
         open={libraryOpen}

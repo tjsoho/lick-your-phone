@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { createClient, createVenue } from "@/server-actions/clients";
+import { createClientWithVenue, createVenue } from "@/server-actions/clients";
 import {
   createProposal,
   supersedeProposal,
@@ -23,33 +23,23 @@ import toast from "react-hot-toast";
 type Venue = {
   id: string;
   name: string;
-  address?: string | null;
-  state_id?: string | null;
 };
 
 type Client = {
   id: string;
   name: string;
-  entity_name?: string;
-  abn?: string;
+  contact_name?: string | null;
+  email?: string | null;
   venues: Venue[];
-};
-
-type State = {
-  id: string;
-  name: string;
-  abbreviation: string;
 };
 
 export type ProposalInitialData = {
   clientId: string;
   venueId: string;
-  notes: string;
 };
 
 type Props = {
   clients: Client[];
-  states: State[];
   mode?: "create" | "edit" | "supersede";
   proposalId?: string;
   initialData?: ProposalInitialData;
@@ -65,7 +55,20 @@ function slugify(name: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-const steps = ["Client", "Location", "Notes", "Review"];
+/**
+ * Creating a client or venue revalidates the page, so the server props catch
+ * up while the locally added copy is still held. Keep the first of each id.
+ */
+function dedupeById<T extends { id: string }>(items: T[]): T[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
+const steps = ["Details", "Review"];
 
 const EASE = "ease-brand";
 
@@ -75,6 +78,8 @@ const selectClasses = `${fieldClasses} appearance-none pr-11`;
 
 const labelClasses =
   "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+
+const hintClasses = "mt-1.5 font-body text-[11px] text-[#A89898]";
 
 const primaryPill = `group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none`;
 
@@ -97,7 +102,6 @@ function SelectShell({ children }: { children: React.ReactNode }) {
 
 export default function ProposalWizard({
   clients,
-  states,
   mode = "create",
   proposalId,
   initialData,
@@ -111,44 +115,55 @@ export default function ProposalWizard({
     initialData?.clientId ?? "",
   );
   const [showNewClient, setShowNewClient] = useState(false);
-  const [newClientName, setNewClientName] = useState("");
-  const [newClientEntity, setNewClientEntity] = useState("");
-  const [newClientAbn, setNewClientAbn] = useState("");
+  const [newVenueName, setNewVenueName] = useState("");
+  const [newContactName, setNewContactName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
   const [createdClients, setCreatedClients] = useState<Client[]>([]);
 
-  // Location state
+  // Venue state, for clients that already exist
   const [selectedVenueId, setSelectedVenueId] = useState(
     initialData?.venueId ?? "",
   );
-  const [newVenueName, setNewVenueName] = useState("");
-  const [newVenueAddress, setNewVenueAddress] = useState("");
-  const [newVenueStateId, setNewVenueStateId] = useState("");
+  const [showNewVenue, setShowNewVenue] = useState(false);
+  const [extraVenueName, setExtraVenueName] = useState("");
   const [createdVenues, setCreatedVenues] = useState<Venue[]>([]);
 
-  // Notes
-  const [notes, setNotes] = useState(initialData?.notes ?? "");
-
-  const allClients = [...clients, ...createdClients];
+  const allClients = dedupeById([...clients, ...createdClients]);
   const selectedClient = allClients.find((c) => c.id === selectedClientId);
-  const allVenues = [...(selectedClient?.venues ?? []), ...createdVenues];
+  const allVenues = dedupeById([
+    ...(selectedClient?.venues ?? []),
+    ...createdVenues,
+  ]);
   const selectedVenue = allVenues.find((v) => v.id === selectedVenueId);
-  const selectedVenueState = states.find(
-    (s) => s.id === selectedVenue?.state_id,
-  );
+
+  /** Picking a client resets the venue, unless that client has exactly one. */
+  function handleSelectClient(clientId: string) {
+    setSelectedClientId(clientId);
+    setCreatedVenues([]);
+    setShowNewVenue(false);
+    const venues = allClients.find((c) => c.id === clientId)?.venues ?? [];
+    setSelectedVenueId(venues.length === 1 ? venues[0].id : "");
+  }
 
   async function handleCreateClient() {
-    if (!newClientName.trim()) {
-      toast.error("Client name is required");
+    if (!newVenueName.trim()) {
+      toast.error("Venue name is required");
+      return;
+    }
+    if (!newContactName.trim()) {
+      toast.error("Client full name is required");
+      return;
+    }
+    if (!newClientEmail.trim()) {
+      toast.error("Client email is required");
       return;
     }
     setLoading(true);
-    const { data, error } = await createClient({
-      name: newClientName.trim(),
-      slug: slugify(newClientName),
-      entity_name: newClientEntity.trim() || undefined,
-      abn: newClientAbn.trim() || undefined,
+    const { data, error } = await createClientWithVenue({
+      venue_name: newVenueName.trim(),
+      contact_name: newContactName.trim(),
       email: newClientEmail.trim(),
+      slug: slugify(newVenueName),
     });
     setLoading(false);
     if (error) {
@@ -156,13 +171,20 @@ export default function ProposalWizard({
       return;
     }
     if (data) {
-      const newClient: Client = { ...data, venues: [] };
+      const venue: Venue = { id: data.venue.id, name: data.venue.name };
+      const newClient: Client = {
+        id: data.client.id,
+        name: data.client.name,
+        contact_name: data.client.contact_name,
+        email: data.client.email,
+        venues: [venue],
+      };
       setCreatedClients((prev) => [...prev, newClient]);
-      setSelectedClientId(data.id);
+      setSelectedClientId(data.client.id);
+      setSelectedVenueId(venue.id);
       setShowNewClient(false);
-      setNewClientName("");
-      setNewClientEntity("");
-      setNewClientAbn("");
+      setNewVenueName("");
+      setNewContactName("");
       setNewClientEmail("");
       toast.success("Client created");
       setStep(2);
@@ -170,20 +192,14 @@ export default function ProposalWizard({
   }
 
   async function handleCreateVenue() {
-    if (!newVenueName.trim()) {
-      toast.error("Location name is required");
-      return;
-    }
-    if (!newVenueStateId) {
-      toast.error("State is required");
+    if (!extraVenueName.trim()) {
+      toast.error("Venue name is required");
       return;
     }
     setLoading(true);
     const { data, error } = await createVenue({
       client_id: selectedClientId,
-      name: newVenueName.trim(),
-      address: newVenueAddress.trim() || undefined,
-      state_id: newVenueStateId,
+      name: extraVenueName.trim(),
     });
     setLoading(false);
     if (error) {
@@ -191,21 +207,11 @@ export default function ProposalWizard({
       return;
     }
     if (data) {
-      setCreatedVenues((prev) => [
-        ...prev,
-        {
-          id: data.id,
-          name: data.name,
-          address: data.address,
-          state_id: data.state_id,
-        },
-      ]);
+      setCreatedVenues((prev) => [...prev, { id: data.id, name: data.name }]);
       setSelectedVenueId(data.id);
-      setNewVenueName("");
-      setNewVenueAddress("");
-      setNewVenueStateId("");
-      toast.success("Location created");
-      setStep(3);
+      setExtraVenueName("");
+      setShowNewVenue(false);
+      toast.success("Venue added");
     }
   }
 
@@ -214,10 +220,9 @@ export default function ProposalWizard({
     const payload = {
       client_id: selectedClientId,
       venue_id: selectedVenueId,
-      notes: notes.trim() || undefined,
     };
 
-    let result: { error: string | null };
+    let result: { data?: { id: string } | null; error: string | null };
 
     if (mode === "edit" && proposalId) {
       result = await updateProposal(proposalId, payload);
@@ -240,22 +245,16 @@ export default function ProposalWizard({
           ? "Superseding proposal created"
           : "Proposal created";
     toast.success(msg);
-    router.push("/admin/proposals");
+
+    // Land on the proposal itself, where the presentation gets tailored,
+    // rather than back on the list.
+    const landingId = mode === "edit" ? proposalId : result.data?.id;
+    router.push(
+      landingId ? `/admin/proposals/${landingId}` : "/admin/proposals",
+    );
   }
 
-  function canProceed(): boolean {
-    switch (step) {
-      case 1:
-        return !!selectedClientId;
-      case 2:
-        return !!selectedVenueId;
-      case 3:
-      case 4:
-        return true;
-      default:
-        return false;
-    }
-  }
+  const canProceed = !!selectedClientId && !!selectedVenueId;
 
   const reviewTitle =
     mode === "edit"
@@ -328,34 +327,30 @@ export default function ProposalWizard({
       </div>
 
       <div className="px-6 py-8 sm:px-8">
-        {/* ─────────────── Step 1: Client ─────────────── */}
+        {/* ─────────────── Step 1: Details ─────────────── */}
         {step === 1 && (
           <div>
             <h2 className="font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
-              Select Client
+              Venue & Client
             </h2>
             <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
-              Choose who this proposal is for, or add a new client.
+              Choose an existing venue, or add a new one.
             </p>
 
             {!showNewClient ? (
-              <div className="mt-7 space-y-4">
+              <div className="mt-7 space-y-5">
                 <div>
                   <label htmlFor="client" className={labelClasses}>
-                    Client
+                    Venue
                   </label>
                   <SelectShell>
                     <select
                       id="client"
                       value={selectedClientId}
-                      onChange={(e) => {
-                        setSelectedClientId(e.target.value);
-                        setSelectedVenueId("");
-                        setCreatedVenues([]);
-                      }}
+                      onChange={(e) => handleSelectClient(e.target.value)}
                       className={selectClasses}
                     >
-                      <option value="">Choose a client…</option>
+                      <option value="">Choose a venue…</option>
                       {allClients.map((client) => (
                         <option key={client.id} value={client.id}>
                           {client.name}
@@ -363,6 +358,108 @@ export default function ProposalWizard({
                       ))}
                     </select>
                   </SelectShell>
+                  {selectedClient?.contact_name && (
+                    <p className={hintClasses}>
+                      Contact: {selectedClient.contact_name}
+                      {selectedClient.email ? ` — ${selectedClient.email}` : ""}
+                    </p>
+                  )}
+                </div>
+
+                {/* A client with more than one venue has to say which */}
+                {selectedClient && allVenues.length > 1 && (
+                  <div>
+                    <p className={labelClasses}>Which venue</p>
+                    <div className="flex flex-wrap gap-2">
+                      {allVenues.map((venue) => {
+                        const isSelected = selectedVenueId === venue.id;
+                        return (
+                          <button
+                            key={venue.id}
+                            type="button"
+                            onClick={() => setSelectedVenueId(venue.id)}
+                            className={cn(
+                              "inline-flex items-center gap-2 rounded-full border px-4 py-2 font-body text-[13px] transition-all duration-500",
+                              EASE,
+                              isSelected
+                                ? "border-lyp-cherry/30 bg-lyp-cherry/[0.06] font-semibold text-lyp-cherry"
+                                : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/25 hover:text-lyp-black",
+                            )}
+                          >
+                            <MapPin strokeWidth={1.25} className="h-3.5 w-3.5" />
+                            {venue.name}
+                            {isSelected && (
+                              <Check strokeWidth={2} className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Adding a second venue to a client we already have */}
+                {selectedClient &&
+                  (showNewVenue ? (
+                    <div className="rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] p-5">
+                      <label htmlFor="extra-venue" className={labelClasses}>
+                        Venue Name
+                      </label>
+                      <input
+                        id="extra-venue"
+                        type="text"
+                        value={extraVenueName}
+                        onChange={(e) => setExtraVenueName(e.target.value)}
+                        className={fieldClasses}
+                        placeholder="e.g. Riverside Ballroom"
+                      />
+                      <div className="mt-5 flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={handleCreateVenue}
+                          disabled={loading}
+                          className={primaryPill}
+                        >
+                          {loading ? "Adding" : "Add Venue"}
+                          <span className={pillIcon}>
+                            {loading ? (
+                              <Loader2
+                                strokeWidth={1.5}
+                                className="h-4 w-4 animate-spin"
+                              />
+                            ) : (
+                              <Check strokeWidth={1.5} className="h-4 w-4" />
+                            )}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowNewVenue(false)}
+                          className={secondaryPill}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setShowNewVenue(true)}
+                      className={`group inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
+                    >
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-lyp-cherry/[0.08]">
+                        <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
+                      </span>
+                      Add another venue for this client
+                    </button>
+                  ))}
+
+                <div className="flex items-center gap-4 pt-1">
+                  <span className="h-px flex-1 bg-[#F1E8E8]" />
+                  <span className="font-body text-[10px] uppercase tracking-[0.22em] text-[#C3B5B5]">
+                    Or
+                  </span>
+                  <span className="h-px flex-1 bg-[#F1E8E8]" />
                 </div>
 
                 <button
@@ -373,32 +470,48 @@ export default function ProposalWizard({
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-lyp-cherry/[0.08]">
                     <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
                   </span>
-                  Create new client
+                  New venue &amp; client
                 </button>
               </div>
             ) : (
               <div className="mt-7 rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] p-5 sm:p-6">
                 <h3 className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
-                  New Client
+                  New Venue &amp; Client
                 </h3>
 
-                <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <div className="sm:col-span-2">
-                    <label htmlFor="c-name" className={labelClasses}>
-                      Name *
+                <div className="mt-5 space-y-4">
+                  <div>
+                    <label htmlFor="c-venue" className={labelClasses}>
+                      Venue Name *
                     </label>
                     <input
-                      id="c-name"
+                      id="c-venue"
                       type="text"
-                      value={newClientName}
-                      onChange={(e) => setNewClientName(e.target.value)}
+                      value={newVenueName}
+                      onChange={(e) => setNewVenueName(e.target.value)}
                       className={fieldClasses}
-                      placeholder="Client name"
+                      placeholder="e.g. Riverside Ballroom"
                     />
                   </div>
-                  <div className="sm:col-span-2">
+                  <div>
+                    <label htmlFor="c-contact" className={labelClasses}>
+                      Client Full Name *
+                    </label>
+                    <input
+                      id="c-contact"
+                      type="text"
+                      value={newContactName}
+                      onChange={(e) => setNewContactName(e.target.value)}
+                      className={fieldClasses}
+                      placeholder="e.g. Sarah Nguyen"
+                    />
+                    <p className={hintClasses}>
+                      The person who will sign, not the venue.
+                    </p>
+                  </div>
+                  <div>
                     <label htmlFor="c-email" className={labelClasses}>
-                      Email *
+                      Client Email *
                     </label>
                     <input
                       id="c-email"
@@ -406,34 +519,12 @@ export default function ProposalWizard({
                       value={newClientEmail}
                       onChange={(e) => setNewClientEmail(e.target.value)}
                       className={fieldClasses}
-                      placeholder="name@company.com"
+                      placeholder="sarah@example.com"
                     />
-                  </div>
-                  <div>
-                    <label htmlFor="c-entity" className={labelClasses}>
-                      Entity Name
-                    </label>
-                    <input
-                      id="c-entity"
-                      type="text"
-                      value={newClientEntity}
-                      onChange={(e) => setNewClientEntity(e.target.value)}
-                      className={fieldClasses}
-                      placeholder="Entity name"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="c-abn" className={labelClasses}>
-                      ABN
-                    </label>
-                    <input
-                      id="c-abn"
-                      type="text"
-                      value={newClientAbn}
-                      onChange={(e) => setNewClientAbn(e.target.value)}
-                      className={fieldClasses}
-                      placeholder="ABN"
-                    />
+                    <p className={hintClasses}>
+                      Their personal work address — not a shared inbox like
+                      info@.
+                    </p>
                   </div>
                 </div>
 
@@ -469,168 +560,8 @@ export default function ProposalWizard({
           </div>
         )}
 
-        {/* ─────────────── Step 2: Location ─────────────── */}
+        {/* ─────────────── Step 2: Review ─────────────── */}
         {step === 2 && (
-          <div>
-            <h2 className="font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
-              Location
-            </h2>
-            <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
-              Where the work happens, for{" "}
-              <span className="font-semibold text-lyp-black">
-                {selectedClient?.name}
-              </span>
-              .
-            </p>
-
-            {/* Saved locations, when this client already has some */}
-            {allVenues.length > 0 && (
-              <div className="mt-7">
-                <p className={labelClasses}>Saved locations</p>
-                <div className="flex flex-wrap gap-2">
-                  {allVenues.map((venue) => {
-                    const isSelected = selectedVenueId === venue.id;
-                    return (
-                      <button
-                        key={venue.id}
-                        type="button"
-                        onClick={() =>
-                          setSelectedVenueId(isSelected ? "" : venue.id)
-                        }
-                        className={cn(
-                          "inline-flex items-center gap-2 rounded-full border px-4 py-2 font-body text-[13px] transition-all duration-500",
-                          EASE,
-                          isSelected
-                            ? "border-lyp-cherry/30 bg-lyp-cherry/[0.06] font-semibold text-lyp-cherry"
-                            : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/25 hover:text-lyp-black",
-                        )}
-                      >
-                        <MapPin strokeWidth={1.25} className="h-3.5 w-3.5" />
-                        {venue.name}
-                        {isSelected && (
-                          <Check strokeWidth={2} className="h-3.5 w-3.5" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-7 flex items-center gap-4">
-                  <span className="h-px flex-1 bg-[#F1E8E8]" />
-                  <span className="font-body text-[10px] uppercase tracking-[0.22em] text-[#C3B5B5]">
-                    Or add a new one
-                  </span>
-                  <span className="h-px flex-1 bg-[#F1E8E8]" />
-                </div>
-              </div>
-            )}
-
-            {/* The form is always available */}
-            <div className="mt-7 rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] p-5 sm:p-6">
-              <h3 className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
-                New Location
-              </h3>
-
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div className="sm:col-span-2">
-                  <label htmlFor="v-name" className={labelClasses}>
-                    Location Name *
-                  </label>
-                  <input
-                    id="v-name"
-                    type="text"
-                    value={newVenueName}
-                    onChange={(e) => setNewVenueName(e.target.value)}
-                    className={fieldClasses}
-                    placeholder="e.g. Riverside Ballroom"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label htmlFor="v-address" className={labelClasses}>
-                    Address
-                  </label>
-                  <input
-                    id="v-address"
-                    type="text"
-                    value={newVenueAddress}
-                    onChange={(e) => setNewVenueAddress(e.target.value)}
-                    className={fieldClasses}
-                    placeholder="Street address"
-                  />
-                </div>
-                <div className="sm:col-span-2">
-                  <label htmlFor="v-state" className={labelClasses}>
-                    State *
-                  </label>
-                  <SelectShell>
-                    <select
-                      id="v-state"
-                      value={newVenueStateId}
-                      onChange={(e) => setNewVenueStateId(e.target.value)}
-                      className={selectClasses}
-                    >
-                      <option value="">Choose a state…</option>
-                      {states.map((state) => (
-                        <option key={state.id} value={state.id}>
-                          {state.name} ({state.abbreviation})
-                        </option>
-                      ))}
-                    </select>
-                  </SelectShell>
-                </div>
-              </div>
-
-              <div className="mt-6">
-                <button
-                  type="button"
-                  onClick={handleCreateVenue}
-                  disabled={loading}
-                  className={primaryPill}
-                >
-                  {loading ? "Creating" : "Create Location"}
-                  <span className={pillIcon}>
-                    {loading ? (
-                      <Loader2
-                        strokeWidth={1.5}
-                        className="h-4 w-4 animate-spin"
-                      />
-                    ) : (
-                      <ArrowRight strokeWidth={1.5} className="h-4 w-4" />
-                    )}
-                  </span>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ─────────────── Step 3: Notes ─────────────── */}
-        {step === 3 && (
-          <div>
-            <h2 className="font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
-              Internal Notes
-            </h2>
-            <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
-              Only your team sees these. Optional.
-            </p>
-            <div className="mt-7">
-              <label htmlFor="notes" className={labelClasses}>
-                Notes
-              </label>
-              <textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={6}
-                className={`${fieldClasses} resize-y leading-relaxed`}
-                placeholder="Anything the team should know about this proposal…"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* ─────────────── Step 4: Review ─────────────── */}
-        {step === 4 && (
           <div>
             <h2 className="font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
               {reviewTitle}
@@ -642,40 +573,34 @@ export default function ProposalWizard({
             <dl className="mt-7 overflow-hidden rounded-2xl border border-[#EFE6E6]">
               <div className="flex items-start gap-4 border-b border-[#F1E8E8] px-5 py-4">
                 <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
+                  Venue
+                </dt>
+                <dd className="font-body text-[14px] font-medium text-lyp-black">
+                  {selectedVenue?.name ?? selectedClient?.name ?? "—"}
+                </dd>
+              </div>
+              <div className="flex items-start gap-4 border-b border-[#F1E8E8] px-5 py-4">
+                <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
                   Client
                 </dt>
                 <dd className="font-body text-[14px] font-medium text-lyp-black">
-                  {selectedClient?.name ?? "—"}
+                  {selectedClient?.contact_name || "—"}
                 </dd>
               </div>
               <div className="flex items-start gap-4 px-5 py-4">
                 <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
-                  Location
+                  Email
                 </dt>
-                <dd>
-                  <p className="font-body text-[14px] font-medium text-lyp-black">
-                    {selectedVenue?.name ?? "—"}
-                  </p>
-                  {(selectedVenue?.address || selectedVenueState) && (
-                    <p className="mt-1 font-body text-[13px] leading-relaxed text-[#8A7A7A]">
-                      {[selectedVenue?.address, selectedVenueState?.name]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </p>
-                  )}
+                <dd className="font-body text-[14px] font-medium text-lyp-black">
+                  {selectedClient?.email || "—"}
                 </dd>
               </div>
-              {notes.trim() && (
-                <div className="flex items-start gap-4 border-t border-[#F1E8E8] px-5 py-4">
-                  <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
-                    Notes
-                  </dt>
-                  <dd className="whitespace-pre-wrap font-body text-[13px] leading-relaxed text-[#8A7A7A]">
-                    {notes.length > 200 ? `${notes.slice(0, 200)}…` : notes}
-                  </dd>
-                </div>
-              )}
             </dl>
+
+            <p className="mt-5 font-body text-[12px] leading-relaxed text-[#A89898]">
+              Internal notes are added after the client signs, in the
+              post-signature review.
+            </p>
           </div>
         )}
       </div>
@@ -699,11 +624,11 @@ export default function ProposalWizard({
           Back
         </button>
 
-        {step < 4 ? (
+        {step < 2 ? (
           <button
             type="button"
             onClick={() => setStep((s) => s + 1)}
-            disabled={!canProceed()}
+            disabled={!canProceed}
             className={primaryPill}
           >
             Next

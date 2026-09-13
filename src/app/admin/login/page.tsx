@@ -17,7 +17,7 @@ const highlights = [
   },
   {
     icon: PenLine,
-    title: "Intake and signature",
+    title: "Onboarding and signature",
     description: "Details and sign-off in a single flow.",
   },
   {

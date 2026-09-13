@@ -11,6 +11,7 @@ import {
   Pencil,
   Copy,
   Eye,
+  ClipboardList,
   Plus,
 } from "lucide-react";
 import ProposalStatusSelect from "@/components/admin/ProposalStatusSelect";
@@ -186,13 +187,29 @@ export default async function ProposalsPage() {
                             status={proposal.status}
                           />
 
+                          {/* Labelled buttons, not bare icons — these are the
+                              two things the team actually opens. */}
+                          {portalUrl && (
+                          <a
+                            href={portalUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`inline-flex items-center gap-1.5 rounded-full border border-[#EFE6E6] bg-lyp-white px-3 py-1.5 font-body text-[12px] font-semibold text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
+                            title="Open the client-facing proposal"
+                          >
+                            <Eye strokeWidth={1.5} className="h-3.5 w-3.5" />
+                            Proposal
+                          </a>
+                          )}
+
                           {intakeCount > 0 && (
                             <Link
                               href={`/admin/proposals/${proposal.id}/intake`}
-                              className={`text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
-                              title="View intake responses"
+                              className={`inline-flex items-center gap-1.5 rounded-full border border-lyp-cherry/25 bg-lyp-cherry/[0.06] px-3 py-1.5 font-body text-[12px] font-semibold text-lyp-cherry transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.12] active:scale-[0.985]`}
+                              title="View onboarding answers"
                             >
-                              <Eye strokeWidth={1.5} className="h-4 w-4" />
+                              <ClipboardList strokeWidth={1.5} className="h-3.5 w-3.5" />
+                              Onboarding
                             </Link>
                           )}
                           {proposal.status === "draft" && (

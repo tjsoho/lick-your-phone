@@ -11,8 +11,14 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   // forwards the email, so this avoids a second auth round trip per
   // navigation. It is display-only — access is enforced by middleware and by
   // row-level security on the data itself.
-  const userEmail =
-    (await headers()).get("x-admin-user-email") || undefined;
+  const requestHeaders = await headers();
+  const userEmail = requestHeaders.get("x-admin-user-email") || undefined;
+
+  // The live preview is rendered inside a frame beside the editor, so it gets
+  // the page to itself — no sidebar, no padding.
+  const isBareRoute = (requestHeaders.get("x-admin-pathname") ?? "").endsWith(
+    "/preview",
+  );
 
   // Login page renders without sidebar
   return (
@@ -34,7 +40,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
           },
         }}
       />
-      {userEmail ? (
+      {userEmail && !isBareRoute ? (
         <div className="min-h-screen bg-lyp-off-white">
           <Sidebar userEmail={userEmail} />
           <main className="lg:pl-64 transition-all duration-300">

@@ -19,7 +19,7 @@ export default async function IntakeQuestionsPage() {
             </span>
           </div>
           <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
-            Intake Questions
+            Onboarding Questions
           </h1>
           <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
             Manage the questionnaire clients fill out during onboarding.

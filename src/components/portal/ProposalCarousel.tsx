@@ -10,6 +10,7 @@ import {
   type ProposalData,
   type PageData,
   type Selection,
+  type AgreementCopy,
 } from "./ProposalContext";
 import RunningTotal from "./RunningTotal";
 import ServicePage from "./pages/ServicePage";
@@ -97,7 +98,12 @@ function Capped({ children }: { children: React.ReactNode }) {
   return <div className="mx-auto h-full w-full max-w-[1400px]">{children}</div>;
 }
 
-function PageRenderer({ page }: { page: PageData }) {
+/**
+ * Renders one slide exactly as the client sees it. Exported so the admin
+ * live preview draws from this same code path rather than a second
+ * implementation that would drift.
+ */
+export function PageRenderer({ page }: { page: PageData }) {
   const { services } = useProposal();
 
   if (page.type === "service" && page.serviceId) {
@@ -162,7 +168,8 @@ function PageRenderer({ page }: { page: PageData }) {
 const BRAND_EASE = [0.32, 0.72, 0, 1] as const;
 
 function CarouselInner() {
-  const { pages, currentPage, setCurrentPage, selectedCount } = useProposal();
+  const { pages, currentPage, setCurrentPage, selectedCount, proposal } =
+    useProposal();
   const reduceMotion = useReducedMotion();
 
   // Direction is resolved DURING render, not in an effect: the incoming slide
@@ -214,7 +221,10 @@ function CarouselInner() {
 
   const hasTop = selectedCount > 0;
   const isSummary = page.slug === "summary";
-  const showRunningTotal = hasTop && !isSummary;
+  // Once signed, the selection is locked in — the running total stops being
+  // a shopping aid and just follows the client through onboarding.
+  const isSigned = proposal.status === "signed" || proposal.status === "intake_complete";
+  const showRunningTotal = hasTop && !isSummary && !isSigned;
   const topPad = showRunningTotal ? "pt-[52px]" : "";
 
   return (
@@ -303,6 +313,7 @@ function CarouselInner() {
 
 export interface ProposalCarouselProps {
   proposal: ProposalData;
+  agreement?: AgreementCopy;
   pages: PageData[];
   services: ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers[];
   savedSelections?: Selection[] | null;
@@ -311,6 +322,7 @@ export interface ProposalCarouselProps {
 
 export default function ProposalCarousel({
   proposal,
+  agreement,
   pages,
   services,
   savedSelections,
@@ -319,6 +331,7 @@ export default function ProposalCarousel({
   return (
     <ProposalProvider
       proposal={proposal}
+      agreement={agreement}
       pages={pages}
       services={services}
       initialSelections={savedSelections ?? undefined}

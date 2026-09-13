@@ -55,12 +55,20 @@ export interface ProposalData {
   status: string | null;
   discountExpiresAt: string | null;
   clientName: string;
+  /** The person signing, which is not the venue's own name. */
+  contactName: string | null;
   venueName: string;
 }
 
 /* ------------------------------------------------------------------ */
 /*  Selection state                                                   */
 /* ------------------------------------------------------------------ */
+
+/** Workspace-wide agreement copy, shared by every proposal. */
+export interface AgreementCopy {
+  termsClauses: string[];
+  postSignatureText: string;
+}
 
 export interface Selection {
   serviceId: string;
@@ -79,6 +87,9 @@ interface ProposalContextValue {
 
   currentPage: number;
   setCurrentPage: (i: number) => void;
+
+  /** Terms and confirmation wording, authored in Agreement Settings. */
+  agreement: AgreementCopy;
 
   selections: Selection[];
   isSelected: (serviceId: string) => boolean;
@@ -128,6 +139,7 @@ function monthlyTarget(service: Service, tierTarget: number): number {
 
 interface ProviderProps {
   proposal: ProposalData;
+  agreement?: AgreementCopy;
   pages: PageData[];
   services: ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers[];
   initialSelections?: Selection[];
@@ -137,6 +149,7 @@ interface ProviderProps {
 
 export function ProposalProvider({
   proposal: initialProposal,
+  agreement,
   pages,
   services,
   initialSelections,
@@ -290,6 +303,7 @@ export function ProposalProvider({
     currentPage,
     setCurrentPage,
     selections,
+    agreement: agreement ?? { termsClauses: [], postSignatureText: "" },
     isSelected,
     selectedTierId,
     toggleService,

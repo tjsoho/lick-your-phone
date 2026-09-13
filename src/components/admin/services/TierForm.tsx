@@ -7,6 +7,8 @@ import { Check, Plus } from "lucide-react";
 import { createSlug } from "@/utils/create-slug";
 import { upsertTier } from "@/server-actions/service-tiers";
 import { cn } from "@/lib/utils";
+import { useAutosave } from "@/hooks/use-autosave";
+import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 
 interface TierFormData {
   name: string;
@@ -54,6 +56,7 @@ export default function TierForm({
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<TierFormData>({
     defaultValues: {
@@ -71,6 +74,26 @@ export default function TierForm({
       setValue("slug", createSlug(name));
     }
   }
+
+  // An existing tier saves as you type; Done closes the panel.
+  const tierValues = watch();
+  const { status: autosaveStatus } = useAutosave(
+    tierValues,
+    async (v) => {
+      if (!tier) return { error: null };
+      const { error } = await upsertTier({
+        id: tier.id,
+        service_id: serviceId,
+        name: v.name,
+        slug: v.slug || createSlug(v.name),
+        target_price_cents: Math.round(Number(v.target_price_dollars) * 100),
+        billing_cycle_months: Number(v.billing_cycle_months),
+        sequence: tier.sequence,
+      });
+      return { error };
+    },
+    { enabled: isEditing && !!tierValues.name?.trim() },
+  );
 
   async function onSubmit(data: TierFormData) {
     setSaving(true);
@@ -126,7 +149,7 @@ export default function TierForm({
         {errors.slug && <p className={errorClasses}>{errors.slug.message}</p>}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="tier-price" className={labelClasses}>
             Target Price (AUD)
@@ -176,6 +199,8 @@ export default function TierForm({
       </div>
 
       <div className="flex flex-wrap items-center justify-end gap-2.5 pt-2">
+        {isEditing && <SaveStatusBadge status={autosaveStatus} />}
+        {!isEditing && (
         <button
           type="button"
           onClick={onCancel}
@@ -183,15 +208,17 @@ export default function TierForm({
         >
           Cancel
         </button>
+        )}
         <button
-          type="submit"
+          type={isEditing ? "button" : "submit"}
+          onClick={isEditing ? onSuccess : undefined}
           disabled={saving}
           className={cn(
             `group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-5 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`,
             saving && "cursor-not-allowed opacity-50"
           )}
         >
-          {saving ? "Saving..." : isEditing ? "Save Changes" : "Add Tier"}
+          {saving ? "Saving..." : isEditing ? "Done" : "Add Tier"}
           <span
             className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}
           >

@@ -2,9 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getPageWithBlocks } from "@/server-actions/pages";
-import { ContentBlocksEditor } from "@/components/admin/ContentBlocksEditor";
-import { PageSettingsForm } from "@/components/admin/PageSettingsForm";
-import PageTitleForm from "@/components/admin/PageTitleForm";
+import { createClient } from "@/utils/server";
+import PageEditorWorkspace from "@/components/admin/PageEditorWorkspace";
+import PageEditorNav from "@/components/admin/PageEditorNav";
 
 const EASE = "ease-brand";
 
@@ -18,12 +18,46 @@ export default async function EditPagePage({
   if (error || !page) return notFound();
 
   const blocks = (
-    (page.content_blocks as { id: string; type: string | null; content: unknown; sequence: number | null }[]) ?? []
+    (page.content_blocks as {
+      id: string;
+      type: string | null;
+      content: unknown;
+      sequence: number | null;
+    }[]) ?? []
   ).sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
 
+  const record = page as Record<string, unknown>;
+  const serviceId = (record.service_id as string | null) ?? null;
+
+  // Neighbours in the deck's own order, so the editor can step through it.
+  const supabaseForOrder = await createClient();
+  const { data: ordered } = await supabaseForOrder
+    .from("pages")
+    .select("id, title")
+    .order("sequence", { ascending: true });
+
+  const deck = (ordered ?? []) as { id: string; title: string | null }[];
+  const index = deck.findIndex((p) => p.id === id);
+  const previous = index > 0 ? deck[index - 1] : null;
+  const next =
+    index >= 0 && index < deck.length - 1 ? deck[index + 1] : null;
+
+  // Service pages send you to the service record for pricing, so fetch the
+  // slug that link needs.
+  let serviceSlug: string | null = null;
+  if (serviceId) {
+    const supabase = await createClient();
+    const { data: service } = await supabase
+      .from("services")
+      .select("slug")
+      .eq("id", serviceId)
+      .single();
+    serviceSlug = service?.slug ?? null;
+  }
+
   return (
-    <div className="mx-auto max-w-[80rem] space-y-6">
-      <header className="animate-rise flex items-start gap-4">
+    <div className="mx-auto max-w-[110rem]">
+      <header className="animate-rise mb-6 flex items-start gap-4">
         <Link
           href="/admin/pages"
           aria-label="Back to content pages"
@@ -37,34 +71,34 @@ export default async function EditPagePage({
           <div className="flex items-center gap-3">
             <span className="h-px w-7 bg-lyp-cherry/30" />
             <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
-              Content Page
+              {serviceId ? "Service Page" : "Content Page"}
             </span>
           </div>
-          <PageTitleForm
-            pageId={id}
-            initialTitle={page.title ?? ""}
-            initialSlug={page.slug ?? ""}
-          />
+          <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
+            {page.title ?? "Untitled"}
+          </h1>
         </div>
       </header>
 
-      <section
-        className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
-        style={{ animationDelay: "140ms" }}
-      >
-        <PageSettingsForm
-          pageId={id}
-          initialImage={(page as Record<string, unknown>).featured_image as string | null ?? null}
-          initialPosition={(page as Record<string, unknown>).image_position as string | null ?? "right"}
+      <div className="animate-rise mb-6" style={{ animationDelay: "100ms" }}>
+        <PageEditorNav
+          previous={previous}
+          next={next}
+          position={index + 1}
+          total={deck.length}
         />
-      </section>
+      </div>
 
-      <section
-        className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
-        style={{ animationDelay: "200ms" }}
-      >
-        <ContentBlocksEditor pageId={id} initialBlocks={blocks} />
-      </section>
+      <PageEditorWorkspace
+        pageId={id}
+        initialTitle={page.title ?? ""}
+        initialSlug={page.slug ?? ""}
+        initialImage={(record.featured_image as string | null) ?? null}
+        initialPosition={(record.image_position as string | null) ?? "right"}
+        initialBlocks={blocks}
+        isServicePage={!!serviceId}
+        serviceSlug={serviceSlug}
+      />
     </div>
   );
 }

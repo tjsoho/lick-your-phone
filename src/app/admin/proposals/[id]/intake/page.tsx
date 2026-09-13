@@ -96,11 +96,11 @@ export default async function AdminIntakePage({
         <div className="mt-4 flex items-center gap-3">
           <span className="h-px w-7 bg-lyp-cherry/30" />
           <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
-            Intake
+            Onboarding
           </span>
         </div>
         <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
-          Intake Responses
+          Onboarding Answers
         </h1>
         <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
           {clientName}
@@ -116,7 +116,7 @@ export default async function AdminIntakePage({
             <FileText strokeWidth={1} className="h-6 w-6 text-lyp-cherry/60" />
           </span>
           <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
-            No intake responses submitted yet.
+            No onboarding answers submitted yet.
           </p>
         </div>
       ) : (
@@ -212,6 +212,19 @@ function ResponseValue({
         })}
       </ul>
     );
+  }
+
+  // Address: show it the way you'd write it on an envelope, not as raw keys
+  if (type === "address" && typeof value === "object" && !Array.isArray(value)) {
+    const a = value as Record<string, unknown>;
+    const part = (k: string) => String(a[k] ?? "").trim();
+    const locality = [part("city"), part("state"), part("postcode")]
+      .filter(Boolean)
+      .join(" ");
+    const line = [part("street"), locality, part("country")]
+      .filter(Boolean)
+      .join(", ");
+    return line ? <span>{line}</span> : <span className="text-[#C3B5B5]">—</span>;
   }
 
   // Checkbox / multiselect: array of strings

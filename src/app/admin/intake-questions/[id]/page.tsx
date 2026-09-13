@@ -49,7 +49,7 @@ export default async function EditIntakeQuestionPage({ params }: PageProps) {
           </span>
         </div>
         <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
-          Edit Intake Question
+          Edit Onboarding Question
         </h1>
       </header>
 

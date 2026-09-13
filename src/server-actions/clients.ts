@@ -49,6 +49,7 @@ export async function getClient(id: string) {
 export async function createClient(data: {
   name: string;
   slug: string;
+  contact_name?: string;
   abn?: string;
   entity_name?: string;
   email: string;
@@ -74,6 +75,7 @@ export async function updateClient(
   data: {
     name?: string;
     slug?: string;
+    contact_name?: string;
     abn?: string;
     entity_name?: string;
     email?: string;
@@ -100,7 +102,7 @@ export async function createVenue(data: {
   client_id: string;
   name: string;
   address?: string;
-  state_id: string;
+  state_id?: string;
 }) {
   try {
     const supabase = await createSupabaseClient();
@@ -194,4 +196,47 @@ export async function updateContact(
   } catch (error) {
     return { data: null, error: (error as Error).message };
   }
+}
+
+/**
+ * Creates the client and its venue together, the way the proposal wizard asks
+ * for them: one venue name, one contact person. Rolls the client back if the
+ * venue insert fails so a half-made record never reaches the clients list.
+ */
+export async function createClientWithVenue(data: {
+  venue_name: string;
+  contact_name: string;
+  email: string;
+  slug: string;
+}) {
+  const supabase = await createSupabaseClient();
+
+  const { data: client, error: clientError } = await supabase
+    .from("clients")
+    .insert({
+      name: data.venue_name,
+      slug: data.slug,
+      contact_name: data.contact_name,
+      email: data.email,
+    })
+    .select()
+    .single();
+
+  if (clientError) {
+    return { data: null, error: clientError.message };
+  }
+
+  const { data: venue, error: venueError } = await supabase
+    .from("venues")
+    .insert({ client_id: client.id, name: data.venue_name })
+    .select()
+    .single();
+
+  if (venueError) {
+    await supabase.from("clients").delete().eq("id", client.id);
+    return { data: null, error: venueError.message };
+  }
+
+  revalidatePath("/admin");
+  return { data: { client, venue }, error: null };
 }

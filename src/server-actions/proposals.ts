@@ -350,6 +350,52 @@ export async function supersedeProposal(
         author_id: authorId,
         content: data.notes.trim(),
       });
+    } else {
+      // Notes are written after signing now, so carry the old version's
+      // across rather than losing them when a proposal is superseded.
+      const { data: oldNotes } = await supabase
+        .from("internal_notes")
+        .select("author_id, content")
+        .eq("proposal_id", oldProposalId);
+
+      if (oldNotes && oldNotes.length > 0) {
+        await supabase.from("internal_notes").insert(
+          oldNotes.map((note: { author_id: string; content: string }) => ({
+            proposal_id: result.id,
+            author_id: note.author_id,
+            content: note.content,
+          })),
+        );
+      }
+    }
+
+    // Tailoring belongs to the deal, not the version: carry hidden sections
+    // and custom discounts across so replacing a proposal doesn't reset them.
+    const { data: oldSettings, error: readSettingsError } = await supabase
+      .from("proposal_page_settings")
+      .select("page_id, visible, discount_pct")
+      .eq("proposal_id", oldProposalId);
+
+    if (readSettingsError) throw readSettingsError;
+
+    if (oldSettings && oldSettings.length > 0) {
+      const { error: settingsError } = await supabase
+        .from("proposal_page_settings")
+        .insert(
+          oldSettings.map(
+            (setting: {
+              page_id: string;
+              visible: boolean | null;
+              discount_pct: number | null;
+            }) => ({
+              proposal_id: result.id,
+              page_id: setting.page_id,
+              visible: setting.visible,
+              discount_pct: setting.discount_pct,
+            }),
+          ),
+        );
+      if (settingsError) throw settingsError;
     }
 
     revalidatePath("/admin");

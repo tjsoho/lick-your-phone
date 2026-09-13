@@ -22,6 +22,10 @@ export const intakeQuestions = pgTable('intake_questions', {
   fieldType: fieldTypeEnum('field_type'),
   options: jsonb('options'),
   required: boolean('required').default(false),
+  /** Built but not shown. Keeps retired questions recoverable. */
+  hidden: boolean('hidden').default(false).notNull(),
+  /** Explains the section under its heading, e.g. what "Access Audit" means. */
+  sectionSubtitle: text('section_subtitle'),
   sequence: integer('sequence').notNull(),
   config: jsonb('config'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

@@ -348,7 +348,7 @@ function PaymentForm({
           style={{ animationDelay: `${revealDelay(3)}ms` }}
           className="portal-reveal block mt-6 w-fit rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:active:scale-100"
         >
-          Access Intake Form
+          Access Onboarding Form
         </Link>
       </div>
     );

@@ -198,13 +198,22 @@ export interface PdfLineItem {
   priceCents: number;
   term: string | null;
   billingCycleMonths: number;
+  /** What the client is buying, printed under the service name. */
+  inclusions?: string[];
 }
 
 export interface PdfContractInput {
   clientName: string;
+  /** The person signing; omitted for older records that never captured one. */
+  contactName?: string | null;
   venueName: string;
   lineItems: PdfLineItem[];
   totalCents: number;
+  /** Clauses from Agreement Settings; falls back to none if unset. */
+  termsClauses?: string[];
+  countersignatureImage?: string | null;
+  countersignatureName?: string;
+  countersignatureTitle?: string;
   signerEmail: string;
   signedAt: string;
   signatureDataUrl?: string;
@@ -267,7 +276,16 @@ function createContractDocument(input: PdfContractInput) {
       React.createElement(
         Text,
         { style: s.subtitle },
-        `Service Agreement for ${input.clientName} — ${input.venueName}`,
+        // Venue first, then the person signing — and never the same name
+        // twice, since a client's account name is its venue.
+        `Service Agreement for ${
+          [input.venueName, input.contactName]
+            .filter(
+              (part, i, parts): part is string =>
+                !!part && parts.indexOf(part) === i,
+            )
+            .join(" — ") || input.clientName
+        }`,
       ),
 
       /* Services table */
@@ -346,9 +364,27 @@ function createContractDocument(input: PdfContractInput) {
               ? React.createElement(
                   Text,
                   { style: { fontSize: 8, color: "#666666", marginTop: 3 } },
-                  item.term, // Ini akan mencetak "12 months, 6 shoots (every 2 months)"
+                  item.term,
                 )
               : null,
+
+            // What they are actually hiring us for, so the contract stands
+            // on its own without the proposal beside it.
+            ...(item.inclusions ?? []).map((text, inc) =>
+              React.createElement(
+                Text,
+                {
+                  key: `inc-${inc}`,
+                  style: {
+                    fontSize: 7.5,
+                    color: "#555555",
+                    marginTop: inc === 0 ? 4 : 2,
+                    paddingLeft: 8,
+                  },
+                },
+                `• ${text}`,
+              ),
+            ),
           ),
 
           // Kolom 2: Tipe Billing
@@ -402,40 +438,14 @@ function createContractDocument(input: PdfContractInput) {
         { style: s.sectionTitle },
         "Terms & Conditions",
       ),
-      React.createElement(
-        Text,
-        { style: s.termsText },
-        "1. Agreement Start: This agreement commences on the date of signature and continues for the term specified for each service.",
-      ),
-      React.createElement(
-        Text,
-        { style: s.termsText },
-        "2. Billing: Monthly recurring charges are invoiced 7 days before the start of each billing period. One-off charges are invoiced upon execution of this agreement.",
-      ),
-      React.createElement(
-        Text,
-        { style: s.termsText },
-        "3. Payment Terms: All invoices are due within 14 days of issue. A late payment fee of 2% per month applies to overdue balances.",
-      ),
-      React.createElement(
-        Text,
-        { style: s.termsText },
-        "4. GST: All prices listed are exclusive of GST. GST will be added at the prevailing rate.",
-      ),
-      React.createElement(
-        Text,
-        { style: s.termsText },
-        "5. Early Termination: Monthly services may be terminated with 30 days written notice. Early termination of fixed-term agreements is subject to a fee equal to the remaining term value, as outlined in our Terms & Conditions.",
-      ),
-      React.createElement(
-        Text,
-        { style: s.termsText },
-        "6. Scope: Services are provided as described in the accompanying proposal. Changes to scope require written agreement from both parties.",
-      ),
-      React.createElement(
-        Text,
-        { style: s.termsText },
-        "7. Intellectual Property: All content created by LickYourPhone Media remains the property of LickYourPhone Media until full payment is received, at which point a licence is granted for agreed usage.",
+      // Clauses are authored in Agreement Settings and numbered here, so
+      // adding a service's terms never means touching this file.
+      ...(input.termsClauses ?? []).map((clause, i) =>
+        React.createElement(
+          Text,
+          { key: `term-${i}`, style: s.termsText },
+          `${i + 1}. ${clause}`,
+        ),
       ),
 
       /* Signature blocks */
@@ -474,16 +484,23 @@ function createContractDocument(input: PdfContractInput) {
             { style: s.signatureLabel },
             "LickYourPhone Media",
           ),
-          React.createElement(View, { style: s.signatureLine }),
+          input.countersignatureImage
+            ? React.createElement(Image, {
+                style: s.signatureImage,
+                src: input.countersignatureImage,
+              })
+            : React.createElement(View, { style: s.signatureLine }),
           React.createElement(
             Text,
             { style: { fontSize: 9 } },
-            "Authorised Representative",
+            [input.countersignatureName, input.countersignatureTitle]
+              .filter(Boolean)
+              .join(" — ") || "Authorised Representative",
           ),
           React.createElement(
             Text,
             { style: s.signatureDate },
-            "Date: _______________",
+            `Signed: ${dateStr}`,
           ),
         ),
       ),

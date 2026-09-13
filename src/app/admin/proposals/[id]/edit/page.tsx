@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import { getClients } from "@/server-actions/clients";
-import { getStates } from "@/server-actions/states";
 import { getProposal } from "@/server-actions/proposals";
 import ProposalWizard from "@/components/admin/ProposalWizard";
 
@@ -15,10 +14,9 @@ export default async function EditProposalPage({
   const { mode } = await searchParams;
   const wizardMode = mode === "supersede" ? "supersede" : "edit";
 
-  const [{ data: proposal, error }, clientsRes, statesRes] = await Promise.all([
+  const [{ data: proposal, error }, clientsRes] = await Promise.all([
     getProposal(id),
     getClients(),
-    getStates(),
   ]);
 
   if (error || !proposal) return notFound();
@@ -26,7 +24,6 @@ export default async function EditProposalPage({
   const initialData = {
     clientId: proposal.clients?.id ?? "",
     venueId: proposal.venues?.id ?? "",
-    notes: proposal.internal_notes?.[0]?.content ?? "",
   };
 
   return (
@@ -44,7 +41,6 @@ export default async function EditProposalPage({
       </header>
       <ProposalWizard
         clients={clientsRes.data ?? []}
-        states={statesRes.data ?? []}
         mode={wizardMode}
         proposalId={id}
         initialData={initialData}

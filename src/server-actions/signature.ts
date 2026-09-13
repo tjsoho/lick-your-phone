@@ -1,10 +1,14 @@
 "use server";
 
-import { createClient } from "@/utils/server";
+import { createAdminClient, createClient } from "@/utils/server";
 import { headers } from "next/headers";
 import crypto from "crypto";
 import { generateContractPdf, type PdfLineItem } from "@/lib/pdf";
 import { onProposalSigned } from "@/lib/integrations";
+import {
+  getAgreementSettings,
+  getTermsClauses,
+} from "@/server-actions/agreement-settings";
 
 function calculateMonthlyCents(
   targetCents: number,
@@ -31,6 +35,13 @@ interface SignProposalInput {
 export async function signProposal(input: SignProposalInput) {
   try {
     const supabase = await createClient();
+
+    // The person signing is not logged in, and the tables this writes to are
+    // closed to anonymous writes on purpose — otherwise anyone holding a
+    // portal link could insert line items or contracts against any proposal.
+    // Reads stay on the anon client; only these writes are elevated.
+    const admin = await createAdminClient();
+
     const hdrs = await headers();
 
     const signerIp =
@@ -43,7 +54,7 @@ export async function signProposal(input: SignProposalInput) {
       .select(
         `
         id, status, token,
-        client:clients!client_id ( id, name ),
+        client:clients!client_id ( id, name, contact_name ),
         venue:venues!venue_id ( id, name, address )
       `,
       )
@@ -66,7 +77,7 @@ export async function signProposal(input: SignProposalInput) {
     const { data: services, error: svcErr } = await supabase
       .from("services")
       .select(
-        "id, name, billing, term, billing_cycle_months, price_display_period, target_price_cents, discount_pct, service_tiers(id, name, target_price_cents, billing_cycle_months)",
+        "id, name, billing, term, billing_cycle_months, price_display_period, target_price_cents, discount_pct, service_tiers(id, name, target_price_cents, billing_cycle_months), service_inclusions(text, sequence)",
       )
       .in("id", serviceIds);
 
@@ -135,6 +146,15 @@ export async function signProposal(input: SignProposalInput) {
         | "recurring_monthly"
         | "in_kind";
 
+      const inclusions = (
+        (svc as unknown as {
+          service_inclusions?: { text: string; sequence: number | null }[];
+        }).service_inclusions ?? []
+      )
+        .slice()
+        .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
+        .map((inc) => inc.text);
+
       pdfLineItems.push({
         name: svc.name,
         tierName,
@@ -142,6 +162,7 @@ export async function signProposal(input: SignProposalInput) {
         priceCents,
         term: svc.term,
         billingCycleMonths: finalBillingCycle || 1,
+        inclusions,
       });
 
       if (billing !== "in_kind") {
@@ -154,7 +175,7 @@ export async function signProposal(input: SignProposalInput) {
     }
 
     // 4. Insert line items
-    const { error: lineItemErr } = await supabase
+    const { error: lineItemErr } = await admin
       .from("proposal_line_items")
       // .insert(lineItemRows);
       .upsert(lineItemRows, {
@@ -169,6 +190,7 @@ export async function signProposal(input: SignProposalInput) {
     const clientObj = proposal.client as unknown as {
       id: string;
       name: string;
+      contact_name: string | null;
     } | null;
     const venueObj = proposal.venue as unknown as {
       id: string;
@@ -178,14 +200,24 @@ export async function signProposal(input: SignProposalInput) {
 
     const signedAt = new Date().toISOString();
 
+    const [settings, termsClauses] = await Promise.all([
+      getAgreementSettings(),
+      getTermsClauses(),
+    ]);
+
     const pdfBuffer = await generateContractPdf({
       clientName: clientObj?.name ?? "Client",
+      contactName: clientObj?.contact_name ?? null,
       venueName: venueObj?.name ?? "Venue",
       lineItems: pdfLineItems,
       totalCents,
       signerEmail: input.signerEmail,
       signedAt,
       signatureDataUrl: input.signatureDataUrl,
+      termsClauses,
+      countersignatureImage: settings.countersignatureImage,
+      countersignatureName: settings.countersignatureName,
+      countersignatureTitle: settings.countersignatureTitle,
     });
 
     // 6. Compute document hash
@@ -198,7 +230,7 @@ export async function signProposal(input: SignProposalInput) {
     const fileName = `contract-${input.proposalId}-${Date.now()}.pdf`;
     const storagePath = `contracts/${fileName}`;
 
-    const { error: uploadErr } = await supabase.storage
+    const { error: uploadErr } = await admin.storage
       .from("site-images")
       .upload(storagePath, pdfBuffer, {
         contentType: "application/pdf",
@@ -209,14 +241,14 @@ export async function signProposal(input: SignProposalInput) {
       return { error: "Failed to upload contract PDF: " + uploadErr.message };
     }
 
-    const { data: urlData } = supabase.storage
+    const { data: urlData } = admin.storage
       .from("site-images")
       .getPublicUrl(storagePath);
 
     const fileUrl = urlData.publicUrl;
 
     // 8. Create document record
-    const { data: doc, error: docErr } = await supabase
+    const { data: doc, error: docErr } = await admin
       .from("documents")
       .insert({
         proposal_id: input.proposalId,
@@ -232,7 +264,7 @@ export async function signProposal(input: SignProposalInput) {
     }
 
     // 9. Update proposal to signed
-    const { error: updateErr } = await supabase
+    const { error: updateErr } = await admin
       .from("proposals")
       .update({
         status: "signed",

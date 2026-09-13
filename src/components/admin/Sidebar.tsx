@@ -30,7 +30,7 @@ const navItems = [
   { label: "Services", icon: Package, href: "/admin/services" },
   { label: "Content Pages", icon: BookOpen, href: "/admin/pages" },
   {
-    label: "Intake Questions",
+    label: "Onboarding Questions",
     icon: CircleQuestionMarkIcon,
     href: "/admin/intake-questions",
   },

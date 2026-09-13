@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import { PageData, useProposal, type ContentBlock } from "../ProposalContext";
@@ -308,6 +309,30 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   const currentTierId = selectedTierId(service.id);
   const hasTiers = service.service_tiers.length > 0;
   const isInKind = service.billing === "in_kind";
+
+  const sortedTiers = [...service.service_tiers].sort(
+    (a, b) => a.sequence - b.sequence,
+  );
+
+  /**
+   * Every slide ends with the same action, so a term has to be pickable
+   * before the service is added. Until then the choice lives here; once the
+   * service is in, the context owns it.
+   */
+  const [pendingTierId, setPendingTierId] = useState<string | null>(null);
+  const highlightedTierId =
+    currentTierId ?? pendingTierId ?? sortedTiers[0]?.id ?? null;
+
+  /** The one action shared by every service page. */
+  function handleWantThis() {
+    if (isDisabled) return;
+    if (selected) {
+      deselectService(service.id);
+      return;
+    }
+    if (hasTiers && highlightedTierId) selectTier(service.id, highlightedTierId);
+    else toggleService(service.id);
+  }
 
   const hasOtherSelected = selections.some((sel) => {
     const svc = serviceMap[sel.serviceId];
@@ -634,7 +659,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 {isDisabled && (
                   <p className="mt-2 max-w-[15rem] font-body text-[10px] leading-[1.4] text-lyp-white/75 [@media(min-height:850px)]:text-[11px]">
                     {proposal.status === "signed"
-                      ? "Proposal has already been signed. Services can no longer be changed."
+                      ? "This has already been signed. Services can no longer be changed."
                       : "This service requires at least one other service to be selected first."}
                   </p>
                 )}
@@ -655,15 +680,13 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                     tierCount >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2",
                   )}
                 >
-                  {service.service_tiers
-                    .slice()
-                    .sort((a, b) => a.sequence - b.sequence)
+                  {sortedTiers
                     .map((tier, tierIndex) => {
                       const tierList = listFromTarget(
                         tier.target_price_cents,
                         service.discount_pct,
                       );
-                      const tierSelected = currentTierId === tier.id;
+                      const tierSelected = highlightedTierId === tier.id;
                       const tierSaving = tierList - tier.target_price_cents;
                       return (
                         <button
@@ -673,8 +696,11 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                           }}
                           disabled={isDisabled}
                           onClick={() => {
-                            if (tierSelected) deselectService(service.id);
-                            else selectTier(service.id, tier.id);
+                            if (isDisabled) return;
+                            // Picking a term never adds or removes the
+                            // service; the action below does that.
+                            setPendingTierId(tier.id);
+                            if (selected) selectTier(service.id, tier.id);
                           }}
                           className={cn(
                             "portal-reveal portal-reveal-pop rounded-xl px-3 py-2.5 text-left ring-1 ring-inset transition-[background-color,box-shadow,transform] duration-300 ease-brand hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none",
@@ -751,40 +777,36 @@ export default function ServicePage({ service, page }: ServicePageProps) {
 
           </Reveal>
 
-          {/* Selection — a deliberate action, not a stray toggle. It sits
-              OUTSIDE the quote, on the panel's bottom-right corner: the panel
-              states the price, this answers it. */}
-          {!hasTiers && (
-            <Reveal
-              // `pop` scales UP to its final size, so it never occupies more
-              // room than it settles into — safe at the foot of the slide.
-              variant="pop"
-              delay={D_TOGGLE}
-              className={cn(
-                "flex shrink-0 items-center gap-3 self-end rounded-xl px-4 py-2.5 ring-1 ring-inset transition-colors duration-300 ease-brand",
-                selected
-                  ? "bg-[#f0c9c9]/[0.14] ring-[#f0c9c9]/60"
-                  : "bg-lyp-white/[0.04] ring-lyp-white/[0.14]",
-                isDisabled && "opacity-40",
-              )}
-            >
-              <Switch
-                checked={selected}
-                onCheckedChange={() => {
-                  if (!isDisabled) toggleService(service.id);
-                }}
-                disabled={isDisabled}
-                className="data-[state=checked]:bg-lyp-cherry"
-              />
-              <span className="font-heading text-[11px] font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:850px)]:text-xs">
-                {isInKind
-                  ? "Paid in kind"
-                  : selected
-                    ? "Selected"
-                    : "Add to proposal"}
-              </span>
-            </Reveal>
-          )}
+          {/* Selection — one action, identical on every service slide,
+              whether or not a term had to be chosen above. It sits OUTSIDE
+              the quote, on the panel's bottom-right corner: the panel states
+              the price, this answers it. */}
+          <Reveal
+            // `pop` scales UP to its final size, so it never occupies more
+            // room than it settles into — safe at the foot of the slide.
+            variant="pop"
+            delay={D_TOGGLE}
+            className={cn(
+              "flex shrink-0 items-center gap-3 self-end rounded-xl px-4 py-2.5 ring-1 ring-inset transition-colors duration-300 ease-brand",
+              selected
+                ? "bg-[#f0c9c9]/[0.14] ring-[#f0c9c9]/60"
+                : "bg-lyp-white/[0.04] ring-lyp-white/[0.14]",
+              isDisabled && "opacity-40",
+            )}
+          >
+            <Switch
+              checked={selected}
+              onCheckedChange={handleWantThis}
+              disabled={isDisabled}
+              aria-label={
+                selected ? `Remove ${service.name}` : `I want ${service.name}`
+              }
+              className="data-[state=checked]:bg-lyp-cherry"
+            />
+            <span className="font-heading text-[11px] font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:850px)]:text-xs">
+              {isInKind ? "Paid in kind" : selected ? "Added" : "I want this"}
+            </span>
+          </Reveal>
           </div>
         </div>
 

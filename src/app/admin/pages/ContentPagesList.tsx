@@ -2,13 +2,13 @@
 
 import { useTransition, useState, useRef } from "react";
 import Link from "next/link";
-import { BookOpen, Loader2, Pencil, X, Check, FileEdit, Plus, GripVertical } from "lucide-react";
+import { BookOpen, Loader2, Pencil, X, Check, Trash2, Plus, GripVertical } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   togglePageVisibility,
-  updatePage,
   createPage,
   reorderPages,
+  deletePage,
 } from "@/server-actions/pages";
 import toast from "react-hot-toast";
 
@@ -46,14 +46,8 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
   const [pages, setPages] = useState<PageItem[]>(initialPages);
   const [isPending, startTransition] = useTransition();
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState({
-    title: "",
-    slug: "",
-    type: "",
-    sequence: 0,
-  });
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
 
@@ -138,32 +132,25 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
     });
   };
 
-  const startEdit = (page: PageItem) => {
-    setEditingId(page.id);
-    setEditForm({
-      title: page.title ?? "",
-      slug: page.slug ?? "",
-      type: page.type ?? "content",
-      sequence: page.sequence,
-    });
-  };
+  const handleDelete = async (page: PageItem) => {
+    const label = page.title ?? "this page";
+    if (
+      !window.confirm(
+        `Delete "${label}"? Its content blocks go with it. This cannot be undone.`,
+      )
+    )
+      return;
 
-  const cancelEdit = () => setEditingId(null);
+    setDeletingId(page.id);
+    const res = await deletePage(page.id);
+    setDeletingId(null);
 
-  const handleSave = async () => {
-    if (!editingId) return;
-    setSaving(true);
-    const res = await updatePage(editingId, editForm);
-    setSaving(false);
     if (res.error) {
       toast.error(res.error);
-    } else if (res.data) {
-      toast.success("Page updated");
-      setPages((prev) =>
-        prev.map((p) => (p.id === editingId ? { ...p, ...res.data } : p)),
-      );
-      setEditingId(null);
+      return;
     }
+    setPages((prev) => prev.filter((p) => p.id !== page.id));
+    toast.success(`"${label}" deleted`);
   };
 
   const handleAdd = async () => {
@@ -230,101 +217,10 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
       </thead>
       <tbody>
         {pages.map((page) => {
-          if (editingId === page.id) {
-            return (
-              <tr
-                key={page.id}
-                className="border-b border-[#F7F1F1] bg-[#FBF8F8] last:border-0"
-              >
-                <td className="w-10 px-2 py-2" />
-                <td className="px-4 py-2">
-                  <input
-                    className={ic}
-                    aria-label="Page title"
-                    value={editForm.title}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, title: e.target.value }))
-                    }
-                  />
-                </td>
-                <td className="px-4 py-2">
-                  <input
-                    className={ic + " font-mono text-[11px]"}
-                    aria-label="Page slug"
-                    value={editForm.slug}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, slug: e.target.value }))
-                    }
-                  />
-                </td>
-                <td className="px-4 py-2">
-                  <select
-                    className={ic}
-                    aria-label="Page type"
-                    value={editForm.type}
-                    onChange={(e) =>
-                      setEditForm((f) => ({ ...f, type: e.target.value }))
-                    }
-                  >
-                    <option value="content">content</option>
-                    <option value="service">service</option>
-                  </select>
-                </td>
-                <td className="px-4 py-2">
-                  <input
-                    className={ic + " w-20 tabular-nums"}
-                    aria-label="Page order"
-                    type="number"
-                    value={editForm.sequence}
-                    onChange={(e) =>
-                      setEditForm((f) => ({
-                        ...f,
-                        sequence: Number(e.target.value),
-                      }))
-                    }
-                  />
-                </td>
-                <td className="px-4 py-3">
-                  <Switch
-                    checked={!!page.visible}
-                    disabled={isPending && loadingId === page.id}
-                    onCheckedChange={() => handleToggle(page.id, page.visible)}
-                    aria-label={`Toggle visibility for ${page.title ?? "page"}`}
-                    className={switchClasses}
-                  />
-                </td>
-                <td className="px-4 py-2 text-right">
-                  <div className="flex items-center justify-end gap-1.5">
-                    <button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className={`rounded-full p-1.5 text-lyp-cherry transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.06] disabled:opacity-40`}
-                      title="Save"
-                      aria-label="Save page"
-                    >
-                      {saving ? (
-                        <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Check strokeWidth={1.5} className="h-4 w-4" />
-                      )}
-                    </button>
-                    <button
-                      onClick={cancelEdit}
-                      className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-black`}
-                      title="Cancel"
-                      aria-label="Cancel editing"
-                    >
-                      <X strokeWidth={1.5} className="h-4 w-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          }
           return (
             <tr
               key={page.id}
-              draggable={!editingId && !savingOrder}
+              draggable={!savingOrder}
               onDragStart={() => handleDragStart(page.id)}
               onDragOver={(e) => handleDragOver(e, page.id)}
               onDragEnd={handleDragEnd}
@@ -338,7 +234,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
               <td className="w-10 px-2 py-3">
                 <span
                   className={`flex items-center justify-center text-[#C3B5B5] transition-colors duration-500 ${EASE} ${
-                    editingId || savingOrder
+                    savingOrder
                       ? "cursor-not-allowed"
                       : "cursor-grab active:cursor-grabbing hover:text-lyp-cherry"
                   }`}
@@ -396,19 +292,24 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                   <Link
                     href={`/admin/pages/${page.id}`}
                     className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
-                    title="Edit Page Content"
-                    aria-label={`Edit content of ${page.title ?? "page"}`}
+                    title="Edit page"
+                    aria-label={`Edit ${page.title ?? "page"}`}
                   >
-                    <FileEdit strokeWidth={1.5} className="h-4 w-4" />
+                    <Pencil strokeWidth={1.5} className="h-4 w-4" />
                   </Link>
 
                   <button
-                    onClick={() => startEdit(page)}
-                    className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
-                    title="Edit Row"
-                    aria-label={`Edit details of ${page.title ?? "page"}`}
+                    onClick={() => handleDelete(page)}
+                    disabled={deletingId === page.id}
+                    className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry disabled:opacity-40`}
+                    title="Delete page"
+                    aria-label={`Delete ${page.title ?? "page"}`}
                   >
-                    <Pencil strokeWidth={1.5} className="h-4 w-4" />
+                    {deletingId === page.id ? (
+                      <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 strokeWidth={1.5} className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </td>

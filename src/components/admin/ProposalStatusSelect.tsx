@@ -6,6 +6,7 @@ import { updateProposal } from "@/server-actions/proposals";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
+import { formatStatus } from "@/lib/format";
 
 const EASE = "ease-brand";
 
@@ -74,7 +75,7 @@ export default function ProposalStatusSelect({
       >
         {statuses.map((s) => (
           <option key={s} value={s}>
-            {s.replace(/_/g, " ")}
+            {formatStatus(s)}
           </option>
         ))}
       </select>

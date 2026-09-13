@@ -26,7 +26,7 @@ export default async function IntakeRoutePage({ params }: Props) {
       token,
       status,
       discount_expires_at,
-      client:clients!client_id ( id, name ),
+      client:clients!client_id ( id, name, contact_name ),
       venue:venues!venue_id ( id, name, state_id )
     `,
     )
@@ -79,6 +79,9 @@ export default async function IntakeRoutePage({ params }: Props) {
     status: proposal.status,
     discountExpiresAt: proposal.discount_expires_at,
     clientName: clientObj?.name ?? "Client",
+    contactName:
+      (clientObj as { contact_name?: string | null } | null)?.contact_name ??
+      null,
     venueName: venueObj?.name ?? "Venue",
   };
 

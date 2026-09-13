@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { upsertVenue } from "@/server-actions/venues";
 import toast from "react-hot-toast";
 import { Check, X } from "lucide-react";
+import { useAutosave } from "@/hooks/use-autosave";
+import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 
 const EASE = "ease-brand";
 
@@ -41,6 +43,7 @@ export default function VenueForm({ venue, clients, states }: Props) {
   const {
     register,
     handleSubmit,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     defaultValues: {
@@ -50,6 +53,27 @@ export default function VenueForm({ venue, clients, states }: Props) {
       address: venue?.address ?? "",
     },
   });
+
+  // An existing venue saves as you type; creating one still needs the button.
+  const venueValues = watch();
+  const { status: autosaveStatus } = useAutosave(
+    venueValues,
+    async (v) => {
+      if (!venue) return { error: null };
+      const { error } = await upsertVenue({
+        id: venue.id,
+        name: v.name,
+        client_id: v.client_id || null,
+        state_id: v.state_id,
+        address: v.address || null,
+      });
+      return { error };
+    },
+    {
+      enabled:
+        isEditing && !!venueValues.name?.trim() && !!venueValues.state_id,
+    },
+  );
 
   async function onSubmit(values: FormValues) {
     const payload = {
@@ -67,7 +91,7 @@ export default function VenueForm({ venue, clients, states }: Props) {
     }
 
     toast.success(isEditing ? "Venue updated" : "Venue created");
-    router.push("/admin/venues");
+    if (!isEditing) router.push("/admin/venues");
   }
 
   return (
@@ -143,6 +167,9 @@ export default function VenueForm({ venue, clients, states }: Props) {
       </div>
 
       <div className="mt-7 flex flex-wrap items-center gap-2.5 border-t border-[#F1E8E8] pt-6">
+        {isEditing ? (
+          <SaveStatusBadge status={autosaveStatus} />
+        ) : (
         <button
           type="submit"
           disabled={isSubmitting}
@@ -159,13 +186,14 @@ export default function VenueForm({ venue, clients, states }: Props) {
             <Check strokeWidth={1.5} aria-hidden="true" className="h-4 w-4" />
           </span>
         </button>
+        )}
 
         <button
           type="button"
           onClick={() => router.back()}
           className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
         >
-          Cancel
+          {isEditing ? "Back" : "Cancel"}
           <span
             className={`flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
           >

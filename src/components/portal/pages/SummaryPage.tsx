@@ -114,7 +114,7 @@ export default function SummaryPage() {
           index={0}
           className="font-heading text-3xl md:text-5xl text-lyp-white mb-2 uppercase tracking-tight"
         >
-          Your Proposal Summary
+          Your Summary
         </Reveal>
         <Reveal
           as="p"
@@ -135,7 +135,7 @@ export default function SummaryPage() {
               index={3}
               className="font-body text-lyp-white/30 text-sm mt-2"
             >
-              Browse the pages to add services to your proposal.
+              Browse the pages to add the services you want.
             </Reveal>
           </div>
         ) : (
@@ -155,20 +155,25 @@ export default function SummaryPage() {
                     <button
                       type="button"
                       onClick={() => setExpandedId(isOpen ? null : item.id)}
-                      className="w-full flex items-center justify-between px-5 py-4 text-left transition-colors hover:bg-lyp-white/5"
+                      className="w-full flex items-center justify-between px-4 py-4 text-left transition-colors hover:bg-lyp-white/5 sm:px-5"
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Check className="h-4 w-4 text-lyp-cherry shrink-0" />
-                        <span className="font-heading text-sm text-lyp-white uppercase tracking-wide truncate">
-                          {item.name}
-                        </span>
-                        {item.tierName && (
-                          <span className="font-body text-xs text-lyp-white/40 shrink-0">
-                            ({item.tierName})
+                      {/* On a phone the name gets its own line and the term
+                          sits under it, so the price never squeezes the name
+                          down to a single letter. */}
+                      <div className="flex items-start gap-3 min-w-0">
+                        <Check className="mt-0.5 h-4 w-4 text-lyp-cherry shrink-0" />
+                        <div className="min-w-0">
+                          <span className="block font-heading text-sm text-lyp-white uppercase tracking-wide break-words sm:truncate">
+                            {item.name}
                           </span>
-                        )}
+                          {item.tierName && (
+                            <span className="block font-body text-xs text-lyp-white/40">
+                              {item.tierName}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0 ml-4">
+                      <div className="flex items-center gap-2 shrink-0 ml-3 sm:gap-3 sm:ml-4">
                         {item.billing === "in_kind" ? (
                           <span className="font-body text-sm text-lyp-cherry">
                             Complimentary
@@ -176,7 +181,7 @@ export default function SummaryPage() {
                         ) : (
                           <span className="font-heading text-base text-lyp-white">
                             {item.hasDiscount && (
-                              <span className="font-body text-xs text-lyp-white/30 line-through mr-2">
+                              <span className="hidden font-body text-xs text-lyp-white/30 line-through mr-2 sm:inline">
                                 {formatCents(item.listCents)}
                               </span>
                             )}
@@ -184,7 +189,7 @@ export default function SummaryPage() {
                             <span className="font-body text-xs text-lyp-white/40 ml-0.5">
                               {item.billing === "recurring_monthly"
                                 ? "/mo"
-                                : ""}
+                                : " one-off"}
                             </span>
                           </span>
                         )}
@@ -276,7 +281,7 @@ export default function SummaryPage() {
                             className="flex items-center gap-2 rounded-lg border border-lyp-white/15 px-4 py-2 font-body text-xs text-lyp-white/60 transition-colors hover:border-lyp-cherry/40 hover:text-lyp-cherry"
                           >
                             <X className="h-3.5 w-3.5" />
-                            Remove from proposal
+                            Remove this
                           </button>
                         )}
                       </div>
@@ -322,13 +327,22 @@ export default function SummaryPage() {
                             )}
                           </span>
 
-                          {/* Tampilkan rincian durasi kontrak jika recurring */}
-                          {item.billing === "recurring_monthly" &&
-                            item.billingCycleMonths > 1 && (
-                              <span className="font-body text-[10px] text-lyp-white/40 mt-0.5">
-                                for {item.billingCycleMonths} months
-                              </span>
-                            )}
+                          {/* Every paid line says how long it runs, so a
+                              12-month plan reads as plainly as a 3-month one
+                              and a single payment is never mistaken for a
+                              recurring one. */}
+                          {item.billing === "recurring_monthly" ? (
+                            <span className="font-body text-[10px] text-lyp-white/40 mt-0.5">
+                              for {item.billingCycleMonths}{" "}
+                              {item.billingCycleMonths === 1
+                                ? "month"
+                                : "months"}
+                            </span>
+                          ) : item.billing === "one_off" ? (
+                            <span className="font-body text-[10px] text-lyp-white/40 mt-0.5">
+                              one-off payment
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     );
@@ -385,7 +399,7 @@ export default function SummaryPage() {
                     onClick={() => setCurrentPage(paymentIdx)}
                     className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 mt-2"
                   >
-                    Proceed to Payment
+                    Add your payment details
                   </button>
                 ) : (
                   signatureIdx >= 0 && (

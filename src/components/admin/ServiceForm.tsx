@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -13,6 +13,8 @@ import {
   updateServiceObligations,
 } from "@/server-actions/services";
 import { createSlug } from "@/utils/create-slug";
+import { useAutosave } from "@/hooks/use-autosave";
+import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 import { cn } from "@/lib/utils";
 
 interface ListItem {
@@ -104,6 +106,58 @@ export default function ServiceForm({ service }: ServiceFormProps) {
   });
 
   watch("name");
+  const formValues = watch();
+
+  // Editing saves itself as you type. Creating still needs the button,
+  // because there is nothing to save into until the service exists.
+  const savedSlugRef = useRef(service?.slug ?? "");
+  const { status: autosaveStatus } = useAutosave(
+    { values: formValues, inclusions, obligations },
+    async ({ values, inclusions: incl, obligations: obl }) => {
+      if (!service) return { error: null };
+      const { error } = await updateService(service.id, {
+        name: values.name,
+        slug: values.slug,
+        billing: values.billing,
+        term: values.term || undefined,
+        target_price_cents: Math.round(Number(values.target_price_dollars) * 100),
+        discount_pct: Number(values.discount_pct_display) / 100,
+        discount_window_hours: Number(values.discount_window_hours) || undefined,
+        price_display_period: values.price_display_period || undefined,
+        requires_other_service: values.requires_other_service,
+        sequence: Number(values.sequence),
+      });
+      if (error) return { error };
+
+      // A row that has just been added is still empty; don't save blanks.
+      const { error: inclError } = await updateServiceInclusions(
+        service.id,
+        incl
+          .filter((item) => item.text.trim())
+          .map((item, i) => ({ text: item.text, sequence: i })),
+      );
+      if (inclError) return { error: inclError };
+
+      const { error: oblError } = await updateServiceObligations(
+        service.id,
+        obl
+          .filter((item) => item.text.trim())
+          .map((item, i) => ({ text: item.text, sequence: i })),
+      );
+      if (oblError) return { error: oblError };
+
+      // The slug is this page's own address, so follow it when it changes.
+      if (values.slug && values.slug !== savedSlugRef.current) {
+        savedSlugRef.current = values.slug;
+        router.replace(`/admin/services/${values.slug}`);
+      }
+      return { error: null };
+    },
+    {
+      enabled:
+        isEditing && !!formValues.name?.trim() && !!formValues.slug?.trim(),
+    },
+  );
 
   function handleNameChange(e: React.ChangeEvent<HTMLInputElement>) {
     const name = e.target.value;
@@ -164,7 +218,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
         toast.success("Service created");
       }
 
-      router.push("/admin/services");
+      if (!isEditing) router.push("/admin/services");
     } catch (err) {
       toast.error((err as Error).message || "Something went wrong");
     } finally {
@@ -387,7 +441,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="discount_pct_display" className={labelClasses}>
               Discount (%)
@@ -414,7 +468,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="price_display_period" className={labelClasses}>
               Price Display Period
@@ -468,7 +522,8 @@ export default function ServiceForm({ service }: ServiceFormProps) {
           disabled={saving}
           className={cn(
             `group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`,
-            saving && "cursor-not-allowed opacity-50"
+            saving && "cursor-not-allowed opacity-50",
+            isEditing && "hidden"
           )}
         >
           {saving ? "Saving..." : isEditing ? "Update Service" : "Create Service"}
@@ -482,6 +537,8 @@ export default function ServiceForm({ service }: ServiceFormProps) {
             )}
           </span>
         </button>
+
+        {isEditing && <SaveStatusBadge status={autosaveStatus} />}
 
         {isEditing && (
           <button

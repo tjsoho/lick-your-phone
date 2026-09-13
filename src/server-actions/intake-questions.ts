@@ -33,6 +33,7 @@ export async function upsertQuestion(input: IntakeQuestionInput) {
     const questionData = {
       page_number: input.page_number,
       section: input.section || null,
+      section_subtitle: input.section_subtitle || null,
       field_label: input.field_label,
       field_type: input.field_type,
       options: input.options || null,

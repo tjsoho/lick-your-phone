@@ -10,12 +10,15 @@ import {
   deleteQuestion,
 } from "@/server-actions/intake-questions";
 import { cn } from "@/lib/utils";
+import { useAutosave } from "@/hooks/use-autosave";
+import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 
 interface IntakeQuestionFormProps {
   question?: {
     id: string;
     page_number: number;
     section: string | null;
+    section_subtitle?: string | null;
     field_label: string;
     field_type: string;
     options: string[] | null;
@@ -40,6 +43,7 @@ interface IntakeQuestionFormData {
   page_number: number;
   sequence: number;
   section: string;
+  section_subtitle: string;
   field_label: string;
   field_type: string;
   required: boolean;
@@ -160,6 +164,7 @@ export default function IntakeQuestionForm({
       page_number: question?.page_number ?? 1,
       sequence: question?.sequence ?? 1,
       section: question?.section ?? "",
+      section_subtitle: question?.section_subtitle ?? "",
       field_label: question?.field_label ?? "",
       field_type:
         question?.field_type === "static"
@@ -201,66 +206,99 @@ export default function IntakeQuestionForm({
     watchedFieldType,
   );
 
+  /** One payload shape, whether the question is being created or autosaved. */
+  function buildPayload(data: IntakeQuestionFormData): IntakeQuestionInput {
+    const isChoice = ["radio", "checkbox", "multiselect", "select"].includes(
+      data.field_type,
+    );
+    // Map options
+    const optionsArray = isChoice
+      ? data.options.map((opt) => opt.value).filter(Boolean)
+      : null;
+
+    // Map conditions
+    const conditions = data.conditions.map((c) => {
+      const payload: IntakeQuestionFormData["conditions"][number] = {
+        condition_type: c.condition_type,
+        condition_service_id: "",
+        condition_state_id: "",
+        condition_question_id: "",
+        condition_value: "",
+      };
+      if (c.id) payload.id = c.id;
+
+      if (c.condition_type === "service_signed") {
+        payload.condition_service_id = c.condition_service_id;
+      } else if (c.condition_type === "venue_state") {
+        payload.condition_state_id = c.condition_state_id;
+      } else if (c.condition_type === "answer_equals") {
+        payload.condition_question_id = c.condition_question_id;
+        payload.condition_value = c.condition_value;
+      }
+      return payload;
+    });
+
+    // Map config based on field type
+    let configPayload: Record<string, unknown> | null = null;
+    if (data.field_type === "text" || data.field_type === "email") {
+      configPayload = { placeholder: data.config?.placeholder || "" };
+    } else if (data.field_type === "static_content") {
+      configPayload = { content: data.config?.content || "" };
+    } else if (data.field_type === "provider_picker") {
+      configPayload = {
+        providerType: data.config?.providerType || "photographer",
+      };
+    }
+
+    return {
+      id: question?.id,
+      page_number: Number(data.page_number),
+      sequence: Number(data.sequence),
+      section: data.section || null,
+      section_subtitle: data.section_subtitle || null,
+      field_label: data.field_label,
+      field_type: data.field_type,
+      options: optionsArray,
+      required: data.required,
+      config: configPayload,
+      intake_conditions: conditions,
+    };
+  }
+
+  // Editing saves as you type. A condition only saves once it is complete,
+  // since a half-filled one has nothing valid to point at yet.
+  const allValues = watch();
+  const conditionsComplete = (allValues.conditions ?? []).every((c) =>
+    c.condition_type === "service_signed"
+      ? !!c.condition_service_id
+      : c.condition_type === "venue_state"
+        ? !!c.condition_state_id
+        : c.condition_type === "answer_equals"
+          ? !!c.condition_question_id && !!c.condition_value
+          : true,
+  );
+  const { status: autosaveStatus } = useAutosave(
+    allValues,
+    async (v) => {
+      const { error } = await upsertQuestion(buildPayload(v));
+      return { error };
+    },
+    {
+      enabled:
+        isEditing && !!allValues.field_label?.trim() && conditionsComplete,
+    },
+  );
+
   async function onSubmit(data: IntakeQuestionFormData) {
     setSaving(true);
     try {
-      // Map options
-      const optionsArray = isChoiceBased
-        ? data.options.map((opt) => opt.value).filter(Boolean)
-        : null;
-
-      // Map conditions
-      const conditions = data.conditions.map((c) => {
-        const payload: IntakeQuestionFormData["conditions"][number] = {
-          condition_type: c.condition_type,
-          condition_service_id: "",
-          condition_state_id: "",
-          condition_question_id: "",
-          condition_value: "",
-        };
-        if (c.id) payload.id = c.id;
-
-        if (c.condition_type === "service_signed") {
-          payload.condition_service_id = c.condition_service_id;
-        } else if (c.condition_type === "venue_state") {
-          payload.condition_state_id = c.condition_state_id;
-        } else if (c.condition_type === "answer_equals") {
-          payload.condition_question_id = c.condition_question_id;
-          payload.condition_value = c.condition_value;
-        }
-        return payload;
-      });
-
-      // Map config based on field type
-      let configPayload: Record<string, unknown> | null = null;
-      if (data.field_type === "text" || data.field_type === "email") {
-        configPayload = { placeholder: data.config?.placeholder || "" };
-      } else if (data.field_type === "static_content") {
-        configPayload = { content: data.config?.content || "" };
-      } else if (data.field_type === "provider_picker") {
-        configPayload = {
-          providerType: data.config?.providerType || "photographer",
-        };
-      }
-
-      const payload: IntakeQuestionInput = {
-        id: question?.id,
-        page_number: Number(data.page_number),
-        sequence: Number(data.sequence),
-        section: data.section || null,
-        field_label: data.field_label,
-        field_type: data.field_type,
-        options: optionsArray,
-        required: data.required,
-        config: configPayload,
-        intake_conditions: conditions,
-      };
+      const payload = buildPayload(data);
 
       const { error } = await upsertQuestion(payload);
       if (error) throw new Error(error);
 
       toast.success(isEditing ? "Question updated" : "Question created");
-      router.push("/admin/intake-questions");
+      if (!isEditing) router.push("/admin/intake-questions");
       router.refresh();
     } catch (err) {
       toast.error((err as Error).message || "Something went wrong");
@@ -352,6 +390,23 @@ export default function IntakeQuestionForm({
               {...register("section")}
               className={inputClasses}
             />
+          </div>
+
+          <div>
+            <label htmlFor="section_subtitle" className={labelClasses}>
+              Section Subtitle (Optional)
+            </label>
+            <input
+              id="section_subtitle"
+              type="text"
+              placeholder="e.g. The logins we need to run your accounts"
+              {...register("section_subtitle")}
+              className={inputClasses}
+            />
+            <p className="mt-1.5 font-body text-[11px] text-[#A89898]">
+              Shown under the section heading, so clients know what the section
+              is for. Taken from the first question in the section.
+            </p>
           </div>
 
           <div>
@@ -734,20 +789,20 @@ export default function IntakeQuestionForm({
         className="animate-rise flex flex-wrap items-center gap-3"
         style={{ animationDelay: "200ms" }}
       >
-        <button type="submit" disabled={saving} className={primaryPill}>
-          {saving
-            ? "Saving..."
-            : isEditing
-              ? "Update Question"
-              : "Create Question"}
-          <span className={pillIcon}>
-            {saving ? (
-              <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" />
-            ) : (
-              <Check strokeWidth={1.5} className="h-4 w-4" />
-            )}
-          </span>
-        </button>
+        {isEditing ? (
+          <SaveStatusBadge status={autosaveStatus} />
+        ) : (
+          <button type="submit" disabled={saving} className={primaryPill}>
+            {saving ? "Saving..." : "Create Question"}
+            <span className={pillIcon}>
+              {saving ? (
+                <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" />
+              ) : (
+                <Check strokeWidth={1.5} className="h-4 w-4" />
+              )}
+            </span>
+          </button>
+        )}
 
         {isEditing && (
           <button

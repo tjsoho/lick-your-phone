@@ -39,3 +39,21 @@ export const contentBlocks = pgTable('content_blocks', {
 export const contentBlocksRelations = relations(contentBlocks, ({ one }) => ({
   page: one(pages, { fields: [contentBlocks.pageId], references: [pages.id] }),
 }))
+
+/**
+ * Agreement-wide settings, edited in admin and applied to every proposal.
+ *
+ * A single row, pinned to `id = 1`, so callers never have to pick between
+ * rows and an update can never fork into two competing sets of terms.
+ * Deliberately not `site_settings` — that name is already taken in this
+ * database by an unrelated hold-page record.
+ */
+export const agreementSettings = pgTable('agreement_settings', {
+  id: integer('id').primaryKey().default(1),
+  termsAndConditions: text('terms_and_conditions'),
+  postSignatureText: text('post_signature_text'),
+  countersignatureImage: text('countersignature_image'),
+  countersignatureName: text('countersignature_name'),
+  countersignatureTitle: text('countersignature_title'),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})

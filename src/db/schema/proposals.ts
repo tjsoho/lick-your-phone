@@ -1,8 +1,9 @@
-import { pgTable, uuid, text, timestamp, integer, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, uuid, text, timestamp, integer, real, boolean, unique, pgEnum } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 import { users } from './auth'
 import { clients, venues } from './clients'
 import { services, serviceTiers } from './services'
+import { pages } from './content'
 import { intakeResponses } from './intake'
 import { documents } from './documents'
 import { payments } from './payments'
@@ -68,4 +69,30 @@ export const internalNotes = pgTable('internal_notes', {
 export const internalNotesRelations = relations(internalNotes, ({ one }) => ({
   proposal: one(proposals, { fields: [internalNotes.proposalId], references: [proposals.id] }),
   author: one(users, { fields: [internalNotes.authorId], references: [users.id] }),
+}))
+
+/**
+ * Per-proposal tailoring of the presentation.
+ *
+ * One row per page a proposal deviates on. A null column means "inherit the
+ * global setting", so a row that only overrides the discount leaves visibility
+ * following Content Pages, and a proposal with no rows renders exactly as the
+ * global deck does.
+ */
+export const proposalPageSettings = pgTable('proposal_page_settings', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  proposalId: uuid('proposal_id').references(() => proposals.id).notNull(),
+  pageId: uuid('page_id').references(() => pages.id).notNull(),
+  visible: boolean('visible'),
+  // Same unit as services.discount_pct: a fraction, so 0.2 is 20% off.
+  discountPct: real('discount_pct'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+}, (t) => ({
+  proposalPageUnique: unique('proposal_page_settings_proposal_id_page_id_key').on(t.proposalId, t.pageId),
+}))
+
+export const proposalPageSettingsRelations = relations(proposalPageSettings, ({ one }) => ({
+  proposal: one(proposals, { fields: [proposalPageSettings.proposalId], references: [proposals.id] }),
+  page: one(pages, { fields: [proposalPageSettings.pageId], references: [pages.id] }),
 }))

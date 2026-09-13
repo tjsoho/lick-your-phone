@@ -1,12 +1,8 @@
 import { getClients } from "@/server-actions/clients";
-import { getStates } from "@/server-actions/states";
 import ProposalWizard from "@/components/admin/ProposalWizard";
 
 export default async function NewProposalPage() {
-  const [clientsRes, statesRes] = await Promise.all([
-    getClients(),
-    getStates(),
-  ]);
+  const clientsRes = await getClients();
 
   return (
     <div className="mx-auto max-w-[52rem]">
@@ -21,10 +17,7 @@ export default async function NewProposalPage() {
           New Proposal
         </h1>
       </header>
-      <ProposalWizard
-        clients={clientsRes.data ?? []}
-        states={statesRes.data ?? []}
-      />
+      <ProposalWizard clients={clientsRes.data ?? []} />
     </div>
   );
 }

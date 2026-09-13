@@ -236,3 +236,52 @@ export async function updatePageImage(
   }
 }
 
+
+/**
+ * Pages the portal addresses by slug. Removing one leaves the presentation
+ * without a cover, summary, signing step or payment step, so they are locked.
+ */
+const STRUCTURAL_SLUGS = [
+  "cover",
+  "summary",
+  "signature",
+  "payment",
+  "intake",
+];
+
+export async function deletePage(id: string) {
+  try {
+    const supabase = await createClient();
+
+    const { data: page, error: readError } = await supabase
+      .from("pages")
+      .select("id, slug, title")
+      .eq("id", id)
+      .single();
+
+    if (readError) throw readError;
+    if (!page) return { error: "Page not found" };
+
+    if (page.slug && STRUCTURAL_SLUGS.includes(page.slug)) {
+      return {
+        error: `"${page.title ?? page.slug}" is part of the proposal flow and can't be deleted. Hide it instead.`,
+      };
+    }
+
+    // content_blocks.page_id has no cascade, so clear the children first.
+    const { error: blocksError } = await supabase
+      .from("content_blocks")
+      .delete()
+      .eq("page_id", id);
+
+    if (blocksError) throw blocksError;
+
+    const { error } = await supabase.from("pages").delete().eq("id", id);
+    if (error) throw error;
+
+    revalidatePath("/admin/pages");
+    return { error: null };
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+}

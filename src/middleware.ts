@@ -8,6 +8,9 @@ const HIDDEN_ADMIN_ROUTES: string[] = [];
 /** Header used to hand the verified user down to the admin layout. */
 const USER_EMAIL_HEADER = "x-admin-user-email";
 
+/** Lets the admin layout tell which route it is wrapping. */
+const PATHNAME_HEADER = "x-admin-pathname";
+
 export async function middleware(request: NextRequest) {
     const pathname = request.nextUrl.pathname;
 
@@ -15,6 +18,8 @@ export async function middleware(request: NextRequest) {
     // this header itself and make the layout believe it is signed in.
     const forwarded = new Headers(request.headers);
     forwarded.delete(USER_EMAIL_HEADER);
+    forwarded.delete(PATHNAME_HEADER);
+    forwarded.set(PATHNAME_HEADER, pathname);
 
     if (pathname.startsWith("/admin")) {
         // Redirect hidden admin routes to dashboard

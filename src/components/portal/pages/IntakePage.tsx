@@ -22,6 +22,33 @@ import {
 import { saveIntakeResponses, completeIntake } from "@/server-actions/intake";
 import Reveal, { revealDelay } from "../Reveal";
 
+/**
+ * A "same as above" shortcut, declared on the first question of a section.
+ *
+ * `pairs` are [target label, source label] within the same page, so the same
+ * mechanism works for any section without naming question ids in code:
+ *   { "same_as": { "label": "Same as director",
+ *                  "pairs": [["First Name", "Director First Name"]] } }
+ */
+type SameAsConfig = {
+  label: string;
+  pairs: [string, string][];
+};
+
+function readSameAs(config: unknown): SameAsConfig | null {
+  const raw = (config as { same_as?: unknown } | null)?.same_as;
+  if (!raw || typeof raw !== "object") return null;
+  const { label, pairs } = raw as { label?: unknown; pairs?: unknown };
+  if (!Array.isArray(pairs) || pairs.length === 0) return null;
+  return {
+    label: typeof label === "string" && label ? label : "Same as above",
+    pairs: pairs.filter(
+      (p): p is [string, string] =>
+        Array.isArray(p) && p.length === 2 && p.every((x) => typeof x === "string"),
+    ),
+  };
+}
+
 interface IntakePageProps {
   questions: IntakeQuestionWithConditions[];
   providers: Provider[];
@@ -102,6 +129,7 @@ export default function IntakePage({
   existingResponses,
 }: IntakePageProps) {
   const { proposal, selections } = useProposal();
+  const [sameAsOn, setSameAsOn] = useState<Record<string, boolean>>({});
   const [responses, setResponses] = useState<Record<string, unknown>>(
     existingResponses ?? {},
   );
@@ -175,6 +203,8 @@ export default function IntakePage({
   const sections = useMemo(() => {
     const grouped: {
       section: string | null;
+      subtitle: string | null;
+      sameAs: SameAsConfig | null;
       questions: IntakeQuestionWithConditions[];
     }[] = [];
     let currentSection: string | null | undefined = undefined;
@@ -182,7 +212,14 @@ export default function IntakePage({
     for (const q of visibleQuestionsForPage) {
       if (q.section !== currentSection) {
         currentSection = q.section;
-        grouped.push({ section: currentSection, questions: [] });
+        grouped.push({
+          section: currentSection,
+          // The first question of a section carries its subtitle and any
+          // "same as" shortcut.
+          subtitle: q.section_subtitle ?? null,
+          sameAs: readSameAs(q.config),
+          questions: [],
+        });
       }
       grouped[grouped.length - 1].questions.push(q);
     }
@@ -289,6 +326,28 @@ export default function IntakePage({
     if (error) setError("");
   }
 
+  /**
+   * Copies the source answers onto the target fields, or clears them again
+   * when unticked, so the shortcut is always reversible.
+   */
+  function applySameAs(cfg: SameAsConfig, on: boolean) {
+    const byLabel = new Map(
+      visibleQuestionsForPage.map((q) => [q.field_label, q.id]),
+    );
+
+    setResponses((prev) => {
+      const next = { ...prev };
+      for (const [targetLabel, sourceLabel] of cfg.pairs) {
+        const targetId = byLabel.get(targetLabel);
+        const sourceId = byLabel.get(sourceLabel);
+        if (!targetId || !sourceId) continue;
+        next[targetId] = on ? (prev[sourceId] ?? "") : "";
+      }
+      return next;
+    });
+    if (error) setError("");
+  }
+
   // Completed state
   const isCompletedScreen =
     (completed || proposal.status === "intake_complete") && !isEditing;
@@ -303,7 +362,7 @@ export default function IntakePage({
           All Done!
         </h1>
         <p className="font-body text-lyp-white/60 max-w-md mb-8">
-          Thank you for completing the intake form. Your dedicated marketer will
+          Thank you for completing the onboarding form. Your dedicated marketer will
           be in touch to schedule your onboarding call.
         </p>
         <button
@@ -376,13 +435,45 @@ export default function IntakePage({
               <div key={si}>
                 {section.section && (
                   <Reveal
-                    as="h2"
                     delay={revealDelay(qi++)}
-                    className="font-heading text-xl text-lyp-white mb-6 border-b border-lyp-white/10 pb-3"
+                    className="mb-6 border-b border-lyp-white/10 pb-3"
                   >
-                    {section.section}
+                    <h2 className="font-heading text-xl text-lyp-white">
+                      {section.section}
+                    </h2>
+                    {/* Says what the section is for, so "Access Audit" is not
+                        a mystery to the person filling it in. */}
+                    {section.subtitle && (
+                      <p className="mt-1.5 font-body text-sm leading-relaxed text-lyp-white/50">
+                        {section.subtitle}
+                      </p>
+                    )}
                   </Reveal>
                 )}
+                {/* Saves retyping details already given just above. */}
+                {section.sameAs && (
+                  <Reveal delay={revealDelay(qi++)} className="mb-5">
+                    <label className="inline-flex cursor-pointer items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        checked={!!sameAsOn[section.section ?? ""]}
+                        onChange={(e) => {
+                          const on = e.target.checked;
+                          setSameAsOn((prev) => ({
+                            ...prev,
+                            [section.section ?? ""]: on,
+                          }));
+                          applySameAs(section.sameAs!, on);
+                        }}
+                        className="h-4 w-4 cursor-pointer accent-lyp-cherry"
+                      />
+                      <span className="font-body text-sm text-lyp-white/70">
+                        {section.sameAs.label}
+                      </span>
+                    </label>
+                  </Reveal>
+                )}
+
                 <div className="space-y-6">
                   {section.questions.map((q) => {
                     const Component = FIELD_COMPONENTS[q.field_type];
@@ -418,17 +509,23 @@ export default function IntakePage({
       {/* Navigation */}
       <div className="flex-shrink-0 border-t border-lyp-white/10 px-6 py-4">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <button
-            type="button"
-            onClick={() => {
-              if (prevPage !== null) setCurrentIntakePage(prevPage);
-            }}
-            disabled={isFirstPage || saving}
-            className="group flex items-center gap-1 font-body text-sm text-lyp-white/60 transition-colors duration-300 ease-brand hover:text-lyp-white disabled:opacity-20"
-          >
-            <ChevronLeft className="h-4 w-4 transition-transform duration-300 ease-brand group-hover:-translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
-            Back
-          </button>
+          {/* No Back on the final step — nothing should compete with
+              Submit once the last question is answered. */}
+          {isLastPage ? (
+            <span aria-hidden />
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                if (prevPage !== null) setCurrentIntakePage(prevPage);
+              }}
+              disabled={isFirstPage || saving}
+              className="group flex items-center gap-1 font-body text-sm text-lyp-white/60 transition-colors duration-300 ease-brand hover:text-lyp-white disabled:opacity-20"
+            >
+              <ChevronLeft className="h-4 w-4 transition-transform duration-300 ease-brand group-hover:-translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
+              Back
+            </button>
+          )}
 
           <button
             type="button"

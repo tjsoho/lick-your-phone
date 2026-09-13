@@ -36,7 +36,7 @@ export default async function NewIntakeQuestionPage() {
           </span>
         </div>
         <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
-          Add Intake Question
+          Add Onboarding Question
         </h1>
       </header>
 

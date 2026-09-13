@@ -4,12 +4,14 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import { useProposal } from "../ProposalContext";
 import { signProposal } from "@/server-actions/signature";
 import Reveal, { revealDelay } from "../Reveal";
+import { X } from "lucide-react";
 
 type SignState = "idle" | "signing" | "signed" | "error";
 
 export default function SignaturePage() {
   const {
     proposal,
+    agreement,
     selections,
     updateProposal,
     pages,
@@ -18,6 +20,7 @@ export default function SignaturePage() {
   } = useProposal();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [termsOpen, setTermsOpen] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [email, setEmail] = useState("");
@@ -205,8 +208,7 @@ export default function SignaturePage() {
           Agreement Signed
         </h1>
         <p className="portal-reveal font-body text-sm text-lyp-white/60 max-w-sm mb-8" style={{ animationDelay: `${revealDelay(2)}ms` }}>
-          This proposal has already been signed. If you need a copy of your
-          contract, please contact your account manager.
+          {agreement.postSignatureText}
         </p>
         <Reveal index={3} className="flex flex-col sm:flex-row gap-4 justify-center">
           {documentUrl && (
@@ -237,7 +239,7 @@ export default function SignaturePage() {
               onClick={() => setCurrentPage(paymentPageIndex)}
               className="inline-flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon justify-center"
             >
-              Proceed to Payment
+              Add your payment details
             </button>
           )}
         </Reveal>
@@ -275,7 +277,7 @@ export default function SignaturePage() {
           Agreement Signed
         </h1>
         <p className="portal-reveal font-body text-sm text-lyp-white/60 max-w-sm mb-8" style={{ animationDelay: `${revealDelay(2)}ms` }}>
-          Thank you for signing. A copy of your contract has been generated.
+          {agreement.postSignatureText}
         </p>
         <Reveal index={3} className="flex flex-col sm:flex-row gap-4 justify-center">
           {documentUrl && (
@@ -306,7 +308,7 @@ export default function SignaturePage() {
               onClick={() => setCurrentPage(paymentPageIndex)}
               className="inline-flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon justify-center"
             >
-              Proceed to Payment
+              Add your payment details
             </button>
           )}
         </Reveal>
@@ -417,9 +419,78 @@ export default function SignaturePage() {
             style={{ animationDelay: `${revealDelay(4)}ms` }}
           >
             By clicking &ldquo;I Agree &amp; Sign&rdquo; you confirm that you
-            have reviewed the selected services and pricing, and agree to the
-            terms and conditions outlined in this proposal.
+            have reviewed the selected services and pricing, and agree to the{" "}
+            <button
+              type="button"
+              onClick={() => setTermsOpen(true)}
+              className="font-semibold text-lyp-white/80 underline underline-offset-2 transition-colors hover:text-lyp-cherry"
+            >
+              terms and conditions
+            </button>
+            .
           </p>
+
+          {/* Terms, read in place rather than navigating away mid-signature */}
+          {termsOpen && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Terms and conditions"
+              className="fixed inset-0 z-[60] flex items-center justify-center bg-[#050203]/80 p-4 backdrop-blur-sm"
+              onClick={() => setTermsOpen(false)}
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="portal-reveal portal-reveal-pop flex max-h-[80vh] w-full max-w-2xl flex-col rounded-2xl border border-lyp-white/15 bg-[#150609]"
+              >
+                <div className="flex items-center justify-between gap-4 border-b border-lyp-white/10 px-6 py-4">
+                  <h2 className="font-heading text-lg text-lyp-white">
+                    Terms &amp; Conditions
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setTermsOpen(false)}
+                    aria-label="Close terms and conditions"
+                    className="rounded-full p-1.5 text-lyp-white/50 transition-colors hover:text-lyp-cherry"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="overflow-y-auto px-6 py-5">
+                  {agreement.termsClauses.length === 0 ? (
+                    <p className="font-body text-sm text-lyp-white/50">
+                      No terms have been published yet.
+                    </p>
+                  ) : (
+                    <ol className="space-y-3">
+                      {agreement.termsClauses.map((clause, i) => (
+                        <li
+                          key={i}
+                          className="flex gap-3 font-body text-[13px] leading-relaxed text-lyp-white/70"
+                        >
+                          <span className="shrink-0 font-heading text-lyp-cherry">
+                            {i + 1}.
+                          </span>
+                          <span>{clause}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </div>
+
+                <div className="border-t border-lyp-white/10 px-6 py-4 text-right">
+                  <button
+                    type="button"
+                    onClick={() => setTermsOpen(false)}
+                    className="rounded-lg bg-lyp-cherry px-5 py-2 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Error */}
           {signState === "error" && errorMsg && (

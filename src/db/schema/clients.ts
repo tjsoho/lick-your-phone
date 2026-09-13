@@ -21,6 +21,7 @@ export const clients = pgTable("clients", {
   slug: text("slug").unique().notNull(),
   email: text("email").notNull(),
   name: text("name").notNull(),
+  contactName: text("contact_name"),
   abn: text("abn"),
   entityName: text("entity_name"),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -42,9 +43,7 @@ export const venues = pgTable("venues", {
   clientId: uuid("client_id").references(() => clients.id),
   name: text("name").notNull(),
   address: text("address"),
-  stateId: uuid("state_id")
-    .references(() => states.id)
-    .notNull(),
+  stateId: uuid("state_id").references(() => states.id),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

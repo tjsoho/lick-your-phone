@@ -5,6 +5,10 @@ import type {
   PageData,
 } from "@/components/portal/ProposalContext";
 import { mapPages, mapServices } from "./mappers";
+import {
+  getAgreementSettings,
+  getTermsClauses,
+} from "@/server-actions/agreement-settings";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +35,7 @@ export default async function PortalPage({ params }: Props) {
     .select(
       `
       id, token, status, discount_expires_at,
-      client:clients!client_id ( id, name ),
+      client:clients!client_id ( id, name, contact_name ),
       venue:venues!venue_id ( id, name ),
       payments(*),
       proposal_line_items(*)
@@ -44,7 +48,7 @@ export default async function PortalPage({ params }: Props) {
     return (
       <ErrorScreen
         title="Link Not Found"
-        message="This proposal link is invalid or has expired. Please contact your account manager for an updated link."
+        message="This link is invalid or has expired. Please contact your account manager for an updated link."
       />
     );
   }
@@ -52,21 +56,43 @@ export default async function PortalPage({ params }: Props) {
   if (proposal.status === "superseded") {
     return (
       <ErrorScreen
-        title="Proposal Replaced"
-        message="This proposal has been superseded by a newer version. Please check your email for the latest link or contact your account manager."
+        title="Link Replaced"
+        message="A newer version has been sent to you. Please check your email for the latest link, or contact your account manager."
       />
     );
   }
 
-  // 3. Fetch pages ordered by sequence
+  // 3. Fetch pages ordered by sequence.
+  //    Visibility is resolved below, because this proposal may override it.
   const { data: pagesRaw } = await supabase
     .from("pages")
     .select(
-      `id, type, slug, title, sequence, service_id, featured_image, image_position,
+      `id, type, slug, title, sequence, service_id, visible, featured_image, image_position,
        content_blocks ( id, type, content, sequence )`,
     )
-    .eq("visible", true)
     .order("sequence", { ascending: true });
+
+  // 3b. Per-proposal tailoring: which sections show, and any discount override.
+  const { data: overridesRaw } = await supabase
+    .from("proposal_page_settings")
+    .select("page_id, visible, discount_pct")
+    .eq("proposal_id", proposal.id);
+
+  const overrides = new Map(
+    ((overridesRaw ?? []) as Array<{
+      page_id: string;
+      visible: boolean | null;
+      discount_pct: number | null;
+    }>).map((o) => [o.page_id, o]),
+  );
+
+  const visiblePagesRaw = ((pagesRaw ?? []) as Array<{
+    id: string;
+    visible?: boolean | null;
+  }>).filter((page) => {
+    const override = overrides.get(page.id)?.visible;
+    return override ?? page.visible ?? true;
+  });
 
   // 4. Fetch all services with related data
   const { data: servicesRaw } = await supabase
@@ -86,6 +112,7 @@ export default async function PortalPage({ params }: Props) {
   const clientObj = proposal.client as unknown as {
     id: string;
     name: string;
+    contact_name: string | null;
   } | null;
   const venueObj = proposal.venue as unknown as {
     id: string;
@@ -98,11 +125,32 @@ export default async function PortalPage({ params }: Props) {
     status: proposal.status,
     discountExpiresAt: proposal.discount_expires_at,
     clientName: clientObj?.name ?? "Client",
+    contactName: clientObj?.contact_name ?? null,
     venueName: venueObj?.name ?? "Venue",
   };
 
-  const pages: PageData[] = mapPages(pagesRaw ?? []);
-  const services = mapServices(servicesRaw ?? []);
+  const pages: PageData[] = mapPages(visiblePagesRaw);
+
+  // A discount set on the proposal wins over the service's standing one.
+  const discountByService = new Map<string, number>();
+  for (const page of (pagesRaw ?? []) as Array<{
+    id: string;
+    service_id: string | null;
+  }>) {
+    const override = overrides.get(page.id)?.discount_pct;
+    if (page.service_id && override != null) {
+      discountByService.set(page.service_id, override);
+    }
+  }
+
+  const services = mapServices(
+    ((servicesRaw ?? []) as Array<{ id: string; discount_pct: number | null }>).map(
+      (service) =>
+        discountByService.has(service.id)
+          ? { ...service, discount_pct: discountByService.get(service.id)! }
+          : service,
+    ),
+  );
 
   // Payment captured = any payment with status beyond "pending" creation
   const payments =
@@ -119,9 +167,18 @@ export default async function PortalPage({ params }: Props) {
     tierId: item.service_tier_id,
   }));
 
+  const [agreementSettings, termsClauses] = await Promise.all([
+    getAgreementSettings(),
+    getTermsClauses(),
+  ]);
+
   return (
     <ProposalCarousel
       proposal={proposalData}
+      agreement={{
+        termsClauses,
+        postSignatureText: agreementSettings.postSignatureText,
+      }}
       pages={pages}
       services={services}
       savedSelections={savedSelections}
