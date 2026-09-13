@@ -96,15 +96,21 @@ export default function SummaryPage() {
   const signatureIdx = pages.findIndex((p) => p.slug === "signature");
   const paymentIdx = pages.findIndex((p) => p.slug === "payment");
 
-  const grandTotalContractValue = selectedServices.reduce(
-    (sum, item) => sum + (item?.totalContractCents ?? 0),
-    0,
-  );
-  const grandTotalListValue = selectedServices.reduce(
-    (sum, item) => sum + (item?.totalListContractCents ?? 0),
-    0,
-  );
-  const grandTotalDiscount = grandTotalListValue - grandTotalContractValue;
+  // The card closes on what they pay each month, with one-off payments kept
+  // apart so they're never folded into a monthly figure.
+  const sumBy = (billing: string, key: "monthlyTarget" | "listCents") =>
+    selectedServices.reduce(
+      (sum, item) => sum + (item?.billing === billing ? item[key] : 0),
+      0,
+    );
+  const monthlyTotal = sumBy("recurring_monthly", "monthlyTarget");
+  const monthlyFull = sumBy("recurring_monthly", "listCents");
+  const monthlySavings = monthlyFull - monthlyTotal;
+  const oneOffTotal = sumBy("one_off", "monthlyTarget");
+  const oneOffFull = sumBy("one_off", "listCents");
+  const oneOffCount = selectedServices.filter(
+    (item) => item?.billing === "one_off",
+  ).length;
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -119,7 +125,7 @@ export default function SummaryPage() {
         <Reveal
           as="p"
           index={1}
-          className="font-body text-sm text-lyp-white/50 mb-8"
+          className="font-body text-sm text-lyp-white/75 mb-8"
         >
           Here&apos;s everything you&apos;ve selected. Tap a service to see
           details.
@@ -127,13 +133,13 @@ export default function SummaryPage() {
 
         {selectedServices.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16">
-            <Reveal as="p" index={2} className="font-body text-lyp-white/40 text-lg">
+            <Reveal as="p" index={2} className="font-body text-lyp-white/70 text-lg">
               No services selected yet.
             </Reveal>
             <Reveal
               as="p"
               index={3}
-              className="font-body text-lyp-white/30 text-sm mt-2"
+              className="font-body text-lyp-white/60 text-sm mt-2"
             >
               Browse the pages to add the services you want.
             </Reveal>
@@ -167,7 +173,7 @@ export default function SummaryPage() {
                             {item.name}
                           </span>
                           {item.tierName && (
-                            <span className="block font-body text-xs text-lyp-white/40">
+                            <span className="block font-body text-xs text-lyp-white/70">
                               {item.tierName}
                             </span>
                           )}
@@ -181,12 +187,12 @@ export default function SummaryPage() {
                         ) : (
                           <span className="font-heading text-base text-lyp-white">
                             {item.hasDiscount && (
-                              <span className="hidden font-body text-xs text-lyp-white/30 line-through mr-2 sm:inline">
+                              <span className="hidden font-body text-xs text-lyp-white/60 line-through mr-2 sm:inline">
                                 {formatCents(item.listCents)}
                               </span>
                             )}
                             {formatCents(item.monthlyTarget)}
-                            <span className="font-body text-xs text-lyp-white/40 ml-0.5">
+                            <span className="font-body text-xs text-lyp-white/70 ml-0.5">
                               {item.billing === "recurring_monthly"
                                 ? "/mo"
                                 : " one-off"}
@@ -195,7 +201,7 @@ export default function SummaryPage() {
                         )}
                         <ChevronDown
                           className={cn(
-                            "h-4 w-4 text-lyp-white/40 transition-transform duration-300 ease-brand motion-reduce:transition-none",
+                            "h-4 w-4 text-lyp-white/70 transition-transform duration-300 ease-brand motion-reduce:transition-none",
                             isOpen && "rotate-180",
                           )}
                         />
@@ -208,7 +214,7 @@ export default function SummaryPage() {
                       // fires each time it is opened.
                       <div className="portal-reveal border-t border-lyp-white/10 px-5 py-4 space-y-4">
                         {item.isWeekly && (
-                          <p className="font-body text-xs text-lyp-white/40">
+                          <p className="font-body text-xs text-lyp-white/70">
                             {formatCents(item.displayTarget)}/week (
                             {formatCents(item.monthlyTarget)}/month)
                           </p>
@@ -233,7 +239,7 @@ export default function SummaryPage() {
                                     className="flex items-start gap-2"
                                   >
                                     <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-lyp-cherry/60" />
-                                    <span className="font-body text-xs text-lyp-white/70">
+                                    <span className="font-body text-xs text-lyp-white/85">
                                       {inc.text}
                                     </span>
                                   </li>
@@ -244,7 +250,7 @@ export default function SummaryPage() {
 
                         {item.clientObligations.length > 0 && (
                           <div>
-                            <p className="font-heading text-xs text-lyp-white/40 uppercase tracking-wider mb-2">
+                            <p className="font-heading text-xs text-lyp-white/70 uppercase tracking-wider mb-2">
                               Your Commitments
                             </p>
                             <ul className="space-y-1">
@@ -261,7 +267,7 @@ export default function SummaryPage() {
                                     className="flex items-start gap-2"
                                   >
                                     <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-lyp-white/30" />
-                                    <span className="font-body text-xs text-lyp-white/50">
+                                    <span className="font-body text-xs text-lyp-white/75">
                                       {ob.text}
                                     </span>
                                   </li>
@@ -278,7 +284,7 @@ export default function SummaryPage() {
                               deselectService(item.id);
                               setExpandedId(null);
                             }}
-                            className="flex items-center gap-2 rounded-lg border border-lyp-white/15 px-4 py-2 font-body text-xs text-lyp-white/60 transition-colors hover:border-lyp-cherry/40 hover:text-lyp-cherry"
+                            className="flex items-center gap-2 rounded-lg border border-lyp-white/15 px-4 py-2 font-body text-xs text-lyp-white/85 transition-colors hover:border-lyp-cherry/40 hover:text-lyp-cherry"
                           >
                             <X className="h-3.5 w-3.5" />
                             Remove this
@@ -310,18 +316,18 @@ export default function SummaryPage() {
                         key={item.id}
                         className="flex justify-between items-start"
                       >
-                        <span className="font-body text-xs text-lyp-white/60 mr-2 mt-0.5">
+                        <span className="font-body text-xs text-lyp-white/85 mr-2 mt-0.5">
                           {item.name}
                         </span>
                         <div className="flex flex-col items-end shrink-0">
-                          <span className="font-body text-xs text-lyp-white/80">
+                          <span className="font-body text-xs text-lyp-white/90">
                             {item.billing === "in_kind" ? (
                               "Free"
                             ) : (
                               <>
                                 {formatCents(item.monthlyTarget)}
                                 {item.billing === "recurring_monthly" && (
-                                  <span className="text-lyp-white/50">/mo</span>
+                                  <span className="text-lyp-white/75">/mo</span>
                                 )}
                               </>
                             )}
@@ -332,14 +338,14 @@ export default function SummaryPage() {
                               and a single payment is never mistaken for a
                               recurring one. */}
                           {item.billing === "recurring_monthly" ? (
-                            <span className="font-body text-[10px] text-lyp-white/40 mt-0.5">
+                            <span className="font-body text-[10px] text-lyp-white/70 mt-0.5">
                               for {item.billingCycleMonths}{" "}
                               {item.billingCycleMonths === 1
                                 ? "month"
                                 : "months"}
                             </span>
                           ) : item.billing === "one_off" ? (
-                            <span className="font-body text-[10px] text-lyp-white/40 mt-0.5">
+                            <span className="font-body text-[10px] text-lyp-white/70 mt-0.5">
                               one-off payment
                             </span>
                           ) : null}
@@ -350,37 +356,78 @@ export default function SummaryPage() {
                 </div>
 
                 <div className="border-t border-lyp-white/10 pt-3 space-y-2">
-                  {grandTotalDiscount > 0 && (
+                  {monthlySavings > 0 && (
                     <>
                       <div className="flex justify-between">
-                        <span className="font-body text-xs text-lyp-white/40">
-                          Total List Price
+                        <span className="font-body text-xs text-lyp-white/75">
+                          Full price
                         </span>
-                        <span className="font-body text-xs text-lyp-white/30 line-through">
-                          {formatCents(grandTotalListValue)}
+                        <span className="font-body text-xs text-lyp-white/70 line-through">
+                          {formatCents(monthlyFull)}/mo
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="font-body text-xs text-lyp-cherry">
-                          Your Savings
+                        <span className="font-body text-xs text-lyp-gold">
+                          You save
                         </span>
-                        <span className="font-body text-xs text-lyp-cherry">
-                          -{formatCents(grandTotalDiscount)}
+                        <span className="font-body text-xs text-lyp-gold">
+                          -{formatCents(monthlySavings)}/mo
                         </span>
                       </div>
                     </>
                   )}
-                  <div className="flex justify-between items-baseline pt-1">
-                    <span className="font-heading text-sm text-lyp-white">
-                      Total Contract Value
-                    </span>
-                    <span className="font-heading text-2xl text-lyp-white">
-                      {formatCents(grandTotalContractValue)}
-                      <span className="font-body text-xs text-lyp-white/40 ml-1">
-                        + GST
+
+                  {monthlyTotal > 0 && (
+                    <div className="flex justify-between items-baseline gap-3 pt-1">
+                      <span className="font-heading text-sm text-lyp-white">
+                        Monthly Total
                       </span>
-                    </span>
-                  </div>
+                      <span className="whitespace-nowrap font-heading text-2xl text-lyp-white">
+                        {formatCents(monthlyTotal)}
+                        <span className="font-body text-xs text-lyp-white/75 ml-1">
+                          /mo + GST
+                        </span>
+                      </span>
+                    </div>
+                  )}
+
+                  {oneOffTotal > 0 && (
+                    <div className="flex justify-between items-baseline gap-3 pt-1">
+                      <span
+                        className={
+                          monthlyTotal > 0
+                            ? "font-body text-xs text-lyp-white/85"
+                            : "font-heading text-sm text-lyp-white"
+                        }
+                      >
+                        {oneOffCount === 1 ? "One-off payment" : "One-off payments"}
+                      </span>
+                      <span
+                        className={cn(
+                          "whitespace-nowrap text-lyp-white",
+                          monthlyTotal > 0
+                            ? "font-body text-sm"
+                            : "font-heading text-2xl",
+                        )}
+                      >
+                        {oneOffFull > oneOffTotal && (
+                          <span className="mr-2 font-body text-xs text-lyp-white/70 line-through">
+                            {formatCents(oneOffFull)}
+                          </span>
+                        )}
+                        {formatCents(oneOffTotal)}
+                        <span className="font-body text-xs text-lyp-white/75 ml-1">
+                          + GST
+                        </span>
+                      </span>
+                    </div>
+                  )}
+
+                  {monthlyTotal === 0 && oneOffTotal === 0 && (
+                    <p className="pt-1 text-center font-heading text-sm text-lyp-white">
+                      Complimentary
+                    </p>
+                  )}
                 </div>
 
                 {paymentCaptured ? (
@@ -389,7 +436,7 @@ export default function SummaryPage() {
                       <span className="h-2 w-2 rounded-full bg-green-400" />
                       Payment details captured
                     </span>
-                    <p className="font-body text-xs text-lyp-white/50 text-center">
+                    <p className="font-body text-xs text-lyp-white/75 text-center">
                       Your payment information is on file. No further action
                       needed.
                     </p>

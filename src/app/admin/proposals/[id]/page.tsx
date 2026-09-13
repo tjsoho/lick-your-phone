@@ -10,8 +10,10 @@ import {
 } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { createAdminClient } from "@/utils/server";
+import { getAppUrl } from "@/lib/app-url";
 import {
   ArrowLeft,
+  Eye,
   Check,
   Clock,
   AlertCircle,
@@ -27,6 +29,7 @@ import {
 } from "lucide-react";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 import ProposalPresentationEditor from "@/components/admin/ProposalPresentationEditor";
+import ProposalDiscountTimer from "@/components/admin/ProposalDiscountTimer";
 import { getProposalPresentation } from "@/server-actions/proposal-presentation";
 
 interface ProposalLineItem {
@@ -230,6 +233,10 @@ export default async function ProposalDetailPage({
   const isOnboardingComplete = proposal.status === "intake_complete";
   const isSigned = proposal.status === "signed" || isOnboardingComplete;
 
+  const portalUrl = proposal.token
+    ? `${await getAppUrl()}/portal/${proposal.token}`
+    : null;
+
   return (
     <div className="mx-auto max-w-[64rem]">
       {/* ─────────────── Header ─────────────── */}
@@ -269,6 +276,22 @@ export default async function ProposalDetailPage({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            {portalUrl && (
+              <a
+                href={portalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`group inline-flex items-center gap-3 rounded-full border border-lyp-cherry/25 bg-lyp-cherry/[0.06] py-1.5 pl-5 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-cherry transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.12] active:scale-[0.985]`}
+                title="Open the client-facing proposal in a new tab"
+              >
+                View Proposal
+                <span
+                  className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white transition-transform duration-500 ${EASE} group-hover:scale-105`}
+                >
+                  <Eye strokeWidth={1.5} className="h-3.5 w-3.5" />
+                </span>
+              </a>
+            )}
             {proposal.status === "draft" && (
               <Link
                 href={`/admin/proposals/${id}/edit`}
@@ -298,6 +321,14 @@ export default async function ProposalDetailPage({
           </div>
         </div>
       </header>
+
+      {/* ─────────────── Discount timer ─────────────── */}
+      <ProposalDiscountTimer
+        proposalId={id}
+        initialActive={proposal.discount_timer_active ?? false}
+        initialExpiresAt={proposal.discount_expires_at}
+        locked={isSigned || proposal.status === "superseded"}
+      />
 
       {/* ─────────────── Summary ─────────────── */}
       <dl

@@ -13,6 +13,7 @@ import {
   type AgreementCopy,
 } from "./ProposalContext";
 import RunningTotal from "./RunningTotal";
+import DiscountCountdown from "./DiscountCountdown";
 import ServicePage from "./pages/ServicePage";
 import ContentPage from "./pages/ContentPage";
 import SummaryPage from "./pages/SummaryPage";
@@ -168,8 +169,14 @@ export function PageRenderer({ page }: { page: PageData }) {
 const BRAND_EASE = [0.32, 0.72, 0, 1] as const;
 
 function CarouselInner() {
-  const { pages, currentPage, setCurrentPage, selectedCount, proposal } =
-    useProposal();
+  const {
+    pages,
+    currentPage,
+    setCurrentPage,
+    selectedCount,
+    proposal,
+    discountLive,
+  } = useProposal();
   const reduceMotion = useReducedMotion();
 
   // Direction is resolved DURING render, not in an effect: the incoming slide
@@ -192,13 +199,22 @@ function CarouselInner() {
     return () => clearTimeout(id);
   }, [currentPage]);
 
+  // Once signed, the pages after the signature only move forward: the deal is
+  // done, so there's nothing to go back and change.
+  const signatureIndex = pages.findIndex((p) => p.slug === "signature");
+  const backLocked =
+    (proposal.status === "signed" || proposal.status === "intake_complete") &&
+    signatureIndex >= 0 &&
+    currentPage > signatureIndex;
+
   const goNext = useCallback(() => {
     setCurrentPage(Math.min(currentPage + 1, pages.length - 1));
   }, [currentPage, pages.length, setCurrentPage]);
 
   const goPrev = useCallback(() => {
+    if (backLocked) return;
     setCurrentPage(Math.max(currentPage - 1, 0));
-  }, [currentPage, setCurrentPage]);
+  }, [backLocked, currentPage, setCurrentPage]);
 
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
@@ -225,12 +241,36 @@ function CarouselInner() {
   // a shopping aid and just follows the client through onboarding.
   const isSigned = proposal.status === "signed" || proposal.status === "intake_complete";
   const showRunningTotal = hasTop && !isSummary && !isSigned;
-  const topPad = showRunningTotal ? "pt-[52px]" : "";
+  // The countdown is a buying aid too, so it goes once the client has signed.
+  const showTimer = discountLive && !isSigned && !!proposal.discountExpiresAt;
+  const topPad =
+    showTimer && showRunningTotal
+      ? "pt-[88px] sm:pt-[52px]"
+      : showRunningTotal
+        ? "pt-[52px]"
+        : showTimer
+          ? "pt-9"
+          : "";
 
   return (
     <div className="relative flex h-dvh flex-col bg-[#050203]">
       <PortalBackground />
-      {showRunningTotal && <RunningTotal />}
+      {(showTimer || showRunningTotal) && (
+        <div className="fixed left-0 right-0 top-0 z-50">
+          {showTimer && (
+            <DiscountCountdown
+              expiresAt={proposal.discountExpiresAt!}
+              // On wider screens the price bar carries the countdown itself.
+              className={showRunningTotal ? "sm:hidden" : undefined}
+            />
+          )}
+          {showRunningTotal && (
+            <RunningTotal
+              countdownEndsAt={showTimer ? proposal.discountExpiresAt : null}
+            />
+          )}
+        </div>
+      )}
 
       <div className={`relative z-10 flex-1 overflow-hidden pb-[56px] ${topPad}`}>
         <motion.div
@@ -278,8 +318,10 @@ function CarouselInner() {
         <div className="mx-auto flex max-w-[1400px] items-center justify-between px-6 py-3">
           <button
             onClick={goPrev}
-            disabled={currentPage === 0}
-            className="group flex items-center gap-1.5 rounded-lg border border-lyp-white/20 px-4 py-2 font-body text-sm text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-white/10 active:scale-[0.97] disabled:opacity-20 motion-reduce:transition-none motion-reduce:active:scale-100"
+            disabled={currentPage === 0 || backLocked}
+            // Hidden rather than removed, so Next and the counter keep their places.
+            aria-hidden={backLocked}
+            className={`${backLocked ? "invisible " : ""}group flex items-center gap-1.5 rounded-lg border border-lyp-white/20 px-4 py-2 font-body text-sm text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-white/10 active:scale-[0.97] disabled:opacity-20 motion-reduce:transition-none motion-reduce:active:scale-100`}
           >
             <ChevronLeft className="h-5 w-5 transition-transform duration-300 ease-brand group-hover:-translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
             Back
@@ -318,6 +360,7 @@ export interface ProposalCarouselProps {
   services: ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers[];
   savedSelections?: Selection[] | null;
   paymentCaptured?: boolean;
+  discountOverrides?: Record<string, number>;
 }
 
 export default function ProposalCarousel({
@@ -327,6 +370,7 @@ export default function ProposalCarousel({
   services,
   savedSelections,
   paymentCaptured,
+  discountOverrides,
 }: ProposalCarouselProps) {
   return (
     <ProposalProvider
@@ -336,6 +380,7 @@ export default function ProposalCarousel({
       services={services}
       initialSelections={savedSelections ?? undefined}
       paymentCaptured={paymentCaptured}
+      discountOverrides={discountOverrides}
     >
       <CarouselInner />
     </ProposalProvider>

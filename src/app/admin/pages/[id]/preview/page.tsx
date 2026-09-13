@@ -55,6 +55,8 @@ export default async function PagePreviewRoute({
     token: "preview",
     status: "draft",
     discountExpiresAt: null,
+    discountTimerActive: false,
+    signedAt: null,
     clientName: "Sample Venue",
     contactName: "Sample Contact",
     venueName: "Sample Venue",

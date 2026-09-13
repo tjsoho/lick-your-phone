@@ -1,0 +1,1 @@
+ALTER TABLE "proposals" ADD COLUMN "discount_timer_active" boolean DEFAULT false NOT NULL;

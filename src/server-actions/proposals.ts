@@ -329,6 +329,13 @@ export async function supersedeProposal(
         .in("status", ["pending", "scheduled"]);
     }
 
+    // The countdown belongs to the deal too, so a replacement keeps the deadline.
+    const { data: oldTimer } = await supabase
+      .from("proposals")
+      .select("discount_timer_active, discount_expires_at")
+      .eq("id", oldProposalId)
+      .single();
+
     // Create new draft proposal
     const { data: result, error: insertError } = await supabase
       .from("proposals")
@@ -338,6 +345,8 @@ export async function supersedeProposal(
         status: "draft",
         token: crypto.randomUUID(),
         created_by: authorId || null,
+        discount_timer_active: oldTimer?.discount_timer_active ?? false,
+        discount_expires_at: oldTimer?.discount_expires_at ?? null,
       })
       .select()
       .single();

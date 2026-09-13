@@ -1,0 +1,123 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Clock } from "lucide-react";
+import { splitRemaining } from "@/lib/countdown";
+import { cn } from "@/lib/utils";
+
+/** setTimeout overflows past ~24.8 days, so long timers re-check in steps. */
+const MAX_TIMEOUT = 2 ** 31 - 1;
+
+/**
+ * Whether the countdown should be on screen right now. Flips off by itself at
+ * the deadline with a single timeout, so the carousel isn't re-rendered every
+ * second just to find that out.
+ */
+export function useDiscountTimerLive(
+  active: boolean,
+  expiresAt: string | null,
+) {
+  // Worked out on the first render too, so prices don't flash from full to
+  // discounted as the page hydrates.
+  const [live, setLive] = useState(
+    () =>
+      active && !!expiresAt && new Date(expiresAt).getTime() > Date.now(),
+  );
+
+  useEffect(() => {
+    if (!active || !expiresAt) {
+      setLive(false);
+      return;
+    }
+
+    const end = new Date(expiresAt).getTime();
+    let id: ReturnType<typeof setTimeout> | undefined;
+
+    const check = () => {
+      const left = end - Date.now();
+      setLive(left > 0);
+      if (left > 0) id = setTimeout(check, Math.min(left, MAX_TIMEOUT));
+    };
+
+    check();
+    return () => clearTimeout(id);
+  }, [active, expiresAt]);
+
+  return live;
+}
+
+/** Ticking digits, e.g. 2d 04h 12m 09s. */
+export function CountdownClock({
+  expiresAt,
+  className,
+  unitClassName = "text-lyp-cherry",
+}: {
+  expiresAt: string;
+  className?: string;
+  unitClassName?: string;
+}) {
+  // Null on the server render, so the digits never mismatch on hydrate.
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const { days, hours, minutes, seconds } = splitRemaining(
+    now == null ? 0 : new Date(expiresAt).getTime() - now,
+  );
+
+  const units = [
+    ...(days > 0 ? [{ value: days, label: "d" }] : []),
+    { value: hours, label: "h" },
+    { value: minutes, label: "m" },
+    { value: seconds, label: "s" },
+  ];
+
+  return (
+    <span
+      className={cn(
+        "whitespace-nowrap font-heading tabular-nums text-lyp-white",
+        className,
+      )}
+    >
+      {units.map((unit) => (
+        <span key={unit.label} className="ml-1.5 first:ml-0">
+          {now == null ? "--" : String(unit.value).padStart(2, "0")}
+          <span className={unitClassName}>{unit.label}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** Slim bar pinned above the slides: how long the client's discount has left. */
+export default function DiscountCountdown({
+  expiresAt,
+  className,
+}: {
+  expiresAt: string;
+  className?: string;
+}) {
+  return (
+    <div
+      role="timer"
+      className={cn(
+        "portal-reveal portal-reveal-fall flex h-9 items-center justify-center gap-2 border-b border-lyp-white/10 bg-lyp-black px-4 sm:gap-3",
+        className,
+      )}
+    >
+      <Clock
+        strokeWidth={1.5}
+        className="h-3.5 w-3.5 flex-shrink-0 text-lyp-cherry"
+      />
+      <span className="whitespace-nowrap font-body text-[10px] uppercase tracking-[0.18em] text-lyp-white/60 sm:text-[11px]">
+        <span className="hidden sm:inline">Your discount ends in</span>
+        <span className="sm:hidden">Discount ends in</span>
+      </span>
+      <CountdownClock expiresAt={expiresAt} className="text-sm" />
+    </div>
+  );
+}

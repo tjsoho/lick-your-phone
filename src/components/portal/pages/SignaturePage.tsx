@@ -171,7 +171,7 @@ export default function SignaturePage() {
 
       setDocumentUrl(result.documentUrl ?? "");
       setSignState("signed");
-      updateProposal({ status: "signed" });
+      updateProposal({ status: "signed", signedAt: new Date().toISOString() });
     } catch {
       setSignState("error");
       setErrorMsg("An unexpected error occurred. Please try again.");

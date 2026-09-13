@@ -8,6 +8,12 @@ import {
   useMemo,
   type ReactNode,
 } from "react";
+import { useDiscountTimerLive } from "./DiscountCountdown";
+import {
+  DISCOUNT_GRACE_MS,
+  isDiscountLive,
+  priceServices,
+} from "@/lib/pricing";
 
 /* ------------------------------------------------------------------ */
 /*  Types coming from the server component                            */
@@ -54,6 +60,10 @@ export interface ProposalData {
   token: string;
   status: string | null;
   discountExpiresAt: string | null;
+  /** Show the client a countdown to discountExpiresAt. */
+  discountTimerActive: boolean;
+  /** When the client signed; the discount is judged at that moment from then on. */
+  signedAt: string | null;
   clientName: string;
   /** The person signing, which is not the venue's own name. */
   contactName: string | null;
@@ -97,6 +107,9 @@ interface ProposalContextValue {
   toggleService: (serviceId: string) => void;
   selectTier: (serviceId: string, tierId: string) => void;
   deselectService: (serviceId: string) => void;
+
+  /** Whether discounted prices apply right now. Full price otherwise. */
+  discountLive: boolean;
 
   totalListCents: number;
   totalTargetCents: number;
@@ -144,19 +157,43 @@ interface ProviderProps {
   services: ServiceWithTiersWithInclusionsWithObligationsWithDisclaimers[];
   initialSelections?: Selection[];
   paymentCaptured?: boolean;
+  /** Per-proposal discounts by service id, set in the dashboard's Presentation section. */
+  discountOverrides?: Record<string, number>;
   children: ReactNode;
 }
+
+const NO_OVERRIDES: Record<string, number> = {};
 
 export function ProposalProvider({
   proposal: initialProposal,
   agreement,
   pages,
-  services,
+  services: rawServices,
   initialSelections,
   children,
   paymentCaptured = false,
+  discountOverrides = NO_OVERRIDES,
 }: ProviderProps) {
   const [proposal, setProposal] = useState<ProposalData>(initialProposal);
+
+  // Full price unless the timer is running. Once signed, the price is fixed
+  // by whether the discount was running when they signed.
+  const timerLive = useDiscountTimerLive(
+    proposal.discountTimerActive,
+    proposal.discountExpiresAt,
+  );
+  const discountLive = proposal.signedAt
+    ? isDiscountLive({
+        active: proposal.discountTimerActive,
+        expiresAt: proposal.discountExpiresAt,
+        at: new Date(proposal.signedAt).getTime() - DISCOUNT_GRACE_MS,
+      })
+    : timerLive;
+
+  const services = useMemo(
+    () => priceServices(rawServices, discountOverrides, discountLive),
+    [rawServices, discountOverrides, discountLive],
+  );
 
   const updateProposal = useCallback((updates: Partial<ProposalData>) => {
     setProposal((prev) => ({ ...prev, ...updates }));
@@ -304,6 +341,7 @@ export function ProposalProvider({
     setCurrentPage,
     selections,
     agreement: agreement ?? { termsClauses: [], postSignatureText: "" },
+    discountLive,
     isSelected,
     selectedTierId,
     toggleService,

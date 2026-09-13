@@ -19,6 +19,8 @@ export const proposals = pgTable('proposals', {
   status: proposalStatusEnum('status'),
   token: text('token').unique().notNull(),
   discountExpiresAt: timestamp('discount_expires_at', { withTimezone: true }),
+  // Whether the client sees a countdown to discount_expires_at in the portal.
+  discountTimerActive: boolean('discount_timer_active').default(false).notNull(),
   signedAt: timestamp('signed_at', { withTimezone: true }),
   signerEmail: text('signer_email'),
   signerIp: text('signer_ip'),

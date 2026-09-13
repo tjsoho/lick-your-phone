@@ -9,6 +9,11 @@ import {
   getAgreementSettings,
   getTermsClauses,
 } from "@/server-actions/agreement-settings";
+import {
+  DISCOUNT_GRACE_MS,
+  isDiscountLive,
+  payableCents,
+} from "@/lib/pricing";
 
 function calculateMonthlyCents(
   targetCents: number,
@@ -53,7 +58,7 @@ export async function signProposal(input: SignProposalInput) {
       .from("proposals")
       .select(
         `
-        id, status, token,
+        id, status, token, discount_timer_active, discount_expires_at,
         client:clients!client_id ( id, name, contact_name ),
         venue:venues!venue_id ( id, name, address )
       `,
@@ -86,6 +91,39 @@ export async function signProposal(input: SignProposalInput) {
     }
 
     const serviceMap = Object.fromEntries(services.map((s) => [s.id, s]));
+
+    // 2b. Price exactly as the portal showed it: full price unless the
+    //     discount timer was running, with this proposal's own discounts.
+    const discountLive = isDiscountLive({
+      active: proposal.discount_timer_active ?? false,
+      expiresAt: proposal.discount_expires_at,
+      at: Date.now() - DISCOUNT_GRACE_MS,
+    });
+
+    const { data: overrideRows } = await supabase
+      .from("proposal_page_settings")
+      .select("page_id, discount_pct")
+      .eq("proposal_id", input.proposalId)
+      .not("discount_pct", "is", null);
+
+    const overridePageIds = (overrideRows ?? []).map((row) => row.page_id);
+    const { data: overridePages } =
+      overridePageIds.length > 0
+        ? await supabase
+            .from("pages")
+            .select("id, service_id")
+            .in("id", overridePageIds)
+        : { data: [] as { id: string; service_id: string | null }[] };
+
+    const discountOverrides: Record<string, number> = {};
+    for (const row of overrideRows ?? []) {
+      const serviceId = overridePages?.find(
+        (page) => page.id === row.page_id,
+      )?.service_id;
+      if (serviceId && row.discount_pct != null) {
+        discountOverrides[serviceId] = row.discount_pct;
+      }
+    }
 
     // 3. Build line items and compute total
     const lineItemRows: Array<{
@@ -126,8 +164,15 @@ export async function signProposal(input: SignProposalInput) {
         basePriceCents = svc.target_price_cents;
       }
 
+      const payable = payableCents({
+        targetCents: basePriceCents,
+        standingPct: svc.discount_pct,
+        effectivePct: discountOverrides[svc.id] ?? svc.discount_pct,
+        discountLive,
+      });
+
       const priceCents = calculateMonthlyCents(
-        basePriceCents,
+        payable,
         svc.price_display_period,
       );
 

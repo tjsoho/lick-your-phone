@@ -34,7 +34,7 @@ export default async function PortalPage({ params }: Props) {
     .from("proposals")
     .select(
       `
-      id, token, status, discount_expires_at,
+      id, token, status, signed_at, discount_expires_at, discount_timer_active,
       client:clients!client_id ( id, name, contact_name ),
       venue:venues!venue_id ( id, name ),
       payments(*),
@@ -124,6 +124,8 @@ export default async function PortalPage({ params }: Props) {
     token: proposal.token,
     status: proposal.status,
     discountExpiresAt: proposal.discount_expires_at,
+    discountTimerActive: proposal.discount_timer_active ?? false,
+    signedAt: proposal.signed_at ?? null,
     clientName: clientObj?.name ?? "Client",
     contactName: clientObj?.contact_name ?? null,
     venueName: venueObj?.name ?? "Venue",
@@ -143,14 +145,8 @@ export default async function PortalPage({ params }: Props) {
     }
   }
 
-  const services = mapServices(
-    ((servicesRaw ?? []) as Array<{ id: string; discount_pct: number | null }>).map(
-      (service) =>
-        discountByService.has(service.id)
-          ? { ...service, discount_pct: discountByService.get(service.id)! }
-          : service,
-    ),
-  );
+  // Prices are resolved in the provider: full price unless the timer is running.
+  const services = mapServices(servicesRaw ?? []);
 
   // Payment captured = any payment with status beyond "pending" creation
   const payments =
@@ -183,6 +179,7 @@ export default async function PortalPage({ params }: Props) {
       services={services}
       savedSelections={savedSelections}
       paymentCaptured={paymentCaptured}
+      discountOverrides={Object.fromEntries(discountByService)}
     />
   );
 }

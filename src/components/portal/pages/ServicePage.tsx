@@ -300,10 +300,16 @@ export default function ServicePage({ service, page }: ServicePageProps) {
     selections,
     serviceMap,
     selectedCount,
+    discountLive,
   } = useProposal();
   // The carousel shows the running-total bar as soon as anything is selected,
   // which changes how much air already sits above the masthead.
-  const hasRunningTotal = selectedCount > 0;
+  // The discount countdown is a top bar too, so it counts the same way.
+  const hasRunningTotal =
+    selectedCount > 0 ||
+    (discountLive &&
+      proposal.status !== "signed" &&
+      proposal.status !== "intake_complete");
 
   const selected = isSelected(service.id);
   const currentTierId = selectedTierId(service.id);
@@ -379,6 +385,9 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   const density = textLoad > 9 ? "tight" : textLoad > 7 ? "mid" : "open";
   const twoColumnIndex = inclusions.length > 6;
   const tierCount = service.service_tiers.length;
+  // Three terms side by side need the panel's full width, so the label and
+  // incentive move above them instead of taking a column beside them.
+  const stackOffer = hasTiers && tierCount >= 3;
   // A single-column index leaves width over, so the picture takes a wider rail
   // — unless the offer needs it for three tiers side by side.
   const wideRail = !twoColumnIndex && tierCount < 3;
@@ -410,6 +419,39 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   // The picture is a parallel column, not a later one — it settles with the
   // index rather than queueing behind it.
   const D_RAIL = D_RULE + 80;
+
+  /* Selection — one action, identical on every service slide, whether or
+     not a term had to be chosen. Beside the quote normally; inside its label
+     row when three terms need the panel's full width. */
+  const wantToggle = (
+    <Reveal
+      // `pop` scales UP to its final size, so it never occupies more
+      // room than it settles into — safe at the foot of the slide.
+      variant="pop"
+      delay={D_TOGGLE}
+      className={cn(
+        "flex shrink-0 items-center gap-3 self-end rounded-xl ring-1 ring-inset transition-colors duration-300 ease-brand",
+        stackOffer ? "px-3 py-1.5" : "px-4 py-2.5",
+        selected
+          ? "bg-[#f0c9c9]/[0.14] ring-[#f0c9c9]/60"
+          : "bg-lyp-white/[0.04] ring-lyp-white/[0.14]",
+        isDisabled && "opacity-40",
+      )}
+    >
+      <Switch
+        checked={selected}
+        onCheckedChange={handleWantThis}
+        disabled={isDisabled}
+        aria-label={
+          selected ? `Remove ${service.name}` : `I want ${service.name}`
+        }
+        className="data-[state=checked]:bg-lyp-cherry"
+      />
+      <span className="font-heading text-[11px] font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:850px)]:text-xs">
+        {isInKind ? "Paid in kind" : selected ? "Added" : "I want this"}
+      </span>
+    </Reveal>
+  );
 
   return (
     <article
@@ -628,7 +670,14 @@ export default function ServicePage({ service, page }: ServicePageProps) {
               wash, an inset hairline instead of a border, and a lit top
               edge. No drop shadow.
               ----------------------------------------------------------- */}
-          <div className="mt-9 flex shrink-0 flex-col gap-3 lg:flex-row lg:items-end lg:gap-5 [@media(min-height:850px)]:mt-12">
+          <div
+            className={cn(
+              "flex shrink-0 flex-col gap-3 lg:flex-row lg:items-end lg:gap-5",
+              stackOffer
+                ? "mt-6 [@media(min-height:850px)]:mt-9"
+                : "mt-9 [@media(min-height:850px)]:mt-12",
+            )}
+          >
           <Reveal
             // Fade, not rise. This panel is the lowest element on the slide and
             // `.portal-scroll` counts a transformed child's box in its
@@ -644,14 +693,24 @@ export default function ServicePage({ service, page }: ServicePageProps) {
               className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#f0c9c9]/45 to-transparent"
             />
 
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-8">
+            <div
+              className={cn(
+                "flex flex-col",
+                stackOffer ? "gap-3" : "gap-4 lg:flex-row lg:items-center lg:gap-8",
+              )}
+            >
               {/* Label + incentive */}
-              <div className="shrink-0">
+              <div
+                className={cn(
+                  "shrink-0",
+                  stackOffer && "flex flex-wrap items-center gap-x-4 gap-y-2",
+                )}
+              >
                 <h2 className={`${CAPTION} ${ROSE}`}>Investment</h2>
                 {hasDiscount && (
-                  <p className="mt-2 inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-heading text-[10px] font-semibold uppercase tracking-[0.18em] text-lyp-gold ring-1 ring-inset ring-lyp-gold/45 [@media(min-height:850px)]:text-[11px]">
+                  <p className={cn(!stackOffer && "mt-2", "inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-heading text-[10px] font-semibold uppercase tracking-[0.18em] text-lyp-gold ring-1 ring-inset ring-lyp-gold/45 [@media(min-height:850px)]:text-[11px]")}>
                     {Math.round((service.discount_pct ?? 0) * 100)}% off
-                    &mdash; sign within 24 hrs
+                    &mdash; limited time
                   </p>
                 )}
                 {/* The lock note sits beside the price rather than under it,
@@ -663,6 +722,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                       : "This service requires at least one other service to be selected first."}
                   </p>
                 )}
+                {stackOffer && <div className="ml-auto">{wantToggle}</div>}
               </div>
 
               {isInKind ? (
@@ -703,7 +763,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                             if (selected) selectTier(service.id, tier.id);
                           }}
                           className={cn(
-                            "portal-reveal portal-reveal-pop rounded-xl px-3 py-2.5 text-left ring-1 ring-inset transition-[background-color,box-shadow,transform] duration-300 ease-brand hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none",
+                            "portal-reveal portal-reveal-pop min-w-0 rounded-xl px-4 py-2.5 text-left ring-1 ring-inset transition-[background-color,box-shadow,transform] duration-300 ease-brand hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none",
                             tierSelected
                               ? "bg-[#f0c9c9]/[0.14] ring-[#f0c9c9]/70"
                               : "bg-lyp-white/[0.04] ring-lyp-white/[0.14] hover:ring-lyp-white/35",
@@ -720,29 +780,28 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                                   : "bg-lyp-white/35",
                               )}
                             />
-                            <span className="font-heading text-[11px] font-semibold uppercase leading-tight tracking-[0.12em] text-lyp-white/85">
+                            <span className="whitespace-nowrap font-heading text-[11px] font-semibold uppercase leading-tight tracking-[0.12em] text-lyp-white/85">
                               {tier.name}
                             </span>
                           </span>
                           {hasDiscount && (
-                            <span className="mt-1.5 block font-body text-[11px] text-lyp-white/70 line-through">
-                              {formatCents(tierList)}
+                            <span className="mt-1.5 flex items-baseline justify-between gap-2 font-body text-[11px]">
+                              <span className="text-lyp-white/70 line-through">
+                                {formatCents(tierList)}
+                              </span>
+                              {tierSaving > 0 && (
+                                <span className="whitespace-nowrap text-[10px] text-lyp-gold">
+                                  Save {formatCents(tierSaving)}
+                                </span>
+                              )}
                             </span>
                           )}
-                          <span className="mt-0.5 block font-heading text-[19px] leading-none tabular-nums text-lyp-white [@media(min-height:850px)]:text-[23px]">
+                          <span className="mt-1 block whitespace-nowrap font-heading text-[19px] leading-none tabular-nums text-lyp-white [@media(min-height:850px)]:text-[23px]">
                             {formatCents(tier.target_price_cents)}
-                            <span className="ml-1 text-[11px] text-lyp-white/75">
-                              + GST
+                            <span className="ml-1.5 font-body text-[10px] uppercase tracking-[0.12em] text-lyp-white/75">
+                              + GST {periodLabel}
                             </span>
                           </span>
-                          <span className="mt-1 block font-body text-[10px] uppercase tracking-[0.14em] text-lyp-white/70">
-                            {periodLabel}
-                          </span>
-                          {hasDiscount && tierSaving > 0 && (
-                            <span className="mt-1.5 block font-body text-[10px] text-lyp-gold">
-                              Save {formatCents(tierSaving)}
-                            </span>
-                          )}
                         </button>
                       );
                     })}
@@ -777,36 +836,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
 
           </Reveal>
 
-          {/* Selection — one action, identical on every service slide,
-              whether or not a term had to be chosen above. It sits OUTSIDE
-              the quote, on the panel's bottom-right corner: the panel states
-              the price, this answers it. */}
-          <Reveal
-            // `pop` scales UP to its final size, so it never occupies more
-            // room than it settles into — safe at the foot of the slide.
-            variant="pop"
-            delay={D_TOGGLE}
-            className={cn(
-              "flex shrink-0 items-center gap-3 self-end rounded-xl px-4 py-2.5 ring-1 ring-inset transition-colors duration-300 ease-brand",
-              selected
-                ? "bg-[#f0c9c9]/[0.14] ring-[#f0c9c9]/60"
-                : "bg-lyp-white/[0.04] ring-lyp-white/[0.14]",
-              isDisabled && "opacity-40",
-            )}
-          >
-            <Switch
-              checked={selected}
-              onCheckedChange={handleWantThis}
-              disabled={isDisabled}
-              aria-label={
-                selected ? `Remove ${service.name}` : `I want ${service.name}`
-              }
-              className="data-[state=checked]:bg-lyp-cherry"
-            />
-            <span className="font-heading text-[11px] font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:850px)]:text-xs">
-              {isInKind ? "Paid in kind" : selected ? "Added" : "I want this"}
-            </span>
-          </Reveal>
+          {!stackOffer && wantToggle}
           </div>
         </div>
 

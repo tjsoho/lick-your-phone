@@ -5,6 +5,7 @@ declare interface Proposal {
   status: "signed" | "sent" | "draft" | "superseded" | "intake_completed";
   token: string;
   discount_expires_at: string | null;
+  discount_timer_active: boolean;
   signed_at: string | null;
   signer_email: string | null;
   total_snapshot_cents: number | null;
