@@ -7,6 +7,11 @@ const supabaseHost =
     : "bzswpetvdwzvznhvtote.supabase.co";
 
 const nextConfig: NextConfig = {
+  // Contract PDFs read their fonts from public/ at runtime. Vercel doesn't ship
+  // public/ inside serverless functions, so bundle the font files explicitly.
+  outputFileTracingIncludes: {
+    "/**/*": ["./public/FiraSans-*.ttf"],
+  },
   experimental: {
     serverComponentsHmrCache: false, // Disables the buggy local HMR cache
   },
