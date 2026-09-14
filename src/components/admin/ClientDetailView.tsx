@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 import PortalLinkCell from "@/components/admin/PortalLinkCell";
+import ProposalDiscountTimer from "@/components/admin/ProposalDiscountTimer";
 
 const EASE = "ease-brand";
 
@@ -131,6 +132,8 @@ type Proposal = {
   created_at: string;
   signed_at?: string;
   total_snapshot_cents?: number;
+  discount_timer_active?: boolean;
+  discount_expires_at?: string | null;
   proposal_line_items?: LineItem[];
   documents?: Document[];
   payments?: Payment[];
@@ -1030,12 +1033,25 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                       ) : (
                         <p className="font-body text-[13px] text-[#C3B5B5]">
                           {proposal.status === "signed"
-                            ? "Awaiting intake"
+                            ? "Awaiting onboarding"
                             : "Not yet signed"}
                         </p>
                       )}
                     </div>
                   </div>
+
+                  {/* Discount timer, same control as on the proposal page */}
+                  <ProposalDiscountTimer
+                    variant="row"
+                    proposalId={proposal.id}
+                    initialActive={proposal.discount_timer_active ?? false}
+                    initialExpiresAt={proposal.discount_expires_at ?? null}
+                    locked={
+                      proposal.status === "signed" ||
+                      proposal.status === "intake_complete" ||
+                      proposal.status === "superseded"
+                    }
+                  />
 
                   {/* Proposal link — clickable, opens the client's proposal */}
                   {proposal.status !== "superseded" && proposal.token && (
