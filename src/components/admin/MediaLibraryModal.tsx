@@ -25,6 +25,12 @@ interface MediaLibraryModalProps {
    */
   multiple?: boolean;
   title?: string;
+  /**
+   * The recommended pixel size for this slot, e.g.
+   * "Recommended 1600 x 1200px (JPG or PNG)". Shown under the title, so the
+   * person uploading sees it at the moment they pick the file.
+   */
+  hint?: string;
 }
 
 export default function MediaLibraryModal({
@@ -33,6 +39,7 @@ export default function MediaLibraryModal({
   onSelect,
   multiple = false,
   title = "Media Library",
+  hint,
 }: MediaLibraryModalProps) {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -183,6 +190,11 @@ export default function MediaLibraryModal({
             <h2 className="mt-2 font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
               {title}
             </h2>
+            {hint && (
+              <p className="mt-1.5 font-body text-[11.5px] text-[#A89898]">
+                {hint}
+              </p>
+            )}
           </div>
           <button
             type="button"

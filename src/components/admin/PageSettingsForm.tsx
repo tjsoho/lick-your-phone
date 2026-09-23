@@ -26,6 +26,13 @@ const ic =
 const labelClasses =
   "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
 
+/**
+ * The featured image is drawn at 58vh tall in a ~44vw column (SIZES.main in
+ * ContentBlockRenderer), so ~800 x 600 CSS pixels at most — doubled for 2x
+ * screens.
+ */
+const SIZE_HINT = "Recommended 1600 x 1200px (JPG or PNG)";
+
 export function PageSettingsForm({ pageId, initialImage, initialPosition, onDraftChange }: PageSettingsFormProps) {
   const [image, setImage] = useState(initialImage ?? "");
   const [position, setPosition] = useState(initialPosition);
@@ -63,6 +70,9 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition, onDraf
         <div className="space-y-3">
           <div>
             <span className={labelClasses}>Image</span>
+            <p className="mt-1.5 font-body text-[11px] text-[#A89898]">
+              {SIZE_HINT}
+            </p>
             {image ? (
               <div className="mt-2">
                 <div className="relative inline-block max-w-full">
@@ -124,6 +134,7 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition, onDraf
         onClose={() => setLibraryOpen(false)}
         onSelect={setImage}
         title="Featured Image"
+        hint={SIZE_HINT}
       />
     </div>
   );

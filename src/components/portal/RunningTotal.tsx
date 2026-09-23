@@ -50,18 +50,20 @@ export default function RunningTotal({
           </span>
         </div>
         {countdownEndsAt && (
+          // Same alert voice as the standalone strip — white and weighted, not
+          // a faint caption on the cherry ground.
           <div
             role="timer"
-            className="hidden items-center gap-2 font-body text-xs text-lyp-white/85 sm:flex"
+            className="hidden items-center gap-2 font-body text-xs text-lyp-white sm:flex"
           >
-            <Clock strokeWidth={1.5} className="h-3.5 w-3.5 flex-shrink-0" />
-            <span className="whitespace-nowrap uppercase tracking-[0.16em]">
+            <Clock strokeWidth={2.25} className="h-3.5 w-3.5 flex-shrink-0" />
+            <span className="whitespace-nowrap font-semibold uppercase tracking-[0.16em]">
               {t("discountEndsInShort")}
             </span>
             <CountdownClock
               expiresAt={countdownEndsAt}
-              className="text-sm"
-              unitClassName="text-lyp-white/70"
+              className="text-[15px] font-bold"
+              unitClassName="ml-px text-[10px] font-semibold text-lyp-white/70"
             />
           </div>
         )}

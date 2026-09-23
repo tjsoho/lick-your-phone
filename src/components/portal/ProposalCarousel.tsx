@@ -246,13 +246,17 @@ function CarouselInner() {
   const showRunningTotal = hasTop && !isSummary && !isSigned;
   // The countdown is a buying aid too, so it goes once the client has signed.
   const showTimer = discountLive && !isSigned && !!proposal.discountExpiresAt;
+  // The fixed bars sit outside the flow, so the slide has to reserve their
+  // height itself: the countdown strip is 44px (h-11), the price bar 52px. On
+  // sm and up the price bar carries the countdown, so only one bar is on
+  // screen and the strip's 44px comes back.
   const topPad =
     showTimer && showRunningTotal
-      ? "pt-[88px] sm:pt-[52px]"
+      ? "pt-[96px] sm:pt-[52px]"
       : showRunningTotal
         ? "pt-[52px]"
         : showTimer
-          ? "pt-9"
+          ? "pt-11"
           : "";
 
   return (

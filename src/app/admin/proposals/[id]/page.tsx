@@ -17,7 +17,6 @@ import {
   Clock,
   AlertCircle,
   CreditCard,
-  Pencil,
   Copy,
   Send,
   FileSignature,
@@ -28,6 +27,7 @@ import {
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 import ProposalDeckOverview from "@/components/admin/ProposalDeckOverview";
 import ProposalDiscountTimer from "@/components/admin/ProposalDiscountTimer";
+import SendProposalButton from "@/components/admin/SendProposalButton";
 import { getProposalPresentation } from "@/server-actions/proposal-presentation";
 
 interface InternalNote {
@@ -143,6 +143,11 @@ export default async function ProposalDetailPage({
   const isOnboardingComplete = proposal.status === "intake_complete";
   const isSigned = proposal.status === "signed" || isOnboardingComplete;
 
+  // A draft goes out for the first time; a sent proposal can have its link
+  // emailed again. Signed and superseded ones have nowhere left to go.
+  const isDraft = proposal.status === "draft";
+  const canSend = isDraft || proposal.status === "sent";
+
   const portalUrl = proposal.token
     ? `${await getAppUrl()}/portal/${proposal.token}`
     : null;
@@ -203,19 +208,9 @@ export default async function ProposalDetailPage({
                 </span>
               </a>
             )}
-            {proposal.status === "draft" && (
-              <Link
-                href={`/admin/proposals/${id}/edit`}
-                className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-5 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
-              >
-                Edit
-                <span
-                  className={`flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
-                >
-                  <Pencil strokeWidth={1.5} className="h-3.5 w-3.5" />
-                </span>
-              </Link>
-            )}
+            {/* No "Edit" button: this page *is* the editing surface. Everything
+                a proposal can change — which pages show, the discounts, the
+                timer — is below, in one scroll. */}
             {proposal.status !== "superseded" && (
               <Link
                 href={`/admin/proposals/${id}/edit?mode=supersede`}
@@ -232,14 +227,6 @@ export default async function ProposalDetailPage({
           </div>
         </div>
       </header>
-
-      {/* ─────────────── Discount timer ─────────────── */}
-      <ProposalDiscountTimer
-        proposalId={id}
-        initialActive={proposal.discount_timer_active ?? false}
-        initialExpiresAt={proposal.discount_expires_at}
-        locked={isSigned || proposal.status === "superseded"}
-      />
 
       {/* ─────────────── Summary ─────────────── */}
       <dl
@@ -279,7 +266,51 @@ export default async function ProposalDetailPage({
         <ProposalDeckOverview
           proposalId={id}
           initialPages={presentationPages ?? []}
+          timerActive={proposal.discount_timer_active ?? false}
+          timerExpiresAt={proposal.discount_expires_at}
+          pricesLocked={isSigned || proposal.status === "superseded"}
         />
+      </Section>
+
+      {/* ─────────────── Activate Timer & Send ─────────────── */}
+      {/* The last step of the flow: the deck is settled above, so the timer and
+          the send button are the only things left to touch. */}
+      <Section title="Activate Timer & Send" delay="200ms">
+        <ProposalDiscountTimer
+          proposalId={id}
+          initialActive={proposal.discount_timer_active ?? false}
+          initialExpiresAt={proposal.discount_expires_at}
+          locked={isSigned || proposal.status === "superseded"}
+          variant="step"
+        />
+
+        <div className="mt-5 border-t border-[#F1E8E8] pt-5">
+          {canSend ? (
+            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+              <div className="min-w-0 flex-1">
+                <p className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
+                  {isDraft ? "Send to the client" : "Send the link again"}
+                </p>
+                <p className="mt-0.5 font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
+                  {isDraft
+                    ? "Emails the client their portal link and marks this proposal as sent. Everything above is live the moment they open it."
+                    : "The client already has this link. Sending again emails the same one — they always see the deck and timer as set above."}
+                </p>
+              </div>
+              <SendProposalButton
+                proposalId={id}
+                status={proposal.status}
+                variant="pill"
+              />
+            </div>
+          ) : (
+            <p className="font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
+              {proposal.status === "superseded"
+                ? "This proposal has been replaced. Send the proposal that superseded it instead."
+                : "Signed — there is nothing left to send. Finish up in Post-Signature Review below."}
+            </p>
+          )}
+        </div>
       </Section>
 
       {/* ─────────────── Post-Signature Review ─────────────── */}

@@ -94,7 +94,15 @@ export function CountdownClock({
   );
 }
 
-/** Slim bar pinned above the slides: how long the client's discount has left. */
+/**
+ * Slim bar pinned above the slides: how long the client's discount has left.
+ *
+ * It reads as an alert, not as a caption. This used to be small grey type on
+ * the near-black portal ground, which is the one thing on screen the client
+ * was meant to notice and the one thing they didn't. Cherry ground, white
+ * weight, digits at body size — still ONE slim bar, because the carousel
+ * reserves its height (44px) from a slide that must never scroll.
+ */
 export default function DiscountCountdown({
   expiresAt,
   className,
@@ -108,19 +116,24 @@ export default function DiscountCountdown({
     <div
       role="timer"
       className={cn(
-        "portal-reveal portal-reveal-fall flex h-9 items-center justify-center gap-2 border-b border-lyp-white/10 bg-lyp-black px-4 sm:gap-3",
+        "portal-reveal portal-reveal-fall flex h-11 items-center justify-center gap-2.5 border-b border-lyp-white/15 bg-lyp-cherry px-4 shadow-[0_10px_26px_-14px_rgba(178,38,38,0.9)] sm:gap-3.5",
         className,
       )}
     >
       <Clock
-        strokeWidth={1.5}
-        className="h-3.5 w-3.5 flex-shrink-0 text-lyp-cherry"
+        strokeWidth={2.25}
+        className="h-4 w-4 flex-shrink-0 text-lyp-white"
       />
-      <span className="whitespace-nowrap font-body text-[10px] uppercase tracking-[0.18em] text-lyp-white/60 sm:text-[11px]">
+      <span className="whitespace-nowrap font-body text-[11px] font-semibold uppercase tracking-[0.18em] text-lyp-white sm:text-[12px]">
         <span className="hidden sm:inline">{t("discountEndsIn")}</span>
         <span className="sm:hidden">{t("discountEndsInShort")}</span>
       </span>
-      <CountdownClock expiresAt={expiresAt} className="text-sm" />
+      <CountdownClock
+        expiresAt={expiresAt}
+        className="text-[17px] font-bold sm:text-lg"
+        // Smaller, lighter unit letters so the numbers carry the bar.
+        unitClassName="ml-px text-[11px] font-semibold text-lyp-white/70"
+      />
     </div>
   );
 }

@@ -17,6 +17,12 @@ interface ContentPageProps {
   page: PageData;
 }
 
+/* The cover's post-signature wording. Fixed, not editable: both only appear
+   on a signed proposal, and the page editor always previews a draft, so the
+   fields could never show their effect. Same words as before. */
+const SIGNED_BADGE = "Signed";
+const VIEW_SUMMARY_BUTTON = "View Summary";
+
 export default function ContentPage({ page }: ContentPageProps) {
   const { proposal, pages, setCurrentPage } = useProposal();
   // Called before the slug branches below so the hook order never changes.
@@ -100,7 +106,7 @@ export default function ContentPage({ page }: ContentPageProps) {
               >
                 <span className="inline-flex items-center gap-2 rounded-full bg-green-500/15 px-4 py-1.5 font-body text-sm text-green-400 ring-1 ring-green-500/30">
                   <span className="h-2 w-2 rounded-full bg-green-400" />
-                  {tCover("signedBadge")}
+                  {SIGNED_BADGE}
                 </span>
                 <button
                   onClick={() => {
@@ -109,7 +115,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                   }}
                   className="rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
                 >
-                  {tCover("viewSummaryButton")}
+                  {VIEW_SUMMARY_BUTTON}
                 </button>
               </Reveal>
             )}

@@ -33,6 +33,17 @@ const KIND_LABELS: Record<CopyKind, string> = {
   global: "Every Slide",
 };
 
+/**
+ * The size to upload an image slot at, keyed `kind.slotKey`.
+ *
+ * Derived from how the slot is actually drawn: the cover logo runs through
+ * `<Logo>` at h-14/h-16 — 64 CSS pixels tall — so 2x screens want ~128, and a
+ * wordmark at that height is around 3:1.
+ */
+const IMAGE_SIZE_HINTS: Record<string, string> = {
+  "cover.logo": "Recommended 600 x 200px (transparent PNG)",
+};
+
 /** Overrides with blank values removed, so an empty field means "use the default". */
 export function cleanCopy(copy: CopyOverrides): CopyOverrides {
   return Object.fromEntries(
@@ -58,7 +69,12 @@ export function CopyFields({
   onChange,
   idPrefix = "copy",
 }: CopyFieldsProps) {
-  const [librarySlot, setLibrarySlot] = useState<CopySlot | null>(null);
+  // The kind travels with the slot so the media library can be told the same
+  // recommended size the field shows.
+  const [librarySlot, setLibrarySlot] = useState<{
+    kind: CopyKind;
+    slot: CopySlot;
+  } | null>(null);
 
   const set = (key: string, next: string) =>
     onChange({ ...value, [key]: next });
@@ -88,6 +104,7 @@ export function CopyFields({
               const current = value[slot.key] ?? "";
               const overridden = current.trim() !== "";
               const wide = slot.multiline || slot.image;
+              const sizeHint = IMAGE_SIZE_HINTS[`${kind}.${slot.key}`];
 
               return (
                 <div key={slot.key} className={wide ? "sm:col-span-2" : ""}>
@@ -112,6 +129,11 @@ export function CopyFields({
 
                   {slot.image ? (
                     <div>
+                      {sizeHint && (
+                        <p className="mb-2 font-body text-[11px] text-[#A89898]">
+                          {sizeHint}
+                        </p>
+                      )}
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={overridden ? current : slot.default}
@@ -121,7 +143,7 @@ export function CopyFields({
                       <div className="mt-3 flex flex-wrap items-center gap-4">
                         <button
                           type="button"
-                          onClick={() => setLibrarySlot(slot)}
+                          onClick={() => setLibrarySlot({ kind, slot })}
                           className={quietButton}
                         >
                           <Images strokeWidth={1.5} className="h-3.5 w-3.5" />
@@ -178,9 +200,14 @@ export function CopyFields({
         open={librarySlot !== null}
         onClose={() => setLibrarySlot(null)}
         onSelect={(url) => {
-          if (librarySlot) set(librarySlot.key, url);
+          if (librarySlot) set(librarySlot.slot.key, url);
         }}
-        title={librarySlot?.label}
+        title={librarySlot?.slot.label}
+        hint={
+          librarySlot
+            ? IMAGE_SIZE_HINTS[`${librarySlot.kind}.${librarySlot.slot.key}`]
+            : undefined
+        }
       />
     </div>
   );

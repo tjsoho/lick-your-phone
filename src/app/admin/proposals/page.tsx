@@ -7,11 +7,10 @@ import {
   Check,
   Clock,
   AlertCircle,
-  CreditCard,
   Pencil,
   Copy,
-  Eye,
   ClipboardList,
+  LayoutList,
   Plus,
 } from "lucide-react";
 import ProposalStatusSelect from "@/components/admin/ProposalStatusSelect";
@@ -20,11 +19,34 @@ import PortalLinkCell from "@/components/admin/PortalLinkCell";
 
 const EASE = "ease-brand";
 
+/* -------------------------------------------------------------------------
+   FITTING THE TABLE ON A LAPTOP.
+
+   Nine columns ran ~1450px wide, so on a 1440 screen (1120px of content once
+   the sidebar and page padding are taken) the Actions column — the Onboarding
+   button included — fell off the right edge with nothing to tell you it was
+   there. Three things fix it, together:
+
+   1. Low-value columns are folded into their neighbours rather than dropped:
+      the venue sits under the client name, the payment badge under the status
+      pill, and the proposal's own workspace is an icon in Actions instead of
+      a column of truncated UUIDs.
+   2. The remaining cells are capped and truncate, so one long venue name or a
+      long portal URL cannot push everything else sideways.
+   3. Actions is stuck to the right edge of the scroller, so on anything
+      narrower than it needs it stays on screen while the rest scrolls under
+      it. No action can ever become unreachable.
+   ------------------------------------------------------------------------- */
+
 const thClasses =
-  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-3.5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+
+/** The Actions column rides the right edge, so it needs its own ground. */
+const stickyActions =
+  "sticky right-0 z-10 bg-lyp-white shadow-[-14px_0_18px_-14px_rgba(61,11,17,0.22)]";
 
 function PaymentBadge({ status }: { status?: string }) {
-  if (!status) return <span className="text-[13px] text-[#C3B5B5]">—</span>;
+  if (!status) return null;
   const map: Record<
     string,
     { icon: typeof Check; color: string; label: string }
@@ -46,16 +68,16 @@ function PaymentBadge({ status }: { status?: string }) {
   };
   const entry = map[status];
   if (!entry)
-    return <span className="text-[12px] text-[#8A7A7A]">{status}</span>;
+    return <span className="text-[11.5px] text-[#8A7A7A]">{status}</span>;
   const Icon = entry.icon;
   return (
     <span
       className={cn(
-        "flex items-center gap-1.5 font-body text-[12px] font-medium",
+        "flex items-center gap-1.5 font-body text-[11.5px] font-medium",
         entry.color,
       )}
     >
-      <Icon strokeWidth={1.75} className="h-3 w-3" />
+      <Icon strokeWidth={1.75} className="h-3 w-3 flex-shrink-0" />
       {entry.label}
     </span>
   );
@@ -66,6 +88,8 @@ export default async function ProposalsPage() {
     getProposals(),
     getAppUrl(),
   ]);
+
+  const iconAction = `flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#EFE6E6] bg-lyp-white text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`;
 
   return (
     <div className="mx-auto max-w-[92rem]">
@@ -119,19 +143,14 @@ export default async function ProposalsPage() {
             <thead>
               <tr className="border-b border-[#F1E8E8]">
                 <th className={thClasses}>Client</th>
-                <th className={thClasses}>Location</th>
                 <th className={thClasses}>Status</th>
-                <th className={thClasses}>
-                  <span className="flex items-center gap-1.5">
-                    <CreditCard strokeWidth={1.5} className="h-3 w-3" />
-                    Payment
-                  </span>
-                </th>
                 <th className={thClasses}>Total</th>
-                <th className={thClasses}>Created</th>
+                {/* The date is the first thing to go when space runs out. */}
+                <th className={cn(thClasses, "hidden xl:table-cell")}>
+                  Created
+                </th>
                 <th className={thClasses}>Proposal Link</th>
-                <th className={thClasses}>Actions</th>
-                <th className={cn(thClasses, "text-right")}>ID</th>
+                <th className={cn(thClasses, stickyActions)}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -147,106 +166,128 @@ export default async function ProposalsPage() {
                   return (
                     <tr
                       key={proposal.id}
-                      className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
+                      className={`group border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
                     >
-                      <td className="whitespace-nowrap px-5 py-3">
-                        <Link
-                          href={`/admin/clients/${proposal.clients?.id}`}
-                          className={`font-medium text-lyp-black transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
-                        >
-                          {proposal.clients?.name ?? "—"}
-                        </Link>
+                      {/* Client, with the venue it belongs to underneath —
+                          one column instead of two. */}
+                      <td className="px-3.5 py-3">
+                        <div className="max-w-[160px]">
+                          <Link
+                            href={`/admin/clients/${proposal.clients?.id}`}
+                            className={`block truncate font-medium text-lyp-black transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                          >
+                            {proposal.clients?.name ?? "—"}
+                          </Link>
+                          {proposal.venues?.name && (
+                            <span className="mt-0.5 block truncate font-body text-[11px] text-[#A89898]">
+                              {proposal.venues.name}
+                            </span>
+                          )}
+                        </div>
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
-                        {proposal.venues?.name ?? "—"}
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3">
+
+                      {/* Status, with the payment state reading as a footnote
+                          to it rather than as a column of its own. */}
+                      <td className="whitespace-nowrap px-3.5 py-3">
                         <ProposalStatusSelect
                           proposalId={proposal.id}
                           currentStatus={proposal.status}
                         />
+                        {paymentStatus && (
+                          <span className="mt-1.5 block">
+                            <PaymentBadge status={paymentStatus} />
+                          </span>
+                        )}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3">
-                        <PaymentBadge status={paymentStatus} />
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3 font-medium tabular-nums text-lyp-black">
+
+                      <td className="whitespace-nowrap px-3.5 py-3 font-medium tabular-nums text-lyp-black">
                         {proposal.total_snapshot_cents != null
                           ? formatCents(proposal.total_snapshot_cents)
                           : "—"}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#A89898]">
+
+                      <td className="hidden whitespace-nowrap px-3.5 py-3 tabular-nums text-[#A89898] xl:table-cell">
                         {formatDate(proposal.created_at)}
                       </td>
-                      <td className="px-5 py-3">
-                        <PortalLinkCell url={portalUrl} />
+
+                      {/* Capped so a long host never widens the table; the
+                          link itself truncates inside it. */}
+                      <td className="px-3.5 py-3">
+                        <div className="w-[160px] max-w-full">
+                          <PortalLinkCell url={portalUrl} />
+                        </div>
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3">
-                        <div className="flex items-center gap-2.5">
+
+                      <td
+                        className={cn(
+                          "whitespace-nowrap px-3.5 py-3 transition-colors duration-500",
+                          EASE,
+                          stickyActions,
+                          "group-hover:bg-[#FBF8F8]",
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
                           <SendProposalButton
                             proposalId={proposal.id}
                             status={proposal.status}
                           />
 
-                          {/* Labelled buttons, not bare icons — these are the
-                              two things the team actually opens. */}
-                          {portalUrl && (
-                          <a
-                            href={portalUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`inline-flex items-center gap-1.5 rounded-full border border-[#EFE6E6] bg-lyp-white px-3 py-1.5 font-body text-[12px] font-semibold text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
-                            title="Open the client-facing proposal"
+                          <Link
+                            href={`/admin/proposals/${proposal.id}`}
+                            title={`Open proposal workspace (${proposal.id})`}
+                            aria-label="Open proposal workspace"
+                            className={iconAction}
                           >
-                            <Eye strokeWidth={1.5} className="h-3.5 w-3.5" />
-                            Proposal
-                          </a>
-                          )}
+                            <LayoutList
+                              strokeWidth={1.5}
+                              className="h-3.5 w-3.5"
+                            />
+                          </Link>
 
+                          {/* The one labelled button in the row — onboarding
+                              answers are what the team comes here to open, so
+                              it never reduces to a bare icon. */}
                           {intakeCount > 0 && (
                             <Link
                               href={`/admin/proposals/${proposal.id}/intake`}
                               className={`inline-flex items-center gap-1.5 rounded-full border border-lyp-cherry/25 bg-lyp-cherry/[0.06] px-3 py-1.5 font-body text-[12px] font-semibold text-lyp-cherry transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.12] active:scale-[0.985]`}
                               title="View onboarding answers"
                             >
-                              <ClipboardList strokeWidth={1.5} className="h-3.5 w-3.5" />
+                              <ClipboardList
+                                strokeWidth={1.5}
+                                className="h-3.5 w-3.5"
+                              />
                               Onboarding
                             </Link>
                           )}
                           {proposal.status === "draft" && (
                             <Link
                               href={`/admin/proposals/${proposal.id}/edit`}
-                              className={`text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                              className={iconAction}
                               title="Edit draft"
+                              aria-label="Edit draft"
                             >
-                              <Pencil strokeWidth={1.5} className="h-4 w-4" />
+                              <Pencil strokeWidth={1.5} className="h-3.5 w-3.5" />
                             </Link>
                           )}
                           {proposal.status !== "superseded" && (
                             <Link
                               href={`/admin/proposals/${proposal.id}/edit?mode=supersede`}
-                              className={`text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                              className={iconAction}
                               title="Create superseding proposal"
+                              aria-label="Create superseding proposal"
                             >
-                              <Copy strokeWidth={1.5} className="h-4 w-4" />
+                              <Copy strokeWidth={1.5} className="h-3.5 w-3.5" />
                             </Link>
                           )}
                         </div>
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-right">
-                        <Link
-                          href={`/admin/proposals/${proposal.id}`}
-                          title={proposal.id}
-                          className={`font-mono text-[11px] text-[#C3B5B5] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
-                        >
-                          {proposal.id ? `${proposal.id.slice(0, 8)}…` : "—"}
-                        </Link>
                       </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={9} className="px-8 py-12 text-center">
+                  <td colSpan={6} className="px-8 py-12 text-center">
                     <p className="font-body text-[14px] text-[#8A7A7A]">
                       No proposals yet.
                     </p>

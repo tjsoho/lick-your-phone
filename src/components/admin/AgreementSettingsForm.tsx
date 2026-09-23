@@ -16,6 +16,12 @@ const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px
 const labelClasses =
   "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
 
+/**
+ * The signature is drawn into the contract PDF at 36pt tall, object-contain,
+ * so ~200px of artwork covers it comfortably at print resolution.
+ */
+const SIGNATURE_SIZE_HINT = "Recommended 600 x 200px (transparent PNG)";
+
 type Props = {
   initialTerms: string;
   initialPostSignature: string;
@@ -166,6 +172,9 @@ export default function AgreementSettingsForm({
 
         <div className="mt-4">
           <span className={labelClasses}>Signature Image</span>
+          <p className="-mt-1 mb-2 font-body text-[11px] text-[#A89898]">
+            {SIGNATURE_SIZE_HINT}
+          </p>
           {image ? (
             <div className="mt-2">
               <div className="relative inline-block">
@@ -253,6 +262,7 @@ export default function AgreementSettingsForm({
         onClose={() => setLibraryOpen(false)}
         onSelect={setImage}
         title="Counter-signature"
+        hint={SIGNATURE_SIZE_HINT}
       />
     </div>
   );

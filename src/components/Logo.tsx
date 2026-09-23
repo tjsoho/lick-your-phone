@@ -60,7 +60,10 @@ export default function Logo({
     />
   );
 
-  if (!onDark) return image;
+  // The plate exists only for the built-in artwork, which ships with an opaque
+  // white background. An uploaded logo is expected to be a light, transparent
+  // one, and a plate behind it would hide it entirely.
+  if (!onDark || src !== LOGO_SRC) return image;
 
   return (
     <span

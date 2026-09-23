@@ -45,6 +45,31 @@ const addLabelFor = (t: string | null) =>
     ? "Add result"
     : "Add logo";
 
+/* -------------------------------------------------------------------------
+   WHAT SIZE TO UPLOAD.
+
+   Every number below is twice the largest size the portal actually draws that
+   picture at, because screens go up to 2x:
+
+   - image           SIZES.bodyImage — 730px wide inside the 7/12 text column.
+   - logos           h-16, so 64px tall and ~200px of artwork wide.
+   - media_carousel  a device column in the showcase row: ~450px wide,
+                     max-h-[60vh] tall, portrait.
+   - collage         a square tile capped at max-w-[10rem] — 160px.
+   - results         the circular client mark — h-16, h-20 on tall screens.
+   - offset_image    62% x 82% of a 24rem portrait stage — ~240 x 420px.
+   ------------------------------------------------------------------------- */
+const IMAGE_SIZE_HINTS: Record<string, string> = {
+  image: "Recommended 1600px wide (JPG or PNG)",
+  logos: "Recommended 400 x 160px (transparent PNG)",
+  media_carousel: "Recommended 900 x 1600px (portrait, PNG)",
+  collage: "Recommended 400 x 400px (square, JPG or PNG)",
+  results: "Recommended 320 x 320px (square, JPG or PNG)",
+  offset_image: "Recommended 480 x 840px (portrait, PNG)",
+};
+
+const sizeHintFor = (t: string | null) => IMAGE_SIZE_HINTS[t ?? ""];
+
 const imageListLabel = (t: string | null) =>
   t === "media_carousel"
     ? "Carousel images with alt text"
@@ -124,12 +149,15 @@ function BlockTextarea({ type, value, onChange }: { type: string; value: string;
   );
 }
 
-function ImageUploadEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function ImageUploadEditor({ value, onChange, sizeHint }: { value: string; onChange: (v: string) => void; sizeHint?: string }) {
   const [libraryOpen, setLibraryOpen] = useState(false);
 
   return (
     <div className="space-y-2.5">
       <p className={captionClasses}>Block image</p>
+      {sizeHint && (
+        <p className="font-body text-[11px] text-[#A89898]">{sizeHint}</p>
+      )}
       {value ? (
         <div className="space-y-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -159,6 +187,7 @@ function ImageUploadEditor({ value, onChange }: { value: string; onChange: (v: s
         onClose={() => setLibraryOpen(false)}
         onSelect={onChange}
         title="Block Image"
+        hint={sizeHint}
       />
     </div>
   );
@@ -183,7 +212,7 @@ function TypeSelect({ value, onChange }: { value: BlockType; onChange: (v: Block
  * what the `results` block stores alongside each client logo. Every other
  * image-list type leaves `text` untouched.
  */
-function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo images with alt text", showText = false }: { logos: LogoItem[]; onChange: (v: LogoItem[]) => void; addLabel?: string; label?: string; showText?: boolean }) {
+function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo images with alt text", showText = false, sizeHint }: { logos: LogoItem[]; onChange: (v: LogoItem[]) => void; addLabel?: string; label?: string; showText?: boolean; sizeHint?: string }) {
   // null = closed. A number replaces that row's image; "add" appends a new
   // row per image chosen, so several can be added in one visit.
   const [library, setLibrary] = useState<number | "add" | null>(null);
@@ -217,7 +246,12 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
 
   return (
     <div className="space-y-3">
-      <p className="font-body text-[12px] leading-relaxed text-[#8A7A7A]">{label}</p>
+      <div>
+        <p className="font-body text-[12px] leading-relaxed text-[#8A7A7A]">{label}</p>
+        {sizeHint && (
+          <p className="mt-1 font-body text-[11px] text-[#A89898]">{sizeHint}</p>
+        )}
+      </div>
       {logos.map((logo, i) => (
         <div key={i} className={`flex gap-3 rounded-2xl border border-[#EFE6E6] bg-lyp-white p-2.5 ${showText ? "items-start" : "items-center"}`}>
           {logo.url ? (
@@ -283,6 +317,7 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
         onSelect={handlePick}
         multiple={library === "add"}
         title={library === "add" ? "Add Images" : "Replace Image"}
+        hint={sizeHint}
       />
       <div className="flex flex-wrap items-center gap-4">
         <button
@@ -590,9 +625,9 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
                 <span className="font-mono text-[11px] tabular-nums text-[#A89898]">seq: {block.sequence}</span>
               </div>
               {isImageListType(editType)
-                ? <LogosEditor logos={editLogos} onChange={setEditLogos} addLabel={addLabelFor(editType)} label={imageListLabel(editType)} showText={withCopy(editType)} />
+                ? <LogosEditor logos={editLogos} onChange={setEditLogos} addLabel={addLabelFor(editType)} label={imageListLabel(editType)} showText={withCopy(editType)} sizeHint={sizeHintFor(editType)} />
                 : editType === "image"
-                ? <ImageUploadEditor value={editContent} onChange={setEditContent} />
+                ? <ImageUploadEditor value={editContent} onChange={setEditContent} sizeHint={sizeHintFor(editType)} />
                 : <BlockTextarea type={editType} value={editContent} onChange={setEditContent} />
               }
               <div className="flex flex-wrap items-center gap-3">
@@ -621,9 +656,9 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
             <span className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-lyp-cherry/70">New block</span>
           </div>
           {isImageListType(newType)
-            ? <LogosEditor logos={newLogos} onChange={setNewLogos} addLabel={addLabelFor(newType)} label={imageListLabel(newType)} showText={withCopy(newType)} />
+            ? <LogosEditor logos={newLogos} onChange={setNewLogos} addLabel={addLabelFor(newType)} label={imageListLabel(newType)} showText={withCopy(newType)} sizeHint={sizeHintFor(newType)} />
             : newType === "image"
-            ? <ImageUploadEditor value={newContent} onChange={setNewContent} />
+            ? <ImageUploadEditor value={newContent} onChange={setNewContent} sizeHint={sizeHintFor(newType)} />
             : <BlockTextarea type={newType} value={newContent} onChange={setNewContent} />
           }
           <div className="flex flex-wrap items-center gap-2.5">

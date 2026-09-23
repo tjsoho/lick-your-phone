@@ -26,8 +26,12 @@ type Props = {
   initialExpiresAt: string | null;
   /** Signed or replaced proposals have nothing left to count down to. */
   locked: boolean;
-  /** `card` for the proposal page; `row` sits inside a proposal card elsewhere. */
-  variant?: "card" | "row";
+  /**
+   * `card` stands on its own; `row` sits inside a proposal card elsewhere;
+   * `step` is bare, for the send step on the proposal page which brings its
+   * own card around the timer and the send button together.
+   */
+  variant?: "card" | "row" | "step";
 };
 
 export default function ProposalDiscountTimer({
@@ -41,6 +45,7 @@ export default function ProposalDiscountTimer({
   const switchId = `discount-timer-${proposalId}`;
   const endsId = `discount-ends-${proposalId}`;
   const isRow = variant === "row";
+  const isStep = variant === "step";
   const [active, setActive] = useState(initialActive);
   const [expiresAt, setExpiresAt] = useState(initialExpiresAt);
   const [draft, setDraft] = useState(toLocalInput(initialExpiresAt));
@@ -88,11 +93,13 @@ export default function ProposalDiscountTimer({
   return (
     <section
       className={
-        isRow
-          ? "border-t border-[#F1E8E8] px-5 py-4"
-          : "animate-rise mb-6 rounded-2xl border border-[#EFE6E6] bg-lyp-white p-5 sm:p-6"
+        isStep
+          ? ""
+          : isRow
+            ? "border-t border-[#F1E8E8] px-5 py-4"
+            : "animate-rise mb-6 rounded-2xl border border-[#EFE6E6] bg-lyp-white p-5 sm:p-6"
       }
-      style={isRow ? undefined : { animationDelay: "60ms" }}
+      style={isRow || isStep ? undefined : { animationDelay: "60ms" }}
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
