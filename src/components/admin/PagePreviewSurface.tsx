@@ -28,6 +28,8 @@ type Props = {
   services: React.ComponentProps<typeof ProposalProvider>["services"];
   /** The saved agreement settings, including the workspace-wide wording. */
   agreement: AgreementCopy;
+  /** Per-proposal discounts by service id, when previewing a real proposal. */
+  discountOverrides?: Record<string, number>;
 };
 
 export const PREVIEW_MESSAGE = "lyp:page-draft";
@@ -45,6 +47,7 @@ export default function PagePreviewSurface({
   page,
   services,
   agreement,
+  discountOverrides,
 }: Props) {
   const [draft, setDraft] = useState<PageData>(page);
 
@@ -90,6 +93,7 @@ export default function PagePreviewSurface({
       agreement={agreement}
       pages={[draft]}
       services={services}
+      discountOverrides={discountOverrides}
       initialSelections={[]}
       pageCopy={pageCopy}
     >

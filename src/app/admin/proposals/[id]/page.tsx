@@ -14,7 +14,6 @@ import { getAppUrl } from "@/lib/app-url";
 import {
   ArrowLeft,
   Eye,
-  Check,
   Clock,
   AlertCircle,
   CreditCard,
@@ -25,44 +24,11 @@ import {
   ClipboardCheck,
   DollarSign,
   Activity,
-  Receipt,
 } from "lucide-react";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
-import ProposalPresentationEditor from "@/components/admin/ProposalPresentationEditor";
+import ProposalDeckOverview from "@/components/admin/ProposalDeckOverview";
 import ProposalDiscountTimer from "@/components/admin/ProposalDiscountTimer";
 import { getProposalPresentation } from "@/server-actions/proposal-presentation";
-
-interface ProposalLineItem {
-  id: string;
-  price_snapshot_cents: number;
-  billing_cycle_snapshot_months: number;
-  billing: string | null;
-  term: string | null;
-  services: {
-    name: string;
-  } | null;
-  service_tiers: {
-    name: string;
-  } | null;
-}
-
-interface PaymentSchedule {
-  id: string;
-  scheduled_date: string;
-  description: string | null;
-  amount_cents: number;
-  pinch_payment_id: string | null;
-  status: string;
-}
-
-interface Payment {
-  id: string;
-  card_brand: string | null;
-  card_last_four: string | null;
-  card_expiry: string | null;
-  status: string;
-  payment_schedules?: PaymentSchedule[];
-}
 
 interface InternalNote {
   id: string;
@@ -83,9 +49,6 @@ interface AuditMetadata {
 
 const EASE = "ease-brand";
 
-const thClasses =
-  "whitespace-nowrap px-4 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
-
 /** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const statusStyles: Record<string, string> = {
   draft: "bg-[#F2EDED] text-[#8A7A7A]",
@@ -93,26 +56,6 @@ const statusStyles: Record<string, string> = {
   intake_complete: "bg-[#FBF3E3] text-[#9A7B2E]",
   signed: "bg-[#E9F2EC] text-[#4A7A5C]",
   superseded: "bg-lyp-cherry/[0.07] text-lyp-cherry",
-};
-
-const paymentStatusMap: Record<
-  string,
-  { icon: typeof Check; color: string; label: string }
-> = {
-  details_captured: {
-    icon: Check,
-    color: "text-[#4A7A5C]",
-    label: "Captured",
-  },
-  scheduled: { icon: Clock, color: "text-[#5B7394]", label: "Scheduled" },
-  pending: { icon: Clock, color: "text-[#9A7B2E]", label: "Pending" },
-  settled: { icon: Check, color: "text-[#4A7A5C]", label: "Settled" },
-  dishonoured: {
-    icon: AlertCircle,
-    color: "text-lyp-cherry",
-    label: "Dishonoured",
-  },
-  failed: { icon: AlertCircle, color: "text-lyp-cherry", label: "Failed" },
 };
 
 const eventDetails: Record<
@@ -172,36 +115,6 @@ const eventDetails: Record<
   },
 };
 
-function StatusBadge({
-  status,
-  map,
-}: {
-  status?: string;
-  map: typeof paymentStatusMap;
-}) {
-  if (!status)
-    return <span className="font-body text-[12px] text-[#C3B5B5]">—</span>;
-  const entry = map[status];
-  if (!entry)
-    return (
-      <span className="font-body text-[12px] capitalize text-[#8A7A7A]">
-        {status}
-      </span>
-    );
-  const Icon = entry.icon;
-  return (
-    <span
-      className={cn(
-        "flex items-center gap-1.5 font-body text-[12px] font-medium",
-        entry.color,
-      )}
-    >
-      <Icon strokeWidth={1.75} className="h-3 w-3" />
-      {entry.label}
-    </span>
-  );
-}
-
 export default async function ProposalDetailPage({
   params,
 }: {
@@ -222,9 +135,6 @@ export default async function ProposalDetailPage({
 
   const events = auditEvents || [];
 
-  const lineItems = (proposal.proposal_line_items ??
-    []) as unknown as ProposalLineItem[];
-  const payments = (proposal.payments ?? []) as unknown as Payment[];
   const notes = (proposal.internal_notes ?? []) as unknown as InternalNote[];
 
   const { data: presentationPages } = await getProposalPresentation(id);
@@ -267,7 +177,8 @@ export default async function ProposalDetailPage({
               <span
                 className={cn(
                   "inline-block rounded-full px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em]",
-                  statusStyles[proposal.status] ?? "bg-[#F2EDED] text-[#8A7A7A]",
+                  statusStyles[proposal.status] ??
+                    "bg-[#F2EDED] text-[#8A7A7A]",
                 )}
               >
                 {formatStatus(proposal.status)}
@@ -363,186 +274,9 @@ export default async function ProposalDetailPage({
         )}
       </dl>
 
-      {/* ─────────────── Line items ─────────────── */}
-      <Section title="Line Items" delay="140ms" flush>
-        {lineItems.length === 0 ? (
-          <EmptyRow icon={Receipt} message="No line items." />
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left font-body text-[12.5px]">
-              <thead>
-                <tr className="border-b border-[#F1E8E8]">
-                  <th className={thClasses}>Service</th>
-                  <th className={thClasses}>Billing</th>
-                  <th className={thClasses}>Term</th>
-                  <th className={cn(thClasses, "text-right")}>Price</th>
-                  <th className={cn(thClasses, "text-right")}>Subtotal</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lineItems.map((li) => (
-                  <tr
-                    key={li.id}
-                    className={`border-b border-[#F7F1F1] transition-colors duration-500 ${EASE} hover:bg-[#FBF8F8]`}
-                  >
-                    <td className="px-4 py-3 font-medium text-lyp-black">
-                      {li.services?.name}{" "}
-                      {li.service_tiers?.name && `(${li.service_tiers.name})`}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 capitalize text-[#8A7A7A]">
-                      {li.billing ?? "—"}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[#8A7A7A]">
-                      {li.billing_cycle_snapshot_months} Months
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-lyp-black">
-                      {formatCents(li.price_snapshot_cents)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-lyp-black">
-                      {formatCents(
-                        li.price_snapshot_cents *
-                          (li.billing_cycle_snapshot_months || 1),
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="px-4 py-3 text-right font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]"
-                  >
-                    Total
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right font-heading text-[15px] font-bold tabular-nums tracking-[-0.02em] text-lyp-black">
-                    {formatCents(proposal.total_snapshot_cents ?? 0)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Section>
-
-      {/* ─────────────── Payments ─────────────── */}
-      <Section title="Payments" delay="200ms">
-        {payments.length === 0 ? (
-          <EmptyRow icon={CreditCard} message="No payments recorded." />
-        ) : (
-          <div className="space-y-4">
-            {payments.map((payment) => (
-              <div
-                key={payment.id}
-                className="rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] p-4 sm:p-5"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-lyp-cherry/[0.06] ring-1 ring-lyp-cherry/10">
-                      <CreditCard
-                        strokeWidth={1.25}
-                        className="h-3.5 w-3.5 text-lyp-cherry"
-                      />
-                    </span>
-                    <span className="font-body text-[13px] font-medium text-lyp-black">
-                      {payment.card_brand ?? "Card"} ••••{" "}
-                      <span className="tabular-nums">
-                        {payment.card_last_four ?? "????"}
-                      </span>
-                    </span>
-                    {payment.card_expiry && (
-                      <span className="font-body text-[11px] tabular-nums text-[#A89898]">
-                        Exp {payment.card_expiry}
-                      </span>
-                    )}
-                  </div>
-                  <StatusBadge status={payment.status} map={paymentStatusMap} />
-                </div>
-
-                <h3 className="mt-5 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
-                  Payment Schedule
-                </h3>
-
-                {payment.payment_schedules &&
-                payment.payment_schedules.length > 0 ? (
-                  <div className="mt-2 overflow-x-auto">
-                    <table className="w-full text-left font-body text-[12px]">
-                      <thead>
-                        <tr className="border-b border-[#F1E8E8]">
-                          <th className={thClasses}>Date</th>
-                          <th className={thClasses}>Description</th>
-                          <th className={cn(thClasses, "text-right")}>
-                            Amount
-                          </th>
-                          <th className={thClasses}>Pinch ID</th>
-                          <th className={cn(thClasses, "text-right")}>
-                            Status
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {payment.payment_schedules.map((sched) => (
-                          <tr
-                            key={sched.id}
-                            className="border-b border-[#F7F1F1] last:border-0"
-                          >
-                            <td className="whitespace-nowrap px-4 py-2.5 tabular-nums text-lyp-black">
-                              {formatDate(sched.scheduled_date)}
-                            </td>
-                            <td className="px-4 py-2.5 text-[#8A7A7A]">
-                              {sched.description || "—"}
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-2.5 text-right tabular-nums text-lyp-black">
-                              {formatCents(sched.amount_cents)}
-                            </td>
-                            <td className="whitespace-nowrap px-4 py-2.5 font-mono text-[11px] text-[#C3B5B5]">
-                              {sched.pinch_payment_id
-                                ? sched.pinch_payment_id.slice(0, 12) + "…"
-                                : "—"}
-                            </td>
-                            <td className="px-4 py-2.5">
-                              <span className="flex justify-end">
-                                <StatusBadge
-                                  status={sched.status}
-                                  map={paymentStatusMap}
-                                />
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-
-                        <tr>
-                          <td
-                            colSpan={2}
-                            className="px-4 py-2.5 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]"
-                          >
-                            Total
-                          </td>
-                          <td className="whitespace-nowrap px-4 py-2.5 text-right font-body text-[13px] font-semibold tabular-nums text-lyp-black">
-                            {formatCents(
-                              payment.payment_schedules.reduce(
-                                (sum, sched) => sum + sched.amount_cents,
-                                0,
-                              ),
-                            )}
-                          </td>
-                          <td colSpan={2}></td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="mt-2 font-body text-[12px] text-[#A89898]">
-                    No scheduled payments.
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </Section>
-
-      {/* ─────────────── Presentation ─────────────── */}
-      <Section title="Presentation" delay="220ms">
-        <ProposalPresentationEditor
+      {/* ─────────────── Deck overview ─────────────── */}
+      <Section title="Deck Overview" delay="140ms">
+        <ProposalDeckOverview
           proposalId={id}
           initialPages={presentationPages ?? []}
         />
@@ -745,24 +479,17 @@ function Section({
   title,
   children,
   delay,
-  flush = false,
 }: {
   title: string;
   children: React.ReactNode;
   delay: string;
-  flush?: boolean;
 }) {
   return (
     <section className="animate-rise mb-8" style={{ animationDelay: delay }}>
       <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
         {title}
       </h2>
-      <div
-        className={cn(
-          "mt-3.5 overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white",
-          !flush && "p-5",
-        )}
-      >
+      <div className="mt-3.5 overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white p-5">
         {children}
       </div>
     </section>

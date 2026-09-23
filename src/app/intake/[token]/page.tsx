@@ -92,8 +92,11 @@ export default async function IntakeRoutePage({ params }: Props) {
     discountTimerActive: proposal.discount_timer_active ?? false,
     signedAt: proposal.signed_at ?? null,
     clientName: clientObj?.name ?? "Client",
+    // The person. `contact_name` is legacy: records made before the client
+    // record became the person still carry them there.
     contactName:
       (clientObj as { contact_name?: string | null } | null)?.contact_name ??
+      clientObj?.name ??
       null,
     venueName: venueObj?.name ?? "Venue",
   };

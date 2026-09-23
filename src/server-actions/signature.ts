@@ -252,7 +252,9 @@ export async function signProposal(input: SignProposalInput) {
 
     const pdfBuffer = await generateContractPdf({
       clientName: clientObj?.name ?? "Client",
-      contactName: clientObj?.contact_name ?? null,
+      // The person signing. `contact_name` is legacy: records made before the
+      // client record became the person still carry them there.
+      contactName: clientObj?.contact_name ?? clientObj?.name ?? null,
       venueName: venueObj?.name ?? "Venue",
       lineItems: pdfLineItems,
       totalCents,

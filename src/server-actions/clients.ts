@@ -46,10 +46,13 @@ export async function getClient(id: string) {
   }
 }
 
+/**
+ * `name` is the client — the person. Venues hang off the client as their own
+ * rows; the legacy `contact_name` column is never written any more.
+ */
 export async function createClient(data: {
   name: string;
   slug: string;
-  contact_name?: string;
   abn?: string;
   entity_name?: string;
   email: string;
@@ -75,7 +78,6 @@ export async function updateClient(
   data: {
     name?: string;
     slug?: string;
-    contact_name?: string;
     abn?: string;
     entity_name?: string;
     email?: string;
@@ -199,24 +201,52 @@ export async function updateContact(
 }
 
 /**
- * Creates the client and its venue together, the way the proposal wizard asks
- * for them: one venue name, one contact person. Rolls the client back if the
- * venue insert fails so a half-made record never reaches the clients list.
+ * Client slugs sit in URLs and the column is unique, so two people with the
+ * same name can't both be `sarah-nguyen` — the second becomes `sarah-nguyen-2`.
+ */
+async function uniqueClientSlug(
+  supabase: Awaited<ReturnType<typeof createSupabaseClient>>,
+  base: string,
+): Promise<string> {
+  const root = base || "client";
+
+  // Slugs are [a-z0-9-] only, so the prefix match needs no escaping.
+  const { data } = await supabase
+    .from("clients")
+    .select("slug")
+    .like("slug", `${root}%`);
+
+  const taken = new Set((data ?? []).map((row: { slug: string }) => row.slug));
+  if (!taken.has(root)) return root;
+
+  let suffix = 2;
+  while (taken.has(`${root}-${suffix}`)) suffix += 1;
+  return `${root}-${suffix}`;
+}
+
+/**
+ * Creates the client and their first venue together, the way the proposal
+ * wizard asks for them: the person is the client record, the venue is a row
+ * underneath. Rolls the client back if the venue insert fails so a half-made
+ * record never reaches the clients list.
  */
 export async function createClientWithVenue(data: {
-  venue_name: string;
-  contact_name: string;
+  /** The person's full name — this is what the client record is called. */
+  name: string;
   email: string;
+  /** Their first venue, created as a row under the client. */
+  venue_name: string;
+  /** Base slug, derived from the person's name; made unique before insert. */
   slug: string;
 }) {
   const supabase = await createSupabaseClient();
+  const slug = await uniqueClientSlug(supabase, data.slug);
 
   const { data: client, error: clientError } = await supabase
     .from("clients")
     .insert({
-      name: data.venue_name,
-      slug: data.slug,
-      contact_name: data.contact_name,
+      name: data.name,
+      slug,
       email: data.email,
     })
     .select()

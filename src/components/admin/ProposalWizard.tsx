@@ -27,8 +27,8 @@ type Venue = {
 
 type Client = {
   id: string;
+  /** The person. Their venues hang off them. */
   name: string;
-  contact_name?: string | null;
   email?: string | null;
   venues: Venue[];
 };
@@ -115,9 +115,9 @@ export default function ProposalWizard({
     initialData?.clientId ?? "",
   );
   const [showNewClient, setShowNewClient] = useState(false);
-  const [newVenueName, setNewVenueName] = useState("");
-  const [newContactName, setNewContactName] = useState("");
+  const [newClientName, setNewClientName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
+  const [newVenueName, setNewVenueName] = useState("");
   const [createdClients, setCreatedClients] = useState<Client[]>([]);
 
   // Venue state, for clients that already exist
@@ -145,12 +145,9 @@ export default function ProposalWizard({
     setSelectedVenueId(venues.length === 1 ? venues[0].id : "");
   }
 
+  /** The person is the record; their first venue is created underneath. */
   async function handleCreateClient() {
-    if (!newVenueName.trim()) {
-      toast.error("Venue name is required");
-      return;
-    }
-    if (!newContactName.trim()) {
+    if (!newClientName.trim()) {
       toast.error("Client full name is required");
       return;
     }
@@ -158,12 +155,17 @@ export default function ProposalWizard({
       toast.error("Client email is required");
       return;
     }
+    if (!newVenueName.trim()) {
+      toast.error("Venue name is required");
+      return;
+    }
     setLoading(true);
     const { data, error } = await createClientWithVenue({
-      venue_name: newVenueName.trim(),
-      contact_name: newContactName.trim(),
+      name: newClientName.trim(),
       email: newClientEmail.trim(),
-      slug: slugify(newVenueName),
+      venue_name: newVenueName.trim(),
+      // Slugs live in URLs; the server makes this unique before inserting.
+      slug: slugify(newClientName),
     });
     setLoading(false);
     if (error) {
@@ -175,7 +177,6 @@ export default function ProposalWizard({
       const newClient: Client = {
         id: data.client.id,
         name: data.client.name,
-        contact_name: data.client.contact_name,
         email: data.client.email,
         venues: [venue],
       };
@@ -183,10 +184,10 @@ export default function ProposalWizard({
       setSelectedClientId(data.client.id);
       setSelectedVenueId(venue.id);
       setShowNewClient(false);
-      setNewVenueName("");
-      setNewContactName("");
+      setNewClientName("");
       setNewClientEmail("");
-      toast.success("Client created");
+      setNewVenueName("");
+      toast.success("Client added");
       setStep(2);
     }
   }
@@ -331,17 +332,18 @@ export default function ProposalWizard({
         {step === 1 && (
           <div>
             <h2 className="font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
-              Venue & Client
+              Client
             </h2>
             <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
-              Choose an existing venue, or add a new one.
+              Start with the person. Choose an existing client, or add a new
+              one, then say which of their venues this proposal is for.
             </p>
 
             {!showNewClient ? (
               <div className="mt-7 space-y-5">
                 <div>
                   <label htmlFor="client" className={labelClasses}>
-                    Venue
+                    Client
                   </label>
                   <SelectShell>
                     <select
@@ -350,7 +352,7 @@ export default function ProposalWizard({
                       onChange={(e) => handleSelectClient(e.target.value)}
                       className={selectClasses}
                     >
-                      <option value="">Choose a venue…</option>
+                      <option value="">Choose a client…</option>
                       {allClients.map((client) => (
                         <option key={client.id} value={client.id}>
                           {client.name}
@@ -358,18 +360,15 @@ export default function ProposalWizard({
                       ))}
                     </select>
                   </SelectShell>
-                  {selectedClient?.contact_name && (
-                    <p className={hintClasses}>
-                      Contact: {selectedClient.contact_name}
-                      {selectedClient.email ? ` — ${selectedClient.email}` : ""}
-                    </p>
+                  {selectedClient?.email && (
+                    <p className={hintClasses}>{selectedClient.email}</p>
                   )}
                 </div>
 
-                {/* A client with more than one venue has to say which */}
-                {selectedClient && allVenues.length > 1 && (
+                {/* Their venues, listed so a client with several reads clearly */}
+                {selectedClient && allVenues.length > 0 && (
                   <div>
-                    <p className={labelClasses}>Which venue</p>
+                    <p className={labelClasses}>Venue</p>
                     <div className="flex flex-wrap gap-2">
                       {allVenues.map((venue) => {
                         const isSelected = selectedVenueId === venue.id;
@@ -398,7 +397,7 @@ export default function ProposalWizard({
                   </div>
                 )}
 
-                {/* Adding a second venue to a client we already have */}
+                {/* Adding another venue under a client we already have */}
                 {selectedClient &&
                   (showNewVenue ? (
                     <div className="rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] p-5">
@@ -450,7 +449,9 @@ export default function ProposalWizard({
                       <span className="flex h-6 w-6 items-center justify-center rounded-full bg-lyp-cherry/[0.08]">
                         <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
                       </span>
-                      Add another venue for this client
+                      {allVenues.length > 0
+                        ? "Add another venue for this client"
+                        : "Add a venue for this client"}
                     </button>
                   ))}
 
@@ -470,38 +471,29 @@ export default function ProposalWizard({
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-lyp-cherry/[0.08]">
                     <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
                   </span>
-                  New venue &amp; client
+                  New client
                 </button>
               </div>
             ) : (
               <div className="mt-7 rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] p-5 sm:p-6">
                 <h3 className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
-                  New Venue &amp; Client
+                  New Client
                 </h3>
+                <p className="mt-1.5 font-body text-[12px] text-[#A89898]">
+                  The client is the person. Their first venue is added
+                  underneath — more can follow later.
+                </p>
 
                 <div className="mt-5 space-y-4">
                   <div>
-                    <label htmlFor="c-venue" className={labelClasses}>
-                      Venue Name *
-                    </label>
-                    <input
-                      id="c-venue"
-                      type="text"
-                      value={newVenueName}
-                      onChange={(e) => setNewVenueName(e.target.value)}
-                      className={fieldClasses}
-                      placeholder="e.g. Riverside Ballroom"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="c-contact" className={labelClasses}>
+                    <label htmlFor="c-name" className={labelClasses}>
                       Client Full Name *
                     </label>
                     <input
-                      id="c-contact"
+                      id="c-name"
                       type="text"
-                      value={newContactName}
-                      onChange={(e) => setNewContactName(e.target.value)}
+                      value={newClientName}
+                      onChange={(e) => setNewClientName(e.target.value)}
                       className={fieldClasses}
                       placeholder="e.g. Sarah Nguyen"
                     />
@@ -526,6 +518,23 @@ export default function ProposalWizard({
                       info@.
                     </p>
                   </div>
+                  <div>
+                    <label htmlFor="c-venue" className={labelClasses}>
+                      Venue Name *
+                    </label>
+                    <input
+                      id="c-venue"
+                      type="text"
+                      value={newVenueName}
+                      onChange={(e) => setNewVenueName(e.target.value)}
+                      className={fieldClasses}
+                      placeholder="e.g. Riverside Ballroom"
+                    />
+                    <p className={hintClasses}>
+                      Their first venue. You can add more from the client
+                      record.
+                    </p>
+                  </div>
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -535,7 +544,7 @@ export default function ProposalWizard({
                     disabled={loading}
                     className={primaryPill}
                   >
-                    {loading ? "Creating" : "Create Client"}
+                    {loading ? "Adding" : "Add Client"}
                     <span className={pillIcon}>
                       {loading ? (
                         <Loader2
@@ -573,26 +582,26 @@ export default function ProposalWizard({
             <dl className="mt-7 overflow-hidden rounded-2xl border border-[#EFE6E6]">
               <div className="flex items-start gap-4 border-b border-[#F1E8E8] px-5 py-4">
                 <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
-                  Venue
-                </dt>
-                <dd className="font-body text-[14px] font-medium text-lyp-black">
-                  {selectedVenue?.name ?? selectedClient?.name ?? "—"}
-                </dd>
-              </div>
-              <div className="flex items-start gap-4 border-b border-[#F1E8E8] px-5 py-4">
-                <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
                   Client
                 </dt>
                 <dd className="font-body text-[14px] font-medium text-lyp-black">
-                  {selectedClient?.contact_name || "—"}
+                  {selectedClient?.name || "—"}
                 </dd>
               </div>
-              <div className="flex items-start gap-4 px-5 py-4">
+              <div className="flex items-start gap-4 border-b border-[#F1E8E8] px-5 py-4">
                 <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
                   Email
                 </dt>
                 <dd className="font-body text-[14px] font-medium text-lyp-black">
                   {selectedClient?.email || "—"}
+                </dd>
+              </div>
+              <div className="flex items-start gap-4 px-5 py-4">
+                <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
+                  Venue
+                </dt>
+                <dd className="font-body text-[14px] font-medium text-lyp-black">
+                  {selectedVenue?.name ?? "—"}
                 </dd>
               </div>
             </dl>

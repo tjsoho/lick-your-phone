@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getClients } from "@/server-actions/clients";
 import { formatDate } from "@/lib/format";
-import { AlertCircle, ArrowRight, Plus, Users } from "lucide-react";
+import { AlertCircle, ArrowRight, MapPin, Plus, Users } from "lucide-react";
 
 const EASE = "ease-brand";
 
@@ -62,10 +62,9 @@ export default async function ClientsPage() {
           <table className="w-full text-left font-body text-[12.5px]">
             <thead>
               <tr className="border-b border-[#F1E8E8]">
-                <th className={thClasses}>Venue</th>
                 <th className={thClasses}>Client</th>
-                <th className={thClasses}>Email</th>
                 <th className={thClasses}>Venues</th>
+                <th className={thClasses}>Email</th>
                 <th className={thClasses}>Created</th>
               </tr>
             </thead>
@@ -75,41 +74,59 @@ export default async function ClientsPage() {
                   (client: {
                     id: string;
                     name: string;
-                    contact_name?: string;
                     email?: string;
                     created_at: string;
                     venues: { id: string; name: string }[];
-                  }) => (
-                    <tr
-                      key={client.id}
-                      className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
-                    >
-                      <td className="whitespace-nowrap px-5 py-3">
-                        <Link
-                          href={`/admin/clients/${client.id}`}
-                          className={`font-medium text-lyp-black transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
-                        >
-                          {client.name}
-                        </Link>
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
-                        {client.contact_name || "—"}
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
-                        {client.email || "—"}
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#8A7A7A]">
-                        {client.venues?.length ?? 0}
-                      </td>
-                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#A89898]">
-                        {formatDate(client.created_at)}
-                      </td>
-                    </tr>
-                  ),
+                  }) => {
+                    // Every venue the person has, not just the first — a
+                    // client can hold several.
+                    const venues = client.venues ?? [];
+                    return (
+                      <tr
+                        key={client.id}
+                        className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
+                      >
+                        <td className="whitespace-nowrap px-5 py-3">
+                          <Link
+                            href={`/admin/clients/${client.id}`}
+                            className={`font-medium text-lyp-black transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                          >
+                            {client.name}
+                          </Link>
+                        </td>
+                        <td className="px-5 py-3 text-[#8A7A7A]">
+                          {venues.length > 0 ? (
+                            <span className="flex flex-wrap gap-1.5">
+                              {venues.map((venue) => (
+                                <span
+                                  key={venue.id}
+                                  className="inline-flex items-center gap-1.5 rounded-full border border-[#F1E8E8] bg-[#FBF8F8] px-2.5 py-1 text-[11.5px] text-[#8A7A7A]"
+                                >
+                                  <MapPin
+                                    strokeWidth={1.25}
+                                    className="h-3 w-3 text-[#C3B5B5]"
+                                  />
+                                  {venue.name}
+                                </span>
+                              ))}
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                          {client.email || "—"}
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#A89898]">
+                          {formatDate(client.created_at)}
+                        </td>
+                      </tr>
+                    );
+                  },
                 )
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-8 py-12 text-center">
+                  <td colSpan={4} className="px-8 py-12 text-center">
                     <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
                       <Users
                         strokeWidth={1}

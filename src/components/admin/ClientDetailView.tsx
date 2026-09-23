@@ -147,9 +147,10 @@ type Proposal = {
 
 type Client = {
   id: string;
+  /** The person. Venues live underneath as their own rows. */
   name: string;
   slug: string;
-  contact_name?: string;
+  email?: string;
   abn?: string;
   entity_name?: string;
   created_at: string;
@@ -180,7 +181,7 @@ function ClientInfoCard({
   } = useForm({
     defaultValues: {
       name: client.name,
-      contact_name: client.contact_name ?? "",
+      email: client.email ?? "",
       entity_name: client.entity_name ?? "",
       abn: client.abn ?? "",
       slug: client.slug,
@@ -194,7 +195,7 @@ function ClientInfoCard({
     async (v) => {
       const { error } = await updateClient(client.id, {
         name: v.name,
-        contact_name: v.contact_name || undefined,
+        email: v.email || undefined,
         entity_name: v.entity_name || undefined,
         abn: v.abn || undefined,
         slug: v.slug,
@@ -209,14 +210,14 @@ function ClientInfoCard({
 
   async function onSubmit(values: {
     name: string;
-    contact_name: string;
+    email: string;
     entity_name: string;
     abn: string;
     slug: string;
   }) {
     const { error } = await updateClient(client.id, {
       name: values.name,
-      contact_name: values.contact_name || undefined,
+      email: values.email || undefined,
       entity_name: values.entity_name || undefined,
       abn: values.abn || undefined,
       slug: values.slug,
@@ -239,7 +240,7 @@ function ClientInfoCard({
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
           <div>
             <label htmlFor="client-info-name" className={labelClasses}>
-              Venue Name
+              Client Full Name
             </label>
             <input
               id="client-info-name"
@@ -248,24 +249,30 @@ function ClientInfoCard({
             />
           </div>
           <div>
-            <label htmlFor="client-info-contact" className={labelClasses}>
-              Client Full Name
+            <label htmlFor="client-info-email" className={labelClasses}>
+              Email
             </label>
             <input
-              id="client-info-contact"
-              {...register("contact_name")}
+              id="client-info-email"
+              type="email"
+              placeholder="name@example.com"
+              {...register("email")}
               className={fieldClasses}
             />
           </div>
           <div>
             <label htmlFor="client-info-slug" className={labelClasses}>
-              Slug
+              Web Address
             </label>
             <input
               id="client-info-slug"
               {...register("slug")}
               className={fieldClasses}
             />
+            <p className="mt-1.5 font-body text-[11px] text-[#A89898]">
+              The client&apos;s part of their links — letters, numbers and
+              dashes.
+            </p>
           </div>
           <div>
             <label htmlFor="client-info-entity" className={labelClasses}>
@@ -335,7 +342,15 @@ function ClientInfoCard({
         </button>
       </div>
 
-      <div className="mt-7 grid grid-cols-2 gap-5 border-t border-[#F1E8E8] pt-6 font-body md:grid-cols-4">
+      <div className="mt-7 grid grid-cols-2 gap-5 border-t border-[#F1E8E8] pt-6 font-body md:grid-cols-5">
+        <div>
+          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+            Email
+          </p>
+          <p className="mt-1.5 truncate text-[13px] text-lyp-black">
+            {client.email || "—"}
+          </p>
+        </div>
         <div>
           <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
             Entity
@@ -354,9 +369,11 @@ function ClientInfoCard({
         </div>
         <div>
           <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
-            Slug
+            Web Address
           </p>
-          <p className="mt-1.5 text-[13px] text-lyp-black">{client.slug}</p>
+          <p className="mt-1.5 truncate text-[13px] text-lyp-black">
+            {client.slug}
+          </p>
         </div>
         <div>
           <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
@@ -639,6 +656,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
   const router = useRouter();
   const [showVenueForm, setShowVenueForm] = useState(false);
   const [showContactForm, setShowContactForm] = useState(false);
+  const venueCount = client.venues?.length ?? 0;
 
   function refresh() {
     router.refresh();
@@ -671,7 +689,20 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
         style={{ animationDelay: "80ms" }}
       >
         <div className="mb-3.5 flex flex-wrap items-end justify-between gap-3">
-          <h2 className={sectionHeading}>Venues</h2>
+          <div>
+            <h2 className={sectionHeading}>
+              Venues
+              {venueCount > 0 && (
+                <span className="ml-2 font-body text-[12px] font-medium tabular-nums text-[#A89898]">
+                  {venueCount}
+                </span>
+              )}
+            </h2>
+            <p className="mt-1 font-body text-[12px] text-[#A89898]">
+              Every venue linked to {client.name}. A client can have as many as
+              they like.
+            </p>
+          </div>
           {!showVenueForm && (
             <button
               onClick={() => setShowVenueForm(true)}

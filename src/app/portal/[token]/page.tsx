@@ -139,7 +139,9 @@ export default async function PortalPage({ params }: Props) {
     discountTimerActive: proposal.discount_timer_active ?? false,
     signedAt: proposal.signed_at ?? null,
     clientName: clientObj?.name ?? "Client",
-    contactName: clientObj?.contact_name ?? null,
+    // The person. `contact_name` is legacy: records made before the client
+    // record became the person still carry them there.
+    contactName: clientObj?.contact_name ?? clientObj?.name ?? null,
     venueName: venueObj?.name ?? "Venue",
   };
 

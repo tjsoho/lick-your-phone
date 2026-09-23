@@ -203,8 +203,9 @@ export interface PdfLineItem {
 }
 
 export interface PdfContractInput {
+  /** The client record's own name — the person, once records are migrated. */
   clientName: string;
-  /** The person signing; omitted for older records that never captured one. */
+  /** The person signing; resolved by the caller from contact_name ?? name. */
   contactName?: string | null;
   venueName: string;
   lineItems: PdfLineItem[];
@@ -277,7 +278,7 @@ function createContractDocument(input: PdfContractInput) {
         Text,
         { style: s.subtitle },
         // Venue first, then the person signing — and never the same name
-        // twice, since a client's account name is its venue.
+        // twice, since older records repeat the person in both fields.
         `Service Agreement for ${
           [input.venueName, input.contactName]
             .filter(
