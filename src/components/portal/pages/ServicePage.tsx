@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -18,6 +18,9 @@ import ContentBlockRenderer, {
 } from "./ContentBlockRenderer";
 import MediaCarousel from "./MediaCarousel";
 import Reveal, { revealDelay } from "../Reveal";
+
+/** Below this frame width the offer panel stacks instead of running in a row. */
+const TIGHT_FRAME_PX = 1200;
 
 /* -------------------------------------------------------------------------
    THE SERVICE SPREAD
@@ -394,6 +397,22 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   // Three terms side by side need the panel's full width, so the label and
   // incentive move above them instead of taking a column beside them.
   const stackOffer = hasTiers && tierCount >= 3;
+  // The slide gives up its right-hand width to the open basket, so the frame
+  // is measured rather than read off the window: the same page is wide with
+  // the basket closed and tight with it open at one viewport size.
+  const frameRef = useRef<HTMLElement>(null);
+  const [tightFrame, setTightFrame] = useState(false);
+  useEffect(() => {
+    const frame = frameRef.current;
+    if (!frame || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(([entry]) => {
+      setTightFrame(entry.contentRect.width < TIGHT_FRAME_PX);
+    });
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, []);
+  // Below this the label no longer fits beside the price inside the panel.
+  const compactOffer = stackOffer || tightFrame;
   // A single-column index leaves width over, so the picture takes a wider rail
   // — unless the offer needs it for three tiers side by side.
   const wideRail = !twoColumnIndex && tierCount < 3;
@@ -461,6 +480,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
 
   return (
     <article
+      ref={frameRef}
       className={cn(
         "flex h-full flex-col px-7 pb-2 max-lg:h-auto max-lg:min-h-full lg:px-12 xl:px-16 [@media(min-height:850px)]:pb-8",
         // The masthead sits DOWN from the top edge, not against it. When the
@@ -679,7 +699,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           <div
             className={cn(
               "flex shrink-0 flex-col gap-3 lg:flex-row lg:items-end lg:gap-5",
-              stackOffer
+              compactOffer
                 ? "mt-6 [@media(min-height:850px)]:mt-9"
                 : "mt-9 [@media(min-height:850px)]:mt-12",
             )}
@@ -692,7 +712,12 @@ export default function ServicePage({ service, page }: ServicePageProps) {
             // which is where the movement belongs anyway.
             variant="fade"
             delay={D_OFFER}
-            className="relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-gradient-to-b from-lyp-white/[0.11] to-lyp-white/[0.035] px-5 py-3 ring-1 ring-inset ring-lyp-white/[0.14] backdrop-blur-[2px] [@media(min-height:850px)]:px-7 [@media(min-height:850px)]:py-4"
+            className={cn(
+              "relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-gradient-to-b from-lyp-white/[0.11] to-lyp-white/[0.035] px-5 py-3 ring-1 ring-inset ring-lyp-white/[0.14] backdrop-blur-[2px] [@media(min-height:850px)]:px-7",
+              // A stacked panel is already taller; it keeps the tighter padding
+              // so the inclusions above it still fit the frame.
+              !compactOffer && "[@media(min-height:850px)]:py-4",
+            )}
           >
             <div
               aria-hidden
@@ -702,21 +727,26 @@ export default function ServicePage({ service, page }: ServicePageProps) {
             <div
               className={cn(
                 "flex flex-col",
-                stackOffer ? "gap-3" : "gap-4 lg:flex-row lg:items-center lg:gap-8",
+                // Beside the open basket, or on a laptop, the price no longer
+                // fits next to the label, so the panel stacks rather than being
+                // clipped by its own rounded edge.
+                compactOffer
+                  ? "gap-3"
+                  : "gap-4 lg:flex-row lg:items-center lg:gap-8",
               )}
             >
               {/* Label + incentive */}
               <div
                 className={cn(
                   "shrink-0",
-                  stackOffer && "flex flex-wrap items-center gap-x-4 gap-y-2",
+                  compactOffer && "flex flex-wrap items-center gap-x-4 gap-y-2",
                 )}
               >
                 <h2 className={`${CAPTION} ${ROSE}`}>
                   {t("investmentHeading")}
                 </h2>
                 {hasDiscount && (
-                  <p className={cn(!stackOffer && "mt-2", "inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-heading text-[10px] font-semibold uppercase tracking-[0.18em] text-lyp-gold ring-1 ring-inset ring-lyp-gold/45 [@media(min-height:850px)]:text-[11px]")}>
+                  <p className={cn(!compactOffer && "mt-2", "inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-heading text-[10px] font-semibold uppercase tracking-[0.18em] text-lyp-gold ring-1 ring-inset ring-lyp-gold/45 [@media(min-height:850px)]:text-[11px]")}>
                     {t("discountBadge", {
                       pct: Math.round((service.discount_pct ?? 0) * 100),
                     })}
@@ -809,7 +839,16 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                           )}
                           <span className="mt-1 block whitespace-nowrap font-heading text-[19px] leading-none tabular-nums text-lyp-white [@media(min-height:850px)]:text-[23px]">
                             {formatCents(tier.target_price_cents)}
-                            <span className="ml-1.5 font-body text-[10px] uppercase tracking-[0.12em] text-lyp-white/75">
+                            <span
+                              className={cn(
+                                "font-body text-[10px] uppercase tracking-[0.12em] text-lyp-white/75",
+                                // Three terms in a narrowed frame have no room
+                                // for the cadence beside the figure, so it
+                                // takes the line under it instead of spilling
+                                // over the card next to it.
+                                tightFrame ? "mt-1 block" : "ml-1.5",
+                              )}
+                            >
                               {t("plusGst")} {periodLabel}
                             </span>
                           </span>
@@ -819,7 +858,11 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 </div>
               ) : (
                 <div className="flex flex-1 flex-wrap items-end gap-x-6 gap-y-2">
-                  <div>
+                  {/* The price and its "+ GST" are one word: on a laptop, or
+                      beside the open basket, the column narrows and a wrap
+                      would orphan the GST under the figure. The saving beside
+                      it wraps below instead, which costs a line, not sense. */}
+                  <div className="whitespace-nowrap">
                     {hasDiscount && (
                       <p className="font-body text-[13px] leading-none text-lyp-white/70 line-through [@media(min-height:850px)]:text-sm">
                         {formatCents(displayList)} {t("plusGst")}

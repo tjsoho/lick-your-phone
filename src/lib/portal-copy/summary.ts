@@ -12,6 +12,7 @@ export const SUMMARY_COPY: CopySlot[] = [
   { key: "includedHeading", label: "Inclusions heading", default: "What's Included" },
   { key: "commitmentsHeading", label: "Commitments heading", default: "Your Commitments" },
   { key: "removeButton", label: "Remove button", default: "Remove this" },
+  { key: "editButton", label: "Change selection button", default: "Change this", hint: "Takes the client back to the service's own slide. Hidden when this proposal has no slide for that service." },
   { key: "cardTitle", label: "Price card title", default: "Investment Summary" },
   { key: "free", label: "Free label", default: "Free" },
   { key: "forMonths", label: "Length of a monthly plan", default: "for {months} months", hint: "{months} is replaced with the number of months." },

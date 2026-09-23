@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, X } from "lucide-react";
+import { Check, ChevronDown, Pencil, X } from "lucide-react";
 import { useCopy, useProposal } from "../ProposalContext";
 import { cn } from "@/lib/utils";
 import Reveal, { STEP, revealDelay } from "../Reveal";
@@ -115,361 +115,405 @@ export default function SummaryPage() {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
-      <div className="flex-1 px-8 py-8 md:px-16 lg:px-24">
-        <Reveal
-          as="h1"
-          index={0}
-          className="font-heading text-3xl md:text-5xl text-lyp-white mb-2 uppercase tracking-tight"
-        >
-          {t("heading")}
-        </Reveal>
-        <Reveal
-          as="p"
-          index={1}
-          className="font-body text-sm text-lyp-white/75 mb-8"
-        >
-          {t("intro")}
-        </Reveal>
+      {/* The body sits on the optical centre of the frame like every other
+          slide. Auto margins, not justify-center: if a long list ever outgrows
+          the height, it scrolls from the top instead of losing its heading. */}
+      <div className="flex flex-1 px-8 py-8 md:px-16 lg:px-24">
+        <div className="m-auto w-full">
+          <Reveal
+            as="h1"
+            index={0}
+            className="font-heading text-3xl md:text-5xl text-lyp-white mb-2 uppercase tracking-tight"
+          >
+            {t("heading")}
+          </Reveal>
+          <Reveal
+            as="p"
+            index={1}
+            className="font-body text-base text-lyp-white/80 mb-6"
+          >
+            {t("intro")}
+          </Reveal>
 
-        {selectedServices.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Reveal as="p" index={2} className="font-body text-lyp-white/70 text-lg">
-              {t("emptyTitle")}
-            </Reveal>
-            <Reveal
-              as="p"
-              index={3}
-              className="font-body text-lyp-white/60 text-sm mt-2"
-            >
-              {t("emptyBody")}
-            </Reveal>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
-            {/* Left: expandable drawers */}
-            <div className="space-y-2">
-              {selectedServices.map((item, i) => {
-                if (!item) return null;
-                const isOpen = expandedId === item.id;
-                return (
-                  <Reveal
-                    key={item.id}
-                    delay={revealDelay(2) + i * STEP}
-                    className="overflow-hidden"
-                  >
-                    {/* Collapsed row */}
-                    <button
-                      type="button"
-                      onClick={() => setExpandedId(isOpen ? null : item.id)}
-                      className="w-full flex items-center justify-between px-4 py-4 text-left transition-colors hover:bg-lyp-white/5 sm:px-5"
+          {selectedServices.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <Reveal
+                as="p"
+                index={2}
+                className="font-body text-lyp-white/70 text-lg"
+              >
+                {t("emptyTitle")}
+              </Reveal>
+              <Reveal
+                as="p"
+                index={3}
+                className="font-body text-lyp-white/70 text-[15px] mt-2"
+              >
+                {t("emptyBody")}
+              </Reveal>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
+              {/* Left: expandable drawers */}
+              <div className="space-y-2">
+                {selectedServices.map((item, i) => {
+                  if (!item) return null;
+                  const isOpen = expandedId === item.id;
+                  // The slide this service was pitched on, so the drawer can
+                  // offer a way back to it. `pages` is already filtered to what
+                  // this client can see, so -1 means there is nothing to send
+                  // them to and the control stays off.
+                  const servicePageIdx = pages.findIndex(
+                    (p) => p.serviceId === item.id,
+                  );
+                  return (
+                    <Reveal
+                      key={item.id}
+                      delay={revealDelay(2) + i * STEP}
+                      className="overflow-hidden"
                     >
-                      {/* On a phone the name gets its own line and the term
+                      {/* Collapsed row */}
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isOpen ? null : item.id)}
+                        className="w-full flex items-center justify-between px-4 py-4 text-left transition-colors hover:bg-lyp-white/5 sm:px-5"
+                      >
+                        {/* On a phone the name gets its own line and the term
                           sits under it, so the price never squeezes the name
                           down to a single letter. */}
-                      <div className="flex items-start gap-3 min-w-0">
-                        <Check className="mt-0.5 h-4 w-4 text-lyp-cherry shrink-0" />
-                        <div className="min-w-0">
-                          <span className="block font-heading text-sm text-lyp-white uppercase tracking-wide break-words sm:truncate">
-                            {item.name}
-                          </span>
-                          {item.tierName && (
-                            <span className="block font-body text-xs text-lyp-white/70">
-                              {item.tierName}
+                        <div className="flex items-start gap-3 min-w-0">
+                          <Check className="mt-0.5 h-4 w-4 text-lyp-cherry shrink-0" />
+                          <div className="min-w-0">
+                            <span className="block font-heading text-sm text-lyp-white uppercase tracking-wide break-words sm:truncate">
+                              {item.name}
                             </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0 ml-3 sm:gap-3 sm:ml-4">
-                        {item.billing === "in_kind" ? (
-                          <span className="font-body text-sm text-lyp-cherry">
-                            {t("complimentary")}
-                          </span>
-                        ) : (
-                          <span className="font-heading text-base text-lyp-white">
-                            {item.hasDiscount && (
-                              <span className="hidden font-body text-xs text-lyp-white/60 line-through mr-2 sm:inline">
-                                {formatCents(item.listCents)}
+                            {item.tierName && (
+                              <span className="block font-body text-[13px]/[18px] text-lyp-white/75">
+                                {item.tierName}
                               </span>
                             )}
-                            {formatCents(item.monthlyTarget)}
-                            <span className="font-body text-xs text-lyp-white/70 ml-0.5">
-                              {item.billing === "recurring_monthly"
-                                ? t("perMonthShort")
-                                : ` ${t("oneOffShort")}`}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0 ml-3 sm:gap-3 sm:ml-4">
+                          {item.billing === "in_kind" ? (
+                            <span className="font-body text-sm text-lyp-cherry">
+                              {t("complimentary")}
                             </span>
-                          </span>
-                        )}
-                        <ChevronDown
-                          className={cn(
-                            "h-4 w-4 text-lyp-white/70 transition-transform duration-300 ease-brand motion-reduce:transition-none",
-                            isOpen && "rotate-180",
+                          ) : (
+                            <span className="font-heading text-base text-lyp-white">
+                              {item.hasDiscount && (
+                                <span className="hidden font-body text-[13px]/[18px] text-lyp-white/70 line-through mr-2 sm:inline">
+                                  {formatCents(item.listCents)}
+                                </span>
+                              )}
+                              {formatCents(item.monthlyTarget)}
+                              <span className="font-body text-[13px]/[18px] text-lyp-white/75 ml-0.5">
+                                {item.billing === "recurring_monthly"
+                                  ? t("perMonthShort")
+                                  : ` ${t("oneOffShort")}`}
+                              </span>
+                            </span>
                           )}
-                        />
-                      </div>
-                    </button>
-
-                    {/* Expanded details */}
-                    {isOpen && (
-                      // The drawer body mounts on expand, so its own reveal
-                      // fires each time it is opened.
-                      <div className="portal-reveal border-t border-lyp-white/10 px-5 py-4 space-y-4">
-                        {item.isWeekly && (
-                          <p className="font-body text-xs text-lyp-white/70">
-                            {t("weeklyBreakdown", {
-                              weekly: formatCents(item.displayTarget),
-                              monthly: formatCents(item.monthlyTarget),
-                            })}
-                          </p>
-                        )}
-
-                        {item.inclusions.length > 0 && (
-                          <div>
-                            <p className="font-heading text-xs text-lyp-cherry uppercase tracking-wider mb-2">
-                              {t("includedHeading")}
-                            </p>
-                            <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
-                              {item.inclusions
-                                .sort(
-                                  (
-                                    a: { sequence?: number | null },
-                                    b: { sequence?: number | null },
-                                  ) => (a.sequence ?? 0) - (b.sequence ?? 0),
-                                )
-                                .map((inc: { id: string; text: string }) => (
-                                  <li
-                                    key={inc.id}
-                                    className="flex items-start gap-2"
-                                  >
-                                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-lyp-cherry/60" />
-                                    <span className="font-body text-xs text-lyp-white/85">
-                                      {inc.text}
-                                    </span>
-                                  </li>
-                                ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {item.clientObligations.length > 0 && (
-                          <div>
-                            <p className="font-heading text-xs text-lyp-white/70 uppercase tracking-wider mb-2">
-                              {t("commitmentsHeading")}
-                            </p>
-                            <ul className="space-y-1">
-                              {item.clientObligations
-                                .sort(
-                                  (
-                                    a: { sequence?: number | null },
-                                    b: { sequence?: number | null },
-                                  ) => (a.sequence ?? 0) - (b.sequence ?? 0),
-                                )
-                                .map((ob: { id: string; text: string }) => (
-                                  <li
-                                    key={ob.id}
-                                    className="flex items-start gap-2"
-                                  >
-                                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-lyp-white/30" />
-                                    <span className="font-body text-xs text-lyp-white/75">
-                                      {ob.text}
-                                    </span>
-                                  </li>
-                                ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        {!paymentCaptured && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              deselectService(item.id);
-                              setExpandedId(null);
-                            }}
-                            className="flex items-center gap-2 rounded-lg border border-lyp-white/15 px-4 py-2 font-body text-xs text-lyp-white/85 transition-colors hover:border-lyp-cherry/40 hover:text-lyp-cherry"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                            {t("removeButton")}
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </Reveal>
-                );
-              })}
-            </div>
-
-            {/* Right: pricing card */}
-            <Reveal
-              variant="right"
-              delay={revealDelay(3)}
-              className="lg:sticky lg:top-4 self-start"
-            >
-              <div className="rounded-xl border border-lyp-white/10 bg-lyp-white/5 p-6 space-y-4">
-                <h3 className="font-heading text-lg text-lyp-white text-center mb-3">
-                  {t("cardTitle")}
-                </h3>
-
-                <div className="space-y-3">
-                  {selectedServices.map((item) => {
-                    if (!item) return null;
-                    return (
-                      <div
-                        key={item.id}
-                        className="flex justify-between items-start"
-                      >
-                        <span className="font-body text-xs text-lyp-white/85 mr-2 mt-0.5">
-                          {item.name}
-                        </span>
-                        <div className="flex flex-col items-end shrink-0">
-                          <span className="font-body text-xs text-lyp-white/90">
-                            {item.billing === "in_kind" ? (
-                              t("free")
-                            ) : (
-                              <>
-                                {formatCents(item.monthlyTarget)}
-                                {item.billing === "recurring_monthly" && (
-                                  <span className="text-lyp-white/75">
-                                    {t("perMonthShort")}
-                                  </span>
-                                )}
-                              </>
+                          <ChevronDown
+                            className={cn(
+                              "h-4 w-4 text-lyp-white/70 transition-transform duration-300 ease-brand motion-reduce:transition-none",
+                              isOpen && "rotate-180",
                             )}
-                          </span>
+                          />
+                        </div>
+                      </button>
 
-                          {/* Every paid line says how long it runs, so a
+                      {/* Expanded details */}
+                      {isOpen && (
+                        // The drawer body mounts on expand, so its own reveal
+                        // fires each time it is opened.
+                        <div className="portal-reveal border-t border-lyp-white/10 px-5 py-4 space-y-4">
+                          {item.isWeekly && (
+                            <p className="font-body text-sm text-lyp-white/80">
+                              {t("weeklyBreakdown", {
+                                weekly: formatCents(item.displayTarget),
+                                monthly: formatCents(item.monthlyTarget),
+                              })}
+                            </p>
+                          )}
+
+                          {item.inclusions.length > 0 && (
+                            <div>
+                              <p className="font-heading text-[13px]/[18px] text-lyp-cherry uppercase tracking-wider mb-2">
+                                {t("includedHeading")}
+                              </p>
+                              <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
+                                {item.inclusions
+                                  .sort(
+                                    (
+                                      a: { sequence?: number | null },
+                                      b: { sequence?: number | null },
+                                    ) => (a.sequence ?? 0) - (b.sequence ?? 0),
+                                  )
+                                  .map((inc: { id: string; text: string }) => (
+                                    <li
+                                      key={inc.id}
+                                      className="flex items-start gap-2"
+                                    >
+                                      <Check className="mt-[3px] h-4 w-4 shrink-0 text-lyp-cherry/70" />
+                                      <span className="font-body text-[13.5px]/[20px] text-lyp-white/90">
+                                        {inc.text}
+                                      </span>
+                                    </li>
+                                  ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {item.clientObligations.length > 0 && (
+                            <div>
+                              <p className="font-heading text-[13px]/[18px] text-lyp-white/75 uppercase tracking-wider mb-2">
+                                {t("commitmentsHeading")}
+                              </p>
+                              <ul className="space-y-1">
+                                {item.clientObligations
+                                  .sort(
+                                    (
+                                      a: { sequence?: number | null },
+                                      b: { sequence?: number | null },
+                                    ) => (a.sequence ?? 0) - (b.sequence ?? 0),
+                                  )
+                                  .map((ob: { id: string; text: string }) => (
+                                    <li
+                                      key={ob.id}
+                                      className="flex items-start gap-2"
+                                    >
+                                      <span className="mt-[7px] h-1.5 w-1.5 shrink-0 rounded-full bg-lyp-white/40" />
+                                      <span className="font-body text-[13.5px]/[20px] text-lyp-white/85">
+                                        {ob.text}
+                                      </span>
+                                    </li>
+                                  ))}
+                              </ul>
+                            </div>
+                          )}
+
+                          {/* Two ways out of a line the client isn't happy with:
+                            go back to the slide and change it, or drop it.
+                            Changing comes first — removing is the destructive
+                            one and earns the far seat. */}
+                          {!paymentCaptured && (
+                            <div className="flex flex-wrap items-center gap-2">
+                              {servicePageIdx >= 0 && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCurrentPage(servicePageIdx);
+                                  }}
+                                  className="flex items-center gap-2 rounded-lg border border-lyp-white/20 px-4 py-2 font-body text-[13px]/[18px] text-lyp-white transition-colors duration-300 ease-brand hover:border-lyp-cherry/50 hover:text-lyp-cherry motion-reduce:transition-none"
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                  {t("editButton")}
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deselectService(item.id);
+                                  setExpandedId(null);
+                                }}
+                                className="flex items-center gap-2 rounded-lg border border-lyp-white/15 px-4 py-2 font-body text-[13px]/[18px] text-lyp-white/85 transition-colors duration-300 ease-brand hover:border-lyp-cherry/40 hover:text-lyp-cherry motion-reduce:transition-none"
+                              >
+                                <X className="h-3.5 w-3.5" />
+                                {t("removeButton")}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </Reveal>
+                  );
+                })}
+              </div>
+
+              {/* Right: pricing card */}
+              <Reveal
+                variant="right"
+                delay={revealDelay(3)}
+                className="lg:sticky lg:top-4 self-start"
+              >
+                {/* The card reads bigger than it used to, so its own rhythm
+                  gives the height back: a tighter pad and tighter gaps keep
+                  the whole column the same height as before at six services,
+                  which is what stops the slide scrolling on desktop. */}
+                <div className="rounded-xl border border-lyp-white/10 bg-lyp-white/5 p-5 space-y-3.5">
+                  <h3 className="font-heading text-lg text-lyp-white text-center mb-3">
+                    {t("cardTitle")}
+                  </h3>
+
+                  <div className="space-y-2">
+                    {selectedServices.map((item) => {
+                      if (!item) return null;
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex justify-between items-start"
+                        >
+                          <span className="font-body text-[13.5px]/[18px] text-lyp-white/90 mr-2 mt-px">
+                            {item.name}
+                          </span>
+                          <div className="flex flex-col items-end shrink-0">
+                            <span className="font-body text-[13.5px]/[18px] text-lyp-white">
+                              {item.billing === "in_kind" ? (
+                                t("free")
+                              ) : (
+                                <>
+                                  {formatCents(item.monthlyTarget)}
+                                  {item.billing === "recurring_monthly" && (
+                                    <span className="text-lyp-white/80">
+                                      {t("perMonthShort")}
+                                    </span>
+                                  )}
+                                </>
+                              )}
+                            </span>
+
+                            {/* Every paid line says how long it runs, so a
                               12-month plan reads as plainly as a 3-month one
                               and a single payment is never mistaken for a
                               recurring one. */}
-                          {item.billing === "recurring_monthly" ? (
-                            <span className="font-body text-[10px] text-lyp-white/70 mt-0.5">
-                              {item.billingCycleMonths === 1
-                                ? t("forOneMonth")
-                                : t("forMonths", {
-                                    months: item.billingCycleMonths,
-                                  })}
-                            </span>
-                          ) : item.billing === "one_off" ? (
-                            <span className="font-body text-[10px] text-lyp-white/70 mt-0.5">
-                              {t("oneOffPayment")}
-                            </span>
-                          ) : null}
+                            {item.billing === "recurring_monthly" ? (
+                              <span className="font-body text-[12.5px]/[16px] text-lyp-white/75 mt-0.5">
+                                {item.billingCycleMonths === 1
+                                  ? t("forOneMonth")
+                                  : t("forMonths", {
+                                      months: item.billingCycleMonths,
+                                    })}
+                              </span>
+                            ) : item.billing === "one_off" ? (
+                              <span className="font-body text-[12.5px]/[16px] text-lyp-white/75 mt-0.5">
+                                {t("oneOffPayment")}
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                <div className="border-t border-lyp-white/10 pt-3 space-y-2">
-                  {monthlySavings > 0 && (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="font-body text-xs text-lyp-white/75">
-                          {t("fullPrice")}
-                        </span>
-                        <span className="font-body text-xs text-lyp-white/70 line-through">
-                          {formatCents(monthlyFull)}
-                          {t("perMonthShort")}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="font-body text-xs text-lyp-gold">
-                          {t("youSave")}
-                        </span>
-                        <span className="font-body text-xs text-lyp-gold">
-                          -{formatCents(monthlySavings)}
-                          {t("perMonthShort")}
-                        </span>
-                      </div>
-                    </>
-                  )}
-
-                  {monthlyTotal > 0 && (
-                    <div className="flex justify-between items-baseline gap-3 pt-1">
-                      <span className="font-heading text-sm text-lyp-white">
-                        {t("monthlyTotal")}
-                      </span>
-                      <span className="whitespace-nowrap font-heading text-2xl text-lyp-white">
-                        {formatCents(monthlyTotal)}
-                        <span className="font-body text-xs text-lyp-white/75 ml-1">
-                          {t("gstSuffixMonthly")}
-                        </span>
-                      </span>
-                    </div>
-                  )}
-
-                  {oneOffTotal > 0 && (
-                    <div className="flex justify-between items-baseline gap-3 pt-1">
-                      <span
-                        className={
-                          monthlyTotal > 0
-                            ? "font-body text-xs text-lyp-white/85"
-                            : "font-heading text-sm text-lyp-white"
-                        }
-                      >
-                        {oneOffCount === 1
-                          ? t("oneOffTotalSingle")
-                          : t("oneOffTotalPlural")}
-                      </span>
-                      <span
-                        className={cn(
-                          "whitespace-nowrap text-lyp-white",
-                          monthlyTotal > 0
-                            ? "font-body text-sm"
-                            : "font-heading text-2xl",
-                        )}
-                      >
-                        {oneOffFull > oneOffTotal && (
-                          <span className="mr-2 font-body text-xs text-lyp-white/70 line-through">
-                            {formatCents(oneOffFull)}
-                          </span>
-                        )}
-                        {formatCents(oneOffTotal)}
-                        <span className="font-body text-xs text-lyp-white/75 ml-1">
-                          {t("gstSuffix")}
-                        </span>
-                      </span>
-                    </div>
-                  )}
-
-                  {monthlyTotal === 0 && oneOffTotal === 0 && (
-                    <p className="pt-1 text-center font-heading text-sm text-lyp-white">
-                      {t("complimentary")}
-                    </p>
-                  )}
-                </div>
-
-                {paymentCaptured ? (
-                  <div className="mt-2 flex flex-col items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-5 py-4">
-                    <span className="inline-flex items-center gap-2 font-body text-sm text-green-400">
-                      <span className="h-2 w-2 rounded-full bg-green-400" />
-                      {t("paymentCapturedTitle")}
-                    </span>
-                    <p className="font-body text-xs text-lyp-white/75 text-center">
-                      {t("paymentCapturedBody")}
-                    </p>
+                      );
+                    })}
                   </div>
-                ) : proposal.status === "signed" ? (
-                  <button
-                    onClick={() => setCurrentPage(paymentIdx)}
-                    className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 mt-2"
-                  >
-                    {t("addPaymentButton")}
-                  </button>
-                ) : (
-                  signatureIdx >= 0 && (
+
+                  <div className="border-t border-lyp-white/10 pt-3 space-y-2">
+                    {monthlySavings > 0 && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="font-body text-[13px]/[18px] text-lyp-white/75">
+                            {t("fullPrice")}
+                          </span>
+                          <span className="font-body text-[13px]/[18px] text-lyp-white/75 line-through">
+                            {formatCents(monthlyFull)}
+                            {t("perMonthShort")}
+                          </span>
+                        </div>
+                        {/* The saving is the best news on the page, so it is set
+                          in the heading face at the same weight as a total
+                          rather than whispered underneath one. */}
+                        <div className="flex justify-between items-baseline gap-3">
+                          <span className="font-heading text-[15px]/[22px] text-lyp-gold uppercase tracking-wide">
+                            {t("youSave")}
+                          </span>
+                          <span className="whitespace-nowrap font-heading text-lg/[22px] text-lyp-gold">
+                            -{formatCents(monthlySavings)}
+                            <span className="font-body text-[13px] ml-0.5">
+                              {t("perMonthShort")}
+                            </span>
+                          </span>
+                        </div>
+                      </>
+                    )}
+
+                    {monthlyTotal > 0 && (
+                      <div className="flex justify-between items-baseline gap-3 pt-1">
+                        <span className="font-heading text-base text-lyp-white">
+                          {t("monthlyTotal")}
+                        </span>
+                        <span className="whitespace-nowrap font-heading text-2xl text-lyp-white">
+                          {formatCents(monthlyTotal)}
+                          <span className="font-body text-[13px] text-lyp-white/80 ml-1">
+                            {t("gstSuffixMonthly")}
+                          </span>
+                        </span>
+                      </div>
+                    )}
+
+                    {oneOffTotal > 0 && (
+                      <div className="flex justify-between items-baseline gap-3 pt-1">
+                        <span
+                          className={
+                            monthlyTotal > 0
+                              ? "font-body text-[13.5px]/[18px] text-lyp-white/90"
+                              : "font-heading text-base text-lyp-white"
+                          }
+                        >
+                          {oneOffCount === 1
+                            ? t("oneOffTotalSingle")
+                            : t("oneOffTotalPlural")}
+                        </span>
+                        <span
+                          className={cn(
+                            "whitespace-nowrap text-lyp-white",
+                            monthlyTotal > 0
+                              ? "font-body text-base"
+                              : "font-heading text-2xl",
+                          )}
+                        >
+                          {oneOffFull > oneOffTotal && (
+                            <span className="mr-2 font-body text-[13px] text-lyp-white/75 line-through">
+                              {formatCents(oneOffFull)}
+                            </span>
+                          )}
+                          {formatCents(oneOffTotal)}
+                          <span className="font-body text-[13px] text-lyp-white/80 ml-1">
+                            {t("gstSuffix")}
+                          </span>
+                        </span>
+                      </div>
+                    )}
+
+                    {monthlyTotal === 0 && oneOffTotal === 0 && (
+                      <p className="pt-1 text-center font-heading text-base text-lyp-white">
+                        {t("complimentary")}
+                      </p>
+                    )}
+                  </div>
+
+                  {paymentCaptured ? (
+                    <div className="mt-2 flex flex-col items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-5 py-4">
+                      <span className="inline-flex items-center gap-2 font-body text-sm text-green-400">
+                        <span className="h-2 w-2 rounded-full bg-green-400" />
+                        {t("paymentCapturedTitle")}
+                      </span>
+                      <p className="font-body text-[13px]/[18px] text-lyp-white/80 text-center">
+                        {t("paymentCapturedBody")}
+                      </p>
+                    </div>
+                  ) : proposal.status === "signed" ? (
                     <button
-                      onClick={() => setCurrentPage(signatureIdx)}
+                      onClick={() => setCurrentPage(paymentIdx)}
                       className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 mt-2"
                     >
-                      {t("proceedButton")}
+                      {t("addPaymentButton")}
                     </button>
-                  )
-                )}
-              </div>
-            </Reveal>
-          </div>
-        )}
+                  ) : (
+                    signatureIdx >= 0 && (
+                      <button
+                        onClick={() => setCurrentPage(signatureIdx)}
+                        className="w-full rounded-lg bg-lyp-cherry px-5 py-3.5 font-heading text-base text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100 mt-2"
+                      >
+                        {t("proceedButton")}
+                      </button>
+                    )
+                  )}
+                </div>
+              </Reveal>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

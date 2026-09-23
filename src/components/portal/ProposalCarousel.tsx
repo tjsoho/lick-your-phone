@@ -15,6 +15,10 @@ import {
 } from "./ProposalContext";
 import type { CopyOverrides } from "@/lib/portal-copy";
 import RunningTotal from "./RunningTotal";
+import SelectionCart, {
+  CART_GUTTER_CLASS,
+  useCartOpen,
+} from "./SelectionCart";
 import DiscountCountdown from "./DiscountCountdown";
 import ServicePage from "./pages/ServicePage";
 import ContentPage from "./pages/ContentPage";
@@ -181,6 +185,7 @@ function CarouselInner() {
   } = useProposal();
   const reduceMotion = useReducedMotion();
   const t = useCopy("global");
+  const { open: cartOpen, setOpen: setCartOpen } = useCartOpen(proposal.token);
 
   // Direction is resolved DURING render, not in an effect: the incoming slide
   // has to know which way it is travelling on the very first frame it paints.
@@ -259,6 +264,16 @@ function CarouselInner() {
           ? "pt-11"
           : "";
 
+  // The basket is the price bar's own panel, so it follows the bar's rule:
+  // gone on the summary slide (which is the same list at full size) and gone
+  // for good once the proposal is signed. It does NOT follow the bar's
+  // selection count, though — removing the last line should leave an empty
+  // basket open to say so, rather than snapping it shut mid-gesture.
+  const showCart = cartOpen && !isSummary && !isSigned;
+  // Where the rail hangs from on `sm` and up: under the price bar when it is
+  // there, otherwise under the countdown strip, otherwise the top of the page.
+  const cartTopOffset = showRunningTotal ? 52 : showTimer ? 44 : 0;
+
   return (
     <div className="relative flex h-dvh flex-col bg-[#050203]">
       <PortalBackground />
@@ -274,12 +289,28 @@ function CarouselInner() {
           {showRunningTotal && (
             <RunningTotal
               countdownEndsAt={showTimer ? proposal.discountExpiresAt : null}
+              cartOpen={showCart}
+              onToggleCart={() => setCartOpen(!showCart)}
             />
           )}
         </div>
       )}
 
-      <div className={`relative z-10 flex-1 overflow-hidden pb-[56px] ${topPad}`}>
+      <SelectionCart
+        open={showCart}
+        onClose={() => setCartOpen(false)}
+        topOffset={cartTopOffset}
+      />
+
+      {/* The slide column gives up the rail's width rather than sitting under
+          it, so a page stays centred in what it actually has and still never
+          scrolls. On a phone the basket is a sheet over the top, so there is
+          nothing to give up. */}
+      <div
+        className={`relative z-10 flex-1 overflow-hidden pb-[56px] ${topPad} ${
+          showCart ? CART_GUTTER_CLASS : ""
+        }`}
+      >
         <motion.div
           key={page.id}
           initial={
