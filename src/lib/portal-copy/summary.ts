@@ -11,6 +11,7 @@ export const SUMMARY_COPY: CopySlot[] = [
   { key: "weeklyBreakdown", label: "Weekly price breakdown", default: "{weekly}/week ({monthly}/month)", hint: "{weekly} and {monthly} are replaced with prices." },
   { key: "includedHeading", label: "Inclusions heading", default: "What's Included" },
   { key: "commitmentsHeading", label: "Commitments heading", default: "Your Commitments" },
+  { key: "termLabel", label: "Contract length heading", default: "Contract Length", hint: "Above the term buttons inside an opened service, where the client can switch between twelve, six and three months." },
   { key: "removeButton", label: "Remove button", default: "Remove this" },
   { key: "editButton", label: "Change selection button", default: "Change this", hint: "Takes the client back to the service's own slide. Hidden when this proposal has no slide for that service." },
   { key: "cardTitle", label: "Price card title", default: "Investment Summary" },

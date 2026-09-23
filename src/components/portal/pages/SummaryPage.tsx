@@ -31,6 +31,7 @@ export default function SummaryPage() {
     pages,
     setCurrentPage,
     deselectService,
+    selectTier,
     paymentCaptured,
   } = useProposal();
   const t = useCopy("summary");
@@ -78,6 +79,8 @@ export default function SummaryPage() {
         id: svc.id,
         name: svc.name,
         tierName,
+        tierId: sel.tierId ?? null,
+        tiers: svc.service_tiers ?? [],
         billing: svc.billing,
         isWeekly,
         displayTarget,
@@ -235,6 +238,55 @@ export default function SummaryPage() {
                                 monthly: formatCents(item.monthlyTarget),
                               })}
                             </p>
+                          )}
+
+                          {/* The contract length is changed here rather than
+                              back on the slide: this is where they compare
+                              what they have chosen, so this is where they
+                              change their mind. Prices move at once. */}
+                          {item.tiers.length > 1 && !paymentCaptured && (
+                            <div>
+                              <p className="font-heading text-[13px]/[18px] uppercase tracking-wide text-lyp-cherry">
+                                {t("termLabel")}
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-2">
+                                {[...item.tiers]
+                                  .sort((a, b) => a.sequence - b.sequence)
+                                  .map((tier) => {
+                                    const tierMonthly = item.isWeekly
+                                      ? Math.round(
+                                          (tier.target_price_cents * 52) / 12,
+                                        )
+                                      : tier.target_price_cents;
+                                    const chosen = tier.id === item.tierId;
+                                    return (
+                                      <button
+                                        key={tier.id}
+                                        type="button"
+                                        aria-pressed={chosen}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          selectTier(item.id, tier.id);
+                                        }}
+                                        className={cn(
+                                          "rounded-lg border px-3.5 py-2 font-body text-[13px]/[18px] transition-colors duration-300 ease-brand motion-reduce:transition-none",
+                                          chosen
+                                            ? "border-lyp-cherry/70 bg-lyp-cherry/15 text-lyp-white"
+                                            : "border-lyp-white/15 text-lyp-white/85 hover:border-lyp-cherry/40 hover:text-lyp-white",
+                                        )}
+                                      >
+                                        {tier.name}
+                                        <span className="ml-2 font-heading">
+                                          {formatCents(tierMonthly)}
+                                        </span>
+                                        <span className="text-lyp-white/70">
+                                          {t("perMonthShort")}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                              </div>
+                            </div>
                           )}
 
                           {item.inclusions.length > 0 && (
