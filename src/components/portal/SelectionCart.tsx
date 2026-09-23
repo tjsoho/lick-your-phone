@@ -227,13 +227,13 @@ export default function SelectionCart({
             strokeWidth={2}
             className="h-4 w-4 shrink-0 text-[#f0c9c9]"
           />
-          <h2 className="truncate font-heading text-[13px] uppercase tracking-[0.1em] text-lyp-white">
+          <h2 className="truncate font-heading text-xs uppercase tracking-[0.06em] text-lyp-white">
             {t("cartTitle")}
           </h2>
           {lines.length > 0 && (
             <span
               key={lines.length}
-              className="portal-reveal portal-reveal-pop shrink-0 whitespace-nowrap rounded-full bg-lyp-cherry px-2 py-0.5 font-body text-[10px] text-lyp-white"
+              className="portal-reveal portal-reveal-pop shrink-0 whitespace-nowrap rounded-full bg-lyp-cherry px-1.5 py-0.5 font-body text-[10px] text-lyp-white"
               style={{ animationDelay: "0ms" }}
             >
               {lines.length === 1
