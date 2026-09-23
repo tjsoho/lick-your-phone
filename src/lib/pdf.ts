@@ -515,3 +515,125 @@ function createContractDocument(input: PdfContractInput) {
     ),
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Terms & Conditions document                                       */
+/* ------------------------------------------------------------------ */
+
+const termsStyles = StyleSheet.create({
+  intro: {
+    fontSize: 9,
+    lineHeight: 1.6,
+    color: "#666666",
+    marginBottom: 2,
+  },
+  clauseRow: {
+    flexDirection: "row",
+    marginBottom: 9,
+  },
+  clauseNumber: {
+    fontFamily: "Fira Sans",
+    fontWeight: 700,
+    fontSize: 9.5,
+    color: CHERRY,
+    width: 20,
+  },
+  clauseText: {
+    fontSize: 9.5,
+    lineHeight: 1.6,
+    color: "#333333",
+    flex: 1,
+  },
+});
+
+export interface PdfTermsInput {
+  /** One clause per entry, exactly as Agreement Settings holds them. */
+  clauses: string[];
+  /** Printed on the cover line, so the client's copy is addressed to them. */
+  venueName?: string | null;
+  clientName?: string | null;
+  /** ISO timestamp; the terms are dated so an old download is recognisable. */
+  generatedAt: string;
+}
+
+/**
+ * The workspace's terms on their own.
+ *
+ * Same generator, same fonts and the same furniture as the signed contract —
+ * the client's copy of the terms should not look like it came from somewhere
+ * else — but with no prices, no signature blocks and nothing about this
+ * proposal beyond the name it was produced for. The clauses are whatever
+ * Agreement Settings holds at the moment of the download, so there is no
+ * second copy of the terms for the agency to keep in step.
+ */
+export async function generateTermsPdf(input: PdfTermsInput): Promise<Buffer> {
+  const buffer = await renderToBuffer(createTermsDocument(input));
+  return Buffer.from(buffer);
+}
+
+function createTermsDocument(input: PdfTermsInput) {
+  const dateStr = formatDate(input.generatedAt);
+
+  // Venue first, then the person — and never the same name twice, the way
+  // the contract's own subtitle handles older records that repeat it.
+  const forName = [input.venueName, input.clientName]
+    .filter(
+      (part, i, parts): part is string =>
+        !!part && parts.indexOf(part) === i,
+    )
+    .join(" — ");
+
+  return React.createElement(
+    Document,
+    null,
+    React.createElement(
+      Page,
+      { size: "A4" as const, style: s.page },
+
+      React.createElement(View, { style: s.headerBar }),
+      React.createElement(Text, { style: s.brandName }, "LickYourPhone Media"),
+      React.createElement(
+        Text,
+        { style: s.subtitle },
+        forName
+          ? `Terms & Conditions — prepared for ${forName}`
+          : "Terms & Conditions",
+      ),
+
+      React.createElement(
+        Text,
+        { style: termsStyles.intro },
+        `These terms form part of any service agreement signed with LickYourPhone Media. Current as at ${dateStr}.`,
+      ),
+
+      React.createElement(Text, { style: s.sectionTitle }, "The Terms"),
+
+      ...input.clauses.map((clause, i) =>
+        React.createElement(
+          View,
+          { key: `clause-${i}`, style: termsStyles.clauseRow },
+          React.createElement(
+            Text,
+            { style: termsStyles.clauseNumber },
+            `${i + 1}.`,
+          ),
+          React.createElement(Text, { style: termsStyles.clauseText }, clause),
+        ),
+      ),
+
+      /* Fixed, so a long set of terms carries the footer onto every page. */
+      React.createElement(Text, {
+        style: s.footer,
+        fixed: true,
+        render: ({
+          pageNumber,
+          totalPages,
+        }: {
+          pageNumber: number;
+          totalPages: number;
+        }) =>
+          `LickYourPhone Media — Terms & Conditions — ${dateStr} — Page ${pageNumber} of ${totalPages}`,
+      }),
+    ),
+  );
+}

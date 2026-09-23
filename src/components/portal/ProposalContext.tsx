@@ -74,6 +74,13 @@ export interface ProposalData {
   clientName: string;
   /** The person signing, which is not the venue's own name. */
   contactName: string | null;
+  /**
+   * The email this proposal was sent to — the signer's if they have signed,
+   * the client record's otherwise. The onboarding form opens its email
+   * questions with it so nobody retypes what we already know. Absent in the
+   * dashboard's page previews, which have no real proposal behind them.
+   */
+  clientEmail?: string | null;
   venueName: string;
 }
 

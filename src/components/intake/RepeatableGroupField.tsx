@@ -12,6 +12,25 @@ interface SubField {
 
 interface GroupConfig {
   subFields: SubField[];
+  /**
+   * What one entry is called, set per question in the data:
+   * `{"entryLabel": "Team member"}` reads "Team member 1", "Team member 2".
+   * A `{number}` in the value is replaced in place, so "Location {number}"
+   * works too. Left unset, the editable "Entry {number}" wording stands.
+   */
+  entryLabel?: string;
+  /**
+   * What the add button says, e.g. `{"addLabel": "Add another location"}`.
+   * The button draws its own + icon, so the wording doesn't need one.
+   */
+  addLabel?: string;
+}
+
+/** "Team member" + 2 → "Team member 2"; "Stop {number}" + 2 → "Stop 2". */
+function numbered(label: string, number: number): string {
+  return label.includes("{number}")
+    ? label.replaceAll("{number}", String(number))
+    : `${label} ${number}`;
 }
 
 export default function RepeatableGroupField({
@@ -24,6 +43,11 @@ export default function RepeatableGroupField({
     subFields: [],
   };
   const rows = (value as Record<string, string>[]) ?? [];
+
+  // The question's own wording wins; the copy slot is the fallback for every
+  // group that hasn't been given one.
+  const entryLabel = config.entryLabel?.trim() || "";
+  const addLabel = config.addLabel?.trim() || "";
 
   function addRow() {
     const empty: Record<string, string> = {};
@@ -62,7 +86,9 @@ export default function RepeatableGroupField({
           >
             <div className="flex items-center justify-between">
               <span className="font-body text-xs text-lyp-white/40">
-                {t("groupEntryLabel", { number: i + 1 })}
+                {entryLabel
+                  ? numbered(entryLabel, i + 1)
+                  : t("groupEntryLabel", { number: i + 1 })}
               </span>
               <button
                 type="button"
@@ -103,7 +129,7 @@ export default function RepeatableGroupField({
           className="flex items-center gap-2 rounded-lg border border-dashed border-lyp-white/20 px-4 py-3 font-body text-sm text-lyp-white/60 transition-colors hover:border-lyp-cherry hover:text-lyp-cherry"
         >
           <Plus className="h-4 w-4" />
-          {t("groupAddButton")}
+          {addLabel || t("groupAddButton")}
         </button>
       </div>
     </div>

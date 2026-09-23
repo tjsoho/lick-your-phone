@@ -142,12 +142,46 @@ export async function getAllProviders(): Promise<{
   }
 }
 
+/**
+ * The onboarding answers are final once submitted: changes go through the
+ * team, not the form. `intake_complete` is written by `completeIntake` alone,
+ * so a client who is part-way through — status `signed` — is never caught by
+ * this, and nothing here can strand someone in a form they haven't finished.
+ *
+ * Checked on the server as well as in the UI, because a disabled button is a
+ * courtesy, not a lock: a stale tab, a second window or a replayed action all
+ * reach these two writes directly.
+ */
+const INTAKE_LOCKED_MESSAGE =
+  "These onboarding answers have already been submitted. Your marketer can make any changes with you.";
+
+async function readIntakeLock(
+  supabase: Awaited<ReturnType<typeof createAdminClient>>,
+  proposalId: string,
+): Promise<{ error: string; locked: boolean } | null> {
+  const { data, error } = await supabase
+    .from("proposals")
+    .select("status")
+    .eq("id", proposalId)
+    .single();
+
+  if (error || !data) return { error: "Proposal not found", locked: false };
+  if (data.status === "intake_complete") {
+    return { error: INTAKE_LOCKED_MESSAGE, locked: true };
+  }
+  return null;
+}
+
 export async function saveIntakeResponses(
   proposalId: string,
   responses: { questionId: string; value: unknown }[],
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; locked?: boolean }> {
   try {
     const supabase = await createAdminClient();
+
+    const lock = await readIntakeLock(supabase, proposalId);
+    if (lock) return lock;
+
     for (const r of responses) {
       const { error } = await supabase.from("intake_responses").upsert(
         {
@@ -171,7 +205,7 @@ export async function saveIntakeResponses(
 
 export async function completeIntake(
   proposalId: string,
-): Promise<{ error: string | null }> {
+): Promise<{ error: string | null; locked?: boolean }> {
   try {
     const supabase = await createAdminClient();
 
@@ -187,7 +221,11 @@ export async function completeIntake(
       throw new Error("Proposal not found");
     }
 
-    const isEdit = proposal?.status === "intake_complete";
+    // Submitting is a one-way door. A second attempt — a stale tab, a double
+    // click that outran the UI — is refused rather than re-notifying the team.
+    if (proposal.status === "intake_complete") {
+      return { error: INTAKE_LOCKED_MESSAGE, locked: true };
+    }
 
     // Collect asset URLs from file-type responses
     const { data: fileQuestionIds } = await supabase
@@ -229,7 +267,9 @@ export async function completeIntake(
     const { error: auditError } = await supabase.from("audit_events").insert({
       entity_type: "proposal",
       entity_id: proposalId,
-      action: isEdit ? "intake_edited" : "intake_completed",
+      // Only ever a first completion now — the guard above turns a repeat
+      // into a refusal, so there is no "edited" case left to record.
+      action: "intake_completed",
       metadata: { completed_at: new Date().toISOString() },
     });
 
@@ -251,7 +291,7 @@ export async function completeIntake(
       venueName: venueObj?.name ?? "Venue",
       venueAddress: venueObj?.address ?? "",
       proposalToken: proposal.token,
-      isEdit,
+      isEdit: false,
       assets,
     });
 

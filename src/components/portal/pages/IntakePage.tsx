@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Check, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Check, Loader2, Lock } from "lucide-react";
 import { useCopy, useProposal } from "../ProposalContext";
 import {
   TextField,
@@ -58,6 +58,45 @@ interface IntakePageProps {
 }
 
 /**
+ * Whether a question opens with the proposal's own email already in it.
+ *
+ * Keyed off `field_type` alone — the one thing about a question that stays
+ * true when the lead rewords its label or renumbers the page. Every email
+ * question is asking for a way to reach this client, so every one of them
+ * starts from the address we already hold. A question that shouldn't (an
+ * accountant's, say) opts out in its own data with `{"prefill": false}`.
+ */
+function prefillsClientEmail(q: IntakeQuestionWithConditions): boolean {
+  if (q.field_type !== "email") return false;
+  return (q.config as { prefill?: unknown } | null)?.prefill !== false;
+}
+
+/**
+ * The saved answers, with the client's email filled into the email questions
+ * they have never answered.
+ *
+ * It fills blanks only: a question with a row of its own — including one the
+ * client deliberately emptied — is left exactly as they left it. The value is
+ * a real, editable answer from the first render, so whatever they type over
+ * it is what gets saved.
+ */
+function withClientEmail(
+  saved: Record<string, unknown>,
+  questions: IntakeQuestionWithConditions[],
+  email: string | null | undefined,
+): Record<string, unknown> {
+  if (!email) return saved;
+
+  const next = { ...saved };
+  for (const q of questions) {
+    if (!prefillsClientEmail(q)) continue;
+    if (Object.prototype.hasOwnProperty.call(saved, q.id)) continue;
+    next[q.id] = email;
+  }
+  return next;
+}
+
+/**
  * Field types whose answer is CHOSEN from a set rather than typed. If such a
  * question has an empty set, there is literally nothing the client can do with
  * it — so a required one must not be allowed to block the form.
@@ -107,6 +146,7 @@ const FIELD_COMPONENTS: Record<
     value: unknown;
     onChange: (value: unknown) => void;
     providers?: Provider[];
+    disabled?: boolean;
   }>
 > = {
   text: TextField,
@@ -133,16 +173,24 @@ export default function IntakePage({
   const { proposal, selections } = useProposal();
   const t = useCopy("intake");
   const [sameAsOn, setSameAsOn] = useState<Record<string, boolean>>({});
-  const [responses, setResponses] = useState<Record<string, unknown>>(
-    existingResponses ?? {},
+  // Prefilled once, at mount: from here on the answers are the client's own.
+  const [responses, setResponses] = useState<Record<string, unknown>>(() =>
+    withClientEmail(existingResponses ?? {}, questions, proposal.clientEmail),
   );
   const [currentIntakePage, setCurrentIntakePage] = useState(1);
   const [saving, setSaving] = useState(false);
   const [completed, setCompleted] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  /** Reading the submitted answers back, rather than filling the form in. */
+  const [reviewing, setReviewing] = useState(false);
   const [error, setError] = useState("");
 
-  console.log("selections", selections);
+  /**
+   * Submitted answers are final. The client can read them; changing them goes
+   * through the team. `intake_complete` is the only thing that locks the form,
+   * and only a finished submission ever writes it — a part-filled form is
+   * still `signed`, so nobody is locked out of work they haven't handed in.
+   */
+  const locked = completed || proposal.status === "intake_complete";
 
   // Build a set of signed service slugs for condition evaluation
   const signedServiceIds = useMemo(
@@ -217,14 +265,21 @@ export default function IntakePage({
         currentSection = q.section;
         grouped.push({
           section: currentSection,
-          // The first question of a section carries its subtitle and any
-          // "same as" shortcut.
-          subtitle: q.section_subtitle ?? null,
+          subtitle: null,
+          // The first question of a section carries its "same as" shortcut.
           sameAs: readSameAs(q.config),
           questions: [],
         });
       }
-      grouped[grouped.length - 1].questions.push(q);
+      const group = grouped[grouped.length - 1];
+      // The subtitle describes the SECTION, not the question it is stored on,
+      // so the first question that carries one wins. Taking it from the first
+      // question only would lose the strapline whenever that question is
+      // conditioned away.
+      if (!group.subtitle && q.section_subtitle) {
+        group.subtitle = q.section_subtitle;
+      }
+      group.questions.push(q);
     }
     return grouped;
   }, [visibleQuestionsForPage]);
@@ -283,7 +338,22 @@ export default function IntakePage({
     return true;
   }
 
+  /**
+   * The server has told us the answers are already in — a second tab got
+   * there first, or a double click outran the button. Show the client the
+   * finished screen rather than an error they can do nothing about.
+   */
+  function fallIntoLockedState() {
+    setCompleted(true);
+    setReviewing(false);
+    setSaving(false);
+    setError("");
+  }
+
   async function handleSaveAndNavigate(targetPage: number | null) {
+    // Nothing writes once the form is locked. The buttons are gone by then;
+    // this is the guard behind them.
+    if (locked) return;
     if (!validateCurrentPage()) return;
 
     setSaving(true);
@@ -301,6 +371,7 @@ export default function IntakePage({
 
     if (pageResponses.length > 0) {
       const result = await saveIntakeResponses(proposal.id, pageResponses);
+      if (result.locked) return fallIntoLockedState();
       if (result.error) {
         setError(`Failed to save: ${result.error}`);
         setSaving(false);
@@ -313,11 +384,12 @@ export default function IntakePage({
     } else {
       // Final page — complete intake
       const result = await completeIntake(proposal.id);
+      if (result.locked) return fallIntoLockedState();
       if (result.error) {
         setError(`Failed to complete intake: ${result.error}`);
       } else {
         setCompleted(true);
-        setIsEditing(false);
+        setReviewing(false);
       }
     }
 
@@ -351,11 +423,8 @@ export default function IntakePage({
     if (error) setError("");
   }
 
-  // Completed state
-  const isCompletedScreen =
-    (completed || proposal.status === "intake_complete") && !isEditing;
-
-  if (isCompletedScreen) {
+  // Completed state. No edit affordance: the only way back in is to read.
+  if (locked && !reviewing) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6 text-center">
         <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-lyp-cherry/20">
@@ -364,18 +433,24 @@ export default function IntakePage({
         <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-4">
           {t("doneTitle")}
         </h1>
-        <p className="font-body text-lyp-white/60 max-w-md mb-8">
+        <p className="font-body text-lyp-white/60 max-w-md mb-4">
           {t("doneBody")}
+        </p>
+        {/* Said plainly, once: the answers are in, and a person handles any
+            change. No warning colour — nothing has gone wrong. */}
+        <p className="mb-8 flex max-w-md items-start gap-2 font-body text-sm leading-relaxed text-lyp-white/40">
+          <Lock className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+          <span>{t("lockedNote")}</span>
         </p>
         <button
           type="button"
           onClick={() => {
-            setIsEditing(true);
+            setReviewing(true);
             setCurrentIntakePage(1);
           }}
-          className="font-body text-sm text-lyp-cherry hover:text-lyp-cherry/80 transition-colors"
+          className="font-body text-sm text-lyp-cherry transition-colors duration-300 ease-brand hover:text-lyp-cherry/80"
         >
-          {t("editResponses")}
+          {t("reviewResponses")}
         </button>
       </div>
     );
@@ -429,77 +504,104 @@ export default function IntakePage({
 
       {/* Form content */}
       <div className="flex-1 overflow-y-auto px-6 py-8 md:px-16 lg:px-24">
-        {/* Keyed on the step number: moving between intake pages remounts
-            the stack, so the cascade replays on every step rather than only
-            on first load. The running counter `qi` carries the delay ACROSS
-            sections, so the form reads as one list, not several. */}
-        <div key={currentIntakePage} className="mx-auto max-w-2xl space-y-8">
-          {(() => {
-            let qi = 0;
-            return sections.map((section, si) => (
-              <div key={si}>
-                {section.section && (
-                  <Reveal
-                    delay={revealDelay(qi++)}
-                    className="mb-6 border-b border-lyp-white/10 pb-3"
-                  >
-                    <h2 className="font-heading text-xl text-lyp-white">
-                      {section.section}
-                    </h2>
-                    {/* Says what the section is for, so "Access Audit" is not
-                        a mystery to the person filling it in. */}
-                    {section.subtitle && (
-                      <p className="mt-1.5 font-body text-sm leading-relaxed text-lyp-white/50">
-                        {section.subtitle}
-                      </p>
-                    )}
-                  </Reveal>
-                )}
-                {/* Saves retyping details already given just above. */}
-                {section.sameAs && (
-                  <Reveal delay={revealDelay(qi++)} className="mb-5">
-                    <label className="inline-flex cursor-pointer items-center gap-2.5">
-                      <input
-                        type="checkbox"
-                        checked={!!sameAsOn[section.section ?? ""]}
-                        onChange={(e) => {
-                          const on = e.target.checked;
-                          setSameAsOn((prev) => ({
-                            ...prev,
-                            [section.section ?? ""]: on,
-                          }));
-                          applySameAs(section.sameAs!, on);
-                        }}
-                        className="h-4 w-4 cursor-pointer accent-lyp-cherry"
-                      />
-                      <span className="font-body text-sm text-lyp-white/70">
-                        {section.sameAs.label || t("sameAsLabel")}
-                      </span>
-                    </label>
-                  </Reveal>
-                )}
+        {/* Read-only from here down once the answers are in. A disabled
+            fieldset inerts every control inside it in one move, so no field
+            component has to remember to check. */}
+        {locked && (
+          <div className="mx-auto mb-8 max-w-2xl rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3">
+            <p className="flex items-center gap-2 font-body text-sm text-lyp-white/50">
+              <Lock className="h-3.5 w-3.5 flex-shrink-0" />
+              {t("reviewBanner")}
+            </p>
+          </div>
+        )}
+        {/* `min-w-0` undoes the fieldset's own `min-inline-size: min-content`,
+            which would otherwise stop the form narrowing on a phone. */}
+        <fieldset disabled={locked} className="m-0 min-w-0 border-0 p-0">
+          {/* Keyed on the step number: moving between intake pages remounts
+              the stack, so the cascade replays on every step rather than only
+              on first load. The running counter `qi` carries the delay ACROSS
+              sections, so the form reads as one list, not several. */}
+          <div key={currentIntakePage} className="mx-auto max-w-2xl">
+            {(() => {
+              let qi = 0;
+              return sections.map((section, si) => {
+                /* A real break between blocks of questions: a rule and a wide
+                   gap ABOVE the heading. A rule under the heading only ever
+                   underlined it — from the client's side "Meta Digital Ads"
+                   read as one more question in the Facebook list. The first
+                   section on a step opens the page and needs neither. */
+                const breakClass =
+                  si === 0
+                    ? ""
+                    : section.section
+                      ? "mt-14 border-t border-lyp-white/10 pt-12"
+                      : "mt-8";
 
-                <div className="space-y-6">
-                  {section.questions.map((q) => {
-                    const Component = FIELD_COMPONENTS[q.field_type];
-                    if (!Component) return null;
-
-                    return (
-                      <Reveal key={q.id} delay={revealDelay(qi++)}>
-                        <Component
-                          question={q}
-                          value={responses[q.id] ?? null}
-                          onChange={(val) => handleChange(q.id, val)}
-                          providers={providers}
-                        />
+                return (
+                  <div key={si} className={breakClass}>
+                    {section.section && (
+                      <Reveal delay={revealDelay(qi++)} className="mb-7">
+                        <h2 className="font-heading text-2xl text-lyp-white md:text-3xl">
+                          {section.section}
+                        </h2>
+                        {/* Says what the section is for, so "Access Audit" is not
+                            a mystery to the person filling it in. */}
+                        {section.subtitle && (
+                          <p className="mt-2 max-w-xl font-body text-sm leading-relaxed text-lyp-white/50">
+                            {section.subtitle}
+                          </p>
+                        )}
                       </Reveal>
-                    );
-                  })}
-                </div>
-              </div>
-            ));
-          })()}
-        </div>
+                    )}
+                    {/* Saves retyping details already given just above. */}
+                    {section.sameAs && (
+                      <Reveal delay={revealDelay(qi++)} className="mb-5">
+                        <label className="inline-flex cursor-pointer items-center gap-2.5">
+                          <input
+                            type="checkbox"
+                            checked={!!sameAsOn[section.section ?? ""]}
+                            onChange={(e) => {
+                              const on = e.target.checked;
+                              setSameAsOn((prev) => ({
+                                ...prev,
+                                [section.section ?? ""]: on,
+                              }));
+                              applySameAs(section.sameAs!, on);
+                            }}
+                            className="h-4 w-4 cursor-pointer accent-lyp-cherry"
+                          />
+                          <span className="font-body text-sm text-lyp-white/70">
+                            {section.sameAs.label || t("sameAsLabel")}
+                          </span>
+                        </label>
+                      </Reveal>
+                    )}
+
+                    <div className="space-y-6">
+                      {section.questions.map((q) => {
+                        const Component = FIELD_COMPONENTS[q.field_type];
+                        if (!Component) return null;
+
+                        return (
+                          <Reveal key={q.id} delay={revealDelay(qi++)}>
+                            <Component
+                              question={q}
+                              value={responses[q.id] ?? null}
+                              onChange={(val) => handleChange(q.id, val)}
+                              providers={providers}
+                              disabled={locked}
+                            />
+                          </Reveal>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
+        </fieldset>
       </div>
 
       {/* Error message */}
@@ -515,8 +617,9 @@ export default function IntakePage({
       <div className="flex-shrink-0 border-t border-lyp-white/10 px-6 py-4">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
           {/* No Back on the final step — nothing should compete with
-              Submit once the last question is answered. */}
-          {isLastPage ? (
+              Submit once the last question is answered. Reading the answers
+              back there is no Submit, so Back stays. */}
+          {isLastPage && !locked ? (
             <span aria-hidden />
           ) : (
             <button
@@ -532,14 +635,25 @@ export default function IntakePage({
             </button>
           )}
 
+          {/* Locked, this button only turns pages and then closes the read —
+              it never saves, and there is no second Submit to press. */}
           <button
             type="button"
-            onClick={() => handleSaveAndNavigate(isLastPage ? null : nextPage)}
+            onClick={() => {
+              if (!locked) {
+                handleSaveAndNavigate(isLastPage ? null : nextPage);
+                return;
+              }
+              if (isLastPage) setReviewing(false);
+              else if (nextPage !== null) setCurrentIntakePage(nextPage);
+            }}
             disabled={saving}
             className="group flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            {t(isLastPage ? "submitButton" : "continueButton")}
+            {isLastPage
+              ? t(locked ? "reviewDone" : "submitButton")
+              : t("continueButton")}
             {!isLastPage && (
               <ChevronRight className="h-4 w-4 transition-transform duration-300 ease-brand group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
             )}

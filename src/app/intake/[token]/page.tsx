@@ -1,6 +1,7 @@
 import { createClient } from "@/utils/server";
 import IntakePage from "@/components/portal/pages/IntakePage";
 import { ProposalProvider } from "@/components/portal/ProposalContext";
+import FlowProgress from "@/components/portal/FlowProgress";
 import type { ProposalData } from "@/components/portal/ProposalContext";
 import { getIntakeQuestions } from "@/server-actions/intake";
 import { getServices } from "@/server-actions/services";
@@ -38,14 +39,18 @@ export default async function IntakeRoutePage({ params }: Props) {
       discount_expires_at,
       discount_timer_active,
       signed_at,
-      client:clients!client_id ( id, name, contact_name ),
+      signer_email,
+      client:clients!client_id ( id, name, contact_name, email ),
       venue:venues!venue_id ( id, name, state_id )
     `,
     )
     .eq("token", token)
     .single();
 
-  // Guard: only accessible if payment details captured
+  // Guard: the form opens once the client has got through the steps before it
+  // — the card, or, for a proposal made entirely of complimentary services,
+  // the signature alone. A complimentary client never reaches a payment row,
+  // and requiring one shut them out of onboarding altogether.
   const { data: payments } = await supabase
     .from("payments")
     .select("status")
@@ -55,7 +60,25 @@ export default async function IntakeRoutePage({ params }: Props) {
     (p) => p.status === "details_captured",
   );
 
-  if (proposalError || !proposal || !paymentCaptured) {
+  const { data: payableLines } = await supabase
+    .from("proposal_line_items")
+    .select("id, service:services!service_id ( billing )")
+    .eq("proposal_id", proposal?.id ?? "");
+
+  const nothingPayable = (payableLines ?? []).every(
+    (line) =>
+      (line.service as unknown as { billing?: string } | null)?.billing ===
+      "in_kind",
+  );
+
+  const signed =
+    proposal?.status === "signed" || proposal?.status === "intake_complete";
+
+  if (
+    proposalError ||
+    !proposal ||
+    !(paymentCaptured || (signed && nothingPayable))
+  ) {
     console.error(
       "Error loading proposal:",
       proposalError,
@@ -77,6 +100,7 @@ export default async function IntakeRoutePage({ params }: Props) {
   const clientObj = proposal.client as unknown as {
     id: string;
     name: string;
+    email: string | null;
   } | null;
   const venueObj = proposal.venue as unknown as {
     id: string;
@@ -97,6 +121,13 @@ export default async function IntakeRoutePage({ params }: Props) {
     contactName:
       (clientObj as { contact_name?: string | null } | null)?.contact_name ??
       clientObj?.name ??
+      null,
+    // What the onboarding form fills its email questions with. The signer's
+    // address wins: by this point they have signed, and that is the address
+    // they chose to be reached on.
+    clientEmail:
+      (proposal as { signer_email?: string | null }).signer_email ??
+      clientObj?.email ??
       null,
     venueName: venueObj?.name ?? "Venue",
   };
@@ -192,6 +223,9 @@ export default async function IntakeRoutePage({ params }: Props) {
         pages={[]}
         services={services}
         initialSelections={selections}
+        // The tracker in the bar above reads this: without it the payment
+        // stage would sit open on the one screen that proves it is closed.
+        paymentCaptured={paymentCaptured || nothingPayable}
         pageCopy={{ intake: intakeCopy }}
         agreement={{
           termsClauses: [],
@@ -199,11 +233,22 @@ export default async function IntakeRoutePage({ params }: Props) {
           portalCopy: agreementSettings.portalCopy,
         }}
       >
-        <IntakePage
-          questions={intakeQuestions}
-          providers={intakeProviders}
-          existingResponses={intakeResponses}
-        />
+        {/* The onboarding form leaves the deck behind, so the tracker comes
+            with it: the client asked for the last stage, and a client who has
+            just been carried here by two automatic jumps should be able to
+            see that this is the end of it. */}
+        <div className="flex h-full flex-col">
+          <div className="flex flex-shrink-0 justify-center border-b border-lyp-white/10 px-6 py-3">
+            <FlowProgress />
+          </div>
+          <div className="min-h-0 flex-1">
+            <IntakePage
+              questions={intakeQuestions}
+              providers={intakeProviders}
+              existingResponses={intakeResponses}
+            />
+          </div>
+        </div>
       </ProposalProvider>
       </div>
     </div>

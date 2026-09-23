@@ -2,7 +2,7 @@ declare interface Proposal {
   id: string;
   client_id: string;
   venue_id: string;
-  status: "signed" | "sent" | "draft" | "superseded" | "intake_completed";
+  status: "signed" | "sent" | "draft" | "superseded" | "intake_complete";
   token: string;
   discount_expires_at: string | null;
   discount_timer_active: boolean;

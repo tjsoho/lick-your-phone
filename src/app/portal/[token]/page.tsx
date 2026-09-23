@@ -42,7 +42,8 @@ export default async function PortalPage({ params }: Props) {
       .select(
         `
       id, token, status, signed_at, discount_expires_at, discount_timer_active,
-      client:clients!client_id ( id, name, contact_name ),
+      signer_email,
+      client:clients!client_id ( id, name, contact_name, email ),
       venue:venues!venue_id ( id, name ),
       payments(*),
       proposal_line_items(*)
@@ -125,6 +126,7 @@ export default async function PortalPage({ params }: Props) {
     id: string;
     name: string;
     contact_name: string | null;
+    email: string | null;
   } | null;
   const venueObj = proposal.venue as unknown as {
     id: string;
@@ -142,6 +144,12 @@ export default async function PortalPage({ params }: Props) {
     // The person. `contact_name` is legacy: records made before the client
     // record became the person still carry them there.
     contactName: clientObj?.contact_name ?? clientObj?.name ?? null,
+    // What the onboarding form fills its email questions with — the signer's
+    // address once they have signed, the client record's until then.
+    clientEmail:
+      (proposal as { signer_email?: string | null }).signer_email ??
+      clientObj?.email ??
+      null,
     venueName: venueObj?.name ?? "Venue",
   };
 

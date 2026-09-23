@@ -26,7 +26,27 @@ import SummaryPage from "./pages/SummaryPage";
 import PaymentPage from "./pages/PaymentPage";
 import SignaturePage from "./pages/SignaturePage";
 import PortalBackground from "./PortalBackground";
+import FlowProgress from "./FlowProgress";
 import { SIZES } from "./pages/ContentBlockRenderer";
+
+/**
+ * The closing stretch: the slides that are a checkout rather than a read.
+ * Here the page counter gives its slot to the three-stage tracker, because
+ * what is left to DO is the only number that means anything this late. Through
+ * the deck the counter stays — "agreement / payment / onboarding" under slide
+ * 6 of 24 would say nothing about the twenty-three pages either side of it.
+ *
+ * `intake` is listed although onboarding is normally its own route rather than
+ * a slide: if a deck ever carries it, it belongs to this stretch too.
+ */
+const CLOSING_SLUGS = ["summary", "signature", "payment", "intake"];
+
+/**
+ * Slides that carry their own way forward, so the bar's Next would be a
+ * second and wronger exit. Signing turns the page itself, and the payment
+ * slide hands over to onboarding once the details are captured.
+ */
+const SELF_ADVANCING_SLUGS = ["signature", "payment"];
 
 /**
  * The `sizes` the NEXT slide's featured image will be requested with, or null
@@ -182,6 +202,7 @@ function CarouselInner() {
     selectedCount,
     proposal,
     discountLive,
+    paymentCaptured,
   } = useProposal();
   const reduceMotion = useReducedMotion();
   const t = useCopy("global");
@@ -215,9 +236,22 @@ function CarouselInner() {
     signatureIndex >= 0 &&
     currentPage > signatureIndex;
 
+  // Read before the callbacks, so the arrow keys obey the same lock the Next
+  // button does — a hidden button that a keypress walks straight past would
+  // only be half a decision.
+  const currentSlug = pages[currentPage]?.slug ?? null;
+  // A slide only keeps Next off itself while it really does carry the client
+  // onward. Once the card is on file the signature slide is a confirmation
+  // with nothing left to trigger, and hiding Next there would strand them.
+  const nextLocked =
+    !!currentSlug &&
+    SELF_ADVANCING_SLUGS.includes(currentSlug) &&
+    !(currentSlug === "signature" && paymentCaptured);
+
   const goNext = useCallback(() => {
+    if (nextLocked) return;
     setCurrentPage(Math.min(currentPage + 1, pages.length - 1));
-  }, [currentPage, pages.length, setCurrentPage]);
+  }, [currentPage, nextLocked, pages.length, setCurrentPage]);
 
   const goPrev = useCallback(() => {
     if (backLocked) return;
@@ -245,6 +279,8 @@ function CarouselInner() {
 
   const hasTop = selectedCount > 0;
   const isSummary = page.slug === "summary";
+  // The counter's slot goes to the stage tracker from the summary onwards.
+  const showFlow = !!page.slug && CLOSING_SLUGS.includes(page.slug);
   // Once signed, the selection is locked in — the running total stops being
   // a shopping aid and just follows the client through onboarding.
   const isSigned = proposal.status === "signed" || proposal.status === "intake_complete";
@@ -359,28 +395,38 @@ function CarouselInner() {
             disabled={currentPage === 0 || backLocked}
             // Hidden rather than removed, so Next and the counter keep their places.
             aria-hidden={backLocked}
-            className={`${backLocked ? "invisible " : ""}group flex items-center gap-1.5 rounded-lg border border-lyp-white/20 px-4 py-2 font-body text-sm text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-white/10 active:scale-[0.97] disabled:opacity-20 motion-reduce:transition-none motion-reduce:active:scale-100`}
+            // `shrink-0`: the tracker that can now sit beside it is the thing
+            // that gives, never the buttons.
+            className={`${backLocked ? "invisible " : ""}group flex shrink-0 items-center gap-1.5 rounded-lg border border-lyp-white/20 px-4 py-2 font-body text-sm text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-white/10 active:scale-[0.97] disabled:opacity-20 motion-reduce:transition-none motion-reduce:active:scale-100`}
           >
             <ChevronLeft className="h-5 w-5 transition-transform duration-300 ease-brand group-hover:-translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
             {t("backButton")}
           </button>
 
-          {/* The counter re-keys on the page index, so the number itself
-              changes with a beat instead of snapping. */}
-          <span className="font-body text-sm text-lyp-white/60">
-            <span
-              key={currentPage}
-              className="portal-reveal portal-reveal-fade inline-block tabular-nums"
-              style={{ animationDelay: "0ms", animationDuration: "420ms" }}
-            >
-              {t("pageCounter", { current: currentPage + 1, total: pages.length })}
+          {/* One slot, two tenants. Both sit well inside the height the Back
+              button sets, so the bar measures the same on every slide. */}
+          {showFlow ? (
+            <FlowProgress />
+          ) : (
+            /* The counter re-keys on the page index, so the number itself
+               changes with a beat instead of snapping. */
+            <span className="font-body text-sm text-lyp-white/60">
+              <span
+                key={currentPage}
+                className="portal-reveal portal-reveal-fade inline-block tabular-nums"
+                style={{ animationDelay: "0ms", animationDuration: "420ms" }}
+              >
+                {t("pageCounter", { current: currentPage + 1, total: pages.length })}
+              </span>
             </span>
-          </span>
+          )}
 
           <button
             onClick={goNext}
-            disabled={currentPage === pages.length - 1}
-            className="group flex items-center gap-1.5 rounded-lg bg-lyp-cherry px-5 py-2 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] disabled:opacity-20 motion-reduce:transition-none motion-reduce:active:scale-100"
+            disabled={currentPage === pages.length - 1 || nextLocked}
+            // Hidden rather than removed, so Back and the tracker keep their places.
+            aria-hidden={nextLocked}
+            className={`${nextLocked ? "invisible " : ""}group flex shrink-0 items-center gap-1.5 rounded-lg bg-lyp-cherry px-5 py-2 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] disabled:opacity-20 motion-reduce:transition-none motion-reduce:active:scale-100`}
           >
             {t("nextButton")}
             <ChevronRight className="h-5 w-5 transition-transform duration-300 ease-brand group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />

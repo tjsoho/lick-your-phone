@@ -12,7 +12,12 @@ interface UploadedFile {
   size: number;
 }
 
-export default function FileField({ question, value, onChange }: FieldProps) {
+export default function FileField({
+  question,
+  value,
+  onChange,
+  disabled,
+}: FieldProps) {
   const files = useMemo(() => (value as UploadedFile[]) ?? [], [value]);
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -68,42 +73,47 @@ export default function FileField({ question, value, onChange }: FieldProps) {
         {question.required && <span className="text-lyp-cherry ml-1">*</span>}
       </label>
 
-      <div
-        onDragOver={(e) => {
-          e.preventDefault();
-          setDragOver(true);
-        }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragOver(false);
-          if (e.dataTransfer.files.length > 0) {
-            upload(e.dataTransfer.files);
-          }
-        }}
-        onClick={() => inputRef.current?.click()}
-        className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-8 transition-colors ${
-          dragOver
-            ? "border-lyp-cherry bg-lyp-cherry/10"
-            : "border-lyp-white/20 hover:border-lyp-white/40"
-        }`}
-      >
-        <Upload className="mb-2 h-8 w-8 text-lyp-white/40" />
-        <p className="font-body text-sm text-lyp-white/60">
-          {uploading ? t("fileUploading") : t("fileDropPrompt")}
-        </p>
-        <input
-          ref={inputRef}
-          type="file"
-          multiple
-          onChange={(e) => {
-            if (e.target.files && e.target.files.length > 0) {
-              upload(e.target.files);
+      {/* Once the answers are locked the drop zone goes away entirely: a
+          disabled fieldset can inert the file input behind it, but not a
+          div you can drag a file onto. Nothing to aim at, nothing to drop. */}
+      {!disabled && (
+        <div
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            if (e.dataTransfer.files.length > 0) {
+              upload(e.dataTransfer.files);
             }
           }}
-          className="hidden"
-        />
-      </div>
+          onClick={() => inputRef.current?.click()}
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-8 transition-colors ${
+            dragOver
+              ? "border-lyp-cherry bg-lyp-cherry/10"
+              : "border-lyp-white/20 hover:border-lyp-white/40"
+          }`}
+        >
+          <Upload className="mb-2 h-8 w-8 text-lyp-white/40" />
+          <p className="font-body text-sm text-lyp-white/60">
+            {uploading ? t("fileUploading") : t("fileDropPrompt")}
+          </p>
+          <input
+            ref={inputRef}
+            type="file"
+            multiple
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                upload(e.target.files);
+              }
+            }}
+            className="hidden"
+          />
+        </div>
+      )}
 
       {error && <p className="font-body text-xs text-lyp-cherry">{error}</p>}
 

@@ -14,7 +14,10 @@ export const PAYMENT_COPY: CopySlot[] = [
   { key: "acceptedToast", label: "Saved: pop-up notice", default: "Payment accepted" },
   { key: "savedTitle", label: "Saved: title", default: "Payment Details Saved" },
   { key: "savedBody", label: "Saved: message", default: "Your card has been securely saved. Payments will be scheduled according to your agreement.", multiline: true },
+  { key: "handoffNote", label: "Saved: moving on note", default: "Taking you to your onboarding form...", hint: "Shown for a moment after the card is saved, while the client is moved to onboarding." },
   { key: "onboardingButton", label: "Onboarding button", default: "Access Onboarding Form" },
+  { key: "capturedTitle", label: "Already saved: title", default: "Payment Details Received" },
+  { key: "capturedBody", label: "Already saved: message", default: "Your card is already saved and nothing is charged today. The last step is your onboarding form.", multiline: true, hint: "Shown if the client comes back to this step after their card is in." },
   { key: "noPaymentTitle", label: "No payment needed: title", default: "No Payment Required" },
   { key: "noPaymentBody", label: "No payment needed: message", default: "Your selected services are complimentary. No payment details are needed at this time.", multiline: true },
 ];
