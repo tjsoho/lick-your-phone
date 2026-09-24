@@ -50,6 +50,13 @@
       "when": 1789330705143,
       "tag": "0006_light_nightmare",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790213369846,
+      "tag": "0007_page_titles_and_full_terms",
+      "breakpoints": true
     }
   ]
 }

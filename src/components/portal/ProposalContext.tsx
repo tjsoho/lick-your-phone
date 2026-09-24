@@ -14,6 +14,7 @@ import {
   type CopyKind,
   type CopyOverrides,
 } from "@/lib/portal-copy";
+import type { TermsKind } from "@/lib/terms";
 import {
   DISCOUNT_GRACE_MS,
   isDiscountLive,
@@ -92,6 +93,13 @@ export interface ProposalData {
 export interface AgreementCopy {
   termsClauses: string[];
   postSignatureText: string;
+  /**
+   * What the full-terms control actually opens — the agency's uploaded
+   * document, their own link, the clauses rendered as a PDF, or nothing.
+   * Decided by `resolveTermsTarget`; the slide only reads it to pick its
+   * wording, because the address is `/api/terms/<token>` either way.
+   */
+  termsKind?: TermsKind;
   /** Workspace-wide wording shown on every slide (the `global` copy kind). */
   portalCopy?: CopyOverrides;
 }

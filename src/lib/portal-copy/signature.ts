@@ -14,8 +14,17 @@ export const SIGNATURE_COPY: CopySlot[] = [
      them is edited here. */
   { key: "termsSummaryTitle", label: "Terms summary: heading", default: "The Main Points", hint: "Above the short summary. The points themselves are the opening sentence of each clause in Settings → Agreement." },
   { key: "termsSummaryMore", label: "Terms summary: rest of the terms", default: "+{count} more in the full terms", hint: "{count} is replaced with the number of clauses not shown in the summary. Hidden when they all fit." },
-  { key: "viewAllTermsButton", label: "See all terms button", default: "See all terms" },
-  { key: "downloadTermsButton", label: "Download T&Cs button", default: "Download T&Cs", hint: "Downloads the terms from Settings → Agreement as a PDF." },
+  { key: "viewAllTermsButton", label: "See all terms button", default: "See all terms", hint: "Opens the clause list from Settings → Agreement in a window, without leaving the page." },
+
+  /* One control, three possible destinations — whichever of them Settings →
+     Agreement has set. The wording differs so the client knows, before they
+     click, whether they are getting the agency's own document or the summary
+     made into a PDF. */
+  { key: "downloadTermsButton", label: "Full terms button: generated PDF", default: "Download T&Cs", hint: "Shown when no document or link is set in Settings → Agreement: the clauses, rendered as a PDF." },
+  { key: "downloadTermsDocumentButton", label: "Full terms button: uploaded document", default: "Download full T&Cs", hint: "Shown when a document is uploaded in Settings → Agreement. It downloads." },
+  { key: "viewTermsLinkButton", label: "Full terms button: live link", default: "Read the full T&Cs", hint: "Shown when a link is set in Settings → Agreement and no document is uploaded. It opens in a new tab." },
+  { key: "fullTermsNote", label: "Full terms: note beside the summary", default: "Summary only — full terms apply.", hint: "Sits beside the buttons, in place of the clause count, when a document or link is set: the points on screen are then a summary of something longer. Keep it to a few words — the slide has no spare line." },
+  { key: "fullTermsOnly", label: "Full terms: no summary written", default: "The full terms and conditions apply — open them before signing.", hint: "Shown in place of the summary when a document or link is set but no clauses have been written in Settings → Agreement." },
 
   { key: "agreementText", label: "Agreement sentence", default: "By clicking “I Agree & Sign” you confirm that you have reviewed the selected services and pricing, and agree to the", multiline: true, hint: "The terms link follows this sentence." },
   { key: "termsLinkText", label: "Terms link text", default: "terms and conditions" },

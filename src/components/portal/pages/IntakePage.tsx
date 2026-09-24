@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useCallback, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Check, Loader2, Lock } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Check,
+  ClipboardList,
+  Download,
+  ExternalLink,
+  FileSignature,
+  Loader2,
+  Lock,
+  ScrollText,
+} from "lucide-react";
 import { useCopy, useProposal } from "../ProposalContext";
 import {
   TextField,
@@ -55,6 +66,15 @@ interface IntakePageProps {
   questions: IntakeQuestionWithConditions[];
   providers: Provider[];
   existingResponses: Record<string, unknown>;
+  /**
+   * Whether a signed agreement exists to download. Resolved server-side from
+   * the documents table: a proposal that reached this form has been signed,
+   * but the document behind it can still be missing, and a button that 404s
+   * is worse than no button.
+   */
+  hasContract: boolean;
+  /** Page number to the name the agency gave it, where they gave one. */
+  pageTitles?: Record<number, string>;
 }
 
 /**
@@ -169,8 +189,10 @@ export default function IntakePage({
   questions,
   providers,
   existingResponses,
+  hasContract,
+  pageTitles = {},
 }: IntakePageProps) {
-  const { proposal, selections } = useProposal();
+  const { proposal, selections, agreement } = useProposal();
   const t = useCopy("intake");
   const [sameAsOn, setSameAsOn] = useState<Record<string, boolean>>({});
   // Prefilled once, at mount: from here on the answers are the client's own.
@@ -207,8 +229,13 @@ export default function IntakePage({
     (q: IntakeQuestionWithConditions): boolean => {
       if (q.intake_conditions.length === 0) return true;
 
-      // All conditions must pass (AND logic)
-      return q.intake_conditions.every((c) => {
+      // Conditions of the SAME kind are alternatives; different kinds all have
+      // to hold. Two "service signed" rows on one question mean "either of
+      // these services", which is how the agency writes them — the
+      // videographer picker is tied to both videography services and is meant
+      // to appear for a client who bought one of them. ANDing those hid it
+      // from everyone who had not bought both.
+      const met = (c: IntakeQuestionWithConditions["intake_conditions"][number]) => {
         switch (c.condition_type) {
           case "service_signed":
             if (!c.condition_service_id) return true;
@@ -227,7 +254,19 @@ export default function IntakePage({
           default:
             return true;
         }
-      });
+      };
+
+      const byKind = new Map<
+        string,
+        IntakeQuestionWithConditions["intake_conditions"]
+      >();
+      for (const c of q.intake_conditions) {
+        const list = byKind.get(c.condition_type) ?? [];
+        list.push(c);
+        byKind.set(c.condition_type, list);
+      }
+
+      return [...byKind.values()].every((group) => group.some(met));
     },
     [signedServiceIds, responses],
   );
@@ -425,33 +464,120 @@ export default function IntakePage({
 
   // Completed state. No edit affordance: the only way back in is to read.
   if (locked && !reviewing) {
+    /* The end of the journey, and the three things it leaves them with. The
+       agreement is dropped rather than shown broken when no document exists;
+       the terms and the form answer for themselves, so they always stand. */
+    const takeaways = [
+      ...(hasContract
+        ? [
+            {
+              href: `/api/contract/by-token/${proposal.token}`,
+              Icon: FileSignature,
+              label: t("downloadAgreement"),
+              note: t("downloadAgreementNote"),
+            },
+          ]
+        : []),
+      {
+        href: `/api/terms/${proposal.token}`,
+        Icon: ScrollText,
+        label: t("downloadTerms"),
+        note: t("downloadTermsNote"),
+        // The agency may have pointed the terms at a page they host, in which
+        // case this opens a website rather than saving a file, and the card
+        // should say so.
+        external: agreement.termsKind === "link",
+      },
+      {
+        href: `/api/intake/${proposal.token}`,
+        Icon: ClipboardList,
+        label: t("downloadIntake"),
+        note: t("downloadIntakeNote"),
+      },
+    ];
+
     return (
-      <div className="flex h-full flex-col items-center justify-center px-6 text-center">
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-lyp-cherry/20">
+      <div className="flex h-full flex-col items-center justify-center px-6 py-8 text-center">
+        <Reveal
+          variant="pop"
+          index={0}
+          className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-lyp-cherry/20"
+        >
           <Check className="h-8 w-8 text-lyp-cherry" />
-        </div>
-        <h1 className="font-heading text-3xl md:text-5xl text-lyp-white mb-4">
+        </Reveal>
+        <Reveal as="h1" index={1} className="font-heading text-3xl md:text-5xl text-lyp-white">
           {t("doneTitle")}
-        </h1>
-        <p className="font-body text-lyp-white/60 max-w-md mb-4">
+        </Reveal>
+        <Reveal as="p" index={2} className="mt-3 max-w-md font-body text-lyp-white/60">
           {t("doneBody")}
-        </p>
+        </Reveal>
+
+        {/* A rule with the heading sitting in it: a break between what has
+            happened and what they can take away with them. */}
+        <Reveal index={3} className="mt-8 flex w-full max-w-3xl items-center gap-4">
+          <span className="h-px flex-1 bg-lyp-white/10" />
+          <span className="font-body text-[10px] uppercase tracking-[0.3em] text-lyp-white/40">
+            {t("downloadsTitle")}
+          </span>
+          <span className="h-px flex-1 bg-lyp-white/10" />
+        </Reveal>
+
+        <div className="mt-5 grid w-full max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {takeaways.map((doc, i) => (
+            <Reveal key={doc.href} index={4 + i} className="h-full">
+              {/* Plain links, so the browser downloads them the way it
+                  downloads anything else — no fetch, no spinner, no state. */}
+              <a
+                href={doc.href}
+                {...(doc.external
+                  ? { target: "_blank", rel: "noopener noreferrer" }
+                  : {})}
+                className="group flex h-full flex-col items-center gap-2 rounded-xl border border-lyp-white/10 bg-lyp-white/[0.04] px-5 py-5 transition-[background-color,border-color,transform] duration-300 ease-brand hover:-translate-y-0.5 hover:border-lyp-cherry/40 hover:bg-lyp-cherry/[0.08] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-lyp-cherry/15 text-lyp-cherry transition-colors duration-300 ease-brand group-hover:bg-lyp-cherry/25 motion-reduce:transition-none">
+                  <doc.Icon className="h-4 w-4" />
+                </span>
+                <span className="font-heading text-base text-lyp-white">
+                  {doc.label}
+                </span>
+                <span className="font-body text-xs leading-relaxed text-lyp-white/40">
+                  {doc.note}
+                </span>
+                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 font-body text-[11px] text-lyp-cherry">
+                  {doc.external ? (
+                    <ExternalLink className="h-3 w-3 transition-transform duration-300 ease-brand group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0" />
+                  ) : (
+                    <Download className="h-3 w-3 transition-transform duration-300 ease-brand group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0" />
+                  )}
+                  {doc.external ? t("openAction") : t("downloadAction")}
+                </span>
+              </a>
+            </Reveal>
+          ))}
+        </div>
+
         {/* Said plainly, once: the answers are in, and a person handles any
             change. No warning colour — nothing has gone wrong. */}
-        <p className="mb-8 flex max-w-md items-start gap-2 font-body text-sm leading-relaxed text-lyp-white/40">
+        <Reveal
+          as="p"
+          index={4 + takeaways.length}
+          className="mt-8 flex max-w-md items-start gap-2 font-body text-sm leading-relaxed text-lyp-white/40"
+        >
           <Lock className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
           <span>{t("lockedNote")}</span>
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            setReviewing(true);
-            setCurrentIntakePage(1);
-          }}
-          className="font-body text-sm text-lyp-cherry transition-colors duration-300 ease-brand hover:text-lyp-cherry/80"
-        >
-          {t("reviewResponses")}
-        </button>
+        </Reveal>
+        <Reveal index={5 + takeaways.length} className="mt-5">
+          <button
+            type="button"
+            onClick={() => {
+              setReviewing(true);
+              setCurrentIntakePage(1);
+            }}
+            className="font-body text-sm text-lyp-cherry transition-colors duration-300 ease-brand hover:text-lyp-cherry/80"
+          >
+            {t("reviewResponses")}
+          </button>
+        </Reveal>
       </div>
     );
   }
@@ -480,13 +606,21 @@ export default function IntakePage({
     <div className="flex h-full flex-col">
       {/* Progress bar */}
       <div className="flex-shrink-0 px-6 pt-6">
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2 flex items-baseline justify-between gap-4">
           <span className="font-body text-xs text-lyp-white/40">
             {t("stepProgress", {
               current: currentVisibleIndex + 1,
               total: totalVisiblePages,
             })}
           </span>
+          {/* The agency's own name for this step, set beside the counter
+              rather than above the questions, where the first section's
+              heading already sits. Unnamed pages say nothing extra. */}
+          {pageTitles[currentIntakePage] && (
+            <span className="truncate font-heading text-xs uppercase tracking-[0.18em] text-lyp-white/70">
+              {pageTitles[currentIntakePage]}
+            </span>
+          )}
         </div>
         <div className="h-1 w-full overflow-hidden rounded-full bg-lyp-white/10">
           {/* scaleX rather than width — a transform, so the bar advances on

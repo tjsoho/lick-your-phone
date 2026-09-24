@@ -57,6 +57,15 @@ export const agreementSettings = pgTable('agreement_settings', {
   countersignatureImage: text('countersignature_image'),
   countersignatureName: text('countersignature_name'),
   countersignatureTitle: text('countersignature_title'),
+  /**
+   * The agency's own full T&Cs, hosted by them. The clause list above is the
+   * summary shown on screen; this is the document behind it.
+   */
+  termsUrl: text('terms_url'),
+  /** A full T&Cs document uploaded to storage, as a public URL. */
+  termsDocumentUrl: text('terms_document_url'),
+  /** The uploaded document's own file name, for the admin list and the download. */
+  termsDocumentName: text('terms_document_name'),
   /** Workspace-wide portal wording (the `global` copy kind), keyed by slot. */
   portalCopy: jsonb('portal_copy').$type<Record<string, string>>().default({}).notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),

@@ -14,6 +14,19 @@ export const conditionTypeEnum = pgEnum('condition_type', [
   'service_signed', 'venue_state', 'answer_equals',
 ])
 
+/**
+ * A name for each page of the onboarding form, so the dashboard and the client
+ * see "Your Business" rather than "Page 2". Keyed by the page number the
+ * questions already carry: there is no page record to create, only a heading
+ * for a number that questions put there.
+ */
+export const intakePages = pgTable('intake_pages', {
+  pageNumber: integer('page_number').primaryKey(),
+  title: text('title').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
 export const intakeQuestions = pgTable('intake_questions', {
   id: uuid('id').primaryKey().defaultRandom(),
   pageNumber: integer('page_number').notNull(),

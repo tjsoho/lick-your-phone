@@ -11,10 +11,14 @@ import {
   Trash2,
   Plus,
   HelpCircle,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import {
   reorderQuestions,
   deleteQuestion,
+  setIntakePageTitle,
+  setQuestionHidden,
 } from "@/server-actions/intake-questions";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +26,8 @@ interface IntakeQuestionsListProps {
   questions: (IntakeQuestion & {
     intake_conditions?: IntakeCondition[];
   })[];
+  /** Page number to the name the agency has given it, where they have. */
+  pageTitles?: Record<number, string>;
 }
 
 const EASE = "ease-brand";
@@ -31,9 +37,13 @@ const thClasses =
 
 export default function IntakeQuestionsList({
   questions,
+  pageTitles = {},
 }: IntakeQuestionsListProps) {
   const router = useRouter();
   const [reordering, setReordering] = useState(false);
+  /** The page whose heading is being typed into, and the text so far. */
+  const [renaming, setRenaming] = useState<number | null>(null);
+  const [draftTitle, setDraftTitle] = useState("");
 
   // Group questions by page number
   const pages: Record<
@@ -91,6 +101,30 @@ export default function IntakeQuestionsList({
     } finally {
       setReordering(false);
     }
+  }
+
+  async function toggleHidden(id: string, label: string, hidden: boolean) {
+    const { error } = await setQuestionHidden(id, hidden);
+    if (error) {
+      toast.error(error || "Failed to update the question");
+      return;
+    }
+    toast.success(hidden ? `"${label}" hidden from clients` : `"${label}" is live`);
+    router.refresh();
+  }
+
+  async function saveTitle(pageNum: number) {
+    const next = draftTitle.trim();
+    setRenaming(null);
+    if (next === (pageTitles[pageNum] ?? "")) return;
+
+    const { error } = await setIntakePageTitle(pageNum, next);
+    if (error) {
+      toast.error(error || "Failed to rename the page");
+      return;
+    }
+    toast.success(next ? "Page renamed" : "Page name removed");
+    router.refresh();
   }
 
   async function handleDelete(id: string, label: string) {
@@ -172,9 +206,47 @@ export default function IntakeQuestionsList({
               className="overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white"
             >
               <div className="flex items-center justify-between gap-4 border-b border-[#F1E8E8] px-5 py-4">
-                <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
-                  Page {pNum}
-                </h2>
+                {/* The heading is the field: click it to rename the page, and
+                    empty it to go back to "Page N". The client sees this name
+                    at the top of that step of the form. */}
+                {renaming === pNum ? (
+                  <input
+                    autoFocus
+                    value={draftTitle}
+                    onChange={(e) => setDraftTitle(e.target.value)}
+                    onBlur={() => saveTitle(pNum)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") e.currentTarget.blur();
+                      if (e.key === "Escape") setRenaming(null);
+                    }}
+                    placeholder={`Page ${pNum}`}
+                    aria-label={`Name for page ${pNum}`}
+                    className={`min-w-0 flex-1 rounded-lg border border-lyp-cherry/30 bg-lyp-white px-2.5 py-1 font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black outline-none transition-colors duration-500 ${EASE} focus:border-lyp-cherry`}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftTitle(pageTitles[pNum] ?? "");
+                      setRenaming(pNum);
+                    }}
+                    title="Rename this page"
+                    className={`group flex min-w-0 items-center gap-2 rounded-lg px-1 py-0.5 text-left transition-colors duration-500 ${EASE} hover:bg-[#F7F1F1]`}
+                  >
+                    <h2 className="truncate font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
+                      {pageTitles[pNum] || `Page ${pNum}`}
+                    </h2>
+                    <Edit
+                      strokeWidth={1.5}
+                      className="h-3.5 w-3.5 flex-shrink-0 text-[#A89898] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                    />
+                    {pageTitles[pNum] && (
+                      <span className="flex-shrink-0 font-body text-[11px] tabular-nums text-[#A89898]">
+                        Page {pNum}
+                      </span>
+                    )}
+                  </button>
+                )}
                 <span className="rounded-full bg-[#F7F1F1] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] tabular-nums text-[#8A7A7A]">
                   {pageQuestions.length}{" "}
                   {pageQuestions.length === 1 ? "Question" : "Questions"}
@@ -211,8 +283,25 @@ export default function IntakeQuestionsList({
                             {q.sequence}
                           </td>
                           <td className="px-5 py-3">
-                            <div className="font-medium text-lyp-black">
-                              {q.field_label}
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={cn(
+                                  "font-medium",
+                                  q.hidden ? "text-[#A89898]" : "text-lyp-black",
+                                )}
+                              >
+                                {q.field_label}
+                              </span>
+                              {/* Hidden questions are dropped before the
+                                  client's form is built, so their conditions
+                                  never get a say. Saying so here is the
+                                  difference between "switched off" and
+                                  "broken condition". */}
+                              {q.hidden && (
+                                <span className="inline-block flex-shrink-0 rounded-full bg-[#F2EDED] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] text-[#8A7A7A]">
+                                  Hidden
+                                </span>
+                              )}
                             </div>
                             {q.section && (
                               <div className="mt-0.5 font-body text-[11px] text-[#A89898]">
@@ -250,6 +339,29 @@ export default function IntakeQuestionsList({
                           </td>
                           <td className="px-5 py-3">
                             <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                onClick={() =>
+                                  toggleHidden(q.id, q.field_label, !q.hidden)
+                                }
+                                className={cn(
+                                  `flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-500 ${EASE}`,
+                                  q.hidden
+                                    ? "border-[#EFE6E6] bg-[#FBF8F8] text-[#A89898] hover:border-lyp-cherry/25 hover:text-lyp-cherry"
+                                    : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/25 hover:text-lyp-cherry",
+                                )}
+                                title={q.hidden ? "Show to clients" : "Hide from clients"}
+                                aria-label={
+                                  q.hidden
+                                    ? `Show ${q.field_label} to clients`
+                                    : `Hide ${q.field_label} from clients`
+                                }
+                              >
+                                {q.hidden ? (
+                                  <EyeOff strokeWidth={1.5} className="h-3.5 w-3.5" />
+                                ) : (
+                                  <Eye strokeWidth={1.5} className="h-3.5 w-3.5" />
+                                )}
+                              </button>
                               <button
                                 onClick={() => handleMove(q.id, "up", pNum)}
                                 disabled={idx === 0 || reordering}

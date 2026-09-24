@@ -637,3 +637,307 @@ function createTermsDocument(input: PdfTermsInput) {
     ),
   );
 }
+
+/* ------------------------------------------------------------------ */
+/*  Onboarding answers document                                       */
+/* ------------------------------------------------------------------ */
+
+const intakeStyles = StyleSheet.create({
+  intro: {
+    fontSize: 9,
+    lineHeight: 1.6,
+    color: "#666666",
+    marginBottom: 2,
+  },
+  /* A section inside a page of the form — quieter than the page's own
+     heading, which reuses the contract's `sectionTitle`. */
+  sectionHeading: {
+    fontFamily: "Fira Sans",
+    fontWeight: 700,
+    fontSize: 10,
+    color: CHERRY,
+    marginTop: 14,
+    marginBottom: 6,
+  },
+  questionBlock: {
+    marginBottom: 9,
+  },
+  questionLabel: {
+    fontSize: 8,
+    color: "#888888",
+    marginBottom: 2,
+  },
+  answerText: {
+    fontSize: 10,
+    lineHeight: 1.5,
+  },
+  bulletRow: {
+    flexDirection: "row",
+    marginBottom: 1,
+  },
+  bulletMark: {
+    fontSize: 10,
+    color: CHERRY,
+    width: 10,
+  },
+  bulletText: {
+    fontSize: 10,
+    lineHeight: 1.5,
+    flex: 1,
+  },
+  pairRow: {
+    flexDirection: "row",
+    paddingVertical: 2,
+    borderBottomWidth: 0.5,
+    borderBottomColor: "#EFEFEF",
+  },
+  pairKey: {
+    fontSize: 9,
+    color: "#666666",
+    width: 120,
+  },
+  pairValue: {
+    fontSize: 9.5,
+    flex: 1,
+  },
+  entryBlock: {
+    marginBottom: 6,
+    paddingLeft: 8,
+    borderLeftWidth: 1,
+    borderLeftColor: OFF_WHITE,
+  },
+  entryTitle: {
+    fontFamily: "Fira Sans",
+    fontWeight: 700,
+    fontSize: 9,
+    color: MAROON,
+    marginBottom: 2,
+  },
+});
+
+/** One label with a value beside it: a matrix row, a group's sub-field. */
+export interface PdfIntakePair {
+  label: string;
+  value: string;
+}
+
+/**
+ * An answer, already reduced to something printable.
+ *
+ * The onboarding form stores every field type as jsonb, so the shapes are the
+ * field's own — a phone is `{countryCode, number}`, opening hours are
+ * `{row: {column: value}}`, a repeating group is a list of rows. Turning those
+ * into these four printable forms is the caller's job, because the caller is
+ * the one holding each question's config; this file only knows how they look
+ * on the page.
+ */
+export type PdfIntakeAnswer =
+  | { kind: "text"; text: string }
+  | { kind: "list"; items: string[] }
+  | { kind: "pairs"; pairs: PdfIntakePair[] }
+  | { kind: "entries"; entries: { title: string; pairs: PdfIntakePair[] }[] };
+
+export interface PdfIntakeQuestion {
+  label: string;
+  answer: PdfIntakeAnswer;
+}
+
+export interface PdfIntakeSection {
+  /** The form's own section name, or null for questions that carry none. */
+  heading: string | null;
+  questions: PdfIntakeQuestion[];
+}
+
+export interface PdfIntakePage {
+  title: string;
+  sections: PdfIntakeSection[];
+}
+
+export interface PdfIntakeInput {
+  venueName?: string | null;
+  clientName?: string | null;
+  /** In the order the form asks them: page, then section, then question. */
+  pages: PdfIntakePage[];
+  /** ISO timestamp of the download itself. */
+  generatedAt: string;
+  /** ISO timestamp of the last answer saved, when one is known. */
+  submittedAt?: string | null;
+}
+
+/**
+ * The client's own onboarding answers, as a document they can keep.
+ *
+ * Same furniture as the signed agreement and the terms — the three things
+ * they take away at the end should look like they came from one place. It
+ * prints what they actually answered, in the order they were asked: a blank
+ * question is left out rather than printed with a dash, since a record of
+ * what was said should not be padded with what wasn't.
+ */
+export async function generateIntakePdf(
+  input: PdfIntakeInput,
+): Promise<Buffer> {
+  const buffer = await renderToBuffer(createIntakeDocument(input));
+  return Buffer.from(buffer);
+}
+
+function renderIntakeAnswer(answer: PdfIntakeAnswer, key: string) {
+  switch (answer.kind) {
+    case "list":
+      return answer.items.map((item, i) =>
+        React.createElement(
+          View,
+          { key: `${key}-i${i}`, style: intakeStyles.bulletRow },
+          React.createElement(Text, { style: intakeStyles.bulletMark }, "•"),
+          React.createElement(Text, { style: intakeStyles.bulletText }, item),
+        ),
+      );
+
+    case "pairs":
+      return answer.pairs.map((pair, i) =>
+        React.createElement(
+          View,
+          { key: `${key}-p${i}`, style: intakeStyles.pairRow },
+          React.createElement(
+            Text,
+            { style: intakeStyles.pairKey },
+            pair.label,
+          ),
+          React.createElement(
+            Text,
+            { style: intakeStyles.pairValue },
+            pair.value,
+          ),
+        ),
+      );
+
+    case "entries":
+      return answer.entries.map((entry, i) =>
+        React.createElement(
+          View,
+          { key: `${key}-e${i}`, style: intakeStyles.entryBlock, wrap: false },
+          React.createElement(
+            Text,
+            { style: intakeStyles.entryTitle },
+            entry.title,
+          ),
+          ...entry.pairs.map((pair, j) =>
+            React.createElement(
+              View,
+              { key: `${key}-e${i}-p${j}`, style: intakeStyles.pairRow },
+              React.createElement(
+                Text,
+                { style: intakeStyles.pairKey },
+                pair.label,
+              ),
+              React.createElement(
+                Text,
+                { style: intakeStyles.pairValue },
+                pair.value,
+              ),
+            ),
+          ),
+        ),
+      );
+
+    default:
+      return [
+        React.createElement(
+          Text,
+          { key: `${key}-t`, style: intakeStyles.answerText },
+          answer.text,
+        ),
+      ];
+  }
+}
+
+function createIntakeDocument(input: PdfIntakeInput) {
+  const dateStr = formatDate(input.generatedAt);
+  const submittedStr = input.submittedAt ? formatDate(input.submittedAt) : null;
+
+  // Venue first, then the person — and never the same name twice, the way
+  // the contract and the terms both handle records that repeat it.
+  const forName = [input.venueName, input.clientName]
+    .filter(
+      (part, i, parts): part is string => !!part && parts.indexOf(part) === i,
+    )
+    .join(" — ");
+
+  return React.createElement(
+    Document,
+    null,
+    React.createElement(
+      Page,
+      { size: "A4" as const, style: s.page },
+
+      React.createElement(View, { style: s.headerBar }),
+      React.createElement(Text, { style: s.brandName }, "LickYourPhone Media"),
+      React.createElement(
+        Text,
+        { style: s.subtitle },
+        forName ? `Onboarding Form — ${forName}` : "Onboarding Form",
+      ),
+
+      React.createElement(
+        Text,
+        { style: intakeStyles.intro },
+        submittedStr
+          ? `The answers submitted to LickYourPhone Media on ${submittedStr}. Downloaded ${dateStr}.`
+          : `The answers submitted to LickYourPhone Media. Downloaded ${dateStr}.`,
+      ),
+
+      ...input.pages.flatMap((page, pi) => [
+        React.createElement(
+          Text,
+          { key: `page-${pi}`, style: s.sectionTitle },
+          page.title,
+        ),
+        ...page.sections.flatMap((section, si) => [
+          ...(section.heading
+            ? [
+                React.createElement(
+                  Text,
+                  {
+                    key: `page-${pi}-s${si}`,
+                    style: intakeStyles.sectionHeading,
+                  },
+                  section.heading,
+                ),
+              ]
+            : []),
+          /* `wrap: false` keeps a question with its answer: a label stranded
+             at the foot of one page reads as an unanswered question. */
+          ...section.questions.map((q, qi) =>
+            React.createElement(
+              View,
+              {
+                key: `page-${pi}-s${si}-q${qi}`,
+                style: intakeStyles.questionBlock,
+                wrap: false,
+              },
+              React.createElement(
+                Text,
+                { style: intakeStyles.questionLabel },
+                q.label,
+              ),
+              ...renderIntakeAnswer(q.answer, `page-${pi}-s${si}-q${qi}`),
+            ),
+          ),
+        ]),
+      ]),
+
+      /* Fixed, so a long form carries the footer onto every page. */
+      React.createElement(Text, {
+        style: s.footer,
+        fixed: true,
+        render: ({
+          pageNumber,
+          totalPages,
+        }: {
+          pageNumber: number;
+          totalPages: number;
+        }) =>
+          `LickYourPhone Media — Onboarding Form — ${dateStr} — Page ${pageNumber} of ${totalPages}`,
+      }),
+    ),
+  );
+}

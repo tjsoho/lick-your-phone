@@ -13,6 +13,26 @@ export const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 /** Ceiling for a single multi-file selection, checked before compression. */
 export const MAX_BATCH_SIZE = 50 * 1024 * 1024; // 50MB
 
+/**
+ * Where uploaded documents are filed inside the same bucket.
+ *
+ * A folder rather than a second bucket: the media library lists the bucket
+ * root and keeps only image extensions, so a PDF filed here is served by its
+ * public URL without ever turning up among the pictures.
+ */
+const DOCUMENT_PREFIX = "documents";
+
+/** What a document field will take, for the file picker and the check below. */
+/**
+ * PDF only, because the bucket itself allows images and `application/pdf` and
+ * nothing else: offering .doc here would fail at the storage layer with an
+ * error the agency could do nothing with.
+ */
+export const DOCUMENT_ACCEPT = ".pdf";
+
+/** The bucket's own ceiling. Anything larger is refused before it is sent. */
+export const MAX_DOCUMENT_SIZE = 10 * 1024 * 1024;
+
 export interface MediaItem {
 	name: string;
 	url: string;
@@ -168,6 +188,89 @@ export async function uploadImage(file: File): Promise<UploadResult> {
 			error: error instanceof Error ? error : new Error("Unknown upload error"),
 			originalSize: file.size,
 			uploadedSize: 0,
+		};
+	}
+}
+
+export interface DocumentUploadResult {
+	url: string;
+	/** The name the agency's file had, kept for the admin list and the download. */
+	name: string;
+	error: Error | null;
+}
+
+/**
+ * Upload a document — a full T&Cs PDF and the like — to Supabase Storage.
+ *
+ * The same bucket and the same public-URL handling as an image, minus the
+ * compression: these are files to be read as sent, not pictures to downscale.
+ */
+export async function uploadDocument(
+	file: File,
+): Promise<DocumentUploadResult> {
+	try {
+		const {
+			data: { session },
+		} = await supabase.auth.getSession();
+
+		if (!session) {
+			return {
+				url: "",
+				name: file.name,
+				error: new Error("Must be authenticated to upload files"),
+			};
+		}
+
+		if (file.size > MAX_DOCUMENT_SIZE) {
+			return {
+				url: "",
+				name: file.name,
+				error: new Error(
+					`"${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)}MB — the limit is 10MB`,
+				),
+			};
+		}
+
+		if (file.type && file.type !== "application/pdf") {
+			return {
+				url: "",
+				name: file.name,
+				error: new Error("Please upload a PDF"),
+			};
+		}
+
+		// Storage keys are URL path segments, so anything exotic in the name is
+		// flattened. The original name is returned separately and stored intact.
+		const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-");
+		const path = `${DOCUMENT_PREFIX}/${Date.now()}-${safeName}`;
+
+		const { data, error } = await supabase.storage
+			.from(BUCKET_NAME)
+			.upload(path, file, { cacheControl: "3600", upsert: true });
+
+		if (error) {
+			return { url: "", name: file.name, error: new Error(error.message) };
+		}
+
+		if (!data?.path) {
+			return {
+				url: "",
+				name: file.name,
+				error: new Error("Upload failed - no path returned"),
+			};
+		}
+
+		const {
+			data: { publicUrl },
+		} = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path);
+
+		return { url: publicUrl, name: file.name, error: null };
+	} catch (error) {
+		return {
+			url: "",
+			name: file.name,
+			error:
+				error instanceof Error ? error : new Error("Unknown upload error"),
 		};
 	}
 }

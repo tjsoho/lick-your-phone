@@ -30,6 +30,9 @@ export default async function SettingsPage() {
         initialImage={settings.countersignatureImage}
         initialName={settings.countersignatureName}
         initialTitle={settings.countersignatureTitle}
+        initialTermsUrl={settings.termsUrl}
+        initialTermsDocumentUrl={settings.termsDocumentUrl}
+        initialTermsDocumentName={settings.termsDocumentName}
         initialPortalCopy={settings.portalCopy}
       />
     </div>

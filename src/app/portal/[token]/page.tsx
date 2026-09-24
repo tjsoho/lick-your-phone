@@ -10,6 +10,7 @@ import {
   getTermsClauses,
 } from "@/server-actions/agreement-settings";
 import { resolveCopy, type CopyOverrides } from "@/lib/portal-copy";
+import { resolveTermsTarget } from "@/lib/terms";
 
 export const dynamic = "force-dynamic";
 
@@ -202,6 +203,14 @@ export default async function PortalPage({ params }: Props) {
       agreement={{
         termsClauses,
         postSignatureText: agreementSettings.postSignatureText,
+        // Only the kind travels: the slide words its button from it, and the
+        // address it points at resolves the same rule again on the way out.
+        termsKind: resolveTermsTarget({
+          termsDocumentUrl: agreementSettings.termsDocumentUrl,
+          termsDocumentName: agreementSettings.termsDocumentName,
+          termsUrl: agreementSettings.termsUrl,
+          clauseCount: termsClauses.length,
+        }).kind,
         portalCopy,
       }}
       pageCopy={pageCopy}

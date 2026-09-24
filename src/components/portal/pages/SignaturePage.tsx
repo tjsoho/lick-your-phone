@@ -2,11 +2,12 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useReducedMotion } from "framer-motion";
-import { Download, X } from "lucide-react";
+import { Download, ExternalLink, X } from "lucide-react";
 import { useCopy, useProposal } from "../ProposalContext";
 import { signProposal } from "@/server-actions/signature";
 import SelectionSummaryCard from "../SelectionSummaryCard";
 import Reveal, { revealDelay } from "../Reveal";
+import type { TermsKind } from "@/lib/terms";
 
 type SignState = "idle" | "signing" | "signed" | "error";
 
@@ -44,6 +45,54 @@ function clauseGist(clause: string): string {
   const cut = sentence.slice(0, GIST_CHARS);
   const lastSpace = cut.lastIndexOf(" ");
   return `${(lastSpace > GIST_CHARS / 2 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
+/** The wording function from `useCopy`. */
+type Copy = (key: string, vars?: Record<string, string | number>) => string;
+
+/**
+ * THE WAY THROUGH TO THE FULL TERMS.
+ *
+ * Always the same address — `/api/terms/<token>` — because which of the three
+ * possible documents that is, is the route's decision and nobody else's. All
+ * that changes here is what the client is told they are about to open, and
+ * how: the agency's own page opens in a new tab so the half-signed slide is
+ * not lost behind it, while a file comes down as a file.
+ */
+function FullTermsLink({
+  token,
+  kind,
+  t,
+  className,
+}: {
+  token: string;
+  kind: TermsKind;
+  t: Copy;
+  className: string;
+}) {
+  if (kind === "none") return null;
+
+  const isLink = kind === "link";
+  const Icon = isLink ? ExternalLink : Download;
+  const label = isLink
+    ? t("viewTermsLinkButton")
+    : kind === "document"
+      ? t("downloadTermsDocumentButton")
+      : t("downloadTermsButton");
+
+  return (
+    /* Nothing special is needed for a file: the route answers one with a
+       Content-Disposition of `attachment`, which downloads it wherever the
+       bytes actually come from. */
+    <a
+      href={`/api/terms/${token}`}
+      {...(isLink ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+      className={className}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {label}
+    </a>
+  );
 }
 
 export default function SignaturePage() {
@@ -377,6 +426,16 @@ export default function SignaturePage() {
   const gists = clauses.slice(0, TERMS_SUMMARY_MAX).map(clauseGist);
   const hiddenClauses = Math.max(clauses.length - TERMS_SUMMARY_MAX, 0);
 
+  /* Which full terms this proposal offers. The dashboard's page previews send
+     no kind, so they fall back to what the clauses alone can support. */
+  const termsKind: TermsKind =
+    agreement.termsKind ?? (clauses.length > 0 ? "generated" : "none");
+
+  /* When the agency keeps the real document elsewhere, "+3 more in the full
+     terms" would undercount it — the clause list is a summary of something
+     longer, and is said to be. */
+  const summarisesDocument = termsKind === "document" || termsKind === "link";
+
   return (
     /* THE SLIDE.
        Two columns on a wide screen: the signing column on the left, sitting on
@@ -462,8 +521,11 @@ export default function SignaturePage() {
             </p>
 
             {gists.length === 0 ? (
+              /* No clauses written. There may still be a document to open, in
+                 which case saying "no terms" beside a button that opens them
+                 would be plainly wrong. */
               <p className="mt-1.5 font-body text-[13px]/[18px] text-lyp-white/50">
-                {t("termsEmpty")}
+                {summarisesDocument ? t("fullTermsOnly") : t("termsEmpty")}
               </p>
             ) : (
               <ul className="mt-1.5 space-y-1">
@@ -488,20 +550,27 @@ export default function SignaturePage() {
               >
                 {t("viewAllTermsButton")}
               </button>
-              {clauses.length > 0 && (
-                <a
-                  href={`/api/terms/${proposal.token}`}
-                  className="inline-flex items-center gap-1.5 font-body text-xs text-lyp-white/80 underline underline-offset-2 transition-colors duration-300 ease-brand hover:text-lyp-cherry motion-reduce:transition-none"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  {t("downloadTermsButton")}
-                </a>
-              )}
-              {hiddenClauses > 0 && (
-                <span className="font-body text-xs text-lyp-white/40">
-                  {t("termsSummaryMore", { count: hiddenClauses })}
-                </span>
-              )}
+              <FullTermsLink
+                token={proposal.token}
+                kind={termsKind}
+                t={t}
+                className="inline-flex items-center gap-1.5 font-body text-xs text-lyp-white/80 underline underline-offset-2 transition-colors duration-300 ease-brand hover:text-lyp-cherry motion-reduce:transition-none"
+              />
+              {/* The tail of the row says what is NOT on screen: a count of
+                  the remaining clauses when they are the whole of it, or that
+                  the whole of it is elsewhere. Kept inline rather than given
+                  its own line — the slide has no spare row at 1280x720. */}
+              {summarisesDocument
+                ? gists.length > 0 && (
+                    <span className="font-body text-xs text-lyp-white/40">
+                      {t("fullTermsNote")}
+                    </span>
+                  )
+                : hiddenClauses > 0 && (
+                    <span className="font-body text-xs text-lyp-white/40">
+                      {t("termsSummaryMore", { count: hiddenClauses })}
+                    </span>
+                  )}
             </div>
           </Reveal>
 
@@ -631,7 +700,7 @@ export default function SignaturePage() {
             <div className="overflow-y-auto px-6 py-5">
               {clauses.length === 0 ? (
                 <p className="font-body text-sm text-lyp-white/50">
-                  {t("termsEmpty")}
+                  {summarisesDocument ? t("fullTermsOnly") : t("termsEmpty")}
                 </p>
               ) : (
                 <ol className="space-y-3">
@@ -651,16 +720,15 @@ export default function SignaturePage() {
             </div>
 
             <div className="flex items-center justify-between gap-4 border-t border-lyp-white/10 px-6 py-4">
-              {clauses.length > 0 ? (
-                <a
-                  href={`/api/terms/${proposal.token}`}
-                  className="inline-flex items-center gap-2 font-body text-xs text-lyp-white/70 underline underline-offset-2 transition-colors duration-300 ease-brand hover:text-lyp-cherry motion-reduce:transition-none"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  {t("downloadTermsButton")}
-                </a>
-              ) : (
+              {termsKind === "none" ? (
                 <span />
+              ) : (
+                <FullTermsLink
+                  token={proposal.token}
+                  kind={termsKind}
+                  t={t}
+                  className="inline-flex items-center gap-2 font-body text-xs text-lyp-white/70 underline underline-offset-2 transition-colors duration-300 ease-brand hover:text-lyp-cherry motion-reduce:transition-none"
+                />
               )}
               <button
                 type="button"

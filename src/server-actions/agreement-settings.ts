@@ -10,6 +10,14 @@ export type AgreementSettings = {
   countersignatureImage: string | null;
   countersignatureName: string;
   countersignatureTitle: string;
+  /**
+   * The full T&Cs, where the clause list above is only the on-screen summary:
+   * a link the agency hosts, a document they uploaded, or neither. Which one
+   * the client is given is decided in `src/lib/terms.ts`.
+   */
+  termsUrl: string;
+  termsDocumentUrl: string | null;
+  termsDocumentName: string | null;
   /** Workspace-wide portal wording (the `global` copy kind). */
   portalCopy: CopyOverrides;
 };
@@ -22,6 +30,9 @@ const FALLBACK: AgreementSettings = {
   countersignatureImage: null,
   countersignatureName: "",
   countersignatureTitle: "",
+  termsUrl: "",
+  termsDocumentUrl: null,
+  termsDocumentName: null,
   portalCopy: {},
 };
 
@@ -35,7 +46,7 @@ export async function getAgreementSettings(): Promise<AgreementSettings> {
     const { data, error } = await supabase
       .from("agreement_settings")
       .select(
-        "terms_and_conditions, post_signature_text, countersignature_image, countersignature_name, countersignature_title, portal_copy",
+        "terms_and_conditions, post_signature_text, countersignature_image, countersignature_name, countersignature_title, terms_url, terms_document_url, terms_document_name, portal_copy",
       )
       .eq("id", 1)
       .maybeSingle();
@@ -49,6 +60,9 @@ export async function getAgreementSettings(): Promise<AgreementSettings> {
       countersignatureImage: data.countersignature_image ?? null,
       countersignatureName: data.countersignature_name ?? "",
       countersignatureTitle: data.countersignature_title ?? "",
+      termsUrl: data.terms_url ?? "",
+      termsDocumentUrl: data.terms_document_url ?? null,
+      termsDocumentName: data.terms_document_name ?? null,
       portalCopy: (data.portal_copy as CopyOverrides | null) ?? {},
     };
   } catch {
@@ -62,6 +76,9 @@ export async function updateAgreementSettings(patch: {
   countersignature_image?: string | null;
   countersignature_name?: string;
   countersignature_title?: string;
+  terms_url?: string | null;
+  terms_document_url?: string | null;
+  terms_document_name?: string | null;
   portal_copy?: CopyOverrides;
 }) {
   try {

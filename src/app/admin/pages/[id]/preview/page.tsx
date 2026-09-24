@@ -7,6 +7,7 @@ import {
   getAgreementSettings,
   getTermsClauses,
 } from "@/server-actions/agreement-settings";
+import { resolveTermsTarget } from "@/lib/terms";
 
 export const dynamic = "force-dynamic";
 
@@ -162,6 +163,13 @@ export default async function PagePreviewRoute({
       agreement={{
         termsClauses,
         postSignatureText: agreementSettings.postSignatureText,
+        // So the preview shows the same full-terms wording the client will get.
+        termsKind: resolveTermsTarget({
+          termsDocumentUrl: agreementSettings.termsDocumentUrl,
+          termsDocumentName: agreementSettings.termsDocumentName,
+          termsUrl: agreementSettings.termsUrl,
+          clauseCount: termsClauses.length,
+        }).kind,
         portalCopy: agreementSettings.portalCopy,
       }}
     />

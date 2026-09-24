@@ -4,6 +4,8 @@ import { ProposalProvider } from "@/components/portal/ProposalContext";
 import FlowProgress from "@/components/portal/FlowProgress";
 import type { ProposalData } from "@/components/portal/ProposalContext";
 import { getIntakeQuestions } from "@/server-actions/intake";
+import { getIntakePageTitles } from "@/server-actions/intake-questions";
+import { resolveTermsTarget } from "@/lib/terms";
 import { getServices } from "@/server-actions/services";
 import { getProposalLineItems } from "@/server-actions/proposals";
 import PortalBackground from "@/components/portal/PortalBackground";
@@ -167,6 +169,7 @@ export default async function IntakeRoutePage({ params }: Props) {
 
   // 4. Fetch intake questions with conditions
   const { data: intakeQuestions } = await getIntakeQuestions();
+  const { data: intakePageTitles } = await getIntakePageTitles();
   // 5. Fetch providers
   let providersQuery = supabase
     .from("providers")
@@ -212,6 +215,18 @@ export default async function IntakeRoutePage({ params }: Props) {
     intakeResponses[r.question_id] = r.value;
   }
 
+  // 7. Is there a signed agreement to hand back at the end? Resolved the same
+  // way `/api/contract/by-token` resolves it — latest contract document for
+  // this proposal — so the finished screen only offers a link that works.
+  const { data: contractDoc } = await supabase
+    .from("documents")
+    .select("file_url")
+    .eq("proposal_id", proposal.id)
+    .eq("type", "contract")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
   // ponytail: ProposalProvider used here to give IntakePage access to selections for condition eval.
   // If intake grows, extract a lighter context.
   return (
@@ -231,6 +246,18 @@ export default async function IntakeRoutePage({ params }: Props) {
           termsClauses: [],
           postSignatureText: agreementSettings.postSignatureText,
           portalCopy: agreementSettings.portalCopy,
+          // The end-of-journey screen offers the full terms, so it needs the
+          // same answer the signing page got: a file to save, or a page to
+          // open. `termsClauses` is empty here on purpose — this screen never
+          // lists them — so the clause count comes from the settings.
+          termsKind: resolveTermsTarget({
+            termsDocumentUrl: agreementSettings.termsDocumentUrl,
+            termsDocumentName: agreementSettings.termsDocumentName,
+            termsUrl: agreementSettings.termsUrl,
+            clauseCount: agreementSettings.termsAndConditions
+              .split("\n")
+              .filter((line: string) => line.trim()).length,
+          }).kind,
         }}
       >
         {/* The onboarding form leaves the deck behind, so the tracker comes
@@ -246,6 +273,8 @@ export default async function IntakeRoutePage({ params }: Props) {
               questions={intakeQuestions}
               providers={intakeProviders}
               existingResponses={intakeResponses}
+              pageTitles={intakePageTitles}
+              hasContract={!!contractDoc?.file_url}
             />
           </div>
         </div>

@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { AlertCircle, Plus } from "lucide-react";
-import { getQuestions } from "@/server-actions/intake-questions";
+import {
+  getQuestions,
+  getIntakePageTitles,
+} from "@/server-actions/intake-questions";
 import IntakeQuestionsList from "@/components/admin/IntakeQuestionsList";
 
 const EASE = "ease-brand";
 
 export default async function IntakeQuestionsPage() {
   const { data: questions, error } = await getQuestions();
+  const { data: pageTitles } = await getIntakePageTitles();
 
   return (
     <div className="mx-auto max-w-[92rem]">
@@ -56,7 +60,10 @@ export default async function IntakeQuestionsPage() {
       )}
 
       <div className="animate-rise" style={{ animationDelay: "140ms" }}>
-        <IntakeQuestionsList questions={questions ?? []} />
+        <IntakeQuestionsList
+          questions={questions ?? []}
+          pageTitles={pageTitles}
+        />
       </div>
     </div>
   );
