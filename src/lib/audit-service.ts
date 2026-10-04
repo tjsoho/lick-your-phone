@@ -14,10 +14,17 @@ export type AuditEvent =
   | "PAYMENT_FAILED"
   | "INTAKE_COMPLETED"
   | "PAYMENT_SUCCEEDED"
-  | "PAYMENT_CAPTURED";
+  | "PAYMENT_CAPTURED"
+  | "PROPOSAL_VIEWED";
 
 interface AuditPayloadMap {
   PROPOSAL_SENT: Client;
+  /**
+   * The client opened their proposal for the first time. Timeline only — this
+   * one is never dispatched to the agency's automations, since an open is not
+   * something anybody needs an email about.
+   */
+  PROPOSAL_VIEWED: { firstViewedAt: string };
   PROPOSAL_SIGNED: {
     client: Client;
     totalAmount: number;

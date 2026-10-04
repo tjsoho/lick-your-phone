@@ -17,13 +17,27 @@ const MAX_TIMEOUT = 2 ** 31 - 1;
 export function useDiscountTimerLive(
   active: boolean,
   expiresAt: string | null,
+  /**
+   * When the window opens, where the agency scheduled one in advance. Before
+   * it, the client sees full prices and no countdown — the discount exists but
+   * has not started.
+   */
+  startsAt?: string | null,
 ) {
+  const windowOpen = (at: number) => {
+    if (!active || !expiresAt) return false;
+    const end = new Date(expiresAt).getTime();
+    if (Number.isNaN(end) || at >= end) return false;
+    if (startsAt) {
+      const start = new Date(startsAt).getTime();
+      if (!Number.isNaN(start) && at < start) return false;
+    }
+    return true;
+  };
+
   // Worked out on the first render too, so prices don't flash from full to
   // discounted as the page hydrates.
-  const [live, setLive] = useState(
-    () =>
-      active && !!expiresAt && new Date(expiresAt).getTime() > Date.now(),
-  );
+  const [live, setLive] = useState(() => windowOpen(Date.now()));
 
   useEffect(() => {
     if (!active || !expiresAt) {
@@ -32,17 +46,24 @@ export function useDiscountTimerLive(
     }
 
     const end = new Date(expiresAt).getTime();
+    const start = startsAt ? new Date(startsAt).getTime() : null;
     let id: ReturnType<typeof setTimeout> | undefined;
 
     const check = () => {
-      const left = end - Date.now();
-      setLive(left > 0);
-      if (left > 0) id = setTimeout(check, Math.min(left, MAX_TIMEOUT));
+      const now = Date.now();
+      const beforeStart =
+        start !== null && !Number.isNaN(start) && now < start;
+      const left = end - now;
+      setLive(!beforeStart && left > 0);
+
+      // Wake at whichever edge comes next: the opening, or the deadline.
+      const next = beforeStart ? start - now : left;
+      if (next > 0) id = setTimeout(check, Math.min(next, MAX_TIMEOUT));
     };
 
     check();
     return () => clearTimeout(id);
-  }, [active, expiresAt]);
+  }, [active, expiresAt, startsAt]);
 
   return live;
 }

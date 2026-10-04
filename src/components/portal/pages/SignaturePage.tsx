@@ -4,6 +4,7 @@ import { useRef, useState, useCallback, useEffect } from "react";
 import { useReducedMotion } from "framer-motion";
 import { Download, ExternalLink, X } from "lucide-react";
 import { useCopy, useProposal } from "../ProposalContext";
+import { useSignerEmail } from "../useSignerEmail";
 import { signProposal } from "@/server-actions/signature";
 import SelectionSummaryCard from "../SelectionSummaryCard";
 import Reveal, { revealDelay } from "../Reveal";
@@ -18,34 +19,33 @@ type SignState = "idle" | "signing" | "signed" | "error";
  */
 const PAYMENT_HANDOFF_MS = 2000;
 
+/* -------------------------------------------------------------------------
+   THE TERMS, ONCE
+
+   This slide used to say the terms three times: a "The main points" panel
+   summarising the first sentence of each clause, a pair of buttons under it
+   (one opening the clause list, one fetching the real document), and then the
+   consent sentence with its own link to the same clause list.
+
+   The agency asked for one of them: "I wouldn't have the terms and conditions
+   twice… we can remove this thing then and just keep this here, like it's a
+   clickable thing. Anyone will understand that they need to read it."
+
+   What is left is the consent sentence. Its link is the single route to the
+   full terms — the clause window when there are clauses to show, and the
+   agency's own document or page directly when there are not, so nobody is
+   ever sent to a window that only tells them to open something else. The
+   window still carries the download/open control in its footer, so the real
+   document is never more than one step from the sentence.
+   ------------------------------------------------------------------------- */
+
 /**
- * How many clauses the summary above the pad shows before it defers to the
- * full terms. Three, because the point is a glance, and because the slide has
- * a signature pad and a button to fit under it without scrolling.
+ * How the terms are written into the consent sentence. One class string for
+ * all three destinations, so the phrase looks identical whether it opens the
+ * clause window, the agency's page, or their file.
  */
-const TERMS_SUMMARY_MAX = 3;
-
-/** Longest a summarised clause runs before it is cut at a word. */
-const GIST_CHARS = 84;
-
-/**
- * The gist of a clause: its first sentence, cut short if even that runs long.
- *
- * Derived rather than written out a second time, because the clauses are the
- * agency's to edit in Settings — a hand-written summary here would drift the
- * first time they changed one, and could soften a term the client is actually
- * bound by. The full clause is always one tap away.
- */
-function clauseGist(clause: string): string {
-  const stop = clause.search(/[.!?](\s|$)/);
-  const sentence = (stop === -1 ? clause : clause.slice(0, stop + 1)).trim();
-  if (sentence.length <= GIST_CHARS) return sentence;
-
-  // Cut at the last whole word, so the shortened line never ends mid-syllable.
-  const cut = sentence.slice(0, GIST_CHARS);
-  const lastSpace = cut.lastIndexOf(" ");
-  return `${(lastSpace > GIST_CHARS / 2 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
-}
+const CONSENT_LINK =
+  "font-semibold text-lyp-white underline decoration-lyp-white/60 underline-offset-[3px] transition-colors duration-300 ease-brand hover:text-lyp-cherry hover:decoration-lyp-cherry/70 motion-reduce:transition-none";
 
 /** The wording function from `useCopy`. */
 type Copy = (key: string, vars?: Record<string, string | number>) => string;
@@ -112,12 +112,17 @@ export default function SignaturePage() {
   const [termsOpen, setTermsOpen] = useState(false);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasDrawn, setHasDrawn] = useState(false);
-  const [email, setEmail] = useState("");
+  /* Opens with the address the proposal was sent to, stays the client's to
+     change, and — unlike the plain `useState` it replaces — survives the
+     carousel pulling this slide down and building it again on every page
+     turn. See useSignerEmail for why that was losing people's typing. */
+  const { email, setEmail, forget: forgetEmail } = useSignerEmail(
+    proposal.token,
+    proposal.clientEmail ?? "",
+  );
   const [emailError, setEmailError] = useState("");
   const [signState, setSignState] = useState<SignState>("idle");
   const [errorMsg, setErrorMsg] = useState("");
-  const [documentUrl, setDocumentUrl] = useState("");
-  const [handoffArmed, setHandoffArmed] = useState(true);
 
   // Already signed?
   const alreadySigned = proposal.status === "signed";
@@ -259,14 +264,24 @@ export default function SignaturePage() {
         return;
       }
 
-      setDocumentUrl(result.documentUrl ?? "");
       setSignState("signed");
+      // Signed: the address is on the record now, so the copy held for the
+      // visit has nothing left to rescue.
+      forgetEmail();
       updateProposal({ status: "signed", signedAt: new Date().toISOString() });
     } catch {
       setSignState("error");
       setErrorMsg("An unexpected error occurred. Please try again.");
     }
-  }, [email, hasDrawn, proposal.id, selections, validateEmail, updateProposal]);
+  }, [
+    email,
+    hasDrawn,
+    proposal.id,
+    selections,
+    validateEmail,
+    updateProposal,
+    forgetEmail,
+  ]);
 
   /* ---------------------------------------------------------------- */
   /*  Straight into payment                                           */
@@ -289,7 +304,7 @@ export default function SignaturePage() {
     confirming && paymentPageIndex !== -1 && !paymentCaptured;
 
   useEffect(() => {
-    if (!handsOffToPayment || !handoffArmed) return;
+    if (!handsOffToPayment) return;
 
     // The hold is decoration. Anyone who has asked for less motion gets the
     // next screen immediately rather than a pause they didn't ask for.
@@ -303,25 +318,23 @@ export default function SignaturePage() {
       PAYMENT_HANDOFF_MS,
     );
     return () => clearTimeout(id);
-  }, [
-    handsOffToPayment,
-    handoffArmed,
-    reduceMotion,
-    paymentPageIndex,
-    setCurrentPage,
-  ]);
+  }, [handsOffToPayment, reduceMotion, paymentPageIndex, setCurrentPage]);
 
   /* ---------------------------------------------------------------- */
   /*  Confirmation, on its way to payment                             */
   /* ---------------------------------------------------------------- */
 
-  if (confirming) {
-    // Fresh signatures know their own document; a client coming back does
-    // not, so the link falls back to the address that resolves the latest
-    // contract from their portal token.
-    const contractHref =
-      documentUrl || `/api/contract/by-token/${proposal.token}`;
+  /* THE CONFIRMATION.
 
+     There used to be a "Download Contract PDF" button here, and it was in the
+     way: a client who has just signed is on their way to pay, and a file is
+     not what they want in that second. "Do you need the contract there to
+     download, or maybe at the end? — At the end is fine." The end-of-journey
+     screen already offers the same `/api/contract/by-token/<token>`, which
+     resolves the latest signed contract, so nothing is lost by dropping it
+     from here — and with it goes the hand-off being disarmed by a click,
+     which only existed to stop the screen moving while someone saved a file. */
+  if (confirming) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6 text-center">
         <Reveal
@@ -355,36 +368,20 @@ export default function SignaturePage() {
         >
           {agreement.postSignatureText}
         </p>
-        <Reveal
-          index={3}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
-        >
-          <a
-            href={contractHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            // Reaching for the contract cancels the hand-off: someone saving
-            // their copy should not have the screen pulled out from under
-            // them mid-click. The button below is then their way on.
-            onClick={() => setHandoffArmed(false)}
-            className="inline-flex items-center justify-center gap-2 rounded-lg bg-lyp-white/10 border border-lyp-white/20 px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-white/20"
-          >
-            <Download className="h-4 w-4" />
-            {t("downloadButton")}
-          </a>
-          {paymentPageIndex !== -1 && !paymentCaptured && (
+        {paymentPageIndex !== -1 && !paymentCaptured && (
+          <Reveal index={3} className="flex justify-center">
             <button
               onClick={() => setCurrentPage(paymentPageIndex)}
-              className="inline-flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon justify-center"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-lyp-cherry px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon"
             >
               {t("addPaymentButton")}
             </button>
-          )}
-        </Reveal>
+          </Reveal>
+        )}
 
         {/* Said out loud, so the page moving on its own reads as the flow
             working rather than something the client didn't do. */}
-        {handsOffToPayment && handoffArmed && !reduceMotion && (
+        {handsOffToPayment && !reduceMotion && (
           <Reveal
             as="p"
             index={4}
@@ -423,18 +420,19 @@ export default function SignaturePage() {
   }
 
   const clauses = agreement.termsClauses;
-  const gists = clauses.slice(0, TERMS_SUMMARY_MAX).map(clauseGist);
-  const hiddenClauses = Math.max(clauses.length - TERMS_SUMMARY_MAX, 0);
 
   /* Which full terms this proposal offers. The dashboard's page previews send
      no kind, so they fall back to what the clauses alone can support. */
   const termsKind: TermsKind =
     agreement.termsKind ?? (clauses.length > 0 ? "generated" : "none");
 
-  /* When the agency keeps the real document elsewhere, "+3 more in the full
-     terms" would undercount it — the clause list is a summary of something
-     longer, and is said to be. */
-  const summarisesDocument = termsKind === "document" || termsKind === "link";
+  /* Where the consent sentence's link goes. Clauses are read in the window,
+     which also carries the control for the real document. With no clauses
+     written there is nothing to put in a window, so the link is the document
+     itself — and with neither, the phrase is left as plain words rather than
+     a link that opens nothing. */
+  const termsOpenInWindow = clauses.length > 0;
+  const termsIsLink = !termsOpenInWindow && termsKind !== "none";
 
   return (
     /* THE SLIDE.
@@ -482,7 +480,9 @@ export default function SignaturePage() {
             </Reveal>
           </div>
 
-          {/* Email */}
+          {/* Email. It arrives filled in with the address this proposal was
+              sent to and stays the client's to change — a different person
+              may be the one signing. */}
           <Reveal index={3}>
             <label
               htmlFor="signer-email"
@@ -492,7 +492,10 @@ export default function SignaturePage() {
             </label>
             <input
               id="signer-email"
+              name="signer-email"
               type="email"
+              autoComplete="email"
+              inputMode="email"
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -510,74 +513,10 @@ export default function SignaturePage() {
             )}
           </Reveal>
 
-          {/* The terms in brief, above the pad: the headline of each clause,
-              capped, with the full wording and a copy to keep beside it. */}
-          <Reveal
-            index={4}
-            className="max-w-md rounded-xl border border-lyp-white/10 bg-lyp-white/5 px-4 py-3"
-          >
-            <p className="font-heading text-[13px]/[18px] uppercase tracking-wider text-lyp-cherry">
-              {t("termsSummaryTitle")}
-            </p>
-
-            {gists.length === 0 ? (
-              /* No clauses written. There may still be a document to open, in
-                 which case saying "no terms" beside a button that opens them
-                 would be plainly wrong. */
-              <p className="mt-1.5 font-body text-[13px]/[18px] text-lyp-white/50">
-                {summarisesDocument ? t("fullTermsOnly") : t("termsEmpty")}
-              </p>
-            ) : (
-              <ul className="mt-1.5 space-y-1">
-                {gists.map((gist, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-lyp-cherry" />
-                    {/* Clamped as well as shortened: a clause with no full
-                        stop in it can't push the pad off the slide. */}
-                    <span className="line-clamp-2 font-body text-[13px]/[18px] text-lyp-white/80">
-                      {gist}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-              <button
-                type="button"
-                onClick={() => setTermsOpen(true)}
-                className="font-body text-xs text-lyp-white/80 underline underline-offset-2 transition-colors duration-300 ease-brand hover:text-lyp-cherry motion-reduce:transition-none"
-              >
-                {t("viewAllTermsButton")}
-              </button>
-              <FullTermsLink
-                token={proposal.token}
-                kind={termsKind}
-                t={t}
-                className="inline-flex items-center gap-1.5 font-body text-xs text-lyp-white/80 underline underline-offset-2 transition-colors duration-300 ease-brand hover:text-lyp-cherry motion-reduce:transition-none"
-              />
-              {/* The tail of the row says what is NOT on screen: a count of
-                  the remaining clauses when they are the whole of it, or that
-                  the whole of it is elsewhere. Kept inline rather than given
-                  its own line — the slide has no spare row at 1280x720. */}
-              {summarisesDocument
-                ? gists.length > 0 && (
-                    <span className="font-body text-xs text-lyp-white/40">
-                      {t("fullTermsNote")}
-                    </span>
-                  )
-                : hiddenClauses > 0 && (
-                    <span className="font-body text-xs text-lyp-white/40">
-                      {t("termsSummaryMore", { count: hiddenClauses })}
-                    </span>
-                  )}
-            </div>
-          </Reveal>
-
           {/* Signature canvas. FADE ONLY, deliberately: `getPos` reads the
               canvas's bounding rect to place each stroke, and a transform
               would offset that rect for anyone who starts drawing mid-entry. */}
-          <Reveal variant="fade" index={5}>
+          <Reveal variant="fade" index={4}>
             <p className="font-body text-sm text-lyp-white/70 mb-1.5">
               {t("signatureLabel")}
             </p>
@@ -608,21 +547,60 @@ export default function SignaturePage() {
             </button>
           </Reveal>
 
-          {/* Agreement text */}
+          {/* THE CONSENT SENTENCE, which is now the whole of the terms on this
+              slide. It was set at `text-xs` on 40% white, under a panel that
+              repeated it — at that weight, alone, it would be furniture. One
+              step up in size and brightness, and a link that is plainly a
+              link, which is all the agency asked for: "just keep this here,
+              like it's a clickable thing." */}
           <p
-            className="portal-reveal font-body text-xs text-lyp-white/40 max-w-md leading-snug"
-            style={{ animationDelay: `${revealDelay(6)}ms` }}
+            className="portal-reveal max-w-md font-body text-[13px] leading-snug text-lyp-white/60"
+            style={{ animationDelay: `${revealDelay(5)}ms` }}
           >
             {t("agreementText")}{" "}
-            <button
-              type="button"
-              onClick={() => setTermsOpen(true)}
-              className="font-semibold text-lyp-white/80 underline underline-offset-2 transition-colors hover:text-lyp-cherry"
-            >
-              {t("termsLinkText")}
-            </button>
+            {termsOpenInWindow ? (
+              <button
+                type="button"
+                onClick={() => setTermsOpen(true)}
+                className={CONSENT_LINK}
+              >
+                {t("termsLinkText")}
+              </button>
+            ) : termsIsLink ? (
+              /* Nothing to put in a window, so the phrase IS the document.
+                 Same address either way — which of the three it resolves to
+                 is the route's business. */
+              <a
+                href={`/api/terms/${proposal.token}`}
+                {...(termsKind === "link"
+                  ? { target: "_blank", rel: "noopener noreferrer" }
+                  : {})}
+                className={CONSENT_LINK}
+              >
+                {t("termsLinkText")}
+              </a>
+            ) : (
+              /* No clauses and no document. The sentence still reads, but the
+                 phrase is words rather than a link that opens nothing. */
+              <span className="font-semibold text-lyp-white/75">
+                {t("termsLinkText")}
+              </span>
+            )}
             {t("agreementTextAfter")}
           </p>
+
+          {/* Nothing published at all — no clauses, no document, no link.
+              The panel that used to sit above the pad said so out loud, and
+              that is worth keeping: it is how the agency notices Settings →
+              Agreement is still empty, before a client does. */}
+          {!termsOpenInWindow && !termsIsLink && (
+            <p
+              className="portal-reveal max-w-md font-body text-xs italic text-lyp-white/40"
+              style={{ animationDelay: `${revealDelay(5)}ms` }}
+            >
+              {t("termsEmpty")}
+            </p>
+          )}
 
           {/* Error */}
           {signState === "error" && errorMsg && (
@@ -632,7 +610,7 @@ export default function SignaturePage() {
           )}
 
           {/* Action buttons */}
-          <Reveal index={7} className="flex gap-3 max-w-md">
+          <Reveal index={6} className="flex gap-3 max-w-md">
             <button
               type="button"
               onClick={handleSign}
@@ -697,26 +675,23 @@ export default function SignaturePage() {
               </button>
             </div>
 
+            {/* No empty state: the sentence only offers this window when
+                there are clauses to put in it, and sends the client straight
+                to the agency's own document when there are not. */}
             <div className="overflow-y-auto px-6 py-5">
-              {clauses.length === 0 ? (
-                <p className="font-body text-sm text-lyp-white/50">
-                  {summarisesDocument ? t("fullTermsOnly") : t("termsEmpty")}
-                </p>
-              ) : (
-                <ol className="space-y-3">
-                  {clauses.map((clause, i) => (
-                    <li
-                      key={i}
-                      className="flex gap-3 font-body text-[13px] leading-relaxed text-lyp-white/70"
-                    >
-                      <span className="shrink-0 font-heading text-lyp-cherry">
-                        {i + 1}.
-                      </span>
-                      <span>{clause}</span>
-                    </li>
-                  ))}
-                </ol>
-              )}
+              <ol className="space-y-3">
+                {clauses.map((clause, i) => (
+                  <li
+                    key={i}
+                    className="flex gap-3 font-body text-[13px] leading-relaxed text-lyp-white/70"
+                  >
+                    <span className="shrink-0 font-heading text-lyp-cherry">
+                      {i + 1}.
+                    </span>
+                    <span>{clause}</span>
+                  </li>
+                ))}
+              </ol>
             </div>
 
             <div className="flex items-center justify-between gap-4 border-t border-lyp-white/10 px-6 py-4">

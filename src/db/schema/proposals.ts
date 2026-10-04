@@ -27,6 +27,19 @@ export const proposals = pgTable('proposals', {
   signerUserAgent: text('signer_user_agent'),
   documentHash: text('document_hash'),
   totalSnapshotCents: integer('total_snapshot_cents'),
+  /**
+   * The proposal this one replaces, and where it sits in that chain. The list
+   * shows only the newest of a chain, with "v2" beside it, so a re-issued
+   * proposal doesn't double up in the pipeline.
+   */
+  supersedesId: uuid('supersedes_id'),
+  version: integer('version').default(1).notNull(),
+  /** When the discount should switch itself on, for a timer set in advance. */
+  discountStartsAt: timestamp('discount_starts_at', { withTimezone: true }),
+  /** When the client first and last opened the portal, and how far they read. */
+  firstViewedAt: timestamp('first_viewed_at', { withTimezone: true }),
+  lastViewedAt: timestamp('last_viewed_at', { withTimezone: true }),
+  furthestPage: integer('furthest_page'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })

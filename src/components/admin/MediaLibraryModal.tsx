@@ -318,7 +318,13 @@ export default function MediaLibraryModal({
                         : "border-[#EFE6E6] hover:border-lyp-cherry/25"
                     }`}
                   >
-                    <div className="aspect-square w-full overflow-hidden">
+                    {/* A mid tone behind the tile, not on the image: half the
+                        library is light artwork on transparency — white logos,
+                        a signature in white ink — and on a white panel those
+                        are blank squares you cannot tell apart. The ground
+                        belongs to the tile; the image keeps object-contain and
+                        nothing else. */}
+                    <div className="aspect-square w-full overflow-hidden bg-[#6B5B5B]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={item.url}

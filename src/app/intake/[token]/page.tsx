@@ -39,6 +39,7 @@ export default async function IntakeRoutePage({ params }: Props) {
       token,
       status,
       discount_expires_at,
+      discount_starts_at,
       discount_timer_active,
       signed_at,
       signer_email,
@@ -115,6 +116,9 @@ export default async function IntakeRoutePage({ params }: Props) {
     token: proposal.token,
     status: proposal.status,
     discountExpiresAt: proposal.discount_expires_at,
+    discountStartsAt:
+      (proposal as { discount_starts_at?: string | null }).discount_starts_at ??
+      null,
     discountTimerActive: proposal.discount_timer_active ?? false,
     signedAt: proposal.signed_at ?? null,
     clientName: clientObj?.name ?? "Client",

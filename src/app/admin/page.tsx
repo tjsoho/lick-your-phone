@@ -26,14 +26,30 @@ const statusStyles: Record<string, string> = {
 export default async function AdminDashboard() {
   const supabase = await createClient();
 
+  // "Maybe also like total clients, or active proposals, or new proposals" —
+  // the three the agency named on the call, with the week's new ones counted
+  // from when they were created.
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
   // Fetch counts in parallel
-  const [clientsRes, proposalsRes, servicesRes, statesRes, recentProposalsRes] =
+  const [
+    clientsRes,
+    proposalsRes,
+    newProposalsRes,
+    servicesRes,
+    statesRes,
+    recentProposalsRes,
+  ] =
     await Promise.all([
       supabase.from("clients").select("*", { count: "exact", head: true }),
       supabase
         .from("proposals")
         .select("*", { count: "exact", head: true })
         .in("status", ["draft", "sent"]),
+      supabase
+        .from("proposals")
+        .select("*", { count: "exact", head: true })
+        .gte("created_at", weekAgo),
       supabase.from("services").select("*", { count: "exact", head: true }),
       supabase.from("states").select("*", { count: "exact", head: true }),
       supabase
@@ -53,6 +69,12 @@ export default async function AdminDashboard() {
     {
       label: "Active Proposals",
       value: proposalsRes.count ?? 0,
+      icon: FileText,
+      href: "/admin/proposals",
+    },
+    {
+      label: "New This Week",
+      value: newProposalsRes.count ?? 0,
       icon: FileText,
       href: "/admin/proposals",
     },

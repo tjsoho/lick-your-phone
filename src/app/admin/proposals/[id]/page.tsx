@@ -17,7 +17,7 @@ import {
   Clock,
   AlertCircle,
   CreditCard,
-  Copy,
+  FilePlus2,
   Send,
   FileSignature,
   ClipboardCheck,
@@ -28,7 +28,9 @@ import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 import ProposalDeckOverview from "@/components/admin/ProposalDeckOverview";
 import ProposalDiscountTimer from "@/components/admin/ProposalDiscountTimer";
 import SendProposalButton from "@/components/admin/SendProposalButton";
+import ProposalPortalLink from "@/components/admin/ProposalPortalLink";
 import { getProposalPresentation } from "@/server-actions/proposal-presentation";
+import { getProposalReview } from "@/server-actions/proposal-review";
 
 interface InternalNote {
   id: string;
@@ -48,6 +50,14 @@ interface AuditMetadata {
 }
 
 const EASE = "ease-brand";
+
+/**
+ * "Superseded" sent the agency to a dictionary, so the pill says what actually
+ * happened. The database keeps the enum value; only the label changes.
+ */
+const statusLabels: Record<string, string> = {
+  superseded: "replaced",
+};
 
 /** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const statusStyles: Record<string, string> = {
@@ -138,6 +148,10 @@ export default async function ProposalDetailPage({
   const notes = (proposal.internal_notes ?? []) as unknown as InternalNote[];
 
   const { data: presentationPages } = await getProposalPresentation(id);
+  const { data: review } = await getProposalReview(id);
+
+  // Versions started at 1 and only legacy rows are missing a number.
+  const version = Number(proposal.version) || 1;
 
   // Notes are captured after signing, so the review section stays shut until then.
   const isOnboardingComplete = proposal.status === "intake_complete";
@@ -186,7 +200,8 @@ export default async function ProposalDetailPage({
                     "bg-[#F2EDED] text-[#8A7A7A]",
                 )}
               >
-                {formatStatus(proposal.status)}
+                {statusLabels[proposal.status] ??
+                  formatStatus(proposal.status)}
               </span>
             </div>
           </div>
@@ -211,16 +226,20 @@ export default async function ProposalDetailPage({
             {/* No "Edit" button: this page *is* the editing surface. Everything
                 a proposal can change — which pages show, the discounts, the
                 timer — is below, in one scroll. */}
+            {/* Was "Supersede", which the agency had to look up — and it
+                carried a copy icon, which read as "copy the client link".
+                Both are now plain. */}
             {proposal.status !== "superseded" && (
               <Link
                 href={`/admin/proposals/${id}/edit?mode=supersede`}
+                title="Close this proposal off and start the next version of it"
                 className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-5 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
               >
-                Supersede
+                Create new version
                 <span
                   className={`flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
                 >
-                  <Copy strokeWidth={1.5} className="h-3.5 w-3.5" />
+                  <FilePlus2 strokeWidth={1.5} className="h-3.5 w-3.5" />
                 </span>
               </Link>
             )}
@@ -249,6 +268,13 @@ export default async function ProposalDetailPage({
           numeric
           value={formatDate(proposal.created_at)}
         />
+        {version > 1 && (
+          <InfoCard
+            label="Version"
+            numeric
+            value={`v${version} — replaces v${version - 1}`}
+          />
+        )}
         {proposal.signed_at && (
           <InfoCard
             label="Signed"
@@ -267,22 +293,121 @@ export default async function ProposalDetailPage({
           proposalId={id}
           initialPages={presentationPages ?? []}
           timerActive={proposal.discount_timer_active ?? false}
+          timerStartsAt={proposal.discount_starts_at}
           timerExpiresAt={proposal.discount_expires_at}
           pricesLocked={isSigned || proposal.status === "superseded"}
         />
       </Section>
 
-      {/* ─────────────── Activate Timer & Send ─────────────── */}
-      {/* The last step of the flow: the deck is settled above, so the timer and
-          the send button are the only things left to touch. */}
-      <Section title="Activate Timer & Send" delay="200ms">
-        <ProposalDiscountTimer
-          proposalId={id}
-          initialActive={proposal.discount_timer_active ?? false}
-          initialExpiresAt={proposal.discount_expires_at}
-          locked={isSigned || proposal.status === "superseded"}
-          variant="step"
-        />
+      {/* ─────────────── Ready to Send ─────────────── */}
+      {/* A deliberate last stage rather than a loose switch and a button: the
+          deck is settled above, so this says what the client gets, what it
+          comes to, offers their link to open or paste, and sends it. */}
+      <Section title="Ready to Send" delay="200ms">
+        <p className="font-body text-[13px] leading-relaxed text-[#8A7A7A]">
+          {canSend
+            ? "Everything above is settled. This is the last look before the client sees it — check what they get and what it comes to, open their view if you want to read it as they will, set the discount window, then send."
+            : "Nothing left to send from here — this is a record of what went out."}
+        </p>
+
+        {review && (
+          <>
+            <dl className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+              <ReviewTile
+                label="Pages they see"
+                value={String(review.shownPages)}
+                hint={
+                  review.hiddenPages > 0
+                    ? `${review.hiddenPages} hidden for this client`
+                    : "the standard deck, nothing hidden"
+                }
+              />
+              <ReviewTile
+                label="Services offered"
+                value={String(review.lines.length)}
+                hint={
+                  review.lines.length === 0
+                    ? "no priced services in this deck"
+                    : review.lines.some((line) => line.hasChoice)
+                      ? "some have tiers the client picks from"
+                      : "one price each"
+                }
+              />
+              <ReviewTile
+                label="One-off total"
+                value={
+                  review.oneOffCents > 0
+                    ? formatCents(review.oneOffCents)
+                    : "—"
+                }
+                hint="if they take everything"
+              />
+              <ReviewTile
+                label="Monthly total"
+                value={
+                  review.monthlyCents > 0
+                    ? `${formatCents(review.monthlyCents)}/mo`
+                    : "—"
+                }
+                hint="if they take everything"
+              />
+            </dl>
+
+            {/* Said once, plainly, rather than left to be inferred from the
+                timer below: these numbers are either the discounted ones or
+                they are not. */}
+            <p className="mt-3 font-body text-[12px] leading-relaxed text-[#8A7A7A]">
+              {review.discountLive
+                ? "These are the discounted prices — the offer is running now."
+                : review.startsAt &&
+                    new Date(review.startsAt).getTime() > Date.now()
+                  ? `These are full prices. The discount is scheduled and opens ${formatDateTime(review.startsAt)}.`
+                  : "These are full prices — no discount is reaching the client. Set the window below."}
+            </p>
+
+            {review.lines.length > 0 && (
+              <ul className="mt-4 divide-y divide-[#F7F1F1] rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] px-4">
+                {review.lines.map((line) => (
+                  <li
+                    key={line.serviceId}
+                    className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 py-2.5"
+                  >
+                    <span className="font-body text-[13px] text-lyp-black">
+                      {line.name}
+                      {line.discountPct != null && (
+                        <span className="ml-2 rounded-full bg-lyp-cherry/[0.08] px-2 py-0.5 font-body text-[9px] font-medium uppercase tracking-[0.16em] text-lyp-cherry">
+                          {Math.round(line.discountPct * 100)}% off
+                        </span>
+                      )}
+                    </span>
+                    <span className="font-body text-[13px] tabular-nums text-[#8A7A7A]">
+                      {line.hasChoice ? "from " : ""}
+                      {formatCents(line.fromCents)}
+                      {line.billing === "recurring_monthly" ? "/mo" : ""}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
+
+        <div className="mt-5 border-t border-[#F1E8E8] pt-5">
+          <ProposalDiscountTimer
+            proposalId={id}
+            initialActive={proposal.discount_timer_active ?? false}
+            initialStartsAt={proposal.discount_starts_at}
+            initialExpiresAt={proposal.discount_expires_at}
+            locked={isSigned || proposal.status === "superseded"}
+            variant="step"
+          />
+        </div>
+
+        {portalUrl && (
+          <div className="mt-5 border-t border-[#F1E8E8] pt-5">
+            <ProposalPortalLink url={portalUrl} />
+          </div>
+        )}
 
         <div className="mt-5 border-t border-[#F1E8E8] pt-5">
           {canSend ? (
@@ -293,8 +418,8 @@ export default async function ProposalDetailPage({
                 </p>
                 <p className="mt-0.5 font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
                   {isDraft
-                    ? "Emails the client their portal link and marks this proposal as sent. Everything above is live the moment they open it."
-                    : "The client already has this link. Sending again emails the same one — they always see the deck and timer as set above."}
+                    ? "Emails the client their link and marks this proposal as sent. Everything above is live the moment they open it."
+                    : "The client already has this link. Sending again emails the same one — they always see the deck and discount as set above."}
                 </p>
               </div>
               <SendProposalButton
@@ -306,7 +431,7 @@ export default async function ProposalDetailPage({
           ) : (
             <p className="font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
               {proposal.status === "superseded"
-                ? "This proposal has been replaced. Send the proposal that superseded it instead."
+                ? "This proposal has been replaced by a newer version. Send that one instead."
                 : "Signed — there is nothing left to send. Finish up in Post-Signature Review below."}
             </p>
           )}
@@ -485,6 +610,31 @@ function InfoCard({
       >
         {value ?? "—"}
       </dd>
+    </div>
+  );
+}
+
+/** A single number in the review stage, with the sentence that qualifies it. */
+function ReviewTile({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] px-4 py-3.5">
+      <dt className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
+        {label}
+      </dt>
+      <dd className="mt-1.5 font-heading text-[18px] font-bold tabular-nums tracking-[-0.02em] text-lyp-black">
+        {value}
+      </dd>
+      <p className="mt-1 font-body text-[11px] leading-relaxed text-[#A89898]">
+        {hint}
+      </p>
     </div>
   );
 }

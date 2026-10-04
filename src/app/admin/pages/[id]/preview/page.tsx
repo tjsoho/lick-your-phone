@@ -18,6 +18,7 @@ const SAMPLE_PROPOSAL: ProposalData = {
   status: "draft",
   discountExpiresAt: null,
   discountTimerActive: false,
+  discountStartsAt: null,
   signedAt: null,
   clientName: "Sample Venue",
   contactName: "Sample Contact",
@@ -46,7 +47,7 @@ async function loadProposalContext(
       supabase
         .from("proposals")
         .select(
-          `id, token, status, signed_at, discount_expires_at, discount_timer_active,
+          `id, token, status, signed_at, discount_expires_at, discount_starts_at, discount_timer_active,
            client:clients!client_id ( name, contact_name ),
            venue:venues!venue_id ( name )`,
         )
@@ -86,6 +87,7 @@ async function loadProposalContext(
     token: row.token,
     status: row.status,
     discountExpiresAt: row.discount_expires_at,
+    discountStartsAt: row.discount_starts_at ?? null,
     discountTimerActive: row.discount_timer_active ?? false,
     signedAt: row.signed_at ?? null,
     clientName: client?.name ?? "Client",

@@ -6,7 +6,10 @@ import toast from "react-hot-toast";
 import { Switch } from "@/components/ui/switch";
 import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 import type { SaveStatus } from "@/hooks/use-autosave";
-import { setDiscountTimer } from "@/server-actions/proposal-timer";
+import {
+  setDiscountTimer,
+  type DiscountTimerPatch,
+} from "@/server-actions/proposal-timer";
 import { formatRemaining } from "@/lib/countdown";
 
 const EASE = "ease-brand";
@@ -20,9 +23,28 @@ function toLocalInput(iso: string | null) {
     .slice(0, 16);
 }
 
+/** "" clears the field; an unparseable draft is ignored rather than saved. */
+function toIso(draft: string): string | null | undefined {
+  if (draft === "") return null;
+  const date = new Date(draft);
+  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+}
+
+function whenLabel(iso: string) {
+  return new Date(iso).toLocaleString("en-AU", {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
 type Props = {
   proposalId: string;
   initialActive: boolean;
+  /** When the discount switches itself on. Null means "as soon as it is on". */
+  initialStartsAt?: string | null;
   initialExpiresAt: string | null;
   /** Signed or replaced proposals have nothing left to count down to. */
   locked: boolean;
@@ -37,17 +59,21 @@ type Props = {
 export default function ProposalDiscountTimer({
   proposalId,
   initialActive,
+  initialStartsAt = null,
   initialExpiresAt,
   locked,
   variant = "card",
 }: Props) {
   // A client page lists several proposals, so ids have to be unique per proposal.
   const switchId = `discount-timer-${proposalId}`;
+  const startsId = `discount-starts-${proposalId}`;
   const endsId = `discount-ends-${proposalId}`;
   const isRow = variant === "row";
   const isStep = variant === "step";
   const [active, setActive] = useState(initialActive);
+  const [startsAt, setStartsAt] = useState(initialStartsAt);
   const [expiresAt, setExpiresAt] = useState(initialExpiresAt);
+  const [startDraft, setStartDraft] = useState(toLocalInput(initialStartsAt));
   const [draft, setDraft] = useState(toLocalInput(initialExpiresAt));
   const [status, setStatus] = useState<SaveStatus>("idle");
   // Null until mounted, so the server render never disagrees with the clock.
@@ -59,7 +85,7 @@ export default function ProposalDiscountTimer({
     return () => clearInterval(id);
   }, []);
 
-  async function save(patch: { active?: boolean; expiresAt?: string }) {
+  async function save(patch: DiscountTimerPatch) {
     setStatus("saving");
     const { data, error } = await setDiscountTimer(proposalId, patch);
     if (error || !data) {
@@ -68,7 +94,9 @@ export default function ProposalDiscountTimer({
       return false;
     }
     setActive(data.active);
+    setStartsAt(data.startsAt);
     setExpiresAt(data.expiresAt);
+    setStartDraft(toLocalInput(data.startsAt));
     setDraft(toLocalInput(data.expiresAt));
     setStatus("saved");
     return true;
@@ -80,15 +108,42 @@ export default function ProposalDiscountTimer({
     if (!(await save({ active: next }))) setActive(previous);
   }
 
-  function commitDraft() {
-    if (!draft || draft === toLocalInput(expiresAt)) return;
-    const date = new Date(draft);
-    if (Number.isNaN(date.getTime())) return;
-    void save({ expiresAt: date.toISOString() });
+  function commitStart() {
+    if (startDraft === toLocalInput(startsAt)) return;
+    const value = toIso(startDraft);
+    if (value === undefined) return;
+    void save({ startsAt: value });
   }
 
-  const remaining =
-    expiresAt && now != null ? new Date(expiresAt).getTime() - now : null;
+  function commitDraft() {
+    if (draft === toLocalInput(expiresAt)) return;
+    const value = toIso(draft);
+    if (value === undefined) return;
+    // The end is what the countdown counts to, so refuse to clear it outright.
+    if (value === null) {
+      setDraft(toLocalInput(expiresAt));
+      return;
+    }
+    void save({ expiresAt: value });
+  }
+
+  const startMs = startsAt ? new Date(startsAt).getTime() : null;
+  const endMs = expiresAt ? new Date(expiresAt).getTime() : null;
+  const pending = startMs != null && now != null && now < startMs;
+  const remaining = endMs != null && now != null ? endMs - now : null;
+
+  // Said the way the agency reads it: scheduled, running, or over.
+  let clientSees: string | null = null;
+  if (now != null) {
+    if (pending && startsAt) {
+      clientSees = `Full prices until ${whenLabel(startsAt)}`;
+    } else if (remaining != null) {
+      clientSees =
+        remaining > 0
+          ? `Ends in ${formatRemaining(remaining)}`
+          : "Ended — the countdown is no longer shown";
+    }
+  }
 
   return (
     <section
@@ -111,14 +166,16 @@ export default function ProposalDiscountTimer({
               htmlFor={switchId}
               className={`font-heading font-bold tracking-[-0.01em] text-lyp-black ${isRow ? "text-[13.5px]" : "text-[15px]"}`}
             >
-              Activate Timer
+              Discount timer
             </label>
             <p className="mt-0.5 font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
               {locked
                 ? "The countdown stops once the client has signed."
-                : active
-                  ? "The client sees discounted prices and a countdown until the discount ends."
-                  : "Off: the client sees full prices. Switch on to apply the discount with a countdown."}
+                : !active
+                  ? "Off: the client sees full prices. Switch on to run the discount over a set window."
+                  : pending
+                    ? "Scheduled: the client sees full prices until the discount starts, then the countdown appears."
+                    : "Running: the client sees discounted prices and a countdown until the discount ends."}
             </p>
           </div>
         </div>
@@ -136,40 +193,67 @@ export default function ProposalDiscountTimer({
       </div>
 
       {active && (
-        <div className={`flex flex-wrap items-end gap-x-8 gap-y-4 border-t border-[#F1E8E8] ${isRow ? "mt-4 pt-4" : "mt-5 pt-5"}`}>
-          <div>
-            <label
-              htmlFor={endsId}
-              className="block font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[#A89898]"
-            >
-              Discount ends
-            </label>
-            <input
-              id={endsId}
-              type="datetime-local"
-              value={draft}
-              disabled={locked}
-              onChange={(e) => setDraft(e.target.value)}
-              onBlur={commitDraft}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commitDraft();
-              }}
-              className={`mt-2 rounded-xl border border-[#EFE6E6] bg-lyp-white px-3.5 py-2.5 font-body text-[13px] tabular-nums text-lyp-black transition-colors duration-500 ${EASE} focus:border-lyp-cherry/40 focus:outline-none disabled:opacity-60`}
-            />
+        <div className={`border-t border-[#F1E8E8] ${isRow ? "mt-4 pt-4" : "mt-5 pt-5"}`}>
+          <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
+            <div>
+              <label
+                htmlFor={startsId}
+                className="block font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[#A89898]"
+              >
+                Discount starts
+              </label>
+              <input
+                id={startsId}
+                type="datetime-local"
+                value={startDraft}
+                disabled={locked}
+                onChange={(e) => setStartDraft(e.target.value)}
+                onBlur={commitStart}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitStart();
+                }}
+                className={`mt-2 rounded-xl border border-[#EFE6E6] bg-lyp-white px-3.5 py-2.5 font-body text-[13px] tabular-nums text-lyp-black transition-colors duration-500 ${EASE} focus:border-lyp-cherry/40 focus:outline-none disabled:opacity-60`}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor={endsId}
+                className="block font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[#A89898]"
+              >
+                Discount ends
+              </label>
+              <input
+                id={endsId}
+                type="datetime-local"
+                value={draft}
+                disabled={locked}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={commitDraft}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitDraft();
+                }}
+                className={`mt-2 rounded-xl border border-[#EFE6E6] bg-lyp-white px-3.5 py-2.5 font-body text-[13px] tabular-nums text-lyp-black transition-colors duration-500 ${EASE} focus:border-lyp-cherry/40 focus:outline-none disabled:opacity-60`}
+              />
+            </div>
+
+            {clientSees && (
+              <div className="pb-2.5">
+                <span className="block font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+                  Client sees
+                </span>
+                <span className="mt-1 block font-body text-[13px] font-medium tabular-nums text-lyp-black">
+                  {clientSees}
+                </span>
+              </div>
+            )}
           </div>
 
-          {remaining != null && (
-            <div className="pb-2.5">
-              <span className="block font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
-                Client sees
-              </span>
-              <span className="mt-1 block font-body text-[13px] font-medium tabular-nums text-lyp-black">
-                {remaining > 0
-                  ? `Ends in ${formatRemaining(remaining)}`
-                  : "Ended — the countdown is no longer shown"}
-              </span>
-            </div>
-          )}
+          <p className="mt-3 font-body text-[11px] leading-relaxed text-[#A89898]">
+            Leave the start blank to run the discount from now. Set it to send
+            the proposal in a meeting and have the offer open later — until
+            then the client sees full prices with no countdown.
+          </p>
         </div>
       )}
     </section>

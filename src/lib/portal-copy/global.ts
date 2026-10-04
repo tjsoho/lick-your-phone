@@ -13,6 +13,9 @@ export const GLOBAL_COPY: CopySlot[] = [
   { key: "flowStageOnboarding", label: "Progress tracker: stage 3", default: "Onboarding form" },
   { key: "flowStageOnboardingShort", label: "Progress tracker: stage 3 (phone)", default: "Setup", hint: "Kept short so all three stages fit beside Back and Next on a phone." },
   { key: "flowStageDone", label: "Progress tracker: screen-reader word for a finished stage", default: "done" },
+  /* The same instruction on every service slide that offers three terms, so
+     it is worded once here rather than retyped on each page. */
+  { key: "serviceChooseTerm", label: "Service page: choose-a-term prompt", default: "Choose your term", hint: "Sits on the price panel's label row, directly above the term cards, on services that offer three of them. Keep it to a few words: a longer wording takes a line of its own, which the slide has no room for at 1280x720." },
   { key: "servicesSelectedOne", label: "Price bar: one service", default: "service selected" },
   { key: "servicesSelectedMany", label: "Price bar: several services", default: "services selected" },
   { key: "perMonthGst", label: "Price bar: per month", default: "+ GST per month" },
@@ -38,7 +41,7 @@ export const GLOBAL_COPY: CopySlot[] = [
   { key: "cartOneOffTotalPlural", label: "Basket: one-off total (several)", default: "One-off payments" },
   { key: "cartGstSuffixMonthly", label: "Basket: GST label on the monthly total", default: "+ GST /month" },
   { key: "cartGstSuffix", label: "Basket: GST label on a single payment", default: "+ GST" },
-  { key: "cartProceedButton", label: "Basket: main button", default: "Review & sign" },
+  { key: "cartProceedButton", label: "Basket: main button", default: "Sign", hint: "The one thing the button does. It used to read “Review & sign”, which promised a review step the portal does not have." },
   { key: "cartPaymentButton", label: "Basket: main button once signed", default: "Add payment details" },
   { key: "cartEmptyTitle", label: "Basket: nothing selected, title", default: "Nothing in here yet" },
   { key: "cartEmptyBody", label: "Basket: nothing selected, message", default: "Add a service from any page and it will show up here, with your total.", multiline: true },

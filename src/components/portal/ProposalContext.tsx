@@ -70,6 +70,8 @@ export interface ProposalData {
   discountExpiresAt: string | null;
   /** Show the client a countdown to discountExpiresAt. */
   discountTimerActive: boolean;
+  /** When a scheduled discount window opens. Null means "as soon as it is on". */
+  discountStartsAt?: string | null;
   /** When the client signed; the discount is judged at that moment from then on. */
   signedAt: string | null;
   clientName: string;
@@ -82,6 +84,13 @@ export interface ProposalData {
    * dashboard's page previews, which have no real proposal behind them.
    */
   clientEmail?: string | null;
+  /**
+   * The client's own logo, shown on the cover in place of the LickYourPhone
+   * mark. Optional: absent in the dashboard's page previews, and null for a
+   * client who has not uploaded one. `resolveCoverLogo` in
+   * `src/lib/client-logo` decides what the cover actually draws.
+   */
+  clientLogoUrl?: string | null;
   venueName: string;
 }
 
@@ -216,12 +225,15 @@ export function ProposalProvider({
   const timerLive = useDiscountTimerLive(
     proposal.discountTimerActive,
     proposal.discountExpiresAt,
+    proposal.discountStartsAt,
   );
   const discountLive = proposal.signedAt
     ? isDiscountLive({
         active: proposal.discountTimerActive,
+        startsAt: proposal.discountStartsAt,
         expiresAt: proposal.discountExpiresAt,
-        at: new Date(proposal.signedAt).getTime() - DISCOUNT_GRACE_MS,
+        at: new Date(proposal.signedAt).getTime(),
+        graceMs: DISCOUNT_GRACE_MS,
       })
     : timerLive;
 

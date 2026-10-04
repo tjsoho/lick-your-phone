@@ -282,6 +282,14 @@ export async function addInternalNote(proposalId: string, content: string) {
   }
 }
 
+/**
+ * Creates the next version of a proposal — what the agency calls "create new
+ * version" and the database still calls superseding.
+ *
+ * The old proposal is closed off, and the new draft records both where it sits
+ * in the chain (`version`) and which proposal it replaces (`supersedes_id`),
+ * so the list can show one row per deal with its version beside it.
+ */
 export async function supersedeProposal(
   oldProposalId: string,
   data: {
@@ -329,12 +337,24 @@ export async function supersedeProposal(
         .in("status", ["pending", "scheduled"]);
     }
 
-    // The countdown belongs to the deal too, so a replacement keeps the deadline.
-    const { data: oldTimer } = await supabase
+    // The countdown belongs to the deal too, so a replacement keeps the window.
+    // The version comes from the same read: the new proposal is the next one
+    // in the chain, and points back at the one it replaces.
+    const { data: previous } = await supabase
       .from("proposals")
-      .select("discount_timer_active, discount_expires_at")
+      .select(
+        "discount_timer_active, discount_starts_at, discount_expires_at, version",
+      )
       .eq("id", oldProposalId)
       .single();
+
+    // Proposals written before versions existed have no number of their own,
+    // so they count as v1 and their replacement becomes v2.
+    const previousVersion = Number(previous?.version);
+    const version =
+      Number.isFinite(previousVersion) && previousVersion >= 1
+        ? previousVersion + 1
+        : 2;
 
     // Create new draft proposal
     const { data: result, error: insertError } = await supabase
@@ -345,8 +365,11 @@ export async function supersedeProposal(
         status: "draft",
         token: crypto.randomUUID(),
         created_by: authorId || null,
-        discount_timer_active: oldTimer?.discount_timer_active ?? false,
-        discount_expires_at: oldTimer?.discount_expires_at ?? null,
+        supersedes_id: oldProposalId,
+        version,
+        discount_timer_active: previous?.discount_timer_active ?? false,
+        discount_starts_at: previous?.discount_starts_at ?? null,
+        discount_expires_at: previous?.discount_expires_at ?? null,
       })
       .select()
       .single();

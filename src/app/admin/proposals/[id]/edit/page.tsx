@@ -36,7 +36,7 @@ export default async function EditProposalPage({
           </span>
         </div>
         <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
-          {wizardMode === "edit" ? "Edit Proposal" : "Supersede Proposal"}
+          {wizardMode === "edit" ? "Edit Proposal" : "Create New Version"}
         </h1>
       </header>
       <ProposalWizard

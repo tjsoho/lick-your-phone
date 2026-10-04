@@ -28,6 +28,7 @@ import {
   Plus,
   Users,
 } from "lucide-react";
+import ClientLogoField from "@/components/admin/ClientLogoField";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 import PortalLinkCell from "@/components/admin/PortalLinkCell";
 import ProposalDiscountTimer from "@/components/admin/ProposalDiscountTimer";
@@ -134,6 +135,7 @@ type Proposal = {
   total_snapshot_cents?: number;
   discount_timer_active?: boolean;
   discount_expires_at?: string | null;
+  discount_starts_at?: string | null;
   proposal_line_items?: LineItem[];
   documents?: Document[];
   payments?: Payment[];
@@ -153,6 +155,8 @@ type Client = {
   email?: string;
   abn?: string;
   entity_name?: string;
+  /** Their own logo, shown on the cover of every proposal written for them. */
+  logo_url?: string | null;
   created_at: string;
   venues: Venue[];
   contacts: Contact[];
@@ -174,6 +178,9 @@ function ClientInfoCard({
   onUpdated: () => void;
 }) {
   const [editing, setEditing] = useState(false);
+  // The logo is a media-library pick rather than a text input, so it sits
+  // outside the form and is folded into the autosave payload below.
+  const [logoUrl, setLogoUrl] = useState(client.logo_url ?? "");
   const {
     register,
     handleSubmit,
@@ -191,7 +198,7 @@ function ClientInfoCard({
   // Details save themselves while the card is open; Done just closes it.
   const clientValues = watch();
   const { status: autosaveStatus } = useAutosave(
-    clientValues,
+    { ...clientValues, logo_url: logoUrl },
     async (v) => {
       const { error } = await updateClient(client.id, {
         name: v.name,
@@ -199,6 +206,9 @@ function ClientInfoCard({
         entity_name: v.entity_name || undefined,
         abn: v.abn || undefined,
         slug: v.slug,
+        // null, not undefined: removing the logo has to clear the column so
+        // the cover falls back to the default mark.
+        logo_url: v.logo_url.trim() || null,
       });
       return { error };
     },
@@ -221,6 +231,7 @@ function ClientInfoCard({
       entity_name: values.entity_name || undefined,
       abn: values.abn || undefined,
       slug: values.slug,
+      logo_url: logoUrl.trim() || null,
     });
     if (error) {
       toast.error(error);
@@ -294,6 +305,15 @@ function ClientInfoCard({
               className={`${fieldClasses} tabular-nums`}
             />
           </div>
+          {/* Spans both columns: the preview and its guidance need the room,
+              and this is the one field that changes what the client sees. */}
+          <div className="sm:col-span-2">
+            <ClientLogoField
+              value={logoUrl}
+              onChange={setLogoUrl}
+              idPrefix="client-info-logo"
+            />
+          </div>
         </div>
 
         <div className="mt-7 flex flex-wrap items-center gap-2.5 border-t border-[#F1E8E8] pt-6">
@@ -319,16 +339,31 @@ function ClientInfoCard({
   return (
     <div className="rounded-3xl border border-[#EFE6E6] bg-lyp-white p-6 sm:p-7">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="h-px w-7 bg-lyp-cherry/30" />
-            <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
-              Client
+        <div className="flex items-end gap-4">
+          {/* Their logo beside their name, on the cover's own dark tone —
+              the light, transparent artwork we ask for would be invisible
+              against this white card. The image is bare inside it. */}
+          {client.logo_url && (
+            <span className="flex h-16 w-24 flex-shrink-0 items-center justify-center rounded-2xl bg-lyp-black px-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={client.logo_url}
+                alt={`${client.name} logo`}
+                className="max-h-10 w-auto max-w-full object-contain"
+              />
             </span>
+          )}
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="h-px w-7 bg-lyp-cherry/30" />
+              <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
+                Client
+              </span>
+            </div>
+            <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
+              {client.name}
+            </h1>
           </div>
-          <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
-            {client.name}
-          </h1>
         </div>
         <button
           onClick={() => setEditing(true)}
@@ -1077,6 +1112,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                     proposalId={proposal.id}
                     initialActive={proposal.discount_timer_active ?? false}
                     initialExpiresAt={proposal.discount_expires_at ?? null}
+                    initialStartsAt={proposal.discount_starts_at ?? null}
                     locked={
                       proposal.status === "signed" ||
                       proposal.status === "intake_complete" ||

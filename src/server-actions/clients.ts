@@ -56,6 +56,8 @@ export async function createClient(data: {
   abn?: string;
   entity_name?: string;
   email: string;
+  /** The client's own logo, shown on their proposal covers. */
+  logo_url?: string | null;
 }) {
   try {
     const supabase = await createSupabaseClient();
@@ -81,6 +83,12 @@ export async function updateClient(
     abn?: string;
     entity_name?: string;
     email?: string;
+    /**
+     * The client's own logo. Explicitly nullable, not just optional: clearing
+     * the field has to write `null` so the cover falls back to the default
+     * mark, and `undefined` would leave the old logo in place.
+     */
+    logo_url?: string | null;
   },
 ) {
   try {
@@ -238,6 +246,9 @@ export async function createClientWithVenue(data: {
   venue_name: string;
   /** Base slug, derived from the person's name; made unique before insert. */
   slug: string;
+  /** Their logo, if the agency has it to hand — it carries through to the
+   *  cover of every proposal written for them. Can be added later instead. */
+  logo_url?: string | null;
 }) {
   const supabase = await createSupabaseClient();
   const slug = await uniqueClientSlug(supabase, data.slug);
@@ -248,6 +259,7 @@ export async function createClientWithVenue(data: {
       name: data.name,
       slug,
       email: data.email,
+      logo_url: data.logo_url?.trim() || null,
     })
     .select()
     .single();

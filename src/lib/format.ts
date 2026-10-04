@@ -33,6 +33,12 @@ export function formatDateTime(date: string): string {
  */
 export function formatStatus(status: string | null | undefined): string {
   if (!status) return "—";
-  if (status === "intake_complete") return "onboarding complete";
+  // The database words and the agency's words are not the same. "Superseded"
+  // in particular sent them to a dictionary — "we had to Google it because we
+  // didn't know it" — so the enum keeps its name and the screen says what it
+  // means.
+  if (status === "intake_complete" || status === "intake_completed")
+    return "onboarding complete";
+  if (status === "superseded") return "replaced";
   return status.replace(/_/g, " ");
 }

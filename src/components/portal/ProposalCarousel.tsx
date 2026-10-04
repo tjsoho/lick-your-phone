@@ -15,6 +15,7 @@ import {
 } from "./ProposalContext";
 import type { CopyOverrides } from "@/lib/portal-copy";
 import RunningTotal from "./RunningTotal";
+import RecordView from "./RecordView";
 import SelectionCart, {
   CART_GUTTER_CLASS,
   useCartOpen,
@@ -331,6 +332,9 @@ function CarouselInner() {
           )}
         </div>
       )}
+
+      {/* Reports the visit to the dashboard. Renders nothing. */}
+      <RecordView token={proposal.token} currentPage={currentPage} />
 
       <SelectionCart
         open={showCart}

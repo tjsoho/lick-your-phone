@@ -275,6 +275,129 @@ export async function uploadDocument(
 	}
 }
 
+/* ------------------------------------------------------------------ */
+/*  Counter-signature                                                 */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Where a counter-signature is filed. A folder, for the same reason documents
+ * get one: the media library lists the bucket root, so a signature kept here
+ * never turns up among the site's pictures.
+ */
+const SIGNATURE_PREFIX = "signatures";
+
+/**
+ * What a counter-signature may be.
+ *
+ * PNG and JPEG only, because those are the two raster formats the contract
+ * generator can decode. Anything else is accepted by the browser, stored
+ * happily, and then silently left off the contract — which is precisely the
+ * failure this path exists to stop.
+ */
+export const SIGNATURE_ACCEPT = ".png,.jpg,.jpeg";
+
+/** A signature is line art. Anything past this is the wrong file. */
+export const MAX_SIGNATURE_SIZE = 5 * 1024 * 1024;
+
+/**
+ * True when a stored image can be drawn into the contract PDF.
+ *
+ * Judged on the stored extension, which is what the admin has to go on.
+ * The generator itself re-checks the bytes.
+ */
+export function isPrintableSignatureUrl(url: string): boolean {
+	const path = url.split(/[?#]/)[0];
+	return /\.(png|jpe?g)$/i.test(path);
+}
+
+export interface SignatureUploadResult {
+	url: string;
+	/** The name the agency's file had, for the admin to recognise. */
+	name: string;
+	error: Error | null;
+}
+
+/**
+ * Upload a counter-signature to Supabase Storage.
+ *
+ * Deliberately not routed through `uploadImage`: that compresses, and
+ * compression re-encodes to WebP, which the contract generator cannot read.
+ * A signature is a few kilobytes of line art, so there is nothing to save by
+ * re-encoding it and a whole signature to lose. The file is stored exactly as
+ * chosen, alpha channel and all.
+ */
+export async function uploadSignature(
+	file: File,
+): Promise<SignatureUploadResult> {
+	try {
+		const {
+			data: { session },
+		} = await supabase.auth.getSession();
+
+		if (!session) {
+			return {
+				url: "",
+				name: file.name,
+				error: new Error("Must be authenticated to upload files"),
+			};
+		}
+
+		if (file.size > MAX_SIGNATURE_SIZE) {
+			return {
+				url: "",
+				name: file.name,
+				error: new Error(
+					`"${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)}MB — the limit is 5MB`,
+				),
+			};
+		}
+
+		if (!/\.(png|jpe?g)$/i.test(file.name)) {
+			return {
+				url: "",
+				name: file.name,
+				error: new Error(
+					"Signatures must be a PNG or a JPG — those are the formats the contract can print",
+				),
+			};
+		}
+
+		// Storage keys are URL path segments, so anything exotic in the name is
+		// flattened. The original name is returned separately.
+		const safeName = file.name.replace(/[^a-zA-Z0-9._-]+/g, "-");
+		const path = `${SIGNATURE_PREFIX}/${Date.now()}-${safeName}`;
+
+		const { data, error } = await supabase.storage
+			.from(BUCKET_NAME)
+			.upload(path, file, { cacheControl: "3600", upsert: true });
+
+		if (error) {
+			return { url: "", name: file.name, error: new Error(error.message) };
+		}
+
+		if (!data?.path) {
+			return {
+				url: "",
+				name: file.name,
+				error: new Error("Upload failed - no path returned"),
+			};
+		}
+
+		const {
+			data: { publicUrl },
+		} = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path);
+
+		return { url: publicUrl, name: file.name, error: null };
+	} catch (error) {
+		return {
+			url: "",
+			name: file.name,
+			error:
+				error instanceof Error ? error : new Error("Unknown upload error"),
+		};
+	}
+}
+
 /**
  * Delete an image from Supabase Storage
  */

@@ -40,19 +40,45 @@ export function payableCents({
   return discountLive ? discountedCents(full, effectivePct) : full;
 }
 
-/** The discount runs while the timer is switched on and its deadline hasn't passed at `at`. */
+/**
+ * Whether the discount is running at `at`.
+ *
+ * The timer has to be switched on and inside its window. A window can be
+ * scheduled ahead — the agency sets one during a sales meeting and lets it
+ * open later — so a start in the future means full prices until then.
+ *
+ * `graceMs` forgives a client who was mid-signature as the deadline passed. It
+ * is applied to the END only: extending it to the start would discount
+ * somebody who signed two minutes BEFORE the window opened, which is the
+ * opposite of a grace.
+ */
 export function isDiscountLive({
   active,
+  startsAt,
   expiresAt,
   at,
+  graceMs = 0,
 }: {
   active: boolean;
+  /** Optional: no start means the window opens as soon as it is switched on. */
+  startsAt?: string | null;
   expiresAt: string | null;
   at: number;
+  graceMs?: number;
 }) {
   if (!active || !expiresAt) return false;
+
   const end = new Date(expiresAt).getTime();
-  return !Number.isNaN(end) && at <= end;
+  if (Number.isNaN(end) || at - graceMs > end) return false;
+
+  if (startsAt) {
+    const start = new Date(startsAt).getTime();
+    // An unreadable start is ignored rather than trusted: a typo in the date
+    // should not quietly withhold a discount the agency meant to give.
+    if (!Number.isNaN(start) && at < start) return false;
+  }
+
+  return true;
 }
 
 type PricedService = {

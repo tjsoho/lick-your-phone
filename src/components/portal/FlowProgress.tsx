@@ -32,8 +32,14 @@ const STAGES: { key: StageKey; copyKey: string; shortCopyKey: string }[] = [
 ];
 
 /**
- * The marker: a tick once the stage has landed, a ringed dot on the one being
- * worked, a hairline circle on the ones still ahead.
+ * The marker: a tick once the stage has landed, an OPEN cherry ring on the one
+ * being worked, a hairline circle on the ones still ahead.
+ *
+ * The current stage used to carry a filled cherry dot, and it read as a stage
+ * already finished — "I wouldn't add the red thing because it looks like it
+ * has been signed already." So the middle is empty now, and the stage is
+ * marked by the ring instead: brand colour, double the stroke of the ones
+ * ahead, and a soft halo outside it. Filled cherry means done, and only done.
  *
  * Re-keyed on its state by the caller so the tick arrives with a pop rather
  * than appearing between two renders. `portal-reveal` is neutralised wholesale
@@ -57,12 +63,13 @@ function StageMarker({ state }: { state: StageState }) {
 
   if (state === "current") {
     return (
+      // The halo is a `ring`, which is a box-shadow: it reads as emphasis
+      // without taking a pixel of the bar's width, which is already spoken
+      // for on a 375px phone.
       <span
         aria-hidden
-        className="flex h-3 w-3 flex-shrink-0 items-center justify-center rounded-full border border-lyp-cherry sm:h-4 sm:w-4"
-      >
-        <span className="h-1 w-1 rounded-full bg-lyp-cherry sm:h-1.5 sm:w-1.5" />
-      </span>
+        className="h-3 w-3 flex-shrink-0 rounded-full border-2 border-lyp-cherry ring-2 ring-lyp-cherry/20 sm:h-4 sm:w-4"
+      />
     );
   }
 

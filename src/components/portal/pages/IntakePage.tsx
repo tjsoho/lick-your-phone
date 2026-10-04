@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -200,6 +200,8 @@ export default function IntakePage({
     withClientEmail(existingResponses ?? {}, questions, proposal.clientEmail),
   );
   const [currentIntakePage, setCurrentIntakePage] = useState(1);
+  /** The form's own scroller — the one thing in the portal that may scroll. */
+  const formScrollRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
   const [completed, setCompleted] = useState(false);
   /** Reading the submitted answers back, rather than filling the form in. */
@@ -213,6 +215,27 @@ export default function IntakePage({
    * still `signed`, so nobody is locked out of work they haven't handed in.
    */
   const locked = completed || proposal.status === "intake_complete";
+
+  /**
+   * Every step starts at the top of itself.
+   *
+   * The scroller is shared by all the steps, so a long one used to hand the
+   * client the FOOT of the next: nothing put the scroll position back, and
+   * Continue looked like a jump to the bottom of the page. Back had the same
+   * fault in reverse, and both go through the one state change this watches.
+   *
+   * Keyed on the step number alone, so it fires when the step changes and at
+   * no other time — a client reading down the step they are already on is
+   * never pulled off it. The preference is read here rather than held in
+   * state for the same reason: a hook would add a dependency that could move
+   * the page under someone mid-scroll.
+   */
+  useEffect(() => {
+    const el = formScrollRef.current;
+    if (!el) return;
+    const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollTo({ top: 0, behavior: still ? "auto" : "smooth" });
+  }, [currentIntakePage]);
 
   // Build a set of signed service slugs for condition evaluation
   const signedServiceIds = useMemo(
@@ -526,12 +549,19 @@ export default function IntakePage({
           {takeaways.map((doc, i) => (
             <Reveal key={doc.href} index={4 + i} className="h-full">
               {/* Plain links, so the browser downloads them the way it
-                  downloads anything else — no fetch, no spinner, no state. */}
+                  downloads anything else — no fetch, no spinner, no state.
+
+                  All three open a new tab. The agreement card redirects to
+                  the stored file and the terms card can be a page the agency
+                  hosts, so in the same tab either one REPLACES the portal —
+                  and Back from there drops the client at the start of the
+                  journey rather than where they left off. The two that do
+                  come back as a download lose nothing by it: a browser
+                  handed an attachment never paints the tab it was given. */}
               <a
                 href={doc.href}
-                {...(doc.external
-                  ? { target: "_blank", rel: "noopener noreferrer" }
-                  : {})}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group flex h-full flex-col items-center gap-2 rounded-xl border border-lyp-white/10 bg-lyp-white/[0.04] px-5 py-5 transition-[background-color,border-color,transform] duration-300 ease-brand hover:-translate-y-0.5 hover:border-lyp-cherry/40 hover:bg-lyp-cherry/[0.08] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
               >
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-lyp-cherry/15 text-lyp-cherry transition-colors duration-300 ease-brand group-hover:bg-lyp-cherry/25 motion-reduce:transition-none">
@@ -637,7 +667,10 @@ export default function IntakePage({
       </div>
 
       {/* Form content */}
-      <div className="flex-1 overflow-y-auto px-6 py-8 md:px-16 lg:px-24">
+      <div
+        ref={formScrollRef}
+        className="flex-1 overflow-y-auto px-6 py-8 md:px-16 lg:px-24"
+      >
         {/* Read-only from here down once the answers are in. A disabled
             fieldset inerts every control inside it in one move, so no field
             component has to remember to check. */}

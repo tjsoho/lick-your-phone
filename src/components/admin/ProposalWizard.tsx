@@ -19,6 +19,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import ClientLogoField from "./ClientLogoField";
 
 type Venue = {
   id: string;
@@ -118,6 +119,9 @@ export default function ProposalWizard({
   const [newClientName, setNewClientName] = useState("");
   const [newClientEmail, setNewClientEmail] = useState("");
   const [newVenueName, setNewVenueName] = useState("");
+  // Optional — the cover falls back to the LickYourPhone mark without it, and
+  // it can be added from the client record later.
+  const [newClientLogo, setNewClientLogo] = useState("");
   const [createdClients, setCreatedClients] = useState<Client[]>([]);
 
   // Venue state, for clients that already exist
@@ -166,6 +170,7 @@ export default function ProposalWizard({
       venue_name: newVenueName.trim(),
       // Slugs live in URLs; the server makes this unique before inserting.
       slug: slugify(newClientName),
+      logo_url: newClientLogo.trim() || null,
     });
     setLoading(false);
     if (error) {
@@ -187,6 +192,7 @@ export default function ProposalWizard({
       setNewClientName("");
       setNewClientEmail("");
       setNewVenueName("");
+      setNewClientLogo("");
       toast.success("Client added");
       setStep(2);
     }
@@ -243,7 +249,7 @@ export default function ProposalWizard({
       mode === "edit"
         ? "Proposal updated"
         : mode === "supersede"
-          ? "Superseding proposal created"
+          ? "New version created"
           : "Proposal created";
     toast.success(msg);
 
@@ -261,7 +267,7 @@ export default function ProposalWizard({
     mode === "edit"
       ? "Review & Save"
       : mode === "supersede"
-        ? "Review & Supersede"
+        ? "Review & create new version"
         : "Review & Create";
 
   const submitLabel = loading
@@ -269,7 +275,7 @@ export default function ProposalWizard({
     : mode === "edit"
       ? "Save Changes"
       : mode === "supersede"
-        ? "Create & Supersede"
+        ? "Create new version"
         : "Create Proposal";
 
   return (
@@ -535,6 +541,15 @@ export default function ProposalWizard({
                       record.
                     </p>
                   </div>
+                  {/* Optional, and deliberately last: the three fields above
+                      are what the record cannot be made without. The logo
+                      carries through to the cover of every proposal written
+                      for this client, and can be added later instead. */}
+                  <ClientLogoField
+                    value={newClientLogo}
+                    onChange={setNewClientLogo}
+                    idPrefix="c-logo"
+                  />
                 </div>
 
                 <div className="mt-6 flex flex-wrap items-center gap-3">

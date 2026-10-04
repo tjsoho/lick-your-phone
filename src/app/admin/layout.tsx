@@ -1,6 +1,7 @@
 import { Toaster } from "react-hot-toast";
 import { headers } from "next/headers";
 import Sidebar from "@/components/admin/Sidebar";
+import NotificationBell from "@/components/admin/NotificationBell";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -44,7 +45,14 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
         <div className="min-h-screen bg-lyp-off-white">
           <Sidebar userEmail={userEmail} />
           <main className="lg:pl-64 transition-all duration-300">
-            <div className="p-6 lg:p-8 pt-16 lg:pt-8">{children}</div>
+            {/* The bell rides above the page rather than inside it, so every
+                screen has it without each one having to ask. */}
+            <div className="pointer-events-none sticky top-0 z-40 flex justify-end px-6 pt-4 lg:px-8">
+              <div className="pointer-events-auto">
+                <NotificationBell />
+              </div>
+            </div>
+            <div className="px-6 pb-6 pt-2 lg:px-8 lg:pb-8">{children}</div>
           </main>
         </div>
       ) : (

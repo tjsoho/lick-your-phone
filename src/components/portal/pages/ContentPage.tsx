@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Logo from "@/components/Logo";
+import { resolveCoverLogo } from "@/lib/client-logo";
 import { useCopy, useProposal, type PageData } from "../ProposalContext";
 import ContentBlockRenderer, {
   RHYTHM,
@@ -29,6 +30,9 @@ export default function ContentPage({ page }: ContentPageProps) {
   const tCover = useCopy("cover", page);
   const tResults = useCopy("results", page);
   const slug = page.slug;
+  // Read unconditionally so the cover branch below has it; cheap and keeps
+  // the precedence rule resolved in exactly one call.
+  const coverLogo = resolveCoverLogo(proposal.clientLogoUrl, tCover("logo"));
 
   if (slug === "cover") {
     return (
@@ -63,12 +67,34 @@ export default function ContentPage({ page }: ContentPageProps) {
                 page.featuredImage ? "lg:justify-start" : ""
               }`}
             >
-              <Logo
-                onDark
-                src={tCover("logo")}
-                className="h-14 md:h-16"
-                priority
-              />
+              {/* The client's own logo if they have one, the cover's copy
+                  slot otherwise — `resolveCoverLogo` is the only place that
+                  decision is made.
+
+                  A client's logo is NOT drawn through `Logo`. That component
+                  declares the brand mark's own 383 x 120 box, and anything
+                  squarer sent through it would be letterboxed inside that
+                  box — sitting visibly indented from the client's name below
+                  on the left-aligned cover. A bare <img> at a fixed height
+                  takes its width from the artwork itself, so the lockup lines
+                  up whatever shape arrives. Height is what is capped, so the
+                  cover cannot grow and start scrolling; the width cap only
+                  catches a very wide mark, which then simply sits shorter. */}
+              {coverLogo.isClientLogo ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={coverLogo.src}
+                  alt={`${proposal.venueName} logo`}
+                  className="h-14 w-auto max-w-[240px] object-contain md:h-16 md:max-w-[300px]"
+                />
+              ) : (
+                <Logo
+                  onDark
+                  src={coverLogo.src}
+                  className="h-14 md:h-16"
+                  priority
+                />
+              )}
             </Reveal>
 
             <Reveal

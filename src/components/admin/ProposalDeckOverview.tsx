@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, RotateCcw, EyeOff, Lock, AlertTriangle } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -28,6 +28,43 @@ function toPercent(fraction: number | null): string {
   return String(Math.round(fraction * 1000) / 10);
 }
 
+/**
+ * Whether a scheduled discount has begun. Flips itself on at the start with a
+ * single timeout rather than a ticking interval, and reads true when no start
+ * is set — a discount with no start begins the moment the timer is switched on.
+ */
+function useDiscountStarted(startsAt: string | null) {
+  const [started, setStarted] = useState(
+    () => !startsAt || new Date(startsAt).getTime() <= Date.now(),
+  );
+
+  useEffect(() => {
+    if (!startsAt) {
+      setStarted(true);
+      return;
+    }
+
+    const start = new Date(startsAt).getTime();
+    if (Number.isNaN(start)) {
+      setStarted(true);
+      return;
+    }
+
+    // setTimeout overflows past ~24.8 days, so a far-off start re-checks in steps.
+    let id: ReturnType<typeof setTimeout> | undefined;
+    const check = () => {
+      const left = start - Date.now();
+      setStarted(left <= 0);
+      if (left > 0) id = setTimeout(check, Math.min(left, 2 ** 31 - 1));
+    };
+
+    check();
+    return () => clearTimeout(id);
+  }, [startsAt]);
+
+  return started;
+}
+
 /** Structural pages the portal needs; hiding them would break the flow. */
 const LOCKED_SLUGS = ["cover", "summary", "signature", "payment", "intake"];
 
@@ -36,6 +73,8 @@ type Props = {
   initialPages: PresentationPage[];
   /** The discount timer's state, so a discount that isn't reaching the client is called out. */
   timerActive: boolean;
+  /** A scheduled start, before which the discount is not live yet. */
+  timerStartsAt?: string | null;
   timerExpiresAt: string | null;
   /** Signed and superseded proposals kept the prices they were signed at. */
   pricesLocked?: boolean;
@@ -57,13 +96,16 @@ export default function ProposalDeckOverview({
   proposalId,
   initialPages,
   timerActive,
+  timerStartsAt = null,
   timerExpiresAt,
   pricesLocked = false,
 }: Props) {
   // A discount only ever reaches the client while the timer is running, so a
   // discount set against a stopped or finished timer changes nothing — and
   // that has caught the team out before. Flag it loudly instead.
-  const discountLive = useDiscountTimerLive(timerActive, timerExpiresAt);
+  const timerRunning = useDiscountTimerLive(timerActive, timerExpiresAt);
+  const started = useDiscountStarted(timerStartsAt);
+  const discountLive = timerRunning && started;
   const discountsIdle = !pricesLocked && !discountLive;
 
   const effectiveDiscount = (page: PresentationPage) =>
@@ -249,9 +291,11 @@ export default function ProposalDeckOverview({
             <span className="font-semibold">Discounts are not reaching this client.</span>{" "}
             {pages.filter((p) => effectiveDiscount(p) > 0).length} page
             {pages.filter((p) => effectiveDiscount(p) > 0).length === 1 ? " has" : "s have"} a
-            discount set, but the client sees full prices until{" "}
-            <span className="font-semibold">Activate Timer</span> is switched on
-            below. When the countdown ends, prices go back to full.
+            discount set, but the client sees full prices{" "}
+            {timerRunning && !started
+              ? "until the scheduled start under Ready to Send below."
+              : "until the discount timer is switched on under Ready to Send below."}{" "}
+            When the countdown ends, prices go back to full.
           </span>
         </p>
       )}
@@ -321,7 +365,7 @@ export default function ProposalDeckOverview({
                       )}
                       {discountsIdle && effectiveDiscount(page) > 0 && (
                         <span
-                          title="The client sees full price until the timer is switched on"
+                          title="The client sees full price until the discount window is running"
                           className="inline-flex items-center gap-1 rounded-full bg-[#FBF3E3] px-2 py-0.5 font-body text-[9px] font-medium uppercase tracking-[0.16em] text-[#9A7B2E]"
                         >
                           <AlertTriangle strokeWidth={1.75} className="h-2.5 w-2.5" />
@@ -373,9 +417,9 @@ export default function ProposalDeckOverview({
                         placeholder={toPercent(page.globalDiscountPct) || "0"}
                         onBlur={(e) => handleDiscount(page, e.target.value)}
                         aria-label={`Discount for ${title}`}
-                        className={`w-16 rounded-xl border border-[#EFE6E6] bg-[#FBF8F8] px-2.5 py-1.5 text-right font-body text-[12.5px] tabular-nums text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`}
+                        className={`w-16 rounded-xl border border-[#E4D6D6] bg-lyp-white px-2.5 py-1.5 text-right font-body text-[12.5px] tabular-nums text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#6F6060] hover:border-lyp-cherry/30 focus:border-lyp-cherry/40 focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`}
                       />
-                      <span className="font-body text-[11px] text-[#A89898]">
+                      <span className="font-body text-[11px] text-[#8A7A7A]">
                         %
                       </span>
                     </span>

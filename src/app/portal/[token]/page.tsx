@@ -42,9 +42,10 @@ export default async function PortalPage({ params }: Props) {
       .from("proposals")
       .select(
         `
-      id, token, status, signed_at, discount_expires_at, discount_timer_active,
+      id, token, status, signed_at, discount_expires_at, discount_starts_at,
+      discount_timer_active,
       signer_email,
-      client:clients!client_id ( id, name, contact_name, email ),
+      client:clients!client_id ( id, name, contact_name, email, logo_url ),
       venue:venues!venue_id ( id, name ),
       payments(*),
       proposal_line_items(*)
@@ -128,6 +129,7 @@ export default async function PortalPage({ params }: Props) {
     name: string;
     contact_name: string | null;
     email: string | null;
+    logo_url: string | null;
   } | null;
   const venueObj = proposal.venue as unknown as {
     id: string;
@@ -139,6 +141,7 @@ export default async function PortalPage({ params }: Props) {
     token: proposal.token,
     status: proposal.status,
     discountExpiresAt: proposal.discount_expires_at,
+    discountStartsAt: proposal.discount_starts_at ?? null,
     discountTimerActive: proposal.discount_timer_active ?? false,
     signedAt: proposal.signed_at ?? null,
     clientName: clientObj?.name ?? "Client",
@@ -151,6 +154,9 @@ export default async function PortalPage({ params }: Props) {
       (proposal as { signer_email?: string | null }).signer_email ??
       clientObj?.email ??
       null,
+    // The cover shows this in place of the LickYourPhone mark. Passed raw;
+    // the fallback to the cover's copy slot lives in `resolveCoverLogo`.
+    clientLogoUrl: clientObj?.logo_url ?? null,
     venueName: venueObj?.name ?? "Venue",
   };
 

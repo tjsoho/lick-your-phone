@@ -24,6 +24,8 @@ export const clients = pgTable("clients", {
   contactName: text("contact_name"),
   abn: text("abn"),
   entityName: text("entity_name"),
+  /** The client's own logo, shown on their proposal cover. */
+  logoUrl: text("logo_url"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

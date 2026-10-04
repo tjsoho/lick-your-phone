@@ -59,6 +59,7 @@ export async function signProposal(input: SignProposalInput) {
       .select(
         `
         id, status, token, discount_timer_active, discount_expires_at,
+        discount_starts_at,
         client:clients!client_id ( id, name, contact_name ),
         venue:venues!venue_id ( id, name, address )
       `,
@@ -96,8 +97,10 @@ export async function signProposal(input: SignProposalInput) {
     //     discount timer was running, with this proposal's own discounts.
     const discountLive = isDiscountLive({
       active: proposal.discount_timer_active ?? false,
+      startsAt: proposal.discount_starts_at,
       expiresAt: proposal.discount_expires_at,
-      at: Date.now() - DISCOUNT_GRACE_MS,
+      at: Date.now(),
+      graceMs: DISCOUNT_GRACE_MS,
     });
 
     const { data: overrideRows } = await supabase

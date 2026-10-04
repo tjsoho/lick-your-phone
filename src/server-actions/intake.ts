@@ -3,6 +3,11 @@
 import { createClient, createAdminClient } from "@/utils/server";
 import { revalidatePath } from "next/cache";
 import { onIntakeCompleted } from "@/lib/integrations";
+import {
+  contactKey,
+  intakeContacts,
+  type ContactSourceQuestion,
+} from "@/lib/intake-contacts";
 
 export async function getIntakeQuestions(): Promise<{
   data: IntakeQuestionWithConditions[];
@@ -203,6 +208,104 @@ export async function saveIntakeResponses(
   }
 }
 
+/**
+ * Puts the people named in the onboarding form onto the client record.
+ *
+ * The form was already collecting a primary contact and a list of other team
+ * members, and none of it reached the `contacts` table — the agency opened a
+ * client the day after onboarding and found nobody there. Which questions
+ * hold which part of a contact is worked out in `@/lib/intake-contacts`,
+ * which explains itself at length; in short, nothing here depends on a
+ * question's wording.
+ *
+ * Returns how many contacts were written. Throws on a database failure, and
+ * the caller is where that is caught: by the time this runs the submission
+ * is already recorded, and a contact that doesn't land is a row the agency
+ * can add by hand — not a reason to hand the client an error for answers
+ * that are safely in.
+ */
+async function syncContactsFromIntake(
+  supabase: Awaited<ReturnType<typeof createAdminClient>>,
+  clientId: string,
+  proposalId: string,
+): Promise<number> {
+  // Hidden questions are excluded for the same reason the form excludes
+  // them: a question the client never saw has no answer, and an empty one
+  // must not take the place of a question they did answer.
+  const { data: questions, error: questionsError } = await supabase
+    .from("intake_questions")
+    .select("id, page_number, sequence, section, field_label, field_type, config")
+    .eq("hidden", false);
+  if (questionsError) throw questionsError;
+
+  const { data: responses, error: responsesError } = await supabase
+    .from("intake_responses")
+    .select("question_id, value")
+    .eq("proposal_id", proposalId);
+  if (responsesError) throw responsesError;
+
+  const found = intakeContacts(
+    (questions ?? []) as ContactSourceQuestion[],
+    responses ?? [],
+  );
+  if (found.length === 0) return 0;
+
+  // Submissions are one-way now, so the client who gets here twice is one who
+  // was already set up by hand. Matching on email — or on a name, where there
+  // is no email — updates that row instead of sitting a duplicate beside it.
+  const { data: existing, error: existingError } = await supabase
+    .from("contacts")
+    .select("id, first_name, last_name, email")
+    .eq("client_id", clientId);
+  if (existingError) throw existingError;
+
+  const byKey = new Map(
+    (existing ?? []).map((c) => [contactKey(c), c] as const),
+  );
+
+  for (const contact of found) {
+    // Only what the client actually filled in. A blank answer leaves whatever
+    // the agency already holds alone rather than erasing it.
+    const filled = {
+      ...(contact.first_name ? { first_name: contact.first_name } : {}),
+      ...(contact.last_name ? { last_name: contact.last_name } : {}),
+      ...(contact.email ? { email: contact.email } : {}),
+      ...(contact.phone ? { phone: contact.phone } : {}),
+      ...(contact.role ? { role: contact.role } : {}),
+    };
+
+    const match = byKey.get(contactKey(contact));
+    if (match) {
+      // Promoting to primary is a change the client just made; nobody is
+      // demoted to make room for them.
+      const { error } = await supabase
+        .from("contacts")
+        .update(contact.is_primary ? { ...filled, is_primary: true } : filled)
+        .eq("id", match.id);
+      if (error) throw error;
+      continue;
+    }
+
+    const { data: inserted, error } = await supabase
+      .from("contacts")
+      .insert({
+        client_id: clientId,
+        first_name: contact.first_name,
+        last_name: contact.last_name,
+        email: contact.email || null,
+        phone: contact.phone || null,
+        role: contact.role || null,
+        is_primary: contact.is_primary,
+      })
+      .select("id, first_name, last_name, email")
+      .single();
+    if (error) throw error;
+    if (inserted) byKey.set(contactKey(inserted), inserted);
+  }
+
+  return found.length;
+}
+
 export async function completeIntake(
   proposalId: string,
 ): Promise<{ error: string | null; locked?: boolean }> {
@@ -212,7 +315,7 @@ export async function completeIntake(
     const { data: proposal } = await supabase
       .from("proposals")
       .select(
-        "signer_email, client:clients!client_id(name), venue:venues!venue_id(name, address), status, token",
+        "signer_email, client_id, client:clients!client_id(name), venue:venues!venue_id(name, address), status, token",
       )
       .eq("id", proposalId)
       .single();
@@ -275,6 +378,30 @@ export async function completeIntake(
 
     if (auditError) throw auditError;
 
+    // The answers are in and recorded by this point, so nothing below may
+    // throw its way out of here: a contact that fails to write is a note in
+    // the log and an audit row the team can act on, never a client told
+    // their submission failed when it didn't.
+    if (proposal.client_id) {
+      try {
+        await syncContactsFromIntake(supabase, proposal.client_id, proposalId);
+      } catch (err) {
+        console.error("[intake] contact sync failed:", err);
+        await supabase
+          .from("audit_events")
+          .insert({
+            entity_type: "proposal",
+            entity_id: proposalId,
+            action: "intake_contacts_failed",
+            metadata: { message: (err as Error).message },
+          })
+          // Logging the failure must not become a second failure.
+          .then(({ error }) => {
+            if (error) console.error("[intake] contact sync audit failed:", error);
+          });
+      }
+    }
+
     // Fire integrations (non-blocking)
     const clientObj = proposal.client as unknown as { name: string } | null;
     const venueObj = proposal.venue as unknown as {
@@ -296,6 +423,10 @@ export async function completeIntake(
     });
 
     revalidatePath("/admin");
+    // The submission now writes the client's contacts, and those are read on
+    // the client's own page — which would otherwise serve a cached copy
+    // without them.
+    revalidatePath("/admin/clients", "layout");
     return { error: null };
   } catch (error) {
     return { error: (error as Error).message };

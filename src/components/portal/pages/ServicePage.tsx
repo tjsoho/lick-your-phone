@@ -49,6 +49,19 @@ const TIGHT_FRAME_PX = 1200;
      │                                                          │  ← free space
      └──────────────────────────────────────────────────────────┘
 
+   A service with THREE terms cannot run that way — three cards need the
+   panel's whole width — so it reads top to bottom instead, in the order the
+   client actually works in:
+
+     ┌───────────────────────────────────────┐
+     │ INVESTMENT  20% OFF   CHOOSE YOUR TERM│  one label row
+     │ ┌─────────┐ ┌─────────┐ ┌───────────┐ │  the terms, cut into the
+     │ │ ANNUALLY│ │ 6 MONTHS│ │  3 MONTHS │ │  panel on their own ground
+     │ │  $389   │ │  $489   │ │   $589    │ │
+     │ └─────────┘ └─────────┘ └───────────┘ │
+     └───────────────────────────────────────┘
+                              [ I WANT THIS ]   ← and only then the decision
+
    Why this and not the old two-column stack:
    - The title gets the full page width, so it can run at display scale on one
      line instead of being squeezed into a half-width column.
@@ -63,7 +76,22 @@ const TIGHT_FRAME_PX = 1200;
      the quote and the toggle reads as the decision.
 
    Hierarchy is carried by scale, weight, letterspacing and rhythm. There is
-   exactly one surface on the page (the offer panel) and one hairline.
+   one surface on the page (the offer panel), one hairline, and — on a
+   three-term service — one control group cut into that surface.
+
+   FITTING. The slide never scrolls, so every pixel the offer takes is a pixel
+   the index gives up. Measured in a headless frame against the real box model,
+   with the longest three-term service (Meta Digital Ads: six inclusions, one
+   disclaimer, 20% off), the air left under the body row is:
+
+                              basket closed   basket open
+       1280 x 720                 24.8px          10.8px
+       1440 x 900                 29.4px          15.4px
+
+   — about 6px tighter than the layout this replaced, in every case. The
+   density notch above is what pays for the rest. If you add to the offer,
+   re-measure: the next thing to give is the index, and it is already at
+   "mid" on these pages.
    ------------------------------------------------------------------------- */
 
 /**
@@ -311,6 +339,9 @@ export default function ServicePage({ service, page }: ServicePageProps) {
     discountLive,
   } = useProposal();
   const t = useCopy("service", page);
+  // The choose-a-term prompt is the same instruction on every service slide,
+  // so it is worded once in Settings rather than retyped on each page.
+  const g = useCopy("global");
   // The carousel shows the running-total bar as soon as anything is selected,
   // which changes how much air already sits above the masthead.
   // The discount countdown is a top bar too, so it counts the same way.
@@ -391,12 +422,21 @@ export default function ServicePage({ service, page }: ServicePageProps) {
     inclusions.length +
     (obligations.length > 0 ? 3 : 0) +
     (disclaimers.length > 0 ? 1 : 0);
-  const density = textLoad > 9 ? "tight" : textLoad > 7 ? "mid" : "open";
   const twoColumnIndex = inclusions.length > 6;
   const tierCount = service.service_tiers.length;
   // Three terms side by side need the panel's full width, so the label and
-  // incentive move above them instead of taking a column beside them.
+  // incentive move above them instead of taking a column beside them — and
+  // the decision moves BELOW them. The toggle used to sit in the label row,
+  // which put it above the terms: the client picked a term and then had to
+  // look back up to add the service. Terms, then the toggle, in that order.
   const stackOffer = hasTiers && tierCount >= 3;
+  // A three-term service gives its terms a bigger, darker, visibly separate
+  // control, and a row of its own for the toggle underneath. That costs
+  // height, and the index pays for it: one notch down the density ladder on
+  // these pages keeps the whole spread inside a 720px frame with the basket
+  // open. Measured rather than guessed — see FITTING, at the foot of the file.
+  const density =
+    textLoad > 9 ? "tight" : textLoad > 7 || stackOffer ? "mid" : "open";
   // The slide gives up its right-hand width to the open basket, so the frame
   // is measured rather than read off the window: the same page is wide with
   // the basket closed and tight with it open at one viewport size.
@@ -446,8 +486,9 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   const D_RAIL = D_RULE + 80;
 
   /* Selection — one action, identical on every service slide, whether or
-     not a term had to be chosen. Beside the quote normally; inside its label
-     row when three terms need the panel's full width. */
+     not a term had to be chosen. Beside the quote normally; on its own row
+     under the terms when three of them need the panel's full width. Either
+     way it is the LAST thing on the reading path. */
   const wantToggle = (
     <Reveal
       // `pop` scales UP to its final size, so it never occupies more
@@ -456,7 +497,9 @@ export default function ServicePage({ service, page }: ServicePageProps) {
       delay={D_TOGGLE}
       className={cn(
         "flex shrink-0 items-center gap-3 self-end rounded-xl ring-1 ring-inset transition-colors duration-300 ease-brand",
-        stackOffer ? "px-3 py-1.5" : "px-4 py-2.5",
+        // On its own row the padding comes in: the row is the separation, and
+        // the slide has no height to spare for both.
+        stackOffer ? "px-4 py-1.5" : "px-4 py-2.5",
         selected
           ? "bg-[#f0c9c9]/[0.14] ring-[#f0c9c9]/60"
           : "bg-lyp-white/[0.04] ring-lyp-white/[0.14]",
@@ -472,7 +515,14 @@ export default function ServicePage({ service, page }: ServicePageProps) {
         }
         className="data-[state=checked]:bg-lyp-cherry"
       />
-      <span className="font-heading text-[11px] font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:850px)]:text-xs">
+      <span
+        className={cn(
+          "font-heading font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:850px)]:text-xs",
+          // On its own row it is the last thing on the slide and the only
+          // thing left to do, so it is set a size up.
+          stackOffer ? "text-[12px]" : "text-[11px]",
+        )}
+      >
         {isInKind ? t("paidInKind") : selected ? t("added") : t("wantThis")}
       </span>
     </Reveal>
@@ -665,7 +715,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
             )}
 
             {disclaimers.length > 0 && (
-              <div className="mt-4 [@media(min-height:850px)]:mt-7">
+              <div className="mt-3 [@media(min-height:850px)]:mt-7">
                 {disclaimers.map((d, i) => (
                   <Reveal
                     as="p"
@@ -698,10 +748,16 @@ export default function ServicePage({ service, page }: ServicePageProps) {
               ----------------------------------------------------------- */}
           <div
             className={cn(
-              "flex shrink-0 flex-col gap-3 lg:flex-row lg:items-end lg:gap-5",
-              compactOffer
-                ? "mt-6 [@media(min-height:850px)]:mt-9"
-                : "mt-9 [@media(min-height:850px)]:mt-12",
+              "flex shrink-0 flex-col",
+              // Three terms fill the panel, so the toggle takes the row under
+              // it rather than the column beside it. Everything else keeps the
+              // quote-then-decision row.
+              stackOffer ? "gap-2" : "gap-3 lg:flex-row lg:items-end lg:gap-5",
+              stackOffer
+                ? "mt-4 [@media(min-height:850px)]:mt-7"
+                : compactOffer
+                  ? "mt-5 [@media(min-height:850px)]:mt-8"
+                  : "mt-9 [@media(min-height:850px)]:mt-12",
             )}
           >
           <Reveal
@@ -731,7 +787,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 // fits next to the label, so the panel stacks rather than being
                 // clipped by its own rounded edge.
                 compactOffer
-                  ? "gap-3"
+                  ? "gap-2.5"
                   : "gap-4 lg:flex-row lg:items-center lg:gap-8",
               )}
             >
@@ -761,7 +817,16 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                       : t("requiresOtherNote")}
                   </p>
                 )}
-                {stackOffer && <div className="ml-auto">{wantToggle}</div>}
+                {/* Names the step, on a row that already exists — a line of
+                    its own would cost the slide 24px it does not have at
+                    1280x720 with the basket open. `whitespace-nowrap` so a
+                    longer wording pushes itself onto its own line rather than
+                    breaking mid-phrase. */}
+                {stackOffer && (
+                  <p className="whitespace-nowrap font-heading text-[10px] font-semibold uppercase tracking-[0.14em] text-lyp-white/65 [@media(min-height:850px)]:text-[11px]">
+                    {g("serviceChooseTerm")}
+                  </p>
+                )}
               </div>
 
               {isInKind ? (
@@ -802,10 +867,20 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                             if (selected) selectTier(service.id, tier.id);
                           }}
                           className={cn(
-                            "portal-reveal portal-reveal-pop min-w-0 rounded-xl px-4 py-2.5 text-left ring-1 ring-inset transition-[background-color,box-shadow,transform] duration-300 ease-brand hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none",
+                            "portal-reveal portal-reveal-pop min-w-0 rounded-xl px-4 text-left ring-1 ring-inset transition-[background-color,box-shadow,transform] duration-300 ease-brand hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none",
+                            // The terms are the only thing on the slide the
+                            // client has to DECIDE, and on the panel's pale
+                            // wash they read as more price furniture. So they
+                            // sit on the opposite ground — cut INTO the panel
+                            // rather than laid on it — with a rose edge that
+                            // marks them as the live control. Picking one
+                            // fills it; the two states are now a swap of
+                            // ground, not a change of opacity.
                             tierSelected
-                              ? "bg-[#f0c9c9]/[0.14] ring-[#f0c9c9]/70"
-                              : "bg-lyp-white/[0.04] ring-lyp-white/[0.14] hover:ring-lyp-white/35",
+                              ? "bg-[#f0c9c9]/[0.16] ring-[#f0c9c9]/75"
+                              : "bg-[#120406]/70 ring-[#f0c9c9]/25 hover:bg-[#120406]/50 hover:ring-[#f0c9c9]/50",
+                            // Three terms also get the room to be read.
+                            stackOffer ? "py-3" : "py-2.5",
                             isDisabled && "cursor-not-allowed opacity-40",
                           )}
                         >
@@ -819,7 +894,14 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                                   : "bg-lyp-white/35",
                               )}
                             />
-                            <span className="whitespace-nowrap font-heading text-[11px] font-semibold uppercase leading-tight tracking-[0.12em] text-lyp-white/85">
+                            <span
+                              className={cn(
+                                "whitespace-nowrap font-heading font-semibold uppercase leading-tight tracking-[0.12em] text-lyp-white/85",
+                                stackOffer
+                                  ? "text-[12px] [@media(min-height:850px)]:text-[13px]"
+                                  : "text-[11px]",
+                              )}
+                            >
                               {tier.name}
                             </span>
                           </span>
@@ -837,7 +919,14 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                               )}
                             </span>
                           )}
-                          <span className="mt-1 block whitespace-nowrap font-heading text-[19px] leading-none tabular-nums text-lyp-white [@media(min-height:850px)]:text-[23px]">
+                          <span
+                            className={cn(
+                              "mt-1 block whitespace-nowrap font-heading leading-none tabular-nums text-lyp-white",
+                              stackOffer
+                                ? "text-[21px] [@media(min-height:850px)]:text-[25px]"
+                                : "text-[19px] [@media(min-height:850px)]:text-[23px]",
+                            )}
+                          >
                             {formatCents(tier.target_price_cents)}
                             <span
                               className={cn(
@@ -893,7 +982,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
 
           </Reveal>
 
-          {!stackOffer && wantToggle}
+          {wantToggle}
           </div>
         </div>
 

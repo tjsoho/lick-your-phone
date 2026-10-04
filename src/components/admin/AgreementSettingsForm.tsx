@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
+  AlertTriangle,
   ExternalLink,
   FileText,
   FileUp,
@@ -19,7 +20,14 @@ import { useAutosave } from "@/hooks/use-autosave";
 import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 import { CopyFields, cleanCopy } from "@/components/admin/PageWordingForm";
 import type { CopyOverrides } from "@/lib/portal-copy";
-import { DOCUMENT_ACCEPT, uploadDocument } from "@/utils/storage";
+import {
+  DOCUMENT_ACCEPT,
+  SIGNATURE_ACCEPT,
+  isPrintableSignatureUrl,
+  uploadDocument,
+  uploadSignature,
+} from "@/utils/storage";
+import { inspectSignatureInk, type SignatureInk } from "@/utils/signature-ink";
 import { isValidTermsUrl, resolveTermsTarget } from "@/lib/terms";
 
 const EASE = "ease-brand";
@@ -31,9 +39,11 @@ const labelClasses =
 
 /**
  * The signature is drawn into the contract PDF at 36pt tall, object-contain,
- * so ~200px of artwork covers it comfortably at print resolution.
+ * so ~200px of artwork covers it comfortably at print resolution. PNG or JPG
+ * because those are the only two formats the contract generator can decode.
  */
-const SIGNATURE_SIZE_HINT = "Recommended 600 x 200px (transparent PNG)";
+const SIGNATURE_SIZE_HINT =
+  "PNG or JPG, around 600 x 200px. Dark ink on a transparent background.";
 
 /**
  * What to attach as the full terms. PDF only — it opens the same
@@ -121,6 +131,13 @@ export default function AgreementSettingsForm({
   const [uploading, setUploading] = useState(false);
   const documentInputRef = useRef<HTMLInputElement>(null);
 
+  const [signatureUploading, setSignatureUploading] = useState(false);
+  const signatureInputRef = useRef<HTMLInputElement>(null);
+  /* What the pixels say about the stored signature. `null` once checked means
+     the question could not be answered, which is not the same as a pass. */
+  const [ink, setInk] = useState<SignatureInk | null>(null);
+  const [inkChecked, setInkChecked] = useState(false);
+
   const termsStatus = useAutosave(terms, async (value) =>
     updateAgreementSettings({ terms_and_conditions: value }),
   ).status;
@@ -170,6 +187,48 @@ export default function AgreementSettingsForm({
     termsUrl: urlValid ? urlTyped : null,
     clauseCount,
   });
+
+  /* Every time the signature changes, look at it rather than trusting it.
+     The agency's complaint was that nothing told them what they had — not
+     whether the file was there, not whether it would print. */
+  const signatureUrl = image.trim();
+  const signaturePrintable =
+    signatureUrl === "" || isPrintableSignatureUrl(signatureUrl);
+
+  useEffect(() => {
+    if (!signatureUrl) {
+      setInk(null);
+      setInkChecked(false);
+      return;
+    }
+
+    let cancelled = false;
+    setInkChecked(false);
+
+    inspectSignatureInk(signatureUrl).then((result) => {
+      if (cancelled) return;
+      setInk(result);
+      setInkChecked(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [signatureUrl]);
+
+  async function handleSignature(file: File) {
+    setSignatureUploading(true);
+    const result = await uploadSignature(file);
+    setSignatureUploading(false);
+
+    if (result.error || !result.url) {
+      toast.error(result.error?.message ?? "Upload failed");
+      return;
+    }
+
+    setImage(result.url);
+    toast.success("Signature uploaded");
+  }
 
   async function handleDocument(file: File) {
     setUploading(true);
@@ -393,52 +452,187 @@ export default function AgreementSettingsForm({
           <p className="-mt-1 mb-2 font-body text-[11px] text-[#A89898]">
             {SIGNATURE_SIZE_HINT}
           </p>
-          {image ? (
+          {signatureUrl ? (
             <div className="mt-2">
-              <div className="relative inline-block">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={image}
-                  alt="Counter-signature"
-                  className="max-h-24 w-auto object-contain"
-                />
+              {/* The same file on two grounds. The left one is the contract's
+                  own white page — the honest preview, where a pale signature
+                  is as absent as it will be in the PDF. The right one exists
+                  only to prove the file is there, which is the question the
+                  agency could not answer. The grounds belong to these panels,
+                  never to the image: it sits on them bare. */}
+              <div className="grid max-w-md gap-3 sm:grid-cols-2">
+                <div>
+                  <div className="flex h-24 items-center justify-center rounded-2xl bg-lyp-white px-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={signatureUrl}
+                      alt="The counter-signature as it prints on the contract"
+                      className="max-h-16 w-auto object-contain"
+                    />
+                  </div>
+                  <p className="mt-1.5 text-center font-body text-[10.5px] text-[#A89898]">
+                    On the contract&rsquo;s white page
+                  </p>
+                </div>
+                <div>
+                  <div className="flex h-24 items-center justify-center rounded-2xl bg-[#1a0606] px-4">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={signatureUrl}
+                      alt="The same counter-signature shown on a dark ground"
+                      className="max-h-16 w-auto object-contain"
+                    />
+                  </div>
+                  <p className="mt-1.5 text-center font-body text-[10.5px] text-[#A89898]">
+                    On dark, so a pale one still shows
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => signatureInputRef.current?.click()}
+                  disabled={signatureUploading}
+                  className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry disabled:cursor-not-allowed disabled:opacity-60`}
+                >
+                  {signatureUploading ? (
+                    <Loader2
+                      strokeWidth={1.5}
+                      className="h-3.5 w-3.5 animate-spin text-lyp-cherry motion-reduce:animate-none"
+                    />
+                  ) : (
+                    <FileUp strokeWidth={1.5} className="h-3.5 w-3.5" />
+                  )}
+                  {signatureUploading ? "Uploading…" : "Replace signature"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLibraryOpen(true)}
+                  className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                >
+                  <Images strokeWidth={1.5} className="h-3.5 w-3.5" />
+                  Pick from the library
+                </button>
                 <button
                   type="button"
                   onClick={() => setImage("")}
                   title="Remove signature image"
                   aria-label="Remove signature image"
-                  className={`absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-[#1a0606]/45 text-lyp-white backdrop-blur-sm transition-all duration-500 ${EASE} hover:bg-lyp-cherry active:scale-95`}
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border border-[#EFE6E6] text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`}
                 >
                   <Trash2 strokeWidth={1.5} className="h-3.5 w-3.5" />
                 </button>
               </div>
+            </div>
+          ) : (
+            <div>
+              <button
+                type="button"
+                onClick={() => signatureInputRef.current?.click()}
+                disabled={signatureUploading}
+                className={`mt-2 flex w-full max-w-sm flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] py-8 text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry disabled:cursor-not-allowed disabled:opacity-60`}
+              >
+                {signatureUploading ? (
+                  <Loader2
+                    strokeWidth={1.5}
+                    className="h-7 w-7 animate-spin text-lyp-cherry motion-reduce:animate-none"
+                  />
+                ) : (
+                  <FileUp strokeWidth={1.25} className="h-7 w-7" />
+                )}
+                <span className="font-body text-[13px]">
+                  {signatureUploading
+                    ? "Uploading…"
+                    : "Upload Rita’s signature"}
+                </span>
+              </button>
               <button
                 type="button"
                 onClick={() => setLibraryOpen(true)}
-                className={`mt-3 flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                className={`mt-3 inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
               >
                 <Images strokeWidth={1.5} className="h-3.5 w-3.5" />
-                Replace signature
+                Pick from the library
               </button>
             </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setLibraryOpen(true)}
-              className={`mt-2 flex w-full max-w-sm flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] py-8 text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry`}
-            >
-              <Images strokeWidth={1.25} className="h-7 w-7" />
-              <span className="font-body text-[13px]">
-                Upload Rita&rsquo;s signature
-              </span>
-            </button>
           )}
+
+          <input
+            ref={signatureInputRef}
+            type="file"
+            accept={SIGNATURE_ACCEPT}
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleSignature(file);
+              if (signatureInputRef.current)
+                signatureInputRef.current.value = "";
+            }}
+          />
+
+          {/* Said out loud, because every one of these fails silently: the
+              contract is generated, uploaded and signed either way, and the
+              only sign of trouble is a blank space nobody looks at until a
+              client asks. */}
+          {signatureUrl && !signaturePrintable && (
+            <p className="mt-3 flex max-w-md items-start gap-2 font-body text-[11px] leading-relaxed text-lyp-cherry">
+              <AlertTriangle
+                strokeWidth={1.5}
+                className="mt-px h-3.5 w-3.5 flex-shrink-0"
+              />
+              <span>
+                This file isn&rsquo;t a PNG or a JPG, and the contract can only
+                print those two. It would leave the signature line blank.
+                Upload the original PNG with the button above — the media
+                library converts what it stores, so a signature taken from
+                there may well be the wrong format.
+              </span>
+            </p>
+          )}
+
+          {signatureUrl && signaturePrintable && ink?.tone === "light" && (
+            <p className="mt-3 flex max-w-md items-start gap-2 font-body text-[11px] leading-relaxed text-lyp-cherry">
+              <AlertTriangle
+                strokeWidth={1.5}
+                className="mt-px h-3.5 w-3.5 flex-shrink-0"
+              />
+              <span>
+                This signature is white, or very nearly — you can see it on the
+                dark panel and not on the white one. The contract page is
+                white, so it will print invisibly. Upload a dark version.
+              </span>
+            </p>
+          )}
+
+          {signatureUrl &&
+            signaturePrintable &&
+            ink?.tone === "dark" &&
+            !ink.hasTransparency && (
+              <p className="mt-3 max-w-md font-body text-[11px] leading-relaxed text-[#A89898]">
+                The ink is dark enough to read, but the file has a solid
+                background, so it will print as a box sitting on the page.
+                A transparent PNG sits on the contract like ink.
+              </p>
+            )}
+
+          {signatureUrl && signaturePrintable && inkChecked && !ink && (
+            <p className="mt-3 max-w-md font-body text-[11px] leading-relaxed text-[#A89898]">
+              The signature is saved, but it could not be read here to check
+              how it will print. The two panels above are the stored file —
+              if the dark one is empty too, nothing was uploaded.
+            </p>
+          )}
+
           <p className="mt-2 max-w-md font-body text-[11px] leading-relaxed text-[#A89898]">
-            Upload a <strong className="font-semibold text-[#8A7A7A]">transparent
-            version</strong> of the signature — a PNG with no background, so it
-            sits on the contract like ink rather than a white box. It is added
-            to every contract from now on. Until one is set, contracts show the
-            name and title on a signature line instead.
+            Upload a{" "}
+            <strong className="font-semibold text-[#8A7A7A]">
+              dark, transparent version
+            </strong>{" "}
+            of the signature — a PNG with no background, so it sits on the
+            contract like ink rather than a white box. It is added to every
+            contract from now on. Until one is set, contracts show the name and
+            title on a signature line instead.
           </p>
         </div>
       </Card>
