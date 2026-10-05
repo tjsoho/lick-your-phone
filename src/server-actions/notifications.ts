@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/utils/server";
+import { createAdminClient, createClient } from "@/utils/server";
 
 /**
  * WHAT THE AGENCY WANTS TO BE TOLD.
@@ -32,7 +32,18 @@ export type NotificationItem = {
 
 export async function getNotifications(limit = 12) {
   try {
-    const supabase = await createClient();
+    // `audit_events` is closed to everyone but the service role, which is how
+    // the proposal workspace reads it too. A server action is reachable by
+    // anyone who can reach the app, so the staff session is checked first —
+    // otherwise this would hand the activity log, client names included, to
+    // whoever asked.
+    const session = await createClient();
+    const {
+      data: { user },
+    } = await session.auth.getUser();
+    if (!user) return { data: [] as NotificationItem[], error: null };
+
+    const supabase = await createAdminClient();
 
     const { data, error } = await supabase
       .from("audit_events")

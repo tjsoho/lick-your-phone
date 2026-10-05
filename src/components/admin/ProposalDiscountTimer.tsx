@@ -131,6 +131,8 @@ export default function ProposalDiscountTimer({
   const endMs = expiresAt ? new Date(expiresAt).getTime() : null;
   const pending = startMs != null && now != null && now < startMs;
   const remaining = endMs != null && now != null ? endMs - now : null;
+  /** Switched on, but its window has already closed — so nothing is running. */
+  const finished = remaining != null && remaining <= 0;
 
   // Said the way the agency reads it: scheduled, running, or over.
   let clientSees: string | null = null;
@@ -175,7 +177,9 @@ export default function ProposalDiscountTimer({
                   ? "Off: the client sees full prices. Switch on to run the discount over a set window."
                   : pending
                     ? "Scheduled: the client sees full prices until the discount starts, then the countdown appears."
-                    : "Running: the client sees discounted prices and a countdown until the discount ends."}
+                    : finished
+                      ? "Ended: the window has closed, so the client sees full prices. Set a new one below."
+                      : "Running: the client sees discounted prices and a countdown until the discount ends."}
             </p>
           </div>
         </div>

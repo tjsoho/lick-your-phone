@@ -14,7 +14,7 @@ import { formatCents, formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import AdminSearchField from "./AdminSearchField";
 import SendProposalButton from "./SendProposalButton";
-import PortalLinkCell from "./PortalLinkCell";
+import PortalLinkButton from "./PortalLinkButton";
 import ProposalStageBadges, {
   hasOnboarded,
   hasPaymentDetails,
@@ -291,10 +291,9 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                   Contract total
                 </Th>
                 {/* The date is the first thing to go when space runs out. */}
-                <Th className="hidden xl:table-cell">Created</Th>
-                <Th hint="The link the client opens to read and sign this proposal.">
-                  Proposal Link
-                </Th>
+                {/* The first thing to go when the window is tight: nobody
+                    came to this page to read a creation date. */}
+                <Th className="hidden 2xl:table-cell">Created</Th>
                 <th scope="col" className={cn(thBase, stickyActions)}>
                   Actions
                 </th>
@@ -376,16 +375,8 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                         : "—"}
                     </td>
 
-                    <td className="hidden whitespace-nowrap px-3.5 py-3 tabular-nums text-[#A89898] xl:table-cell">
+                    <td className="hidden whitespace-nowrap px-3.5 py-3 tabular-nums text-[#A89898] 2xl:table-cell">
                       {formatDate(proposal.createdAt)}
-                    </td>
-
-                    {/* Capped so a long host never widens the table; the
-                        link itself truncates inside it. */}
-                    <td className="px-3.5 py-3">
-                      <div className="w-[160px] max-w-full">
-                        <PortalLinkCell url={proposal.portalUrl} />
-                      </div>
                     </td>
 
                     <td
@@ -400,6 +391,11 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                         <SendProposalButton
                           proposalId={proposal.id}
                           status={proposal.status ?? "draft"}
+                        />
+
+                        <PortalLinkButton
+                          url={proposal.portalUrl}
+                          className={iconAction}
                         />
 
                         <Link
