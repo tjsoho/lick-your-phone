@@ -340,10 +340,6 @@ export default function ProposalWizard({
             <h2 className="font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
               Client
             </h2>
-            <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
-              Start with the person. Choose an existing client, or add a new
-              one, then say which of their venues this proposal is for.
-            </p>
 
             {!showNewClient ? (
               <div className="mt-7 space-y-5">
@@ -590,9 +586,6 @@ export default function ProposalWizard({
             <h2 className="font-heading text-[20px] font-bold tracking-[-0.02em] text-lyp-black">
               {reviewTitle}
             </h2>
-            <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
-              Check the details before you commit.
-            </p>
 
             <dl className="mt-7 overflow-hidden rounded-2xl border border-[#EFE6E6]">
               <div className="flex items-start gap-4 border-b border-[#F1E8E8] px-5 py-4">

@@ -275,9 +275,8 @@ export default function ProposalDeckOverview({
       {/* The rule, said plainly: per-proposal choices here, company words and
           pictures under Content Pages. */}
       <p className="mb-4 rounded-2xl border border-[#F1E8E8] bg-[#FCFAFA] px-4 py-3 font-body text-[12px] leading-relaxed text-[#8A7A7A]">
-        Here you choose which pages this client sees and tailor their discounts
-        — nothing you change touches another proposal. The wording and images on
-        a page are shared company content and are edited under{" "}
+        Wording and images are shared across every proposal and are edited
+        under{" "}
         <span className="font-semibold text-lyp-black">Content Pages</span>.
       </p>
 

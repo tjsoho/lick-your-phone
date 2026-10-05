@@ -16,9 +16,6 @@ export default async function StatesPage() {
         <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
           States
         </h1>
-        <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
-          The regions venues and providers can be assigned to.
-        </p>
       </header>
 
       <div className="animate-rise" style={{ animationDelay: "80ms" }}>

@@ -306,7 +306,7 @@ export default async function ProposalDetailPage({
       <Section title="Ready to Send" delay="200ms">
         <p className="font-body text-[13px] leading-relaxed text-[#8A7A7A]">
           {canSend
-            ? "Everything above is settled. This is the last look before the client sees it — check what they get and what it comes to, open their view if you want to read it as they will, set the discount window, then send."
+            ? "The last look before the client sees it."
             : "Nothing left to send from here — this is a record of what went out."}
         </p>
 
@@ -447,8 +447,7 @@ export default async function ProposalDetailPage({
                 <Clock strokeWidth={1.25} className="h-4 w-4 text-[#A89898]" />
               </span>
               <p className="font-body text-[13px] leading-relaxed text-[#8A7A7A]">
-                Opens once the client signs. Sales confirms the onboarding form
-                here and adds the internal notes the team needs.
+                Opens once the client signs.
               </p>
             </div>
 

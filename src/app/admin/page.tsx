@@ -109,9 +109,6 @@ export default async function AdminDashboard() {
             Dashboard
           </h1>
         </div>
-        <p className="font-body text-[13px] text-[#8A7A7A]">
-          Welcome to the LickYourPhone admin portal.
-        </p>
       </header>
 
       {/* ─────────────── Stats ─────────────── */}

@@ -24,9 +24,6 @@ export default async function ContentPagesPage() {
             Content Pages
           </h1>
         </div>
-        <p className="font-body text-[13px] text-[#8A7A7A]">
-          The pages clients move through in the proposal portal.
-        </p>
       </header>
 
       <div

@@ -734,8 +734,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
               )}
             </h2>
             <p className="mt-1 font-body text-[12px] text-[#A89898]">
-              Every venue linked to {client.name}. A client can have as many as
-              they like.
+              Every venue linked to {client.name}.
             </p>
           </div>
           {!showVenueForm && (

@@ -19,8 +19,7 @@ export default async function SettingsPage() {
           Agreement Settings
         </h1>
         <p className="mt-2.5 max-w-xl font-body text-[13px] leading-relaxed text-[#8A7A7A]">
-          The terms, counter-signature, confirmation and portal wording shared by
-          every proposal. Edits save as you type.
+          Shared by every proposal. Edits save as you type.
         </p>
       </header>
 
