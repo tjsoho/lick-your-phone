@@ -15,7 +15,7 @@ export const GLOBAL_COPY: CopySlot[] = [
   { key: "flowStageDone", label: "Progress tracker: screen-reader word for a finished stage", default: "done" },
   /* The same instruction on every service slide that offers three terms, so
      it is worded once here rather than retyped on each page. */
-  { key: "serviceChooseTerm", label: "Service page: choose-a-term prompt", default: "Choose your term", hint: "Sits on the price panel's label row, directly above the term cards, on services that offer three of them. Keep it to a few words: a longer wording takes a line of its own, which the slide has no room for at 1280x720." },
+  { key: "serviceChooseTerm", label: "Service page: choose-a-term prompt", default: "Select your preferred term", hint: "Sits on the price panel's label row, directly above the term cards, on every service that offers a choice of term. Ticking one of those cards is what adds the service, so this line is the instruction for the whole panel. Keep it short: a longer wording takes a line of its own, which the slide has no room for at 1280x720." },
   { key: "servicesSelectedOne", label: "Price bar: one service", default: "service selected" },
   { key: "servicesSelectedMany", label: "Price bar: several services", default: "services selected" },
   { key: "perMonthGst", label: "Price bar: per month", default: "+ GST per month" },

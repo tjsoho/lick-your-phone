@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { Check } from "lucide-react";
 import {
   PageData,
   useCopy,
@@ -388,22 +389,14 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   );
 
   /**
-   * Every slide ends with the same action, so a term has to be pickable
-   * before the service is added. Until then the choice lives here; once the
-   * service is in, the context owns it.
+   * The action for a service that has only one price. A tiered one is added
+   * and removed by its term cards instead — there is no separate bar to press,
+   * so there is no pending term to hold either: nothing is ticked until the
+   * client ticks it.
    */
-  const [pendingTierId, setPendingTierId] = useState<string | null>(null);
-  const highlightedTierId =
-    currentTierId ?? pendingTierId ?? sortedTiers[0]?.id ?? null;
-
-  /** The one action shared by every service page. */
   function handleWantThis() {
     if (isDisabled) return;
-    if (selected) {
-      deselectService(service.id);
-      return;
-    }
-    if (hasTiers && highlightedTierId) selectTier(service.id, highlightedTierId);
+    if (selected) deselectService(service.id);
     else toggleService(service.id);
   }
 
@@ -451,12 +444,16 @@ export default function ServicePage({ service, page }: ServicePageProps) {
     (disclaimers.length > 0 ? 1 : 0);
   const twoColumnIndex = inclusions.length > 6;
   const tierCount = service.service_tiers.length;
-  // Three terms side by side need the panel's full width, so the label and
-  // incentive move above them instead of taking a column beside them — and
-  // the decision moves BELOW them. The toggle used to sit in the label row,
-  // which put it above the terms: the client picked a term and then had to
-  // look back up to add the service. Terms, then the toggle, in that order.
-  const stackOffer = hasTiers && tierCount >= 3;
+  // TERMS GET THE WHOLE WIDTH.
+  //
+  // The label used to take a column beside the term cards whenever there were
+  // only two of them, and two long names in what was left of the row ran off
+  // the edge: "$7,989 + GST PER MONT". "Adjust this layout so we have invest
+  // up the top and then the same two boxes under with the check box and make
+  // sure the text stays contained." So every tiered service now reads the way
+  // the three-term ones already did — INVESTMENT and its prompt on top, the
+  // cards on a full-width row underneath.
+  const stackOffer = hasTiers;
   // A three-term service gives its terms a bigger, darker, visibly separate
   // control, and a row of its own for the toggle underneath. That costs
   // height, and the index pays for it: one notch down the density ladder on
@@ -929,53 +926,86 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                         tier.target_price_cents,
                         service.discount_pct,
                       );
-                      const tierSelected = highlightedTierId === tier.id;
+                      const tierSelected = selected && currentTierId === tier.id;
                       const tierSaving = tierList - tier.target_price_cents;
                       return (
                         <button
                           key={tier.id}
+                          type="button"
+                          role="checkbox"
+                          aria-checked={tierSelected}
+                          aria-label={
+                            tierSelected
+                              ? `Remove ${service.name} — ${tier.name}`
+                              : `Choose ${tier.name} for ${service.name}`
+                          }
                           style={{
                             animationDelay: `${D_TIERS + tierIndex * 70}ms`,
                           }}
                           disabled={isDisabled}
                           onClick={() => {
                             if (isDisabled) return;
-                            // Picking a term never adds or removes the
-                            // service; the action below does that.
-                            setPendingTierId(tier.id);
-                            if (selected) selectTier(service.id, tier.id);
+                            // TICKING A TERM IS THE DECISION.
+                            //
+                            // There used to be an "I want this" bar under these
+                            // cards, and it asked for the same answer twice:
+                            // "remove i want this on these pages … just make it
+                            // clear to choose your term". So the card is the
+                            // action now — ticking one adds the service on that
+                            // term, ticking another swaps the term, and ticking
+                            // the one already chosen takes the service back out.
+                            if (tierSelected) deselectService(service.id);
+                            else selectTier(service.id, tier.id);
                           }}
                           className={cn(
-                            "portal-reveal portal-reveal-pop min-w-0 rounded-xl px-4 text-left ring-1 ring-inset transition-[background-color,box-shadow,transform] duration-300 ease-brand hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none",
-                            // The terms are the only thing on the slide the
-                            // client has to DECIDE, and on the panel's pale
-                            // wash they read as more price furniture. So they
-                            // sit on the opposite ground — cut INTO the panel
-                            // rather than laid on it — with a rose edge that
-                            // marks them as the live control. Picking one
-                            // fills it; the two states are now a swap of
-                            // ground, not a change of opacity.
+                            "portal-reveal portal-reveal-pop relative min-w-0 rounded-xl px-4 text-left ring-1 ring-inset transition-[box-shadow,transform] duration-300 ease-brand hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none",
+                            "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f0c9c9]",
+                            // ALL THREE KEEP THE SAME GROUND.
+                            //
+                            // "have a check box in the top right so they can
+                            // click it and it gives a tick so they all stay the
+                            // same colour but the one selected has a green tick
+                            // and bright red border." The cards no longer swap
+                            // their fill when chosen: the tick and the cherry
+                            // edge carry the whole state, so the three prices
+                            // stay comparable at a glance.
+                            "bg-[#120406]/70",
                             tierSelected
-                              ? "bg-[#f0c9c9]/[0.16] ring-[#f0c9c9]/75"
-                              : "bg-[#120406]/70 ring-[#f0c9c9]/25 hover:bg-[#120406]/50 hover:ring-[#f0c9c9]/50",
+                              ? "ring-2 ring-lyp-cherry"
+                              : "ring-[#f0c9c9]/25 hover:ring-[#f0c9c9]/50",
                             // Three terms also get the room to be read.
                             stackOffer ? "py-3" : "py-2.5",
                             isDisabled && "cursor-not-allowed opacity-40",
                           )}
                         >
-                          <span className="flex items-center gap-2">
-                            <span
-                              aria-hidden
+                          {/* The box in the corner. It is drawn, not clickable
+                              on its own: the whole card is the target, and a
+                              12px tick would be a cruel one. */}
+                          <span
+                            aria-hidden
+                            className={cn(
+                              "absolute right-3 top-3 flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border transition-colors duration-300 ease-brand",
+                              tierSelected
+                                ? "border-[#4ADE80] bg-[#4ADE80]/[0.14]"
+                                : "border-lyp-white/30 bg-transparent",
+                            )}
+                          >
+                            <Check
+                              strokeWidth={3}
                               className={cn(
-                                "h-1.5 w-1.5 shrink-0 rounded-full transition-colors duration-300 ease-brand",
-                                tierSelected
-                                  ? "bg-[#f0c9c9]"
-                                  : "bg-lyp-white/35",
+                                "h-3 w-3 text-[#4ADE80] transition-opacity duration-300 ease-brand",
+                                tierSelected ? "opacity-100" : "opacity-0",
                               )}
                             />
+                          </span>
+                          <span className="flex items-center gap-2 pr-7">
+                            {/* The name wraps rather than running under the
+                                tick box: "up to 30x influencers" is a long
+                                term, and a clipped one tells the client
+                                nothing. */}
                             <span
                               className={cn(
-                                "whitespace-nowrap font-heading font-semibold uppercase leading-tight tracking-[0.12em] text-lyp-white/85",
+                                "min-w-0 font-heading font-semibold uppercase leading-tight tracking-[0.12em] text-lyp-white/85",
                                 stackOffer
                                   ? "text-[12px] [@media(min-height:850px)]:text-[13px]"
                                   : "text-[11px]",
@@ -998,23 +1028,30 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                               )}
                             </span>
                           )}
+                          {/* NOTHING RUNS OFF THE EDGE.
+                              The figure keeps its own line unbroken; the
+                              cadence beside it is allowed to drop under when
+                              the card is too narrow to hold both, which is
+                              what used to clip "+ GST PER MONT" against the
+                              next card. */}
                           <span
                             className={cn(
-                              "mt-1 block whitespace-nowrap font-heading leading-none tabular-nums text-lyp-white",
+                              "mt-1 flex flex-wrap items-baseline gap-x-1.5 font-heading leading-none tabular-nums text-lyp-white",
                               stackOffer
                                 ? "text-[21px] [@media(min-height:850px)]:text-[25px]"
                                 : "text-[19px] [@media(min-height:850px)]:text-[23px]",
                             )}
                           >
-                            {formatCents(tier.target_price_cents)}
+                            <span className="whitespace-nowrap">
+                              {formatCents(tier.target_price_cents)}
+                            </span>
                             <span
                               className={cn(
                                 "font-body text-[10px] uppercase tracking-[0.12em] text-lyp-white/75",
                                 // Three terms in a narrowed frame have no room
-                                // for the cadence beside the figure, so it
-                                // takes the line under it instead of spilling
-                                // over the card next to it.
-                                tightFrame ? "mt-1 block" : "ml-1.5",
+                                // for the cadence beside the figure at all, so
+                                // it takes the line under it outright.
+                                tightFrame && tierCount >= 3 && "w-full",
                               )}
                             >
                               {t("plusGst")} {periodLabel}
@@ -1025,20 +1062,23 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                     })}
                 </div>
               ) : (
-                <div className="flex flex-1 flex-wrap items-end gap-x-6 gap-y-2">
-                  {/* The price and its "+ GST" are one word: on a laptop, or
-                      beside the open basket, the column narrows and a wrap
-                      would orphan the GST under the figure. The saving beside
-                      it wraps below instead, which costs a line, not sense. */}
-                  <div className="whitespace-nowrap">
+                <div className="flex min-w-0 flex-1 flex-wrap items-end gap-x-6 gap-y-2">
+                  <div className="min-w-0">
                     {hasDiscount && (
-                      <p className="font-body text-[13px] leading-none text-lyp-white/70 line-through [@media(min-height:850px)]:text-sm">
+                      <p className="whitespace-nowrap font-body text-[13px] leading-none text-lyp-white/70 line-through [@media(min-height:850px)]:text-sm">
                         {formatCents(displayList)} {t("plusGst")}
                       </p>
                     )}
-                    <p className="mt-1.5 font-heading text-[32px] leading-none tabular-nums text-lyp-white [@media(min-height:850px)]:text-[42px]">
-                      {formatCents(displayTarget)}
-                      <span className="ml-1.5 text-[15px] text-lyp-white/80 [@media(min-height:850px)]:text-[18px]">
+                    {/* The figure never breaks; its "+ GST" drops under it when
+                        the row runs out of width instead of running off the
+                        panel — which is how "$1,595 + G" happened, on the one
+                        service whose label column carries a two-line note
+                        beside it. */}
+                    <p className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 font-heading text-[32px] leading-none tabular-nums text-lyp-white [@media(min-height:850px)]:text-[42px]">
+                      <span className="whitespace-nowrap">
+                        {formatCents(displayTarget)}
+                      </span>
+                      <span className="text-[15px] text-lyp-white/80 [@media(min-height:850px)]:text-[18px]">
                         {t("plusGst")}
                       </span>
                     </p>
@@ -1061,7 +1101,11 @@ export default function ServicePage({ service, page }: ServicePageProps) {
 
           </Reveal>
 
-          {wantToggle}
+          {/* A tiered service has already been decided by its term cards —
+              ticking one is what puts it in the basket — so there is nothing
+              left for this bar to ask. It stays for the single-price services,
+              which have no other way in. */}
+          {!hasTiers && wantToggle}
           </div>
         </div>
 
