@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useCallback, useEffect } from "react";
-import { useReducedMotion } from "framer-motion";
 import { Download, ExternalLink, X } from "lucide-react";
 import { useCopy, useProposal } from "../ProposalContext";
 import { useSignerEmail } from "../useSignerEmail";
@@ -11,13 +10,6 @@ import Reveal, { revealDelay } from "../Reveal";
 import type { TermsKind } from "@/lib/terms";
 
 type SignState = "idle" | "signing" | "signed" | "error";
-
-/**
- * How long the confirmation holds the screen before the deck carries on to
- * payment. Long enough to read the tick, short enough that nobody starts
- * wondering whether they are finished.
- */
-const PAYMENT_HANDOFF_MS = 2000;
 
 /* -------------------------------------------------------------------------
    THE TERMS, ONCE
@@ -106,7 +98,6 @@ export default function SignaturePage() {
     paymentCaptured,
   } = useProposal();
   const t = useCopy("signature");
-  const reduceMotion = useReducedMotion();
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [termsOpen, setTermsOpen] = useState(false);
@@ -303,37 +294,51 @@ export default function SignaturePage() {
   const handsOffToPayment =
     confirming && paymentPageIndex !== -1 && !paymentCaptured;
 
+  /* NOTHING IN BETWEEN.
+
+     There used to be a tick, a line of reassurance and a two second hold
+     here, and the hold read as a fault rather than a flourish: "the glitch
+     page saying 'proceed to payment' or something like that after clicking
+     the sign contract button is still showing. Instead, after signing, this
+     page should show straight away" — the page in the screenshot being the
+     payment form.
+
+     So the slide turns on the same tick the signature lands on. With no wait
+     there is nothing to announce and nothing for `prefers-reduced-motion` to
+     ask for: everyone now gets what it used to get. */
   useEffect(() => {
     if (!handsOffToPayment) return;
-
-    // The hold is decoration. Anyone who has asked for less motion gets the
-    // next screen immediately rather than a pause they didn't ask for.
-    if (reduceMotion) {
-      setCurrentPage(paymentPageIndex);
-      return;
-    }
-
-    const id = setTimeout(
-      () => setCurrentPage(paymentPageIndex),
-      PAYMENT_HANDOFF_MS,
-    );
-    return () => clearTimeout(id);
-  }, [handsOffToPayment, reduceMotion, paymentPageIndex, setCurrentPage]);
+    setCurrentPage(paymentPageIndex);
+  }, [handsOffToPayment, paymentPageIndex, setCurrentPage]);
 
   /* ---------------------------------------------------------------- */
-  /*  Confirmation, on its way to payment                             */
+  /*  Signed                                                          */
   /* ---------------------------------------------------------------- */
 
-  /* THE CONFIRMATION.
+  /* HANDING OVER.
 
-     There used to be a "Download Contract PDF" button here, and it was in the
-     way: a client who has just signed is on their way to pay, and a file is
-     not what they want in that second. "Do you need the contract there to
-     download, or maybe at the end? — At the end is fine." The end-of-journey
-     screen already offers the same `/api/contract/by-token/<token>`, which
-     resolves the latest signed contract, so nothing is lost by dropping it
-     from here — and with it goes the hand-off being disarmed by a click,
-     which only existed to stop the screen moving while someone saved a file. */
+     The effect above has already asked for the payment slide, and this is
+     the one frame before it arrives. Nothing is drawn in it on purpose: a
+     tick that lives for a frame is exactly the flicker the agency read as a
+     glitch, and the carousel mounts one slide at a time, so there is no
+     outgoing screen to leave standing either. */
+  if (handsOffToPayment) return null;
+
+  /* SIGNED, WITH NOWHERE TO HAND OVER TO.
+
+     Two visits end here rather than at the payment form: a deck whose
+     payment slide has been hidden in Settings, and a client who has already
+     given their card and has walked back to this slide. Both have signed, so
+     neither is shown a pen — they are shown the one sentence the agency
+     writes for this moment, and the bar below them carries on saying where
+     they are in the flow.
+
+     No contract download: it waits on the last screen of the journey, where
+     the client is finished rather than mid-flow. "Do you need the contract
+     there to download, or maybe at the end? — At the end is fine." The
+     onboarding form's All Done screen offers
+     `/api/contract/by-token/<token>` alongside the terms and their own
+     answers. */
   if (confirming) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6 text-center">
@@ -363,35 +368,11 @@ export default function SignaturePage() {
           {t("signedTitle")}
         </h1>
         <p
-          className="portal-reveal font-body text-sm text-lyp-white/60 max-w-sm mb-8"
+          className="portal-reveal font-body text-sm text-lyp-white/60 max-w-sm"
           style={{ animationDelay: `${revealDelay(2)}ms` }}
         >
           {agreement.postSignatureText}
         </p>
-        {paymentPageIndex !== -1 && !paymentCaptured && (
-          <Reveal index={3} className="flex justify-center">
-            <button
-              onClick={() => setCurrentPage(paymentPageIndex)}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-lyp-cherry px-6 py-3 font-heading text-sm text-lyp-white transition-colors hover:bg-lyp-maroon"
-            >
-              {t("addPaymentButton")}
-            </button>
-          </Reveal>
-        )}
-
-        {/* Said out loud, so the page moving on its own reads as the flow
-            working rather than something the client didn't do. */}
-        {handsOffToPayment && !reduceMotion && (
-          <Reveal
-            as="p"
-            index={4}
-            variant="fade"
-            className="mt-5 font-body text-xs text-lyp-white/40"
-            aria-live="polite"
-          >
-            {t("redirectNotice")}
-          </Reveal>
-        )}
       </div>
     );
   }

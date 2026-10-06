@@ -9,7 +9,7 @@ import AdminSearchField from "./AdminSearchField";
 const EASE = "ease-brand";
 
 const thClasses =
-  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
 export type ClientRow = {
   id: string;
@@ -57,20 +57,20 @@ export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
           className="w-full min-w-[220px] flex-1 sm:w-auto sm:max-w-[320px]"
         />
         {query && (
-          <span className="font-body text-[11.5px] text-[#A89898]">
+          <span className="font-body text-[11.5px] text-[#867474]">
             {visible.length} of {clients.length}
           </span>
         )}
       </div>
 
       <div
-        className="animate-rise overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white"
+        className="animate-rise overflow-hidden rounded-2xl border border-[#E2D5D5] bg-lyp-white"
         style={{ animationDelay: "80ms" }}
       >
         <div className="overflow-x-auto">
           <table className="w-full text-left font-body text-[12.5px]">
             <thead>
-              <tr className="border-b border-[#F1E8E8]">
+              <tr className="border-b border-[#E6DADA]">
                 <th scope="col" className={thClasses}>
                   Client
                 </th>
@@ -94,7 +94,7 @@ export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
                   return (
                     <tr
                       key={client.id}
-                      className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
+                      className={`border-b border-[#EFE6E6] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#F7F1F1]`}
                     >
                       <td className="whitespace-nowrap px-5 py-3">
                         <Link
@@ -104,17 +104,17 @@ export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
                           {client.name}
                         </Link>
                       </td>
-                      <td className="px-5 py-3 text-[#8A7A7A]">
+                      <td className="px-5 py-3 text-[#6B5A5A]">
                         {venues.length > 0 ? (
                           <span className="flex flex-wrap gap-1.5">
                             {venues.map((venue) => (
                               <span
                                 key={venue.id}
-                                className="inline-flex items-center gap-1.5 rounded-full border border-[#F1E8E8] bg-[#FBF8F8] px-2.5 py-1 text-[11.5px] text-[#8A7A7A]"
+                                className="inline-flex items-center gap-1.5 rounded-full border border-[#E6DADA] bg-[#F7F1F1] px-2.5 py-1 text-[11.5px] text-[#6B5A5A]"
                               >
                                 <MapPin
                                   strokeWidth={1.25}
-                                  className="h-3 w-3 text-[#C3B5B5]"
+                                  className="h-3 w-3 text-[#9C8C8C]"
                                 />
                                 {venue.name}
                               </span>
@@ -124,10 +124,10 @@ export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
                           "—"
                         )}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                      <td className="whitespace-nowrap px-5 py-3 text-[#6B5A5A]">
                         {client.email || "—"}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#A89898]">
+                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#867474]">
                         {formatDate(client.created_at)}
                       </td>
                     </tr>
@@ -142,7 +142,7 @@ export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
                         className="h-6 w-6 text-lyp-cherry/60"
                       />
                     </span>
-                    <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+                    <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
                       No clients match “{query}”.
                     </p>
                     <button
@@ -163,7 +163,7 @@ export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
                         className="h-6 w-6 text-lyp-cherry/60"
                       />
                     </span>
-                    <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+                    <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
                       No clients yet.
                     </p>
                     <Link

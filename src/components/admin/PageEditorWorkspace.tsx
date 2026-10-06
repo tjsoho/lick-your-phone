@@ -204,7 +204,7 @@ export default function PageEditorWorkspace({
             <h2 className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
               Pricing &amp; Inclusions
             </h2>
-            <p className="mt-2 font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
+            <p className="mt-2 font-body text-[12.5px] leading-relaxed text-[#6B5A5A]">
               This page&rsquo;s price, tiers, inclusions, client obligations and
               disclaimers come from the service record, so they stay consistent
               wherever the service appears. Edit the wording here; prices and
@@ -284,7 +284,7 @@ export default function PageEditorWorkspace({
                   className={`rounded-full p-1.5 transition-colors duration-500 ${EASE} ${
                     active
                       ? "bg-lyp-cherry/[0.08] text-lyp-cherry"
-                      : "text-[#A89898] hover:text-lyp-black"
+                      : "text-[#867474] hover:text-lyp-black"
                   }`}
                 >
                   <Icon strokeWidth={1.5} className="h-4 w-4" />
@@ -313,7 +313,7 @@ export default function PageEditorWorkspace({
           />
         </div>
 
-        <p className="mt-3 font-body text-[11px] leading-relaxed text-[#A89898]">
+        <p className="mt-3 font-body text-[11px] leading-relaxed text-[#867474]">
           Exactly what the client sees, updating as you type. Sample client
           details stand in for the real ones.
         </p>

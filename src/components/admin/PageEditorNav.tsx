@@ -41,7 +41,7 @@ export default function PageEditorNav({
             <ArrowLeft strokeWidth={1.5} className="h-3.5 w-3.5" />
           </span>
           <span className="min-w-0">
-            <span className="block font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+            <span className="block font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]">
               Previous
             </span>
             <span className="block truncate">
@@ -53,7 +53,7 @@ export default function PageEditorNav({
         <span aria-hidden className="flex-1" />
       )}
 
-      <span className="flex-shrink-0 font-body text-[11px] tabular-nums tracking-wide text-[#A89898]">
+      <span className="flex-shrink-0 font-body text-[11px] tabular-nums tracking-wide text-[#867474]">
         {position} / {total}
       </span>
 
@@ -64,7 +64,7 @@ export default function PageEditorNav({
           aria-label={`Next page: ${next.title ?? "Untitled"}`}
         >
           <span className="min-w-0">
-            <span className="block font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+            <span className="block font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]">
               Next
             </span>
             <span className="block truncate">{next.title ?? "Untitled"}</span>

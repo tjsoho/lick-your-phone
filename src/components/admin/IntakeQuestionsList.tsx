@@ -33,7 +33,7 @@ interface IntakeQuestionsListProps {
 const EASE = "ease-brand";
 
 const thClasses =
-  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
 export default function IntakeQuestionsList({
   questions,
@@ -185,7 +185,7 @@ export default function IntakeQuestionsList({
           <h3 className="mt-5 font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
             No questions yet
           </h3>
-          <p className="mx-auto mt-2 max-w-sm font-body text-[13px] text-[#8A7A7A]">
+          <p className="mx-auto mt-2 max-w-sm font-body text-[13px] text-[#6B5A5A]">
             Create your first onboarding question to guide clients through
             registration.
           </p>
@@ -238,16 +238,16 @@ export default function IntakeQuestionsList({
                     </h2>
                     <Edit
                       strokeWidth={1.5}
-                      className="h-3.5 w-3.5 flex-shrink-0 text-[#A89898] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                      className="h-3.5 w-3.5 flex-shrink-0 text-[#867474] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
                     />
                     {pageTitles[pNum] && (
-                      <span className="flex-shrink-0 font-body text-[11px] tabular-nums text-[#A89898]">
+                      <span className="flex-shrink-0 font-body text-[11px] tabular-nums text-[#867474]">
                         Page {pNum}
                       </span>
                     )}
                   </button>
                 )}
-                <span className="rounded-full bg-[#F7F1F1] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] tabular-nums text-[#8A7A7A]">
+                <span className="rounded-full bg-[#F7F1F1] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] tabular-nums text-[#6B5A5A]">
                   {pageQuestions.length}{" "}
                   {pageQuestions.length === 1 ? "Question" : "Questions"}
                 </span>
@@ -279,7 +279,7 @@ export default function IntakeQuestionsList({
                           key={q.id}
                           className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
                         >
-                          <td className="px-5 py-3 text-center tabular-nums text-[#A89898]">
+                          <td className="px-5 py-3 text-center tabular-nums text-[#867474]">
                             {q.sequence}
                           </td>
                           <td className="px-5 py-3">
@@ -287,7 +287,7 @@ export default function IntakeQuestionsList({
                               <span
                                 className={cn(
                                   "font-medium",
-                                  q.hidden ? "text-[#A89898]" : "text-lyp-black",
+                                  q.hidden ? "text-[#867474]" : "text-lyp-black",
                                 )}
                               >
                                 {q.field_label}
@@ -298,18 +298,18 @@ export default function IntakeQuestionsList({
                                   difference between "switched off" and
                                   "broken condition". */}
                               {q.hidden && (
-                                <span className="inline-block flex-shrink-0 rounded-full bg-[#F2EDED] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] text-[#8A7A7A]">
+                                <span className="inline-block flex-shrink-0 rounded-full bg-[#F2EDED] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] text-[#6B5A5A]">
                                   Hidden
                                 </span>
                               )}
                             </div>
                             {q.section && (
-                              <div className="mt-0.5 font-body text-[11px] text-[#A89898]">
+                              <div className="mt-0.5 font-body text-[11px] text-[#867474]">
                                 Section: {q.section}
                               </div>
                             )}
                           </td>
-                          <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                          <td className="whitespace-nowrap px-5 py-3 text-[#6B5A5A]">
                             {getFieldTypeLabel(q.field_type)}
                           </td>
                           <td className="whitespace-nowrap px-5 py-3 text-center">
@@ -318,7 +318,7 @@ export default function IntakeQuestionsList({
                                 Yes
                               </span>
                             ) : (
-                              <span className="inline-block rounded-full bg-[#F2EDED] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] text-[#8A7A7A]">
+                              <span className="inline-block rounded-full bg-[#F2EDED] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] text-[#6B5A5A]">
                                 No
                               </span>
                             )}
@@ -332,7 +332,7 @@ export default function IntakeQuestionsList({
                                   : "conditions"}
                               </span>
                             ) : (
-                              <span className="font-body text-[12px] text-[#C3B5B5]">
+                              <span className="font-body text-[12px] text-[#9C8C8C]">
                                 —
                               </span>
                             )}
@@ -346,8 +346,8 @@ export default function IntakeQuestionsList({
                                 className={cn(
                                   `flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-500 ${EASE}`,
                                   q.hidden
-                                    ? "border-[#EFE6E6] bg-[#FBF8F8] text-[#A89898] hover:border-lyp-cherry/25 hover:text-lyp-cherry"
-                                    : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/25 hover:text-lyp-cherry",
+                                    ? "border-[#EFE6E6] bg-[#FBF8F8] text-[#867474] hover:border-lyp-cherry/25 hover:text-lyp-cherry"
+                                    : "border-[#EFE6E6] bg-lyp-white text-[#6B5A5A] hover:border-lyp-cherry/25 hover:text-lyp-cherry",
                                 )}
                                 title={q.hidden ? "Show to clients" : "Hide from clients"}
                                 aria-label={
@@ -368,8 +368,8 @@ export default function IntakeQuestionsList({
                                 className={cn(
                                   `flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-500 ${EASE}`,
                                   idx === 0
-                                    ? "cursor-not-allowed border-[#F1E8E8] bg-[#FBF8F8] text-[#D8CACA]"
-                                    : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/25 hover:text-lyp-cherry",
+                                    ? "cursor-not-allowed border-[#F1E8E8] bg-[#FBF8F8] text-[#BFADAD]"
+                                    : "border-[#EFE6E6] bg-lyp-white text-[#6B5A5A] hover:border-lyp-cherry/25 hover:text-lyp-cherry",
                                 )}
                                 title="Move up"
                                 aria-label={`Move ${q.field_label} up`}
@@ -387,8 +387,8 @@ export default function IntakeQuestionsList({
                                 className={cn(
                                   `flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-500 ${EASE}`,
                                   idx === pageQuestions.length - 1
-                                    ? "cursor-not-allowed border-[#F1E8E8] bg-[#FBF8F8] text-[#D8CACA]"
-                                    : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/25 hover:text-lyp-cherry",
+                                    ? "cursor-not-allowed border-[#F1E8E8] bg-[#FBF8F8] text-[#BFADAD]"
+                                    : "border-[#EFE6E6] bg-lyp-white text-[#6B5A5A] hover:border-lyp-cherry/25 hover:text-lyp-cherry",
                                 )}
                                 title="Move down"
                                 aria-label={`Move ${q.field_label} down`}
@@ -404,7 +404,7 @@ export default function IntakeQuestionsList({
                             <div className="flex items-center justify-end gap-2.5">
                               <Link
                                 href={`/admin/intake-questions/${q.id}`}
-                                className={`text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                                className={`text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                                 title="Edit question"
                                 aria-label={`Edit ${q.field_label}`}
                               >
@@ -414,7 +414,7 @@ export default function IntakeQuestionsList({
                                 onClick={() =>
                                   handleDelete(q.id, q.field_label)
                                 }
-                                className={`text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                                className={`text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                                 title="Delete question"
                                 aria-label={`Delete ${q.field_label}`}
                               >

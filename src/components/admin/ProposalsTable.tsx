@@ -6,7 +6,6 @@ import {
   ClipboardList,
   FilePlus2,
   EyeOff,
-  LayoutList,
   Pencil,
   SearchX,
 } from "lucide-react";
@@ -34,8 +33,8 @@ const EASE = "ease-brand";
 
    1. Low-value columns are folded into their neighbours rather than dropped:
       the venue sits under the client name, the payment badge under the status
-      pill, and the proposal's own workspace is an icon in Actions instead of
-      a column of truncated UUIDs.
+      pill, and the proposal's own workspace is the pencil in Actions instead
+      of a column of truncated UUIDs.
    2. The remaining cells are capped and truncate, so one long venue name or a
       long portal URL cannot push everything else sideways.
    3. Actions is stuck to the right edge of the scroller, so on anything
@@ -49,7 +48,7 @@ const EASE = "ease-brand";
    ------------------------------------------------------------------------- */
 
 const thBase =
-  "whitespace-nowrap px-3.5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-3.5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
 /** The Actions column rides the right edge, so it needs its own ground. */
 const stickyActions =
@@ -74,7 +73,7 @@ function Th({
       {hint ? (
         <span
           title={hint}
-          className="cursor-help border-b border-dotted border-[#D8CACA] pb-px"
+          className="cursor-help border-b border-dotted border-[#BFADAD] pb-px"
         >
           {children}
         </span>
@@ -148,7 +147,7 @@ function OpenedCell({ row }: { row: ProposalRow }) {
     return (
       <span
         title="The client has not opened this proposal yet."
-        className="font-body text-[12px] text-[#C3B5B5]"
+        className="font-body text-[12px] text-[#9C8C8C]"
       >
         Not yet
       </span>
@@ -164,7 +163,7 @@ function OpenedCell({ row }: { row: ProposalRow }) {
   return (
     <span
       title={`First opened ${formatDate(row.firstViewedAt)}${last}${reached}.`}
-      className="font-body text-[12.5px] text-lyp-black underline decoration-dotted decoration-[#D8CACA] underline-offset-[3px]"
+      className="font-body text-[12.5px] text-lyp-black underline decoration-dotted decoration-[#BFADAD] underline-offset-[3px]"
     >
       {formatDate(row.firstViewedAt)}
     </span>
@@ -195,7 +194,24 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
     });
   }, [rows, query, filter, showSuperseded]);
 
-  const iconAction = `flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#EFE6E6] bg-lyp-white text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`;
+  /* ------------------------------------------------------------------
+     THE ROW'S ICON BUTTONS.
+
+     They were ghost outlines — a hairline border and a pale glyph on an
+     almost-white row — and the agency could not see them: "the actions are
+     not clearly visible enough". So each one now has a filled well, a border
+     that actually draws, and a glyph dark enough and thick enough to read at
+     a glance. The labelled Onboarding pill next to them is the yardstick:
+     these are quieter than it, but unmistakably the same family of control.
+
+     The 32px box and the 8px gap are unchanged, deliberately — the Actions
+     column has to keep fitting on a 1440 screen, so the weight comes from
+     fill, border and stroke rather than from size.
+     ------------------------------------------------------------------ */
+  const iconAction = `flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#D9C9C9] bg-[#EFE4E4] text-[#6B5A5A] outline-none transition-all duration-500 ${EASE} hover:border-lyp-cherry/35 hover:bg-lyp-cherry/[0.08] hover:text-lyp-cherry focus-visible:ring-2 focus-visible:ring-lyp-cherry/40 active:scale-95`;
+
+  /** Glyphs inside `iconAction` — one size and weight for the whole cluster. */
+  const iconGlyph = "h-4 w-4";
 
   return (
     <>
@@ -224,7 +240,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                 EASE,
                 filter === entry.value
                   ? "border-lyp-cherry/25 bg-lyp-cherry/[0.07] text-lyp-cherry"
-                  : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/20 hover:text-lyp-cherry",
+                  : "border-[#E2D5D5] bg-lyp-white text-[#6B5A5A] hover:border-lyp-cherry/20 hover:text-lyp-cherry",
               )}
             >
               {entry.label}
@@ -244,7 +260,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
               EASE,
               showSuperseded
                 ? "border-lyp-cherry/25 bg-lyp-cherry/[0.07] text-lyp-cherry"
-                : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/20 hover:text-lyp-cherry",
+                : "border-[#E2D5D5] bg-lyp-white text-[#6B5A5A] hover:border-lyp-cherry/20 hover:text-lyp-cherry",
             )}
             title={
               showSuperseded
@@ -253,19 +269,19 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
             }
           >
             <EyeOff strokeWidth={1.5} className="h-3.5 w-3.5" />
-            {showSuperseded ? "Hide" : "Show"} superseded ({supersededCount})
+            {showSuperseded ? "Hide" : "Show"} replaced ({supersededCount})
           </button>
         )}
       </div>
 
       <div
-        className="animate-rise overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white"
+        className="animate-rise overflow-hidden rounded-2xl border border-[#E2D5D5] bg-lyp-white"
         style={{ animationDelay: "80ms" }}
       >
         <div className="overflow-x-auto">
           <table className="w-full text-left font-body text-[12.5px]">
             <thead>
-              <tr className="border-b border-[#F1E8E8]">
+              <tr className="border-b border-[#E6DADA]">
                 <Th hint="The client, with the venue this proposal is for underneath.">
                   Client
                 </Th>
@@ -305,9 +321,9 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                   <tr
                     key={proposal.id}
                     className={cn(
-                      "group border-b border-[#F7F1F1] transition-colors duration-500 last:border-0",
+                      "group border-b border-[#EFE6E6] transition-colors duration-500 last:border-0",
                       EASE,
-                      "hover:bg-[#FBF8F8]",
+                      "hover:bg-[#F7F1F1]",
                       // A revealed superseded row reads as an archive entry,
                       // never as live pipeline.
                       proposal.superseded && "opacity-60",
@@ -324,7 +340,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                           {proposal.clientName ?? "—"}
                         </Link>
                         {proposal.venueName && (
-                          <span className="mt-0.5 block truncate font-body text-[11px] text-[#A89898]">
+                          <span className="mt-0.5 block truncate font-body text-[11px] text-[#867474]">
                             {proposal.venueName}
                           </span>
                         )}
@@ -333,7 +349,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
 
                     <td className="whitespace-nowrap px-3.5 py-3">
                       <span
-                        className="font-body text-[11.5px] font-medium tabular-nums text-[#8A7A7A]"
+                        className="font-body text-[11.5px] font-medium tabular-nums text-[#6B5A5A]"
                         title={
                           proposal.version > 1
                             ? `Issue ${proposal.version} — this proposal replaced an earlier one`
@@ -356,11 +372,11 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                       <OpenedCell row={proposal} />
                     </td>
 
-                    <td className="hidden whitespace-nowrap px-3.5 py-3 tabular-nums text-[#8A7A7A] lg:table-cell">
+                    <td className="hidden whitespace-nowrap px-3.5 py-3 tabular-nums text-[#6B5A5A] lg:table-cell">
                       {proposal.monthlyCents ? (
                         <>
                           {formatCents(proposal.monthlyCents)}
-                          <span className="ml-1 text-[10.5px] text-[#C3B5B5]">
+                          <span className="ml-1 text-[10.5px] text-[#9C8C8C]">
                             /mo
                           </span>
                         </>
@@ -375,7 +391,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                         : "—"}
                     </td>
 
-                    <td className="hidden whitespace-nowrap px-3.5 py-3 tabular-nums text-[#A89898] 2xl:table-cell">
+                    <td className="hidden whitespace-nowrap px-3.5 py-3 tabular-nums text-[#867474] 2xl:table-cell">
                       {formatDate(proposal.createdAt)}
                     </td>
 
@@ -384,13 +400,14 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                         "whitespace-nowrap px-3.5 py-3 transition-colors duration-500",
                         EASE,
                         stickyActions,
-                        "group-hover:bg-[#FBF8F8]",
+                        "group-hover:bg-[#F7F1F1]",
                       )}
                     >
                       <div className="flex items-center gap-2">
                         <SendProposalButton
                           proposalId={proposal.id}
                           status={proposal.status ?? "draft"}
+                          className={iconAction}
                         />
 
                         <PortalLinkButton
@@ -398,13 +415,19 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                           className={iconAction}
                         />
 
+                        {/* One pencil, one destination. It used to sit
+                            beside a separate workspace icon and open the
+                            wizard at client-and-venue selection instead —
+                            "we don't need to go back to the client selection
+                            screen" — so the wizard link is gone and the
+                            pencil inherits the workspace. */}
                         <Link
                           href={`/admin/proposals/${proposal.id}`}
-                          title={`Open proposal workspace (${proposal.id})`}
-                          aria-label="Open proposal workspace"
+                          title="Edit this proposal — opens the proposal workspace"
+                          aria-label="Edit this proposal in the proposal workspace"
                           className={iconAction}
                         >
-                          <LayoutList strokeWidth={1.5} className="h-3.5 w-3.5" />
+                          <Pencil strokeWidth={1.75} className={iconGlyph} />
                         </Link>
 
                         {/* The one labelled button in the row — onboarding
@@ -413,24 +436,17 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                         {proposal.intakeCount > 0 && (
                           <Link
                             href={`/admin/proposals/${proposal.id}/intake`}
-                            className={`inline-flex items-center gap-1.5 rounded-full border border-lyp-cherry/25 bg-lyp-cherry/[0.06] px-3 py-1.5 font-body text-[12px] font-semibold text-lyp-cherry transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.12] active:scale-[0.985]`}
+                            className={`inline-flex items-center gap-1.5 rounded-full border border-lyp-cherry/30 bg-lyp-cherry/[0.08] px-3 py-1.5 font-body text-[12px] font-semibold text-lyp-cherry outline-none transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.14] focus-visible:ring-2 focus-visible:ring-lyp-cherry/40 active:scale-[0.985]`}
                             title="View onboarding answers"
                           >
+                            {/* Stays 14px, unlike the bare icons: the pill
+                                has a word next to it, and every pixel here
+                                is a pixel the Actions column costs. */}
                             <ClipboardList
-                              strokeWidth={1.5}
+                              strokeWidth={1.75}
                               className="h-3.5 w-3.5"
                             />
                             Onboarding
-                          </Link>
-                        )}
-                        {proposal.status === "draft" && (
-                          <Link
-                            href={`/admin/proposals/${proposal.id}/edit`}
-                            className={iconAction}
-                            title="Edit draft"
-                            aria-label="Edit draft"
-                          >
-                            <Pencil strokeWidth={1.5} className="h-3.5 w-3.5" />
                           </Link>
                         )}
                         {proposal.status !== "superseded" && (
@@ -440,7 +456,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                             title="Create a new version of this proposal"
                             aria-label="Create a new version of this proposal"
                           >
-                            <FilePlus2 strokeWidth={1.5} className="h-3.5 w-3.5" />
+                            <FilePlus2 strokeWidth={1.75} className={iconGlyph} />
                           </Link>
                         )}
                       </div>
@@ -458,7 +474,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                         className="h-6 w-6 text-lyp-cherry/60"
                       />
                     </span>
-                    <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+                    <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
                       No proposals match that.
                     </p>
                     <button
@@ -476,7 +492,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
               ) : (
                 <tr>
                   <td colSpan={8} className="px-8 py-12 text-center">
-                    <p className="font-body text-[14px] text-[#8A7A7A]">
+                    <p className="font-body text-[14px] text-[#6B5A5A]">
                       No proposals yet.
                     </p>
                     <Link

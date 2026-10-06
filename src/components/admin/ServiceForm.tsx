@@ -57,10 +57,10 @@ interface ServiceFormProps {
 
 const EASE = "ease-brand";
 
-const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
 const labelClasses =
-  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
 const errorClasses = "mt-1.5 font-body text-[11px] text-lyp-cherry";
 
@@ -329,7 +329,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
         </div>
 
         {items.length === 0 ? (
-          <p className="mt-4 font-body text-[13px] text-[#8A7A7A]">
+          <p className="mt-4 font-body text-[13px] text-[#6B5A5A]">
             No items yet.
           </p>
         ) : (
@@ -346,7 +346,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
                       `rounded-full p-1 transition-colors duration-500 ${EASE}`,
                       index === 0
                         ? "cursor-not-allowed text-[#E4D8D8]"
-                        : "text-[#A89898] hover:text-lyp-cherry"
+                        : "text-[#867474] hover:text-lyp-cherry"
                     )}
                   >
                     <ChevronUp strokeWidth={1.5} className="h-3.5 w-3.5" />
@@ -360,7 +360,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
                       `rounded-full p-1 transition-colors duration-500 ${EASE}`,
                       index === items.length - 1
                         ? "cursor-not-allowed text-[#E4D8D8]"
-                        : "text-[#A89898] hover:text-lyp-cherry"
+                        : "text-[#867474] hover:text-lyp-cherry"
                     )}
                   >
                     <ChevronDown strokeWidth={1.5} className="h-3.5 w-3.5" />
@@ -378,7 +378,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
                   type="button"
                   onClick={() => removeItem(index, items, setItems)}
                   aria-label={`Remove ${title} item ${index + 1}`}
-                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-transparent text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/15 hover:bg-lyp-cherry/[0.04] hover:text-lyp-cherry`}
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-transparent text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/15 hover:bg-lyp-cherry/[0.04] hover:text-lyp-cherry`}
                 >
                   <Trash2 strokeWidth={1.5} className="h-3.5 w-3.5" />
                 </button>
@@ -419,7 +419,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
             className={cn(
               inputClasses,
               "mt-2 font-mono",
-              isEditing && "text-[#8A7A7A]"
+              isEditing && "text-[#6B5A5A]"
             )}
             readOnly={isEditing}
           />

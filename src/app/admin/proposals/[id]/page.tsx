@@ -61,12 +61,37 @@ const statusLabels: Record<string, string> = {
 
 /** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const statusStyles: Record<string, string> = {
-  draft: "bg-[#F2EDED] text-[#8A7A7A]",
+  draft: "bg-[#F2EDED] text-[#6B5A5A]",
   sent: "bg-[#EDF1F7] text-[#5B7394]",
   intake_complete: "bg-[#FBF3E3] text-[#9A7B2E]",
   signed: "bg-[#E9F2EC] text-[#4A7A5C]",
   superseded: "bg-lyp-cherry/[0.07] text-lyp-cherry",
 };
+
+/**
+ * Tonal pills for the send banner, borrowing the status palette above so the
+ * stage speaks the same colour language as the header: cherry asks for a hand,
+ * green is live, amber is waiting, blue is informational, grey is inert.
+ */
+const stageToneStyles = {
+  go: "border-lyp-cherry/20 bg-lyp-cherry/[0.08] text-lyp-cherry",
+  live: "border-[#DCE9E1] bg-[#E9F2EC] text-[#4A7A5C]",
+  wait: "border-[#F0E4C9] bg-[#FBF3E3] text-[#9A7B2E]",
+  info: "border-[#E2E8F1] bg-[#EDF1F7] text-[#5B7394]",
+  neutral: "border-[#EFE6E6] bg-lyp-white text-[#6B5A5A]",
+} as const;
+
+type StageTone = keyof typeof stageToneStyles;
+
+/** A pill's words and its tone, decided together. */
+type StageState = { label: string; tone: StageTone };
+
+/** Timestamps arrive as ISO strings or null; an unparseable one is no date. */
+function toMs(iso: string | null | undefined): number | null {
+  if (!iso) return null;
+  const ms = new Date(iso).getTime();
+  return Number.isFinite(ms) ? ms : null;
+}
 
 const eventDetails: Record<
   string,
@@ -166,13 +191,82 @@ export default async function ProposalDetailPage({
     ? `${await getAppUrl()}/portal/${proposal.token}`
     : null;
 
+  // There is no sent_at column, so the audit trail is the record — and it is
+  // already loaded above, newest first.
+  const lastSentAt =
+    events.find((event) => event.action === "PROPOSAL_SENT")?.created_at ??
+    null;
+
+  // Which of the four discount states the agency is looking at, decided once
+  // on the server so the banner can say it in a pill. The running countdown
+  // stays inside the timer, which ticks.
+  const timerLocked = isSigned || proposal.status === "superseded";
+  const discountStartMs = toMs(proposal.discount_starts_at);
+  const discountEndMs = toMs(proposal.discount_expires_at);
+  const nowMs = Date.now();
+
+  let discountChip: StageState;
+  if (timerLocked) {
+    discountChip = { label: "Locked", tone: "neutral" };
+  } else if (!proposal.discount_timer_active) {
+    discountChip = { label: "Off — client sees full prices", tone: "neutral" };
+  } else if (discountEndMs != null && discountEndMs <= nowMs) {
+    discountChip = { label: "Window closed — set a new one", tone: "go" };
+  } else if (discountStartMs != null && discountStartMs > nowMs) {
+    discountChip = {
+      label: `Scheduled — opens ${formatDateTime(proposal.discount_starts_at)}`,
+      tone: "wait",
+    };
+  } else {
+    discountChip = {
+      label:
+        discountEndMs != null
+          ? `Running — ends ${formatDateTime(proposal.discount_expires_at)}`
+          : "Running",
+      tone: "live",
+    };
+  }
+
+  // What the banner leads with. Four states, four honest headings — a signed
+  // or replaced proposal says so instead of offering the same button again.
+  const sendStage: StageState & { heading: string; lead: string } =
+    proposal.status === "superseded"
+      ? {
+          heading: "Replaced by a newer version",
+          label: "Replaced",
+          tone: "neutral",
+          lead: "This one was closed off when the next version was created. Nothing here reaches the client any more — send that version instead.",
+        }
+      : isSigned
+        ? {
+            heading: "Signed — nothing left to send",
+            label: proposal.signed_at
+              ? `Signed ${formatDate(proposal.signed_at)}`
+              : "Signed",
+            tone: "live",
+            lead: "The client has signed, so the prices and the countdown are locked. Pick it up in Post-Signature Review below.",
+          }
+        : isDraft
+          ? {
+              heading: "Send it to the client",
+              label: "Not sent yet",
+              tone: "go",
+              lead: "Nothing has reached the client yet. Set the discount window if you want one, then copy their link or email it — that is the whole of it.",
+            }
+          : {
+              heading: "Sent — resend it if you need to",
+              label: lastSentAt ? `Sent ${formatDate(lastSentAt)}` : "Sent",
+              tone: "info",
+              lead: "The client has their link. Anything changed above is live the moment they reload, and sending again emails the same link.",
+            };
+
   return (
     <div className="mx-auto max-w-[64rem]">
       {/* ─────────────── Header ─────────────── */}
       <header className="animate-rise mb-6">
         <Link
           href="/admin/proposals"
-          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
           <ArrowLeft
             strokeWidth={1.5}
@@ -197,7 +291,7 @@ export default async function ProposalDetailPage({
                 className={cn(
                   "inline-block rounded-full px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em]",
                   statusStyles[proposal.status] ??
-                    "bg-[#F2EDED] text-[#8A7A7A]",
+                    "bg-[#F2EDED] text-[#6B5A5A]",
                 )}
               >
                 {statusLabels[proposal.status] ??
@@ -299,14 +393,17 @@ export default async function ProposalDetailPage({
         />
       </Section>
 
-      {/* ─────────────── Ready to Send ─────────────── */}
-      {/* A deliberate last stage rather than a loose switch and a button: the
-          deck is settled above, so this says what the client gets, what it
-          comes to, offers their link to open or paste, and sends it. */}
-      <Section title="Ready to Send" delay="200ms">
-        <p className="font-body text-[13px] leading-relaxed text-[#8A7A7A]">
+      {/* ─────────────── Review & Send ─────────────── */}
+      {/* Two halves, deliberately unalike. Above: the quiet read — what the
+          client gets and what it comes to, on the same white as the rest of
+          the page. Below: a tinted banner, bled to the card's edges, holding
+          the only three things on this page that still want a hand. The
+          agency's note was that the send never looked like a stage; it does
+          now because it has its own ground to stand on. */}
+      <Section title="Review & Send" delay="200ms">
+        <p className="font-body text-[13px] leading-relaxed text-[#6B5A5A]">
           {canSend
-            ? "The last look before the client sees it."
+            ? "A last read of what the client gets. Everything that needs doing is in the band at the foot of this card."
             : "Nothing left to send from here — this is a record of what went out."}
         </p>
 
@@ -356,7 +453,7 @@ export default async function ProposalDetailPage({
             {/* Said once, plainly, rather than left to be inferred from the
                 timer below: these numbers are either the discounted ones or
                 they are not. */}
-            <p className="mt-3 font-body text-[12px] leading-relaxed text-[#8A7A7A]">
+            <p className="mt-3 font-body text-[12px] leading-relaxed text-[#6B5A5A]">
               {review.discountLive
                 ? "These are the discounted prices — the offer is running now."
                 : review.startsAt &&
@@ -380,7 +477,7 @@ export default async function ProposalDetailPage({
                         </span>
                       )}
                     </span>
-                    <span className="font-body text-[13px] tabular-nums text-[#8A7A7A]">
+                    <span className="font-body text-[13px] tabular-nums text-[#6B5A5A]">
                       {line.hasChoice ? "from " : ""}
                       {formatCents(line.fromCents)}
                       {line.billing === "recurring_monthly" ? "/mo" : ""}
@@ -392,49 +489,95 @@ export default async function ProposalDetailPage({
           </>
         )}
 
-        <div className="mt-5 border-t border-[#F1E8E8] pt-5">
-          <ProposalDiscountTimer
-            proposalId={id}
-            initialActive={proposal.discount_timer_active ?? false}
-            initialStartsAt={proposal.discount_starts_at}
-            initialExpiresAt={proposal.discount_expires_at}
-            locked={isSigned || proposal.status === "superseded"}
-            variant="step"
-          />
-        </div>
-
-        {portalUrl && (
-          <div className="mt-5 border-t border-[#F1E8E8] pt-5">
-            <ProposalPortalLink url={portalUrl} />
-          </div>
-        )}
-
-        <div className="mt-5 border-t border-[#F1E8E8] pt-5">
-          {canSend ? (
-            <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
-              <div className="min-w-0 flex-1">
-                <p className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
-                  {isDraft ? "Send to the client" : "Send the link again"}
-                </p>
-                <p className="mt-0.5 font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
-                  {isDraft
-                    ? "Emails the client their link and marks this proposal as sent. Everything above is live the moment they open it."
-                    : "The client already has this link. Sending again emails the same one — they always see the deck and discount as set above."}
-                </p>
+        {/* ───── The send banner ───── */}
+        {/* Negative margins take it to the card's own edges, so the tint runs
+            edge to edge and the stage reads as a footer to the review rather
+            than another paragraph of it. */}
+        <div className="-mx-5 -mb-5 mt-7 border-t border-lyp-cherry/15 bg-lyp-cherry/[0.045] px-5 py-5">
+          <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2.5">
+                <span className="h-px w-5 bg-lyp-cherry/40" />
+                <span className="font-body text-[10px] font-medium uppercase tracking-[0.3em] text-lyp-cherry">
+                  {canSend ? "Final step" : "Final step — closed"}
+                </span>
               </div>
-              <SendProposalButton
-                proposalId={id}
-                status={proposal.status}
-                variant="pill"
-              />
+              <h3 className="mt-2.5 font-heading text-[19px] font-bold leading-[1.15] tracking-[-0.02em] text-lyp-black">
+                {sendStage.heading}
+              </h3>
+              <p className="mt-1.5 max-w-[44rem] font-body text-[12.5px] leading-relaxed text-[#6B5A5A]">
+                {sendStage.lead}
+              </p>
             </div>
-          ) : (
-            <p className="font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
-              {proposal.status === "superseded"
-                ? "This proposal has been replaced by a newer version. Send that one instead."
-                : "Signed — there is nothing left to send. Finish up in Post-Signature Review below."}
-            </p>
-          )}
+            <StageChip label={sendStage.label} tone={sendStage.tone} />
+          </div>
+
+          <div className="mt-5 space-y-3.5">
+            {/* 1 — the discount window. The pill is a server snapshot of which
+                of the four states this is in; the live countdown belongs to
+                the timer, which has a clock. */}
+            <SendStep
+              index={canSend ? 1 : undefined}
+              title="Discount window"
+              chip={discountChip.label}
+              chipTone={discountChip.tone}
+            >
+              <ProposalDiscountTimer
+                proposalId={id}
+                initialActive={proposal.discount_timer_active ?? false}
+                initialStartsAt={proposal.discount_starts_at}
+                initialExpiresAt={proposal.discount_expires_at}
+                locked={timerLocked}
+                variant="step"
+              />
+            </SendStep>
+
+            {/* 2 — the client's own link, which stays useful after signing:
+                it is how anyone opens the client view. */}
+            {portalUrl && (
+              <SendStep
+                index={canSend ? 2 : undefined}
+                title="Client link"
+                chip={canSend ? "Ready to copy" : "Still opens"}
+                chipTone="neutral"
+              >
+                <ProposalPortalLink url={portalUrl} variant="step" />
+              </SendStep>
+            )}
+
+            {/* 3 — the end of it. */}
+            <SendStep
+              index={canSend ? 3 : undefined}
+              title={
+                canSend
+                  ? isDraft
+                    ? "Send the proposal"
+                    : "Send the link again"
+                  : "Nothing left to send"
+              }
+            >
+              {canSend ? (
+                <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
+                  <p className="min-w-0 flex-1 font-body text-[12.5px] leading-relaxed text-[#6B5A5A]">
+                    {isDraft
+                      ? "Emails the client their link and marks this proposal as sent. Everything above is live the moment they open it. This is the last thing on this page."
+                      : "The client already has this link. Sending again emails the same one — they always see the deck and discount as set above."}
+                  </p>
+                  <SendProposalButton
+                    proposalId={id}
+                    status={proposal.status}
+                    variant="pill"
+                  />
+                </div>
+              ) : (
+                <p className="font-body text-[12.5px] leading-relaxed text-[#6B5A5A]">
+                  {proposal.status === "superseded"
+                    ? "This proposal has been replaced by a newer version. Send that one instead."
+                    : "The client has signed. Finish up in Post-Signature Review below."}
+                </p>
+              )}
+            </SendStep>
+          </div>
         </div>
       </Section>
 
@@ -444,9 +587,9 @@ export default async function ProposalDetailPage({
           <div className="space-y-5">
             <div className="flex items-start gap-3">
               <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#F7F1F1]">
-                <Clock strokeWidth={1.25} className="h-4 w-4 text-[#A89898]" />
+                <Clock strokeWidth={1.25} className="h-4 w-4 text-[#867474]" />
               </span>
-              <p className="font-body text-[13px] leading-relaxed text-[#8A7A7A]">
+              <p className="font-body text-[13px] leading-relaxed text-[#6B5A5A]">
                 Opens once the client signs.
               </p>
             </div>
@@ -455,14 +598,14 @@ export default async function ProposalDetailPage({
                 hiding the team's own words until the client signs again. */}
             {notes.length > 0 && (
               <div className="rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] px-4 py-3.5">
-                <p className="mb-2.5 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
+                <p className="mb-2.5 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]">
                   Notes carried over
                 </p>
                 <ul className="space-y-2.5">
                   {notes.map((note) => (
                     <li
                       key={note.id}
-                      className="border-l-2 border-[#EFE6E6] pl-3 font-body text-[13px] leading-relaxed text-[#8A7A7A]"
+                      className="border-l-2 border-[#EFE6E6] pl-3 font-body text-[13px] leading-relaxed text-[#6B5A5A]"
                     >
                       {note.content}
                     </li>
@@ -490,7 +633,7 @@ export default async function ProposalDetailPage({
                       "h-4 w-4",
                       isOnboardingComplete
                         ? "text-lyp-cherry"
-                        : "text-[#A89898]",
+                        : "text-[#867474]",
                     )}
                   />
                 </span>
@@ -498,7 +641,7 @@ export default async function ProposalDetailPage({
                   <p className="font-body text-[13px] font-semibold text-lyp-black">
                     Onboarding form
                   </p>
-                  <p className="mt-0.5 font-body text-[12px] text-[#8A7A7A]">
+                  <p className="mt-0.5 font-body text-[12px] text-[#6B5A5A]">
                     {isOnboardingComplete
                       ? "Submitted by the client — check it has everything the team needs."
                       : "Not submitted yet. Chase the client before briefing the team."}
@@ -515,10 +658,10 @@ export default async function ProposalDetailPage({
 
             {/* Internal notes */}
             <div>
-              <p className="mb-1 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
+              <p className="mb-1 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]">
                 Internal Notes
               </p>
-              <p className="mb-3.5 font-body text-[12px] text-[#8A7A7A]">
+              <p className="mb-3.5 font-body text-[12px] text-[#6B5A5A]">
                 What the delivery team needs to know. These feed the ClickUp
                 brief.
               </p>
@@ -538,7 +681,7 @@ export default async function ProposalDetailPage({
               const meta = (event.metadata || {}) as AuditMetadata;
               const config = eventDetails[event.action] || {
                 title: event.action.replace(/_/g, " "),
-                color: "border-[#EFE6E6] bg-[#F7F1F1] text-[#8A7A7A]",
+                color: "border-[#EFE6E6] bg-[#F7F1F1] text-[#6B5A5A]",
                 icon: Activity,
                 getDescription: (m: AuditMetadata) =>
                   m && Object.keys(m).length > 0
@@ -564,14 +707,14 @@ export default async function ProposalDetailPage({
                       <h4 className="font-heading text-[14px] font-bold capitalize tracking-[-0.01em] text-lyp-black">
                         {config.title}
                       </h4>
-                      <span className="rounded-full bg-[#F7F1F1] px-2 py-0.5 font-body text-[9px] font-medium uppercase tracking-[0.18em] text-[#A89898]">
+                      <span className="rounded-full bg-[#F7F1F1] px-2 py-0.5 font-body text-[9px] font-medium uppercase tracking-[0.18em] text-[#867474]">
                         {event.actor_type}
                       </span>
                     </div>
-                    <p className="mt-1 font-body text-[13px] leading-relaxed text-[#8A7A7A]">
+                    <p className="mt-1 font-body text-[13px] leading-relaxed text-[#6B5A5A]">
                       {config.getDescription(meta)}
                     </p>
-                    <p className="mt-1.5 font-body text-[11px] tabular-nums text-[#C3B5B5]">
+                    <p className="mt-1.5 font-body text-[11px] tabular-nums text-[#9C8C8C]">
                       {formatDateTime(event.created_at)}
                     </p>
                   </div>
@@ -598,7 +741,7 @@ function InfoCard({
     <div
       className={`rounded-2xl border border-[#EFE6E6] bg-lyp-white px-4 py-3.5 transition-all duration-500 ${EASE} hover:shadow-[0_12px_28px_-16px_rgba(61,11,17,0.25)]`}
     >
-      <dt className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
+      <dt className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]">
         {label}
       </dt>
       <dd
@@ -625,15 +768,75 @@ function ReviewTile({
 }) {
   return (
     <div className="rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] px-4 py-3.5">
-      <dt className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
+      <dt className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]">
         {label}
       </dt>
       <dd className="mt-1.5 font-heading text-[18px] font-bold tabular-nums tracking-[-0.02em] text-lyp-black">
         {value}
       </dd>
-      <p className="mt-1 font-body text-[11px] leading-relaxed text-[#A89898]">
+      <p className="mt-1 font-body text-[11px] leading-relaxed text-[#867474]">
         {hint}
       </p>
+    </div>
+  );
+}
+
+/** The state of one thing, said in three or four words with a dot of colour. */
+function StageChip({ label, tone }: { label: string; tone: StageTone }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex flex-shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 font-body text-[11px] font-semibold tracking-wide",
+        stageToneStyles[tone],
+      )}
+    >
+      <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-current" />
+      {label}
+    </span>
+  );
+}
+
+/**
+ * One of the three things in the send banner, on its own frosted panel.
+ *
+ * `index` numbers it while there is still something to do. Once the proposal
+ * is signed or replaced the numbers come off — a numbered list invites the
+ * list to be worked through, and by then there is nothing to work through.
+ */
+function SendStep({
+  index,
+  title,
+  chip,
+  chipTone = "neutral",
+  children,
+}: {
+  index?: number;
+  title: string;
+  chip?: string;
+  chipTone?: StageTone;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-2xl border border-lyp-cherry/10 bg-lyp-white/70 px-4 py-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <div className="flex min-w-0 items-center gap-3">
+          <span
+            className={cn(
+              "flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full font-body text-[11px] font-semibold tabular-nums",
+              index != null
+                ? "bg-lyp-cherry text-lyp-white"
+                : "bg-[#F2EDED] text-[#867474]",
+            )}
+          >
+            {index ?? <span className="h-1.5 w-1.5 rounded-full bg-current" />}
+          </span>
+          <p className="font-heading text-[14px] font-bold tracking-[-0.01em] text-lyp-black">
+            {title}
+          </p>
+        </div>
+        {chip && <StageChip label={chip} tone={chipTone} />}
+      </div>
+      <div className="mt-3.5">{children}</div>
     </div>
   );
 }
@@ -650,7 +853,7 @@ function EmptyRow({
       <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
         <Icon strokeWidth={1} className="h-5 w-5 text-lyp-cherry/60" />
       </span>
-      <p className="mt-4 font-body text-[13px] text-[#8A7A7A]">{message}</p>
+      <p className="mt-4 font-body text-[13px] text-[#6B5A5A]">{message}</p>
     </div>
   );
 }

@@ -7,7 +7,7 @@ import { AlertCircle, Package, Plus } from "lucide-react";
 const EASE = "ease-brand";
 
 const thClasses =
-  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
 /** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const billingStyles: Record<string, string> = {
@@ -135,7 +135,7 @@ export default async function ServicesPage() {
                         className={cn(
                           "inline-block rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em]",
                           billingStyles[service.billing] ??
-                            "bg-[#F2EDED] text-[#8A7A7A]",
+                            "bg-[#F2EDED] text-[#6B5A5A]",
                         )}
                       >
                         {getBillingLabel(service.billing)}
@@ -144,12 +144,12 @@ export default async function ServicesPage() {
                     <td className="whitespace-nowrap px-5 py-3 font-medium tabular-nums text-lyp-black">
                       {getPrice(service)}
                     </td>
-                    <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#8A7A7A]">
+                    <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#6B5A5A]">
                       {service.discount_pct != null
                         ? `${Math.round(service.discount_pct * 100)}%`
                         : "—"}
                     </td>
-                    <td className="whitespace-nowrap px-5 py-3 text-right tabular-nums text-[#A89898]">
+                    <td className="whitespace-nowrap px-5 py-3 text-right tabular-nums text-[#867474]">
                       {service.sequence ?? "—"}
                     </td>
                   </tr>
@@ -163,7 +163,7 @@ export default async function ServicesPage() {
                         className="h-6 w-6 text-lyp-cherry/60"
                       />
                     </span>
-                    <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+                    <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
                       No services yet.
                     </p>
                     <Link

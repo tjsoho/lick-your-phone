@@ -113,12 +113,17 @@ export async function createVenue(data: {
   name: string;
   address?: string;
   state_id?: string;
+  /**
+   * This venue's own logo, shown on the cover of every proposal written for
+   * it. Left out, the cover uses the client's own logo instead.
+   */
+  logo_url?: string | null;
 }) {
   try {
     const supabase = await createSupabaseClient();
     const { data: result, error } = await supabase
       .from("venues")
-      .insert(data)
+      .insert({ ...data, logo_url: data.logo_url?.trim() || null })
       .select()
       .single();
 
@@ -136,6 +141,12 @@ export async function updateVenue(
     name?: string;
     address?: string;
     state_id?: string;
+    /**
+     * This venue's own logo. Explicitly nullable, not just optional: clearing
+     * the field has to write `null` so the cover falls back to the client's
+     * own logo, and `undefined` would leave the old logo in place.
+     */
+    logo_url?: string | null;
   },
 ) {
   try {

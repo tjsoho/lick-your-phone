@@ -11,6 +11,7 @@ import {
   type DiscountTimerPatch,
 } from "@/server-actions/proposal-timer";
 import { formatRemaining } from "@/lib/countdown";
+import { cn } from "@/lib/utils";
 
 const EASE = "ease-brand";
 
@@ -160,19 +161,38 @@ export default function ProposalDiscountTimer({
     >
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-3">
-          <span className={`flex flex-shrink-0 items-center justify-center rounded-full bg-lyp-cherry/[0.06] ring-1 ring-lyp-cherry/10 ${isRow ? "h-8 w-8" : "h-9 w-9"}`}>
-            <Timer strokeWidth={1.25} className="h-4 w-4 text-lyp-cherry" />
-          </span>
-          <div className="min-w-0">
-            <label
-              htmlFor={switchId}
-              className={`font-heading font-bold tracking-[-0.01em] text-lyp-black ${isRow ? "text-[13.5px]" : "text-[15px]"}`}
+          {/* The send banner heads this step itself, icon, title and status
+              pill included, so the step form drops its own title row rather
+              than saying "Discount timer" twice in eight lines. */}
+          {!isStep && (
+            <span
+              className={cn(
+                "flex flex-shrink-0 items-center justify-center rounded-full bg-lyp-cherry/[0.06] ring-1 ring-lyp-cherry/10",
+                isRow ? "h-8 w-8" : "h-9 w-9",
+              )}
             >
-              Discount timer
-            </label>
-            <p className="mt-0.5 font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
+              <Timer strokeWidth={1.25} className="h-4 w-4 text-lyp-cherry" />
+            </span>
+          )}
+          <div className="min-w-0">
+            {!isStep && (
+              <label
+                htmlFor={switchId}
+                className={`font-heading font-bold tracking-[-0.01em] text-lyp-black ${isRow ? "text-[13.5px]" : "text-[15px]"}`}
+              >
+                Discount timer
+              </label>
+            )}
+            <p
+              className={cn(
+                "font-body text-[12.5px] leading-relaxed text-[#6B5A5A]",
+                !isStep && "mt-0.5",
+              )}
+            >
+              {/* Locked covers both signed and replaced, so it says neither —
+                  the heading above it already names which. */}
               {locked
-                ? "The countdown stops once the client has signed."
+                ? "Locked: the countdown has stopped and the prices can no longer change."
                 : !active
                   ? "Off: the client sees full prices. Switch on to run the discount over a set window."
                   : pending
@@ -188,6 +208,7 @@ export default function ProposalDiscountTimer({
           <SaveStatusBadge status={status} />
           <Switch
             id={switchId}
+            aria-label="Discount timer"
             checked={active}
             disabled={locked || status === "saving"}
             onCheckedChange={handleToggle}
@@ -197,12 +218,18 @@ export default function ProposalDiscountTimer({
       </div>
 
       {active && (
-        <div className={`border-t border-[#F1E8E8] ${isRow ? "mt-4 pt-4" : "mt-5 pt-5"}`}>
+        <div
+          className={cn(
+            "border-t",
+            isStep ? "border-lyp-cherry/10" : "border-[#F1E8E8]",
+            isRow ? "mt-4 pt-4" : "mt-5 pt-5",
+          )}
+        >
           <div className="flex flex-wrap items-end gap-x-8 gap-y-4">
             <div>
               <label
                 htmlFor={startsId}
-                className="block font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[#A89898]"
+                className="block font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[#867474]"
               >
                 Discount starts
               </label>
@@ -223,7 +250,7 @@ export default function ProposalDiscountTimer({
             <div>
               <label
                 htmlFor={endsId}
-                className="block font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[#A89898]"
+                className="block font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[#867474]"
               >
                 Discount ends
               </label>
@@ -243,7 +270,7 @@ export default function ProposalDiscountTimer({
 
             {clientSees && (
               <div className="pb-2.5">
-                <span className="block font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+                <span className="block font-body text-[10px] font-medium uppercase tracking-[0.2em] text-[#867474]">
                   Client sees
                 </span>
                 <span className="mt-1 block font-body text-[13px] font-medium tabular-nums text-lyp-black">
@@ -253,7 +280,7 @@ export default function ProposalDiscountTimer({
             )}
           </div>
 
-          <p className="mt-3 font-body text-[11px] leading-relaxed text-[#A89898]">
+          <p className="mt-3 font-body text-[11px] leading-relaxed text-[#867474]">
             Leave the start blank to run the discount from now. Set it to send
             the proposal in a meeting and have the offer open later — until
             then the client sees full prices with no countdown.

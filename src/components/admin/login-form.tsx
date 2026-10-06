@@ -6,10 +6,10 @@ import { useState } from "react";
 
 const EASE = "ease-brand";
 
-const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-5 py-3.5 font-body text-[15px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] hover:border-[#E2D2D2] focus:border-lyp-cherry/40 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`;
+const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-5 py-3.5 font-body text-[15px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] hover:border-[#E2D2D2] focus:border-lyp-cherry/40 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`;
 
 const labelClasses =
-  "mb-2.5 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "mb-2.5 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -44,7 +44,7 @@ export default function LoginForm() {
       <h1 className="mt-6 font-heading text-[38px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
         Sign in
       </h1>
-      <p className="mt-3 font-body text-[14px] leading-relaxed text-[#8A7A7A]">
+      <p className="mt-3 font-body text-[14px] leading-relaxed text-[#6B5A5A]">
         Use your admin credentials to open the console.
       </p>
 
@@ -108,7 +108,7 @@ export default function LoginForm() {
             <button
               type="button"
               onClick={() => setShowPassword((v) => !v)}
-              className={`absolute inset-y-0 right-0 flex items-center px-5 text-[#C3B5B5] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+              className={`absolute inset-y-0 right-0 flex items-center px-5 text-[#9C8C8C] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (

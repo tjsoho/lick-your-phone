@@ -32,7 +32,11 @@ export default function ContentPage({ page }: ContentPageProps) {
   const slug = page.slug;
   // Read unconditionally so the cover branch below has it; cheap and keeps
   // the precedence rule resolved in exactly one call.
-  const coverLogo = resolveCoverLogo(proposal.clientLogoUrl, tCover("logo"));
+  const coverLogo = resolveCoverLogo(
+    proposal.venueLogoUrl,
+    proposal.clientLogoUrl,
+    tCover("logo"),
+  );
 
   if (slug === "cover") {
     return (
@@ -67,11 +71,11 @@ export default function ContentPage({ page }: ContentPageProps) {
                 page.featuredImage ? "lg:justify-start" : ""
               }`}
             >
-              {/* The client's own logo if they have one, the cover's copy
-                  slot otherwise — `resolveCoverLogo` is the only place that
-                  decision is made.
+              {/* This venue's own logo, the client's if the venue has none,
+                  and the cover's copy slot if neither does —
+                  `resolveCoverLogo` is the only place that decision is made.
 
-                  A client's logo is NOT drawn through `Logo`. That component
+                  Their logo is NOT drawn through `Logo`. That component
                   declares the brand mark's own 383 x 120 box, and anything
                   squarer sent through it would be letterboxed inside that
                   box — sitting visibly indented from the client's name below
@@ -80,7 +84,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                   up whatever shape arrives. Height is what is capped, so the
                   cover cannot grow and start scrolling; the width cap only
                   catches a very wide mark, which then simply sits shorter. */}
-              {coverLogo.isClientLogo ? (
+              {coverLogo.isCustomLogo ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={coverLogo.src}

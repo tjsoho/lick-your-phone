@@ -102,13 +102,13 @@ interface ContentBlocksEditorProps {
 }
 
 const ic =
-  `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+  `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
 const captionClasses =
-  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
 const ghostButtonClasses =
-  `flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`;
+  `flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`;
 
 function contentToString(content: unknown, type?: string | null): string {
   if (isImageListType(type ?? null) && Array.isArray(content)) {
@@ -133,7 +133,7 @@ const typeLabel = (t: string | null) =>
 
 /** Muted tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const typeBadge = (t: string | null) =>
-  ({ heading: "bg-[#F1EDF5] text-[#6E5B84]", paragraph: "bg-[#F2EDED] text-[#8A7A7A]", list: "bg-[#EDF1F7] text-[#5B7394]", image: "bg-[#E9F2EC] text-[#4A7A5C]", logos: "bg-[#F7EDF1] text-[#8A5B72]", media_carousel: "bg-[#E7F0F0] text-[#4F7B7B]", collage: "bg-[#F9EFE4] text-[#916338]", results: "bg-[#EBF1E8] text-[#5C7A4A]", offset_image: "bg-[#ECEDF7] text-[#5F5F94]", custom: "bg-[#FBF3E3] text-[#9A7B2E]" }[t ?? ""] ?? "bg-[#F2EDED] text-[#8A7A7A]");
+  ({ heading: "bg-[#F1EDF5] text-[#6E5B84]", paragraph: "bg-[#F2EDED] text-[#6B5A5A]", list: "bg-[#EDF1F7] text-[#5B7394]", image: "bg-[#E9F2EC] text-[#4A7A5C]", logos: "bg-[#F7EDF1] text-[#8A5B72]", media_carousel: "bg-[#E7F0F0] text-[#4F7B7B]", collage: "bg-[#F9EFE4] text-[#916338]", results: "bg-[#EBF1E8] text-[#5C7A4A]", offset_image: "bg-[#ECEDF7] text-[#5F5F94]", custom: "bg-[#FBF3E3] text-[#9A7B2E]" }[t ?? ""] ?? "bg-[#F2EDED] text-[#6B5A5A]");
 
 function BlockTextarea({ type, value, onChange }: { type: string; value: string; onChange: (v: string) => void }) {
   const id = useId();
@@ -156,7 +156,7 @@ function ImageUploadEditor({ value, onChange, sizeHint }: { value: string; onCha
     <div className="space-y-2.5">
       <p className={captionClasses}>Block image</p>
       {sizeHint && (
-        <p className="font-body text-[11px] text-[#A89898]">{sizeHint}</p>
+        <p className="font-body text-[11px] text-[#867474]">{sizeHint}</p>
       )}
       {value ? (
         <div className="space-y-3">
@@ -168,7 +168,7 @@ function ImageUploadEditor({ value, onChange, sizeHint }: { value: string; onCha
             </button>
             <button
               onClick={() => onChange("")}
-              className={`flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+              className={`flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
             >
               <Trash2 strokeWidth={1.5} className="h-4 w-4" /> Remove
             </button>
@@ -176,7 +176,7 @@ function ImageUploadEditor({ value, onChange, sizeHint }: { value: string; onCha
         </div>
       ) : (
         <button onClick={() => setLibraryOpen(true)}
-          className={`flex h-32 w-full max-w-xs flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry`}>
+          className={`flex h-32 w-full max-w-xs flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry`}>
           <Images strokeWidth={1.25} className="h-6 w-6" />
           <span className="font-body text-[13px]">Choose from library</span>
         </button>
@@ -247,9 +247,9 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
   return (
     <div className="space-y-3">
       <div>
-        <p className="font-body text-[12px] leading-relaxed text-[#8A7A7A]">{label}</p>
+        <p className="font-body text-[12px] leading-relaxed text-[#6B5A5A]">{label}</p>
         {sizeHint && (
-          <p className="mt-1 font-body text-[11px] text-[#A89898]">{sizeHint}</p>
+          <p className="mt-1 font-body text-[11px] text-[#867474]">{sizeHint}</p>
         )}
       </div>
       {logos.map((logo, i) => (
@@ -265,7 +265,7 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
             <button
               onClick={() => setLibrary(i)}
               aria-label={`Choose image for item ${i + 1}`}
-              className={`flex h-16 w-16 flex-shrink-0 items-center justify-center border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] text-[#C3B5B5] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry ${showText ? "rounded-full" : "rounded-lg"}`}
+              className={`flex h-16 w-16 flex-shrink-0 items-center justify-center border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] text-[#9C8C8C] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry ${showText ? "rounded-full" : "rounded-lg"}`}
             >
               <Images strokeWidth={1.25} className="h-5 w-5" />
             </button>
@@ -292,7 +292,7 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
             {logo.url && (
               <button
                 onClick={() => setLibrary(i)}
-                className={`flex items-center gap-1 font-body text-[11px] font-medium text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                className={`flex items-center gap-1 font-body text-[11px] font-medium text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
               >
                 <Images strokeWidth={1.5} className="h-3 w-3" /> Replace
               </button>
@@ -300,7 +300,7 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
           </div>
           <button
             onClick={() => removeRow(i)}
-            className={`flex-shrink-0 rounded-full p-1.5 text-[#A89898] transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.06] hover:text-lyp-cherry`}
+            className={`flex-shrink-0 rounded-full p-1.5 text-[#867474] transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.06] hover:text-lyp-cherry`}
             title="Remove"
             aria-label={`Remove item ${i + 1}`}
           >
@@ -350,7 +350,7 @@ function BlockPreview({ block }: { block: Block }) {
   if (isImageListType(type) && Array.isArray(block.content)) {
     const items = (block.content as LogoItem[]).filter((i) => i?.url);
     if (items.length === 0)
-      return <p className="font-body text-[13px] text-[#C3B5B5]">(no images yet)</p>;
+      return <p className="font-body text-[13px] text-[#9C8C8C]">(no images yet)</p>;
 
     const shown = items.slice(0, 8);
     return (
@@ -366,7 +366,7 @@ function BlockPreview({ block }: { block: Block }) {
           />
         ))}
         {items.length > shown.length && (
-          <span className="font-body text-[11px] text-[#A89898]">
+          <span className="font-body text-[11px] text-[#867474]">
             +{items.length - shown.length} more
           </span>
         )}
@@ -386,7 +386,7 @@ function BlockPreview({ block }: { block: Block }) {
   }
 
   return (
-    <p className="line-clamp-3 whitespace-pre-wrap font-body text-[13px] leading-relaxed text-[#8A7A7A]">
+    <p className="line-clamp-3 whitespace-pre-wrap font-body text-[13px] leading-relaxed text-[#6B5A5A]">
       {contentToString(block.content, block.type) || "(empty)"}
     </p>
   );
@@ -397,15 +397,15 @@ function BlockRow({ block, idx, total, onEdit, onDelete, onMove }: {
   onEdit: () => void; onDelete: () => void; onMove: (dir: "up" | "down") => void;
 }) {
   const iconButton =
-    `rounded-full p-1.5 text-[#A89898] transition-all duration-500 ${EASE} hover:text-lyp-cherry disabled:opacity-30 disabled:hover:text-[#A89898]`;
+    `rounded-full p-1.5 text-[#867474] transition-all duration-500 ${EASE} hover:text-lyp-cherry disabled:opacity-30 disabled:hover:text-[#867474]`;
 
   return (
     <div className={`group flex items-start gap-3 rounded-2xl border border-[#EFE6E6] bg-lyp-white p-3.5 transition-all duration-500 ${EASE} hover:border-lyp-cherry/20 hover:shadow-[0_12px_28px_-16px_rgba(61,11,17,0.25)]`}>
-      <GripVertical strokeWidth={1.5} className="mt-1 h-4 w-4 flex-shrink-0 text-[#C3B5B5]" aria-hidden="true" />
+      <GripVertical strokeWidth={1.5} className="mt-1 h-4 w-4 flex-shrink-0 text-[#9C8C8C]" aria-hidden="true" />
       <div className="min-w-0 flex-1">
         <div className="mb-1.5 flex items-center gap-2">
           <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${typeBadge(block.type)}`}>{typeLabel(block.type)}</span>
-          <span className="font-mono text-[11px] tabular-nums text-[#C3B5B5]">#{block.sequence}</span>
+          <span className="font-mono text-[11px] tabular-nums text-[#9C8C8C]">#{block.sequence}</span>
         </div>
         <BlockPreview block={block} />
       </div>
@@ -603,7 +603,7 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
             <Layers strokeWidth={1} className="h-6 w-6 text-lyp-cherry/60" />
           </span>
-          <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+          <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
             No content blocks yet.
           </p>
           <button
@@ -622,7 +622,7 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
             <div key={block.id} className="space-y-3.5 rounded-2xl border border-lyp-cherry/25 bg-[#FBF8F8] p-4">
               <div className="flex flex-wrap items-center gap-3">
                 <TypeSelect value={editType} onChange={setEditType} />
-                <span className="font-mono text-[11px] tabular-nums text-[#A89898]">seq: {block.sequence}</span>
+                <span className="font-mono text-[11px] tabular-nums text-[#867474]">seq: {block.sequence}</span>
               </div>
               {isImageListType(editType)
                 ? <LogosEditor logos={editLogos} onChange={setEditLogos} addLabel={addLabelFor(editType)} label={imageListLabel(editType)} showText={withCopy(editType)} sizeHint={sizeHintFor(editType)} />

@@ -73,14 +73,14 @@ const steps = ["Details", "Review"];
 
 const EASE = "ease-brand";
 
-const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-3 font-body text-[14px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] hover:border-[#E2D2D2] focus:border-lyp-cherry/40 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`;
+const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-3 font-body text-[14px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] hover:border-[#E2D2D2] focus:border-lyp-cherry/40 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`;
 
 const selectClasses = `${fieldClasses} appearance-none pr-11`;
 
 const labelClasses =
-  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
-const hintClasses = "mt-1.5 font-body text-[11px] text-[#A89898]";
+const hintClasses = "mt-1.5 font-body text-[11px] text-[#867474]";
 
 const primaryPill = `group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none`;
 
@@ -95,7 +95,7 @@ function SelectShell({ children }: { children: React.ReactNode }) {
       {children}
       <ChevronDown
         strokeWidth={1.5}
-        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A89898]"
+        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#867474]"
       />
     </div>
   );
@@ -296,7 +296,7 @@ export default function ProposalWizard({
                     isActive &&
                       "bg-lyp-cherry text-lyp-white shadow-[0_6px_16px_-6px_rgba(178,38,38,0.6)]",
                     isCompleted && "bg-lyp-cherry/10 text-lyp-cherry",
-                    !isActive && !isCompleted && "bg-[#F3ECEC] text-[#A89898]",
+                    !isActive && !isCompleted && "bg-[#F3ECEC] text-[#867474]",
                   )}
                 >
                   {isCompleted ? (
@@ -313,7 +313,7 @@ export default function ProposalWizard({
                       ? "font-semibold text-lyp-black"
                       : isCompleted
                         ? "text-lyp-cherry/70"
-                        : "text-[#A89898]",
+                        : "text-[#867474]",
                   )}
                 >
                   {label}
@@ -384,7 +384,7 @@ export default function ProposalWizard({
                               EASE,
                               isSelected
                                 ? "border-lyp-cherry/30 bg-lyp-cherry/[0.06] font-semibold text-lyp-cherry"
-                                : "border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] hover:border-lyp-cherry/25 hover:text-lyp-black",
+                                : "border-[#EFE6E6] bg-lyp-white text-[#6B5A5A] hover:border-lyp-cherry/25 hover:text-lyp-black",
                             )}
                           >
                             <MapPin strokeWidth={1.25} className="h-3.5 w-3.5" />
@@ -459,7 +459,7 @@ export default function ProposalWizard({
 
                 <div className="flex items-center gap-4 pt-1">
                   <span className="h-px flex-1 bg-[#F1E8E8]" />
-                  <span className="font-body text-[10px] uppercase tracking-[0.22em] text-[#C3B5B5]">
+                  <span className="font-body text-[10px] uppercase tracking-[0.22em] text-[#9C8C8C]">
                     Or
                   </span>
                   <span className="h-px flex-1 bg-[#F1E8E8]" />
@@ -481,7 +481,7 @@ export default function ProposalWizard({
                 <h3 className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
                   New Client
                 </h3>
-                <p className="mt-1.5 font-body text-[12px] text-[#A89898]">
+                <p className="mt-1.5 font-body text-[12px] text-[#867474]">
                   The client is the person. Their first venue is added
                   underneath — more can follow later.
                 </p>
@@ -589,7 +589,7 @@ export default function ProposalWizard({
 
             <dl className="mt-7 overflow-hidden rounded-2xl border border-[#EFE6E6]">
               <div className="flex items-start gap-4 border-b border-[#F1E8E8] px-5 py-4">
-                <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
+                <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#867474]">
                   Client
                 </dt>
                 <dd className="font-body text-[14px] font-medium text-lyp-black">
@@ -597,7 +597,7 @@ export default function ProposalWizard({
                 </dd>
               </div>
               <div className="flex items-start gap-4 border-b border-[#F1E8E8] px-5 py-4">
-                <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
+                <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#867474]">
                   Email
                 </dt>
                 <dd className="font-body text-[14px] font-medium text-lyp-black">
@@ -605,7 +605,7 @@ export default function ProposalWizard({
                 </dd>
               </div>
               <div className="flex items-start gap-4 px-5 py-4">
-                <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#A89898]">
+                <dt className="w-24 flex-shrink-0 font-body text-[10px] uppercase tracking-[0.22em] text-[#867474]">
                   Venue
                 </dt>
                 <dd className="font-body text-[14px] font-medium text-lyp-black">
@@ -613,11 +613,6 @@ export default function ProposalWizard({
                 </dd>
               </div>
             </dl>
-
-            <p className="mt-5 font-body text-[12px] leading-relaxed text-[#A89898]">
-              Internal notes are added after the client signs, in the
-              post-signature review.
-            </p>
           </div>
         )}
       </div>

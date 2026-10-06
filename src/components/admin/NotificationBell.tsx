@@ -136,7 +136,7 @@ export default function NotificationBell() {
           unread > 0 ? `Notifications, ${unread} new` : "Notifications"
         }
         className={cn(
-          `relative flex h-9 w-9 items-center justify-center rounded-full border border-[#EFE6E6] bg-lyp-white text-[#8A7A7A] transition-colors duration-500 ${EASE}`,
+          `relative flex h-9 w-9 items-center justify-center rounded-full border border-[#EFE6E6] bg-lyp-white text-[#6B5A5A] transition-colors duration-500 ${EASE}`,
           "hover:border-lyp-cherry/25 hover:text-lyp-cherry",
         )}
       >
@@ -157,7 +157,7 @@ export default function NotificationBell() {
           </div>
 
           {items.length === 0 ? (
-            <p className="px-4 py-6 text-center font-body text-[12.5px] text-[#A89898]">
+            <p className="px-4 py-6 text-center font-body text-[12.5px] text-[#867474]">
               Nothing yet. Signatures, payments and finished onboarding forms
               land here.
             </p>
@@ -189,7 +189,7 @@ export default function NotificationBell() {
                           <span className="font-semibold">{who}</span>{" "}
                           {copy.verb}
                         </span>
-                        <span className="mt-0.5 block font-body text-[11px] text-[#A89898]">
+                        <span className="mt-0.5 block font-body text-[11px] text-[#867474]">
                           {relative(item.createdAt)}
                         </span>
                       </span>

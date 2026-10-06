@@ -32,7 +32,7 @@ export default async function EditIntakeQuestionPage({ params }: PageProps) {
       <header className="animate-rise mb-6">
         <Link
           href="/admin/intake-questions"
-          className={`group inline-flex items-center gap-2.5 font-body text-[12px] font-semibold tracking-wide text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+          className={`group inline-flex items-center gap-2.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
           <span
             className={`flex h-7 w-7 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:-translate-x-0.5`}

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
    "they've committed but we're not done", green is the finish line. The
    payment step sits between the two in the slate the admin already uses for
    work that's in motion. The lifecycle states that aren't stages of their own
-   — draft, sent, superseded — keep their existing tones and lead the row.
+   — draft, sent, replaced — keep their existing tones and lead the row.
    ------------------------------------------------------------------------- */
 
 /** The database kept both spellings when the enum was renamed. */
@@ -63,7 +63,7 @@ const badge =
 
 /** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const TONE = {
-  draft: "bg-[#F2EDED] text-[#8A7A7A] ring-[#E6DBDB]",
+  draft: "bg-[#EDE4E4] text-[#6B5A5A] ring-[#D9C9C9]",
   sent: "bg-[#EDF1F7] text-[#5B7394] ring-[#DCE4EF]",
   slate: "bg-[#EDF1F7] text-[#5B7394] ring-[#DCE4EF]",
   amber: "bg-[#FBF3E3] text-[#9A7B2E] ring-[#F0E4C9]",
@@ -91,7 +91,7 @@ export default function ProposalStageBadges(props: ProposalStageInput) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       {/* Drafts and sends have no stage of their own, so they speak for the
-          row. Superseded leads even when stages follow it, because it's the
+          row. Replaced leads even when stages follow it, because it's the
           first thing you need to know about the row. */}
       {status === "draft" && (
         <span className={cn(badge, TONE.draft)} title="Not sent to the client yet">
@@ -109,9 +109,9 @@ export default function ProposalStageBadges(props: ProposalStageInput) {
       {status === "superseded" && (
         <span
           className={cn(badge, TONE.cherry)}
-          title="Replaced by a newer proposal — kept for the record"
+          title="A newer version of this proposal has taken over. Kept for the record."
         >
-          Superseded
+          Replaced
         </span>
       )}
 

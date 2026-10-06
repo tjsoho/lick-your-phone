@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const EASE = "ease-brand";
 
 const thClasses =
-  "whitespace-nowrap px-3 py-2 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-3 py-2 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
 export default async function AdminIntakePage({
   params,
@@ -84,7 +84,7 @@ export default async function AdminIntakePage({
       <header className="animate-rise mb-6">
         <Link
           href={`/admin/proposals/${id}`}
-          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
           <ArrowLeft
             strokeWidth={1.5}
@@ -102,7 +102,7 @@ export default async function AdminIntakePage({
         <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
           Onboarding Answers
         </h1>
-        <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
+        <p className="mt-2 font-body text-[13px] text-[#6B5A5A]">
           {clientName}
         </p>
       </header>
@@ -115,7 +115,7 @@ export default async function AdminIntakePage({
           <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
             <FileText strokeWidth={1} className="h-6 w-6 text-lyp-cherry/60" />
           </span>
-          <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+          <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
             No onboarding answers submitted yet.
           </p>
         </div>
@@ -140,7 +140,7 @@ export default async function AdminIntakePage({
               >
                 {group.items.map((item, ii) => (
                   <div key={ii} className="min-w-0">
-                    <dt className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
+                    <dt className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]">
                       {item.label}
                     </dt>
                     <dd className="mt-1.5 break-words font-body text-[14px] text-lyp-black">
@@ -171,7 +171,7 @@ function ResponseValue({
   providers: { id: string; name: string }[];
 }) {
   if (value == null || value === "") {
-    return <span className="text-[#C3B5B5]">—</span>;
+    return <span className="text-[#9C8C8C]">—</span>;
   }
 
   // File uploads: array of { name, url, size }
@@ -224,7 +224,7 @@ function ResponseValue({
     const line = [part("street"), locality, part("country")]
       .filter(Boolean)
       .join(", ");
-    return line ? <span>{line}</span> : <span className="text-[#C3B5B5]">—</span>;
+    return line ? <span>{line}</span> : <span className="text-[#9C8C8C]">—</span>;
   }
 
   // Checkbox / multiselect: array of strings
@@ -235,7 +235,7 @@ function ResponseValue({
   // Matrix: object with nested {row: {col: val}} (e.g. opening hours)
   if (typeof value === "object" && value !== null) {
     const entries = Object.entries(value as Record<string, unknown>);
-    if (entries.length === 0) return <span className="text-[#C3B5B5]">—</span>;
+    if (entries.length === 0) return <span className="text-[#9C8C8C]">—</span>;
 
     // Detect nested objects (matrix format)
     const firstVal = entries[0][1];
@@ -274,7 +274,7 @@ function ResponseValue({
                   {cols.map((c) => (
                     <td
                       key={c}
-                      className="whitespace-nowrap px-3 py-2 tabular-nums text-[#8A7A7A]"
+                      className="whitespace-nowrap px-3 py-2 tabular-nums text-[#6B5A5A]"
                     >
                       {String((v as Record<string, unknown>)[c] ?? "—")}
                     </td>
@@ -294,7 +294,7 @@ function ResponseValue({
           <tbody>
             {entries.map(([k, v]) => (
               <tr key={k} className="border-b border-[#F7F1F1] last:border-0">
-                <td className="whitespace-nowrap py-1.5 pr-4 font-medium text-[#8A7A7A]">
+                <td className="whitespace-nowrap py-1.5 pr-4 font-medium text-[#6B5A5A]">
                   {k}
                 </td>
                 <td className="py-1.5 text-lyp-black">{String(v)}</td>

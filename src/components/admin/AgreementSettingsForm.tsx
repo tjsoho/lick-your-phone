@@ -32,10 +32,10 @@ import { isValidTermsUrl, resolveTermsTarget } from "@/lib/terms";
 
 const EASE = "ease-brand";
 
-const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
 const labelClasses =
-  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
 /**
  * The signature is drawn into the contract PDF at 36pt tall, object-contain,
@@ -92,7 +92,7 @@ function Card({
             <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
               {title}
             </h2>
-            <p className="mt-1 font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
+            <p className="mt-1 font-body text-[12.5px] leading-relaxed text-[#6B5A5A]">
               {description}
             </p>
           </div>
@@ -262,7 +262,7 @@ export default function AgreementSettingsForm({
           className={`${fieldClasses} resize-y leading-relaxed`}
           placeholder="Agreement Start: This agreement commences on…"
         />
-        <p className="mt-2 font-body text-[11px] text-[#A89898]">
+        <p className="mt-2 font-body text-[11px] text-[#867474]">
           {clauseCount} {clauseCount === 1 ? "clause" : "clauses"}. They are
           numbered automatically. Changes apply to proposals signed from now on
           — contracts already signed keep the terms they were signed under.
@@ -296,7 +296,7 @@ export default function AgreementSettingsForm({
           <p
             id="terms-url-note"
             className={`mt-2 max-w-xl font-body text-[11px] leading-relaxed ${
-              urlValid ? "text-[#A89898]" : "text-lyp-cherry"
+              urlValid ? "text-[#867474]" : "text-lyp-cherry"
             }`}
           >
             {urlValid
@@ -308,7 +308,7 @@ export default function AgreementSettingsForm({
               href={urlTyped}
               target="_blank"
               rel="noopener noreferrer"
-              className={`mt-2 inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+              className={`mt-2 inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
             >
               <ExternalLink strokeWidth={1.5} className="h-3.5 w-3.5" />
               Check the link
@@ -318,7 +318,7 @@ export default function AgreementSettingsForm({
 
         <div className="mt-5 border-t border-[#F1E8E8] pt-5">
           <span className={labelClasses}>Full T&amp;Cs Document</span>
-          <p className="-mt-1 mb-2 font-body text-[11px] text-[#A89898]">
+          <p className="-mt-1 mb-2 font-body text-[11px] text-[#867474]">
             {DOCUMENT_HINT}
           </p>
 
@@ -335,7 +335,7 @@ export default function AgreementSettingsForm({
                 href={documentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
               >
                 <ExternalLink strokeWidth={1.5} className="h-3.5 w-3.5" />
                 Open
@@ -343,7 +343,7 @@ export default function AgreementSettingsForm({
               <button
                 type="button"
                 onClick={() => documentInputRef.current?.click()}
-                className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
               >
                 <FileUp strokeWidth={1.5} className="h-3.5 w-3.5" />
                 Replace
@@ -356,7 +356,7 @@ export default function AgreementSettingsForm({
                 }}
                 title="Remove the document"
                 aria-label="Remove the document"
-                className={`flex h-7 w-7 items-center justify-center rounded-full border border-[#EFE6E6] text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`}
+                className={`flex h-7 w-7 items-center justify-center rounded-full border border-[#EFE6E6] text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`}
               >
                 <Trash2 strokeWidth={1.5} className="h-3.5 w-3.5" />
               </button>
@@ -366,7 +366,7 @@ export default function AgreementSettingsForm({
               type="button"
               onClick={() => documentInputRef.current?.click()}
               disabled={uploading}
-              className={`mt-2 flex w-full max-w-sm flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] py-8 text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry disabled:cursor-not-allowed disabled:opacity-60`}
+              className={`mt-2 flex w-full max-w-sm flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] py-8 text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry disabled:cursor-not-allowed disabled:opacity-60`}
             >
               {uploading ? (
                 <Loader2
@@ -397,8 +397,8 @@ export default function AgreementSettingsForm({
 
         {/* One rule, one sentence — so nobody has to guess which of the three
             a client clicking "the full terms" is actually handed. */}
-        <p className="mt-4 max-w-xl font-body text-[11px] leading-relaxed text-[#A89898]">
-          <strong className="font-semibold text-[#8A7A7A]">
+        <p className="mt-4 max-w-xl font-body text-[11px] leading-relaxed text-[#867474]">
+          <strong className="font-semibold text-[#6B5A5A]">
             What the client gets:
           </strong>{" "}
           {termsTarget.kind === "document"
@@ -449,7 +449,7 @@ export default function AgreementSettingsForm({
 
         <div className="mt-4">
           <span className={labelClasses}>Signature Image</span>
-          <p className="-mt-1 mb-2 font-body text-[11px] text-[#A89898]">
+          <p className="-mt-1 mb-2 font-body text-[11px] text-[#867474]">
             {SIGNATURE_SIZE_HINT}
           </p>
           {signatureUrl ? (
@@ -470,7 +470,7 @@ export default function AgreementSettingsForm({
                       className="max-h-16 w-auto object-contain"
                     />
                   </div>
-                  <p className="mt-1.5 text-center font-body text-[10.5px] text-[#A89898]">
+                  <p className="mt-1.5 text-center font-body text-[10.5px] text-[#867474]">
                     On the contract&rsquo;s white page
                   </p>
                 </div>
@@ -483,7 +483,7 @@ export default function AgreementSettingsForm({
                       className="max-h-16 w-auto object-contain"
                     />
                   </div>
-                  <p className="mt-1.5 text-center font-body text-[10.5px] text-[#A89898]">
+                  <p className="mt-1.5 text-center font-body text-[10.5px] text-[#867474]">
                     On dark, so a pale one still shows
                   </p>
                 </div>
@@ -494,7 +494,7 @@ export default function AgreementSettingsForm({
                   type="button"
                   onClick={() => signatureInputRef.current?.click()}
                   disabled={signatureUploading}
-                  className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry disabled:cursor-not-allowed disabled:opacity-60`}
+                  className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry disabled:cursor-not-allowed disabled:opacity-60`}
                 >
                   {signatureUploading ? (
                     <Loader2
@@ -509,7 +509,7 @@ export default function AgreementSettingsForm({
                 <button
                   type="button"
                   onClick={() => setLibraryOpen(true)}
-                  className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                  className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                 >
                   <Images strokeWidth={1.5} className="h-3.5 w-3.5" />
                   Pick from the library
@@ -519,7 +519,7 @@ export default function AgreementSettingsForm({
                   onClick={() => setImage("")}
                   title="Remove signature image"
                   aria-label="Remove signature image"
-                  className={`flex h-7 w-7 items-center justify-center rounded-full border border-[#EFE6E6] text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`}
+                  className={`flex h-7 w-7 items-center justify-center rounded-full border border-[#EFE6E6] text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`}
                 >
                   <Trash2 strokeWidth={1.5} className="h-3.5 w-3.5" />
                 </button>
@@ -531,7 +531,7 @@ export default function AgreementSettingsForm({
                 type="button"
                 onClick={() => signatureInputRef.current?.click()}
                 disabled={signatureUploading}
-                className={`mt-2 flex w-full max-w-sm flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] py-8 text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry disabled:cursor-not-allowed disabled:opacity-60`}
+                className={`mt-2 flex w-full max-w-sm flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] py-8 text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry disabled:cursor-not-allowed disabled:opacity-60`}
               >
                 {signatureUploading ? (
                   <Loader2
@@ -550,7 +550,7 @@ export default function AgreementSettingsForm({
               <button
                 type="button"
                 onClick={() => setLibraryOpen(true)}
-                className={`mt-3 inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                className={`mt-3 inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
               >
                 <Images strokeWidth={1.5} className="h-3.5 w-3.5" />
                 Pick from the library
@@ -609,7 +609,7 @@ export default function AgreementSettingsForm({
             signaturePrintable &&
             ink?.tone === "dark" &&
             !ink.hasTransparency && (
-              <p className="mt-3 max-w-md font-body text-[11px] leading-relaxed text-[#A89898]">
+              <p className="mt-3 max-w-md font-body text-[11px] leading-relaxed text-[#867474]">
                 The ink is dark enough to read, but the file has a solid
                 background, so it will print as a box sitting on the page.
                 A transparent PNG sits on the contract like ink.
@@ -617,16 +617,16 @@ export default function AgreementSettingsForm({
             )}
 
           {signatureUrl && signaturePrintable && inkChecked && !ink && (
-            <p className="mt-3 max-w-md font-body text-[11px] leading-relaxed text-[#A89898]">
+            <p className="mt-3 max-w-md font-body text-[11px] leading-relaxed text-[#867474]">
               The signature is saved, but it could not be read here to check
               how it will print. The two panels above are the stored file —
               if the dark one is empty too, nothing was uploaded.
             </p>
           )}
 
-          <p className="mt-2 max-w-md font-body text-[11px] leading-relaxed text-[#A89898]">
+          <p className="mt-2 max-w-md font-body text-[11px] leading-relaxed text-[#867474]">
             Upload a{" "}
-            <strong className="font-semibold text-[#8A7A7A]">
+            <strong className="font-semibold text-[#6B5A5A]">
               dark, transparent version
             </strong>{" "}
             of the signature — a PNG with no background, so it sits on the

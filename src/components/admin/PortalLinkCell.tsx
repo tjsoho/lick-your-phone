@@ -9,7 +9,7 @@ const EASE = "ease-brand";
 export default function PortalLinkCell({ url }: { url: string | null }) {
   const [copied, setCopied] = useState(false);
 
-  if (!url) return <span className="text-[#C3B5B5]">—</span>;
+  if (!url) return <span className="text-[#9C8C8C]">—</span>;
 
   async function handleCopy() {
     if (!url) return;

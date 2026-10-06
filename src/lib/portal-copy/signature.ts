@@ -28,11 +28,16 @@ export const SIGNATURE_COPY: CopySlot[] = [
   { key: "termsCloseButton", label: "Terms window: close button", default: "Close" },
   { key: "signButton", label: "Sign button", default: "I Agree & Sign" },
   { key: "signingButton", label: "Sign button while signing", default: "Signing..." },
-  { key: "signedTitle", label: "Signed: title", default: "Agreement Signed" },
-  /* No download here: the contract is offered on the last screen of the
-     journey instead, where the client is finished rather than mid-flow. */
-  { key: "addPaymentButton", label: "Continue to payment button", default: "Continue to payment", hint: "The manual way on, for anyone still on the confirmation when it stops moving by itself." },
-  { key: "redirectNotice", label: "Signed: taking you to payment", default: "Taking you to payment…", hint: "Shown for a moment on the confirmation while the portal moves the client on to payment by itself." },
+  /* Signing now goes straight to the payment form, with no screen in
+     between, so this heading is only read on the two visits that have
+     nowhere to be carried to: a deck with its payment slide hidden, and a
+     client who has already paid and walked back to the signing slide.
+
+     The button on to payment and the "Taking you to payment…" line went with
+     the hold they belonged to. No download here either: the contract is
+     offered on the last screen of the journey instead, where the client is
+     finished rather than mid-flow. */
+  { key: "signedTitle", label: "Signed: title", default: "Agreement Signed", hint: "Only seen by a client who has signed and has no payment form to go to — everyone else is taken straight there." },
 
   /* The selections card beside the signature pad. Same figures as the summary
      slide's Investment Summary, so the wording is offered in the same terms. */

@@ -12,10 +12,10 @@ import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 const EASE = "ease-brand";
 
 const thClasses =
-  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
 const labelClasses =
-  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
 interface State {
   id: string;
@@ -133,7 +133,7 @@ export default function ProvidersList({ providers, states }: Props) {
     setForm(emptyForm);
   };
 
-  const inputClass = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+  const inputClass = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
   const renderForm = (
     onSubmit: () => void,
@@ -212,7 +212,7 @@ export default function ProvidersList({ providers, states }: Props) {
                   className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-3.5 py-1.5 font-body text-[12px] transition-all duration-500 ${EASE} ${
                     checked
                       ? "border-lyp-cherry/25 bg-lyp-cherry/[0.05] text-lyp-cherry"
-                      : "border-[#EFE6E6] bg-[#FBF8F8] text-[#8A7A7A] hover:border-lyp-cherry/20"
+                      : "border-[#EFE6E6] bg-[#FBF8F8] text-[#6B5A5A] hover:border-lyp-cherry/20"
                   }`}
                 >
                   <input
@@ -316,7 +316,7 @@ export default function ProvidersList({ providers, states }: Props) {
                 className="h-6 w-6 text-lyp-cherry/60"
               />
             </span>
-            <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+            <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
               No providers yet.
             </p>
             <button
@@ -356,25 +356,25 @@ export default function ProvidersList({ providers, states }: Props) {
                         <td className="whitespace-nowrap px-5 py-3 font-medium text-lyp-black">
                           {provider.name}
                         </td>
-                        <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                        <td className="whitespace-nowrap px-5 py-3 text-[#6B5A5A]">
                           <span className="inline-flex items-center gap-1.5 capitalize">
                             {provider.type === "videographer" ? (
                               <Video
                                 strokeWidth={1.5}
                                 aria-hidden="true"
-                                className="h-3.5 w-3.5 text-[#C3B5B5]"
+                                className="h-3.5 w-3.5 text-[#9C8C8C]"
                               />
                             ) : (
                               <Camera
                                 strokeWidth={1.5}
                                 aria-hidden="true"
-                                className="h-3.5 w-3.5 text-[#C3B5B5]"
+                                className="h-3.5 w-3.5 text-[#9C8C8C]"
                               />
                             )}
                             {provider.type ?? "—"}
                           </span>
                         </td>
-                        <td className="px-5 py-3 text-[#8A7A7A]">
+                        <td className="px-5 py-3 text-[#6B5A5A]">
                           {provider.provider_states
                             ?.map((ps) => ps.states?.code)
                             .filter(Boolean)
@@ -390,7 +390,7 @@ export default function ProvidersList({ providers, states }: Props) {
                             onClick={() => startEdit(provider)}
                             aria-label={`Edit ${provider.name}`}
                             title="Edit"
-                            className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:bg-[#F7F1F1] hover:text-lyp-cherry focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-cherry/30`}
+                            className={`rounded-full p-1.5 text-[#867474] transition-colors duration-500 ${EASE} hover:bg-[#F7F1F1] hover:text-lyp-cherry focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-cherry/30`}
                           >
                             <Pencil strokeWidth={1.5} className="h-4 w-4" />
                           </button>

@@ -65,7 +65,7 @@ export default async function EditPagePage({
           href="/admin/pages"
           aria-label="Back to content pages"
           title="Back to content pages"
-          className={`mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#EFE6E6] bg-lyp-white text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`}
+          className={`mt-1 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-[#EFE6E6] bg-lyp-white text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`}
         >
           <ArrowLeft strokeWidth={1.5} className="h-4 w-4" />
         </Link>

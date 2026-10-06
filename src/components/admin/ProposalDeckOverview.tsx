@@ -20,7 +20,7 @@ const switchClasses =
 const typePill = (type: string | null) =>
   type === "service"
     ? "bg-[#EDF1F7] text-[#5B7394]"
-    : "bg-[#F2EDED] text-[#8A7A7A]";
+    : "bg-[#F2EDED] text-[#6B5A5A]";
 
 /** Discounts are stored as fractions (0.2), shown to staff as percentages. */
 function toPercent(fraction: number | null): string {
@@ -235,7 +235,7 @@ export default function ProposalDeckOverview({
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="font-body text-[12px] text-[#8A7A7A]">
+        <p className="font-body text-[12px] text-[#6B5A5A]">
           <span className="font-semibold text-lyp-black tabular-nums">
             {shownCount}
           </span>{" "}
@@ -260,7 +260,7 @@ export default function ProposalDeckOverview({
             type="button"
             onClick={handleReset}
             disabled={resetting}
-            className={`inline-flex items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-1.5 font-body text-[12px] font-semibold text-[#8A7A7A] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985] disabled:opacity-40`}
+            className={`inline-flex items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-1.5 font-body text-[12px] font-semibold text-[#6B5A5A] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985] disabled:opacity-40`}
           >
             {resetting ? (
               <Loader2 strokeWidth={1.5} className="h-3.5 w-3.5 animate-spin" />
@@ -274,7 +274,7 @@ export default function ProposalDeckOverview({
 
       {/* The rule, said plainly: per-proposal choices here, company words and
           pictures under Content Pages. */}
-      <p className="mb-4 rounded-2xl border border-[#F1E8E8] bg-[#FCFAFA] px-4 py-3 font-body text-[12px] leading-relaxed text-[#8A7A7A]">
+      <p className="mb-4 rounded-2xl border border-[#F1E8E8] bg-[#FCFAFA] px-4 py-3 font-body text-[12px] leading-relaxed text-[#6B5A5A]">
         Wording and images are shared across every proposal and are edited
         under{" "}
         <span className="font-semibold text-lyp-black">Content Pages</span>.
@@ -345,7 +345,7 @@ export default function ProposalDeckOverview({
                   <div className="min-w-0">
                     <h3
                       className={`truncate font-body text-[13px] font-semibold ${
-                        shown ? "text-lyp-black" : "text-[#C3B5B5]"
+                        shown ? "text-lyp-black" : "text-[#9C8C8C]"
                       }`}
                       title={title}
                     >
@@ -378,7 +378,7 @@ export default function ProposalDeckOverview({
                     {busyId === page.pageId && (
                       <Loader2
                         strokeWidth={1.5}
-                        className="h-3.5 w-3.5 animate-spin text-[#C3B5B5]"
+                        className="h-3.5 w-3.5 animate-spin text-[#9C8C8C]"
                       />
                     )}
                     {locked ? (
@@ -388,7 +388,7 @@ export default function ProposalDeckOverview({
                       >
                         <Lock
                           strokeWidth={1.5}
-                          className="h-3 w-3 text-[#A89898]"
+                          className="h-3 w-3 text-[#867474]"
                         />
                       </span>
                     ) : (
@@ -404,7 +404,7 @@ export default function ProposalDeckOverview({
 
                 {page.type === "service" && (
                   <label className="mt-3 flex items-center justify-between gap-3 border-t border-[#F7F1F1] pt-3">
-                    <span className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]">
+                    <span className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]">
                       Discount
                     </span>
                     <span className="flex items-center gap-1.5">
@@ -418,7 +418,7 @@ export default function ProposalDeckOverview({
                         aria-label={`Discount for ${title}`}
                         className={`w-16 rounded-xl border border-[#E4D6D6] bg-lyp-white px-2.5 py-1.5 text-right font-body text-[12.5px] tabular-nums text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#6F6060] hover:border-lyp-cherry/30 focus:border-lyp-cherry/40 focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`}
                       />
-                      <span className="font-body text-[11px] text-[#8A7A7A]">
+                      <span className="font-body text-[11px] text-[#6B5A5A]">
                         %
                       </span>
                     </span>
@@ -430,7 +430,7 @@ export default function ProposalDeckOverview({
         })}
       </div>
 
-      <p className="mt-4 font-body text-[11px] leading-relaxed text-[#A89898]">
+      <p className="mt-4 font-body text-[11px] leading-relaxed text-[#867474]">
         Thumbnails are the live slides with this client&rsquo;s own details.
         Cover, Summary, Signature, Payment and Onboarding always show — the
         portal needs them. Discounts left blank follow the service&rsquo;s

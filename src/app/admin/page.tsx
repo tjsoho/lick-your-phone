@@ -16,7 +16,7 @@ const EASE = "ease-brand";
 
 /** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const statusStyles: Record<string, string> = {
-  draft: "bg-[#F2EDED] text-[#8A7A7A]",
+  draft: "bg-[#EDE4E4] text-[#6B5A5A]",
   sent: "bg-[#EDF1F7] text-[#5B7394]",
   intake_complete: "bg-[#FBF3E3] text-[#9A7B2E]",
   signed: "bg-[#E9F2EC] text-[#4A7A5C]",
@@ -122,7 +122,7 @@ export default async function AdminDashboard() {
             <Link
               key={stat.label}
               href={stat.href}
-              className={`group flex items-center gap-3.5 rounded-2xl border border-[#EFE6E6] bg-lyp-white px-4 py-3.5 transition-all duration-500 ${EASE} hover:border-lyp-cherry/20 hover:shadow-[0_12px_28px_-16px_rgba(61,11,17,0.25)]`}
+              className={`group flex items-center gap-3.5 rounded-2xl border border-[#E2D5D5] bg-lyp-white px-4 py-3.5 transition-all duration-500 ${EASE} hover:border-lyp-cherry/20 hover:shadow-[0_12px_28px_-16px_rgba(61,11,17,0.25)]`}
             >
               <span
                 className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-lyp-cherry/[0.06] ring-1 ring-lyp-cherry/10 transition-transform duration-500 ${EASE} group-hover:scale-105`}
@@ -137,14 +137,14 @@ export default async function AdminDashboard() {
                 <p className="font-heading text-[22px] font-bold leading-none tracking-[-0.03em] tabular-nums text-lyp-black">
                   {stat.value}
                 </p>
-                <p className="mt-1.5 truncate font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+                <p className="mt-1.5 truncate font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]">
                   {stat.label}
                 </p>
               </div>
 
               <ArrowUpRight
                 strokeWidth={1.5}
-                className={`ml-auto h-3.5 w-3.5 flex-shrink-0 text-[#C3B5B5] transition-all duration-500 ${EASE} group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lyp-cherry`}
+                className={`ml-auto h-3.5 w-3.5 flex-shrink-0 text-[#9C8C8C] transition-all duration-500 ${EASE} group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-lyp-cherry`}
               />
             </Link>
           );
@@ -175,11 +175,11 @@ export default async function AdminDashboard() {
 
           <Link
             href="/admin/services"
-            className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1 pl-5 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
+            className={`group inline-flex items-center gap-3 rounded-full border border-[#E2D5D5] bg-lyp-white py-1 pl-5 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
           >
             Manage Services
             <span
-              className={`flex h-7 w-7 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
+              className={`flex h-7 w-7 items-center justify-center rounded-full bg-[#EFE6E6] transition-transform duration-500 ${EASE} group-hover:scale-105`}
             >
               <Package strokeWidth={1.5} className="h-4 w-4" />
             </span>
@@ -187,11 +187,11 @@ export default async function AdminDashboard() {
 
           <Link
             href="/admin/settings"
-            className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1 pl-5 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
+            className={`group inline-flex items-center gap-3 rounded-full border border-[#E2D5D5] bg-lyp-white py-1 pl-5 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
           >
             Terms &amp; Signature
             <span
-              className={`flex h-7 w-7 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}
+              className={`flex h-7 w-7 items-center justify-center rounded-full bg-[#EFE6E6] transition-transform duration-500 ${EASE} group-hover:scale-105`}
             >
               <PenLine strokeWidth={1.5} className="h-4 w-4" />
             </span>
@@ -211,7 +211,7 @@ export default async function AdminDashboard() {
           {recentProposals.length > 0 && (
             <Link
               href="/admin/proposals"
-              className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+              className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
             >
               View all
               <ArrowRight
@@ -222,7 +222,7 @@ export default async function AdminDashboard() {
           )}
         </div>
 
-        <div className="mt-3.5 overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white">
+        <div className="mt-3.5 overflow-hidden rounded-2xl border border-[#E2D5D5] bg-lyp-white">
           {recentProposals.length === 0 ? (
             <div className="px-8 py-12 text-center">
               <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
@@ -231,7 +231,7 @@ export default async function AdminDashboard() {
                   className="h-6 w-6 text-lyp-cherry/60"
                 />
               </span>
-              <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+              <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
                 No proposals yet.
               </p>
               <Link
@@ -246,12 +246,12 @@ export default async function AdminDashboard() {
             <div className="overflow-x-auto">
               <table className="w-full font-body text-[12.5px]">
                 <thead>
-                  <tr className="border-b border-[#F1E8E8]">
+                  <tr className="border-b border-[#E6DADA]">
                     {["Client", "Venue", "Status", "Total", "Created"].map(
                       (heading) => (
                         <th
                           key={heading}
-                          className="whitespace-nowrap px-5 py-3 text-left text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]"
+                          className="whitespace-nowrap px-5 py-3 text-left text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]"
                         >
                           {heading}
                         </th>
@@ -264,7 +264,7 @@ export default async function AdminDashboard() {
                   {recentProposals.map((proposal: any) => (
                     <tr
                       key={proposal.id}
-                      className={`border-b border-[#F7F1F1] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#FBF8F8]`}
+                      className={`border-b border-[#EFE6E6] transition-colors duration-500 last:border-0 ${EASE} hover:bg-[#F7F1F1]`}
                     >
                       <td className="whitespace-nowrap px-5 py-3">
                         <Link
@@ -274,14 +274,14 @@ export default async function AdminDashboard() {
                           {proposal.clients?.name ?? "Unknown"}
                         </Link>
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                      <td className="whitespace-nowrap px-5 py-3 text-[#6B5A5A]">
                         {proposal.venues?.name ?? "—"}
                       </td>
                       <td className="whitespace-nowrap px-5 py-3">
                         <span
                           className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${
                             statusStyles[proposal.status] ??
-                            "bg-[#F2EDED] text-[#8A7A7A]"
+                            "bg-[#EDE4E4] text-[#6B5A5A]"
                           }`}
                         >
                           {formatStatus(proposal.status)}
@@ -292,7 +292,7 @@ export default async function AdminDashboard() {
                           ? formatCents(proposal.total_snapshot_cents)
                           : "—"}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#A89898]">
+                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#867474]">
                         {formatDate(proposal.created_at)}
                       </td>
                     </tr>

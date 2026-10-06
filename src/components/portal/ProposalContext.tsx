@@ -91,6 +91,12 @@ export interface ProposalData {
    * `src/lib/client-logo` decides what the cover actually draws.
    */
   clientLogoUrl?: string | null;
+  /**
+   * This venue's own logo, which the cover prefers over the client's — one
+   * client can hold several restaurants, each with its own branding. Null for
+   * a venue that has none, which is when the client's is used.
+   */
+  venueLogoUrl?: string | null;
   venueName: string;
 }
 

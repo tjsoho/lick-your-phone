@@ -45,6 +45,8 @@ export const venues = pgTable("venues", {
   clientId: uuid("client_id").references(() => clients.id),
   name: text("name").notNull(),
   address: text("address"),
+  /** This venue's own logo, which the proposal cover prefers over the client's. */
+  logoUrl: text("logo_url"),
   stateId: uuid("state_id").references(() => states.id),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()

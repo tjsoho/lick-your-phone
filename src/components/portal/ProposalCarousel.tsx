@@ -44,10 +44,14 @@ const CLOSING_SLUGS = ["summary", "signature", "payment", "intake"];
 
 /**
  * Slides that carry their own way forward, so the bar's Next would be a
- * second and wronger exit. Signing turns the page itself, and the payment
- * slide hands over to onboarding once the details are captured.
+ * second and wronger exit. The summary's investment card ends in "Proceed to
+ * signature", signing turns the page itself, and the payment slide hands over
+ * to onboarding once the details are captured.
+ *
+ * Membership here is the rule, not the whole answer: a slide only keeps Next
+ * off itself while its own action is really on screen. See `nextLocked`.
  */
-const SELF_ADVANCING_SLUGS = ["signature", "payment"];
+const SELF_ADVANCING_SLUGS = ["summary", "signature", "payment"];
 
 /**
  * The `sizes` the NEXT slide's featured image will be requested with, or null
@@ -232,6 +236,7 @@ function CarouselInner() {
   // Once signed, the pages after the signature only move forward: the deal is
   // done, so there's nothing to go back and change.
   const signatureIndex = pages.findIndex((p) => p.slug === "signature");
+  const paymentIndex = pages.findIndex((p) => p.slug === "payment");
   const backLocked =
     (proposal.status === "signed" || proposal.status === "intake_complete") &&
     signatureIndex >= 0 &&
@@ -241,13 +246,27 @@ function CarouselInner() {
   // button does — a hidden button that a keypress walks straight past would
   // only be half a decision.
   const currentSlug = pages[currentPage]?.slug ?? null;
+  // The summary's way forward lives INSIDE its investment card, and that card
+  // only exists once something has been selected: an empty summary is two
+  // sentences and nothing else. Nor does it always end in a button — with the
+  // card already on file it becomes a confirmation panel, and the button it
+  // does render needs a slide to send the client to. In any of those cases the
+  // bar's Next is the only way on, so it stays.
+  const summaryCarriesOn =
+    selectedCount > 0 &&
+    !paymentCaptured &&
+    (proposal.status === "signed" ? paymentIndex >= 0 : signatureIndex >= 0);
   // A slide only keeps Next off itself while it really does carry the client
   // onward. Once the card is on file the signature slide is a confirmation
   // with nothing left to trigger, and hiding Next there would strand them.
   const nextLocked =
     !!currentSlug &&
     SELF_ADVANCING_SLUGS.includes(currentSlug) &&
-    !(currentSlug === "signature" && paymentCaptured);
+    // The signature slide carries them to payment — unless the card is already
+    // on file, or the deck has no payment slide to carry them to (it can be
+    // hidden for a client), either of which leaves Next as the only way on.
+    !(currentSlug === "signature" && (paymentCaptured || paymentIndex < 0)) &&
+    !(currentSlug === "summary" && !summaryCarriesOn);
 
   const goNext = useCallback(() => {
     if (nextLocked) return;

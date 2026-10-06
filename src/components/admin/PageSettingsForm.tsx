@@ -21,10 +21,10 @@ interface PageSettingsFormProps {
 }
 
 const ic =
-  `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+  `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
 const labelClasses =
-  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
 /**
  * The featured image is drawn at 58vh tall in a ~44vw column (SIZES.main in
@@ -70,7 +70,7 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition, onDraf
         <div className="space-y-3">
           <div>
             <span className={labelClasses}>Image</span>
-            <p className="mt-1.5 font-body text-[11px] text-[#A89898]">
+            <p className="mt-1.5 font-body text-[11px] text-[#867474]">
               {SIZE_HINT}
             </p>
             {image ? (
@@ -95,7 +95,7 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition, onDraf
             ) : (
               <button
                 onClick={() => setLibraryOpen(true)}
-                className={`mt-2 flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry`}
+                className={`mt-2 flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry`}
               >
                 <Images strokeWidth={1.25} className="h-7 w-7" />
                 <span className="font-body text-[13px]">Choose from library</span>
@@ -104,7 +104,7 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition, onDraf
             {image && (
               <button
                 onClick={() => setLibraryOpen(true)}
-                className={`mt-3 flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                className={`mt-3 flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
               >
                 <Images strokeWidth={1.5} className="h-3.5 w-3.5" />
                 Replace image

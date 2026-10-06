@@ -3,7 +3,7 @@ import type { CopySlot } from "./types";
 /** Wording that appears on every slide rather than belonging to one page. */
 export const GLOBAL_COPY: CopySlot[] = [
   { key: "backButton", label: "Back button", default: "Back" },
-  { key: "nextButton", label: "Next button", default: "Next" },
+  { key: "nextButton", label: "Next button", default: "Next", hint: "Hidden on the slides that carry their own way forward — the summary (which ends in its own Sign button), the signature and the payment details — so there is never a second, wronger exit beside the real one." },
   { key: "pageCounter", label: "Page counter", default: "{current} / {total}", hint: "{current} and {total} are replaced with numbers." },
   { key: "flowProgressLabel", label: "Progress tracker: screen-reader title", default: "Your progress" },
   { key: "flowStageSigned", label: "Progress tracker: stage 1", default: "Agreement signed" },

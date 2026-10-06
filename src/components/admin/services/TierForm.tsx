@@ -36,10 +36,10 @@ interface TierFormProps {
 
 const EASE = "ease-brand";
 
-const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
 const labelClasses =
-  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
 const errorClasses = "mt-1.5 font-body text-[11px] text-lyp-cherry";
 

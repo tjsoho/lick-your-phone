@@ -13,7 +13,7 @@ import DeleteVenueButton from "./DeleteVenueButton";
 const EASE = "ease-brand";
 
 const thClasses =
-  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
 export default async function VenuesPage(props: {
   searchParams: Promise<{ q?: string }>;
@@ -89,7 +89,7 @@ export default async function VenuesPage(props: {
             <Search
               strokeWidth={1.5}
               aria-hidden="true"
-              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#C3B5B5]"
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9C8C8C]"
             />
             <input
               id="venue-search"
@@ -97,7 +97,7 @@ export default async function VenuesPage(props: {
               name="q"
               defaultValue={q}
               placeholder="Search venues or clients..."
-              className={`w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] py-2.5 pl-11 pr-4 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`}
+              className={`w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] py-2.5 pl-11 pr-4 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`}
             />
           </form>
         </div>
@@ -124,7 +124,7 @@ export default async function VenuesPage(props: {
                         className="h-6 w-6 text-lyp-cherry/60"
                       />
                     </span>
-                    <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+                    <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
                       No venues found.
                     </p>
                     <Link
@@ -146,7 +146,7 @@ export default async function VenuesPage(props: {
                         <MapPin
                           strokeWidth={1.5}
                           aria-hidden="true"
-                          className="h-3.5 w-3.5 flex-shrink-0 text-[#C3B5B5]"
+                          className="h-3.5 w-3.5 flex-shrink-0 text-[#9C8C8C]"
                         />
                         <span className="font-medium text-lyp-black">
                           {venue.name}
@@ -159,23 +159,23 @@ export default async function VenuesPage(props: {
                           <Building
                             strokeWidth={1.5}
                             aria-hidden="true"
-                            className="h-3.5 w-3.5 flex-shrink-0 text-[#C3B5B5]"
+                            className="h-3.5 w-3.5 flex-shrink-0 text-[#9C8C8C]"
                           />
-                          <span className="text-[#8A7A7A]">
+                          <span className="text-[#6B5A5A]">
                             {venue.clients.name}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-[#A89898]">None</span>
+                        <span className="text-[#867474]">None</span>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-5 py-3">
-                      <span className="inline-block rounded-full bg-[#F2EDED] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[#8A7A7A]">
+                      <span className="inline-block rounded-full bg-[#F2EDED] px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-[#6B5A5A]">
                         {venue.states?.name || "Unknown"}
                       </span>
                     </td>
                     <td className="px-5 py-3">
-                      <span className="block max-w-[220px] truncate text-[#A89898]">
+                      <span className="block max-w-[220px] truncate text-[#867474]">
                         {venue.address || "—"}
                       </span>
                     </td>
@@ -187,7 +187,7 @@ export default async function VenuesPage(props: {
                           href={`/admin/venues/${venue.id}`}
                           aria-label={`Edit ${venue.name}`}
                           title="Edit"
-                          className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:bg-[#F7F1F1] hover:text-lyp-cherry focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-cherry/30`}
+                          className={`rounded-full p-1.5 text-[#867474] transition-colors duration-500 ${EASE} hover:bg-[#F7F1F1] hover:text-lyp-cherry focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-cherry/30`}
                         >
                           <Pencil strokeWidth={1.5} className="h-4 w-4" />
                         </Link>

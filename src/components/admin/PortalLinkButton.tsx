@@ -3,6 +3,7 @@
 import { Check, Link2 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import { cn } from "@/lib/utils";
 
 const EASE = "ease-brand";
 
@@ -26,8 +27,12 @@ export default function PortalLinkButton({
 
   if (!url) {
     return (
-      <span className={className} aria-hidden title="No link yet">
-        <Link2 strokeWidth={1.5} className="h-3.5 w-3.5 opacity-30" />
+      <span
+        className={cn(className, "border-dashed bg-lyp-white text-[#BFADAD]")}
+        aria-hidden
+        title="No link yet — send the proposal to generate one"
+      >
+        <Link2 strokeWidth={1.75} className="h-4 w-4" />
       </span>
     );
   }
@@ -56,11 +61,11 @@ export default function PortalLinkButton({
     >
       {copied ? (
         <Check
-          strokeWidth={2}
-          className={`h-3.5 w-3.5 text-[#4A7A5C] transition-opacity duration-500 ${EASE}`}
+          strokeWidth={2.25}
+          className={`h-4 w-4 text-[#4A7A5C] transition-opacity duration-500 ${EASE}`}
         />
       ) : (
-        <Link2 strokeWidth={1.5} className="h-3.5 w-3.5" />
+        <Link2 strokeWidth={1.75} className="h-4 w-4" />
       )}
     </button>
   );

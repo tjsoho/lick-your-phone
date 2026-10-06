@@ -29,21 +29,22 @@ import {
   Users,
 } from "lucide-react";
 import ClientLogoField from "@/components/admin/ClientLogoField";
+import VenueLogoField from "@/components/admin/venues/VenueLogoField";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 import PortalLinkCell from "@/components/admin/PortalLinkCell";
 import ProposalDiscountTimer from "@/components/admin/ProposalDiscountTimer";
 
 const EASE = "ease-brand";
 
-const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
 const selectClasses = `${fieldClasses} appearance-none pr-11`;
 
 const labelClasses =
-  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
 const thClasses =
-  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
 const primaryPill = `group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none`;
 
@@ -59,11 +60,11 @@ const sectionHeading =
   "font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black";
 
 const groupHeading =
-  "mb-2.5 flex items-center gap-1.5 font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "mb-2.5 flex items-center gap-1.5 font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
 /** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const statusStyles: Record<string, string> = {
-  draft: "bg-[#F2EDED] text-[#8A7A7A]",
+  draft: "bg-[#F2EDED] text-[#6B5A5A]",
   sent: "bg-[#EDF1F7] text-[#5B7394]",
   intake_complete: "bg-[#FBF3E3] text-[#9A7B2E]",
   signed: "bg-[#E9F2EC] text-[#4A7A5C]",
@@ -77,7 +78,7 @@ function SelectShell({ children }: { children: React.ReactNode }) {
       {children}
       <ChevronDown
         strokeWidth={1.5}
-        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A89898]"
+        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#867474]"
       />
     </div>
   );
@@ -91,6 +92,8 @@ type Venue = {
   address?: string;
   state_id: string;
   states?: State;
+  /** This restaurant's own logo, preferred over the client's on its covers. */
+  logo_url?: string | null;
 };
 
 type Contact = {
@@ -280,7 +283,7 @@ function ClientInfoCard({
               {...register("slug")}
               className={fieldClasses}
             />
-            <p className="mt-1.5 font-body text-[11px] text-[#A89898]">
+            <p className="mt-1.5 font-body text-[11px] text-[#867474]">
               The client&apos;s part of their links — letters, numbers and
               dashes.
             </p>
@@ -379,7 +382,7 @@ function ClientInfoCard({
 
       <div className="mt-7 grid grid-cols-2 gap-5 border-t border-[#F1E8E8] pt-6 font-body md:grid-cols-5">
         <div>
-          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]">
             Email
           </p>
           <p className="mt-1.5 truncate text-[13px] text-lyp-black">
@@ -387,7 +390,7 @@ function ClientInfoCard({
           </p>
         </div>
         <div>
-          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]">
             Entity
           </p>
           <p className="mt-1.5 text-[13px] text-lyp-black">
@@ -395,7 +398,7 @@ function ClientInfoCard({
           </p>
         </div>
         <div>
-          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]">
             ABN
           </p>
           <p className="mt-1.5 text-[13px] tabular-nums text-lyp-black">
@@ -403,7 +406,7 @@ function ClientInfoCard({
           </p>
         </div>
         <div>
-          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]">
             Web Address
           </p>
           <p className="mt-1.5 truncate text-[13px] text-lyp-black">
@@ -411,7 +414,7 @@ function ClientInfoCard({
           </p>
         </div>
         <div>
-          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+          <p className="font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]">
             Created
           </p>
           <p className="mt-1.5 text-[13px] tabular-nums text-lyp-black">
@@ -432,6 +435,9 @@ function VenueAddForm({
   states: State[];
   onDone: () => void;
 }) {
+  // A media-library pick rather than a text input, so it sits outside the
+  // form and is folded into the payload below.
+  const [logoUrl, setLogoUrl] = useState("");
   const {
     register,
     handleSubmit,
@@ -451,6 +457,7 @@ function VenueAddForm({
       name: values.name,
       address: values.address || undefined,
       state_id: values.stateId,
+      logo_url: logoUrl.trim() || null,
     });
     if (error) {
       toast.error(error);
@@ -458,6 +465,7 @@ function VenueAddForm({
     }
     toast.success("Venue added");
     reset();
+    setLogoUrl("");
     onDone();
   }
 
@@ -508,6 +516,16 @@ function VenueAddForm({
             </select>
           </SelectShell>
         </div>
+      </div>
+
+      {/* This restaurant's own branding. A client can hold several, so the
+          cover shows the venue's logo and only falls back to the client's. */}
+      <div className="mt-5 border-t border-[#F1E8E8] pt-5">
+        <VenueLogoField
+          value={logoUrl}
+          onChange={setLogoUrl}
+          idPrefix="new-venue-logo"
+        />
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-2.5">
@@ -674,7 +692,7 @@ function PaymentLine({ status }: { status: string }) {
 
   const entry = map[status];
   if (!entry)
-    return <p className="font-body text-[13px] text-[#8A7A7A]">{status}</p>;
+    return <p className="font-body text-[13px] text-[#6B5A5A]">{status}</p>;
 
   const Icon = entry.icon;
   return (
@@ -703,7 +721,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
       <div className="animate-rise">
         <Link
           href="/admin/clients"
-          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
           <ArrowLeft
             strokeWidth={1.5}
@@ -728,12 +746,12 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
             <h2 className={sectionHeading}>
               Venues
               {venueCount > 0 && (
-                <span className="ml-2 font-body text-[12px] font-medium tabular-nums text-[#A89898]">
+                <span className="ml-2 font-body text-[12px] font-medium tabular-nums text-[#867474]">
                   {venueCount}
                 </span>
               )}
             </h2>
-            <p className="mt-1 font-body text-[12px] text-[#A89898]">
+            <p className="mt-1 font-body text-[12px] text-[#867474]">
               Every venue linked to {client.name}.
             </p>
           </div>
@@ -770,10 +788,10 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                       <td className="whitespace-nowrap px-5 py-3 font-medium text-lyp-black">
                         {venue.name}
                       </td>
-                      <td className="px-5 py-3 text-[#8A7A7A]">
+                      <td className="px-5 py-3 text-[#6B5A5A]">
                         {venue.address || "—"}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                      <td className="whitespace-nowrap px-5 py-3 text-[#6B5A5A]">
                         {venue.states?.name || "—"}
                       </td>
                     </tr>
@@ -787,7 +805,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                           className="h-6 w-6 text-lyp-cherry/60"
                         />
                       </span>
-                      <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+                      <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
                         No venues yet.
                       </p>
                       {!showVenueForm && (
@@ -865,16 +883,16 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                       <td className="whitespace-nowrap px-5 py-3 font-medium text-lyp-black">
                         {contact.last_name}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                      <td className="whitespace-nowrap px-5 py-3 text-[#6B5A5A]">
                         {contact.email || "—"}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#8A7A7A]">
+                      <td className="whitespace-nowrap px-5 py-3 tabular-nums text-[#6B5A5A]">
                         {contact.phone || "—"}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                      <td className="whitespace-nowrap px-5 py-3 text-[#6B5A5A]">
                         {contact.role || "—"}
                       </td>
-                      <td className="whitespace-nowrap px-5 py-3 text-[#8A7A7A]">
+                      <td className="whitespace-nowrap px-5 py-3 text-[#6B5A5A]">
                         {contact.is_primary ? "Yes" : "No"}
                       </td>
                     </tr>
@@ -888,7 +906,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                           className="h-6 w-6 text-lyp-cherry/60"
                         />
                       </span>
-                      <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+                      <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
                         No contacts yet.
                       </p>
                       {!showContactForm && (
@@ -958,12 +976,12 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                       <span
                         className={`inline-block rounded-full px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] ${
                           statusStyles[proposal.status] ??
-                          "bg-[#F2EDED] text-[#8A7A7A]"
+                          "bg-[#F2EDED] text-[#6B5A5A]"
                         }`}
                       >
                         {formatStatus(proposal.status)}
                       </span>
-                      <span className="font-body text-[12.5px] tabular-nums text-[#A89898]">
+                      <span className="font-body text-[12.5px] tabular-nums text-[#867474]">
                         Created {formatDate(proposal.created_at)}
                       </span>
                       {proposal.signed_at && (
@@ -975,7 +993,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                     {proposal.total_snapshot_cents != null && (
                       <span className="font-heading text-[18px] font-bold tracking-[-0.02em] tabular-nums text-lyp-black">
                         {formatCents(proposal.total_snapshot_cents)}
-                        <span className="ml-1.5 font-body text-[10px] font-medium uppercase tracking-[0.18em] text-[#C3B5B5]">
+                        <span className="ml-1.5 font-body text-[10px] font-medium uppercase tracking-[0.18em] text-[#9C8C8C]">
                           + GST
                         </span>
                       </span>
@@ -1006,7 +1024,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                                 />
                                 {item.services?.name ?? "—"}
                               </span>
-                              <span className="text-[12px] tabular-nums text-[#A89898]">
+                              <span className="text-[12px] tabular-nums text-[#867474]">
                                 {formatCents(item.price_snapshot_cents)}
                                 {item.billing === "recurring_monthly" && "/mo"}
                               </span>
@@ -1014,7 +1032,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                           ))}
                         </ul>
                       ) : (
-                        <p className="font-body text-[13px] text-[#C3B5B5]">
+                        <p className="font-body text-[13px] text-[#9C8C8C]">
                           No services selected
                         </p>
                       )}
@@ -1040,7 +1058,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                             />
                             Download Contract
                           </a>
-                          <p className="font-body text-[11px] tabular-nums text-[#A89898]">
+                          <p className="font-body text-[11px] tabular-nums text-[#867474]">
                             Generated {formatDate(contract.created_at)}
                           </p>
                         </div>
@@ -1050,7 +1068,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                           Generating...
                         </p>
                       ) : (
-                        <p className="font-body text-[13px] text-[#C3B5B5]">
+                        <p className="font-body text-[13px] text-[#9C8C8C]">
                           Awaiting signature
                         </p>
                       )}
@@ -1066,14 +1084,14 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                         <div className="space-y-1">
                           <PaymentLine status={payment.status} />
                           {payment.card_last_four && (
-                            <p className="font-body text-[11px] tabular-nums text-[#A89898]">
+                            <p className="font-body text-[11px] tabular-nums text-[#867474]">
                               {payment.card_brand ?? "Card"} ending{" "}
                               {payment.card_last_four}
                             </p>
                           )}
                         </div>
                       ) : (
-                        <p className="font-body text-[13px] text-[#C3B5B5]">
+                        <p className="font-body text-[13px] text-[#9C8C8C]">
                           {proposal.status === "signed"
                             ? "Awaiting payment"
                             : "Not yet signed"}
@@ -1096,7 +1114,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                           Completed
                         </p>
                       ) : (
-                        <p className="font-body text-[13px] text-[#C3B5B5]">
+                        <p className="font-body text-[13px] text-[#9C8C8C]">
                           {proposal.status === "signed"
                             ? "Awaiting onboarding"
                             : "Not yet signed"}
@@ -1122,7 +1140,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                   {/* Proposal link — clickable, opens the client's proposal */}
                   {proposal.status !== "superseded" && proposal.token && (
                     <div className="flex items-center gap-3 border-t border-[#F1E8E8] bg-[#FBF8F8] px-5 py-3">
-                      <span className="shrink-0 font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]">
+                      <span className="shrink-0 font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]">
                         Proposal Link
                       </span>
                       <PortalLinkCell
@@ -1148,7 +1166,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
             <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
               <FileText strokeWidth={1} className="h-6 w-6 text-lyp-cherry/60" />
             </span>
-            <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+            <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
               No proposals yet.
             </p>
             <Link

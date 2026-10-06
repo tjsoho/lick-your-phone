@@ -15,11 +15,11 @@ import toast from "react-hot-toast";
 const EASE = "ease-brand";
 
 const thClasses =
-  "whitespace-nowrap px-4 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-4 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
 /** Field chrome shared by the inline edit and create rows. */
 const ic =
-  `w-full rounded-xl border border-[#EFE6E6] bg-[#FBF8F8] px-3 py-2 font-body text-[12.5px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+  `w-full rounded-xl border border-[#EFE6E6] bg-[#FBF8F8] px-3 py-2 font-body text-[12.5px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
 const switchClasses =
   "data-[state=checked]:bg-lyp-cherry data-[state=unchecked]:bg-[#EFE6E6]";
@@ -27,7 +27,7 @@ const switchClasses =
 const typePill = (type: string | null) =>
   type === "service"
     ? "bg-[#EDF1F7] text-[#5B7394]"
-    : "bg-[#F2EDED] text-[#8A7A7A]";
+    : "bg-[#F2EDED] text-[#6B5A5A]";
 
 interface PageItem {
   id: string;
@@ -186,7 +186,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
         <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
           <BookOpen strokeWidth={1} className="h-6 w-6 text-lyp-cherry/60" />
         </span>
-        <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+        <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
           No content pages yet.
         </p>
         <button
@@ -233,7 +233,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
             >
               <td className="w-10 px-2 py-3">
                 <span
-                  className={`flex items-center justify-center text-[#C3B5B5] transition-colors duration-500 ${EASE} ${
+                  className={`flex items-center justify-center text-[#9C8C8C] transition-colors duration-500 ${EASE} ${
                     savingOrder
                       ? "cursor-not-allowed"
                       : "cursor-grab active:cursor-grabbing hover:text-lyp-cherry"
@@ -257,7 +257,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                   {page.title ?? "Untitled"}
                 </Link>
               </td>
-              <td className="px-4 py-3 font-mono text-[11px] text-[#A89898]">
+              <td className="px-4 py-3 font-mono text-[11px] text-[#867474]">
                 {page.slug ?? "—"}
               </td>
               <td className="px-4 py-3">
@@ -267,7 +267,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                   {page.type ?? "content"}
                 </span>
               </td>
-              <td className="px-4 py-3 tabular-nums text-[#A89898]">
+              <td className="px-4 py-3 tabular-nums text-[#867474]">
                 {page.sequence}
               </td>
               <td className="px-4 py-3">
@@ -291,7 +291,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                 <div className="flex items-center justify-end gap-1.5">
                   <Link
                     href={`/admin/pages/${page.id}`}
-                    className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                    className={`rounded-full p-1.5 text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                     title="Edit page"
                     aria-label={`Edit ${page.title ?? "page"}`}
                   >
@@ -301,7 +301,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                   <button
                     onClick={() => handleDelete(page)}
                     disabled={deletingId === page.id}
-                    className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry disabled:opacity-40`}
+                    className={`rounded-full p-1.5 text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-cherry disabled:opacity-40`}
                     title="Delete page"
                     aria-label={`Delete ${page.title ?? "page"}`}
                   >
@@ -383,7 +383,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                 </button>
                 <button
                   onClick={() => { setAddingNew(false); setNewForm({ title: "", slug: "", type: "content", sequence: 0 }); }}
-                  className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-black`}
+                  className={`rounded-full p-1.5 text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-black`}
                   title="Cancel"
                   aria-label="Cancel new page"
                 >
@@ -404,7 +404,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
         >
           <Plus strokeWidth={1.5} className="h-4 w-4" /> Add Page
         </button>
-        <span className="flex items-center gap-1.5 font-body text-[11px] text-[#A89898]">
+        <span className="flex items-center gap-1.5 font-body text-[11px] text-[#867474]">
           {savingOrder ? (
             <>
               <Loader2 strokeWidth={1.5} className="h-3.5 w-3.5 animate-spin text-lyp-cherry" />{" "}
@@ -412,7 +412,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
             </>
           ) : (
             <>
-              <GripVertical strokeWidth={1.5} className="h-3.5 w-3.5 text-[#C3B5B5]" /> Drag rows to
+              <GripVertical strokeWidth={1.5} className="h-3.5 w-3.5 text-[#9C8C8C]" /> Drag rows to
               reorder the client-facing flow
             </>
           )}

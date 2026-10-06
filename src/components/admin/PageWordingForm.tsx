@@ -15,12 +15,12 @@ import MediaLibraryModal from "./MediaLibraryModal";
 
 const EASE = "ease-brand";
 
-const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
 const labelClasses =
-  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
-const quietButton = `flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`;
+const quietButton = `flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`;
 
 const KIND_LABELS: Record<CopyKind, string> = {
   cover: "Cover",
@@ -120,7 +120,7 @@ export function CopyFields({
                       <button
                         type="button"
                         onClick={() => reset(slot.key)}
-                        className={`font-body text-[10px] font-medium uppercase tracking-[0.18em] text-[#A89898] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+                        className={`font-body text-[10px] font-medium uppercase tracking-[0.18em] text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                       >
                         Reset
                       </button>
@@ -130,7 +130,7 @@ export function CopyFields({
                   {slot.image ? (
                     <div>
                       {sizeHint && (
-                        <p className="mb-2 font-body text-[11px] text-[#A89898]">
+                        <p className="mb-2 font-body text-[11px] text-[#867474]">
                           {sizeHint}
                         </p>
                       )}
@@ -159,7 +159,7 @@ export function CopyFields({
                             Remove
                           </button>
                         ) : (
-                          <span className="font-body text-[11px] text-[#A89898]">
+                          <span className="font-body text-[11px] text-[#867474]">
                             Using the default
                           </span>
                         )}
@@ -185,7 +185,7 @@ export function CopyFields({
                   )}
 
                   {slot.hint && (
-                    <p className="mt-1.5 font-body text-[11px] leading-relaxed text-[#A89898]">
+                    <p className="mt-1.5 font-body text-[11px] leading-relaxed text-[#867474]">
                       {slot.hint}
                     </p>
                   )}
@@ -249,7 +249,7 @@ export default function PageWordingForm({
             <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
               Page Wording
             </h2>
-            <p className="mt-1 font-body text-[12.5px] leading-relaxed text-[#8A7A7A]">
+            <p className="mt-1 font-body text-[12.5px] leading-relaxed text-[#6B5A5A]">
               The labels, buttons and messages on this slide. Leave a field
               empty to use the wording shown in it.
             </p>

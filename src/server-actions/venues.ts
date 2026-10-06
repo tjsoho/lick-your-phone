@@ -45,6 +45,12 @@ export async function upsertVenue(data: {
   name: string;
   address?: string | null;
   state_id: string;
+  /**
+   * This venue's own logo, shown on the cover of every proposal written for
+   * it. Explicitly nullable, not just optional: clearing the field has to
+   * write `null` so the cover falls back to the client's own logo.
+   */
+  logo_url?: string | null;
 }) {
   try {
     const supabase = await createClient();
@@ -53,6 +59,7 @@ export async function upsertVenue(data: {
       name: data.name,
       address: data.address || null,
       state_id: data.state_id,
+      logo_url: data.logo_url?.trim() || null,
       updated_at: new Date().toISOString(),
     };
 

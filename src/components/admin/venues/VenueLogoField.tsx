@@ -2,15 +2,15 @@
 
 import { useState } from "react";
 import { Images, Trash2 } from "lucide-react";
-import MediaLibraryModal from "./MediaLibraryModal";
-import { CLIENT_LOGO_GUIDANCE, CLIENT_LOGO_SIZE_HINT } from "@/lib/client-logo";
+import MediaLibraryModal from "@/components/admin/MediaLibraryModal";
+import { LOGO_SIZE_HINT, VENUE_LOGO_GUIDANCE } from "@/lib/client-logo";
 
 const EASE = "ease-brand";
 
 const labelClasses =
   "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
-interface ClientLogoFieldProps {
+interface VenueLogoFieldProps {
   /** Current logo URL, or "" for none. */
   value: string;
   /** Called with the new URL, or "" when the logo is removed. */
@@ -20,25 +20,32 @@ interface ClientLogoFieldProps {
 }
 
 /**
- * The client's logo, picked from the media library.
+ * This venue's own logo, picked from the media library.
  *
- * Shared by the proposal wizard's new-client step and the client's own edit
- * card so the hint, the guidance and the preview are worded once.
+ * A client can hold several restaurants, each with its own branding, so the
+ * logo on the proposal cover belongs to the venue the proposal is for. Shared
+ * by every place a venue is created or edited — the venue form, and the
+ * add-venue form on the client's own page — so the wording is written once.
+ *
+ * Deliberately the same field as `ClientLogoField`, down to the hint and the
+ * preview surface; only the label and the fallback sentence differ. The two
+ * should be folded into one parameterised field the next time both files are
+ * open together.
  */
-export default function ClientLogoField({
+export default function VenueLogoField({
   value,
   onChange,
-  idPrefix = "client-logo",
-}: ClientLogoFieldProps) {
+  idPrefix = "venue-logo",
+}: VenueLogoFieldProps) {
   const [libraryOpen, setLibraryOpen] = useState(false);
 
   return (
     <div>
       <span className={labelClasses} id={`${idPrefix}-label`}>
-        Client Logo
+        Venue Logo
       </span>
       <p className="mt-1.5 font-body text-[11px] text-[#867474]">
-        {CLIENT_LOGO_SIZE_HINT}
+        {LOGO_SIZE_HINT}
       </p>
 
       {value ? (
@@ -52,7 +59,7 @@ export default function ClientLogoField({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={value}
-              alt="Client logo"
+              alt="Venue logo"
               className="max-h-14 w-auto max-w-full object-contain"
             />
           </div>
@@ -83,20 +90,20 @@ export default function ClientLogoField({
           className={`mt-2.5 flex w-full max-w-xs flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] py-7 text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry`}
         >
           <Images strokeWidth={1.25} className="h-7 w-7" />
-          <span className="font-body text-[13px]">Upload client logo</span>
+          <span className="font-body text-[13px]">Upload venue logo</span>
         </button>
       )}
 
       <p className="mt-2.5 max-w-md font-body text-[11px] leading-relaxed text-[#867474]">
-        {CLIENT_LOGO_GUIDANCE}
+        {VENUE_LOGO_GUIDANCE}
       </p>
 
       <MediaLibraryModal
         open={libraryOpen}
         onClose={() => setLibraryOpen(false)}
         onSelect={onChange}
-        title="Client Logo"
-        hint={CLIENT_LOGO_SIZE_HINT}
+        title="Venue Logo"
+        hint={LOGO_SIZE_HINT}
       />
     </div>
   );

@@ -12,12 +12,12 @@ export default function SaveStatusBadge({ status }: { status: SaveStatus }) {
   const config = {
     pending: {
       label: "Unsaved changes",
-      className: "text-[#A89898]",
+      className: "text-[#867474]",
       icon: null,
     },
     saving: {
       label: "Saving",
-      className: "text-[#A89898]",
+      className: "text-[#867474]",
       icon: (
         <Loader2 strokeWidth={1.5} className="h-3 w-3 animate-spin" />
       ),

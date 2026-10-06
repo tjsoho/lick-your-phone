@@ -36,9 +36,9 @@ interface ServiceTiersSectionProps {
 const EASE = "ease-brand";
 
 const thClasses =
-  "whitespace-nowrap px-4 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-4 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
-const iconButtonClasses = `flex h-7 w-7 items-center justify-center rounded-full border border-transparent text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/15 hover:bg-lyp-cherry/[0.04] hover:text-lyp-cherry disabled:cursor-not-allowed disabled:border-transparent disabled:bg-transparent disabled:text-[#E4D8D8]`;
+const iconButtonClasses = `flex h-7 w-7 items-center justify-center rounded-full border border-transparent text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/15 hover:bg-lyp-cherry/[0.04] hover:text-lyp-cherry disabled:cursor-not-allowed disabled:border-transparent disabled:bg-transparent disabled:text-[#E4D8D8]`;
 
 export default function ServiceTiersSection({
   serviceId,
@@ -100,7 +100,7 @@ export default function ServiceTiersSection({
           <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
             Service Pricing Tiers
           </h2>
-          <p className="mt-1.5 font-body text-[12px] text-[#8A7A7A]">
+          <p className="mt-1.5 font-body text-[12px] text-[#6B5A5A]">
             Manage the pricing options for this service.
           </p>
         </div>
@@ -122,7 +122,7 @@ export default function ServiceTiersSection({
       </div>
 
       {loading && tiers.length === 0 ? (
-        <p className="mt-6 py-6 text-center font-body text-[13px] text-[#A89898]">
+        <p className="mt-6 py-6 text-center font-body text-[13px] text-[#867474]">
           Loading tiers…
         </p>
       ) : tiers.length === 0 ? (
@@ -130,7 +130,7 @@ export default function ServiceTiersSection({
           <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-lyp-cherry/[0.05] ring-1 ring-lyp-cherry/10">
             <Layers strokeWidth={1} className="h-5 w-5 text-lyp-cherry/60" />
           </span>
-          <p className="mt-4 font-body text-[13px] text-[#8A7A7A]">
+          <p className="mt-4 font-body text-[13px] text-[#6B5A5A]">
             No tiers created yet.
           </p>
           <button
@@ -187,7 +187,7 @@ export default function ServiceTiersSection({
                             className="h-3.5 w-3.5"
                           />
                         </button>
-                        <span className="ml-1 font-mono text-[11px] tabular-nums text-[#A89898]">
+                        <span className="ml-1 font-mono text-[11px] tabular-nums text-[#867474]">
                           {tier.sequence}
                         </span>
                       </div>
@@ -195,13 +195,13 @@ export default function ServiceTiersSection({
                     <td className="whitespace-nowrap px-4 py-3 font-medium text-lyp-black">
                       {tier.name}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] text-[#A89898]">
+                    <td className="whitespace-nowrap px-4 py-3 font-mono text-[11px] text-[#867474]">
                       {tier.slug}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 font-medium tabular-nums text-lyp-black">
                       {formatCents(tier.target_price_cents)}
                     </td>
-                    <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[#8A7A7A]">
+                    <td className="whitespace-nowrap px-4 py-3 tabular-nums text-[#6B5A5A]">
                       {tier.billing_cycle_months}{" "}
                       {tier.billing_cycle_months === 1 ? "month" : "months"}
                     </td>

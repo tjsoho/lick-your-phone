@@ -23,7 +23,7 @@ export default async function ProvidersPage() {
         <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
           Providers
         </h1>
-        <p className="mt-2 font-body text-[13px] text-[#8A7A7A]">
+        <p className="mt-2 font-body text-[13px] text-[#6B5A5A]">
           Photographers and videographers available across your states.
         </p>
       </header>

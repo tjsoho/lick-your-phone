@@ -9,10 +9,10 @@ import toast from "react-hot-toast";
 const EASE = "ease-brand";
 
 const thClasses =
-  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#A89898]";
+  "whitespace-nowrap px-5 py-3 text-left font-body text-[9px] font-medium uppercase tracking-[0.2em] text-[#867474]";
 
 const labelClasses =
-  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
 interface State {
   id: string;
@@ -54,7 +54,7 @@ export default function StatesList({ states }: Props) {
     }
   };
 
-  const inputClass = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+  const inputClass = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
   return (
     <div>
@@ -148,7 +148,7 @@ export default function StatesList({ states }: Props) {
                 className="h-6 w-6 text-lyp-cherry/60"
               />
             </span>
-            <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+            <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
               No states configured yet.
             </p>
             <button
@@ -176,7 +176,7 @@ export default function StatesList({ states }: Props) {
                     <td className="whitespace-nowrap px-5 py-3 font-mono text-[11px] font-semibold uppercase tracking-[0.14em] text-lyp-black">
                       {state.code}
                     </td>
-                    <td className="px-5 py-3 text-[#8A7A7A]">{state.name}</td>
+                    <td className="px-5 py-3 text-[#6B5A5A]">{state.name}</td>
                   </tr>
                 ))}
               </tbody>

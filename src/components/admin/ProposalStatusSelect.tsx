@@ -20,7 +20,7 @@ const statuses = [
 
 /** Muted, tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const statusStyles: Record<string, string> = {
-  draft: "bg-[#F2EDED] text-[#8A7A7A] ring-[#E6DBDB]",
+  draft: "bg-[#F2EDED] text-[#6B5A5A] ring-[#E6DBDB]",
   sent: "bg-[#EDF1F7] text-[#5B7394] ring-[#DCE4EF]",
   signed: "bg-[#E9F2EC] text-[#4A7A5C] ring-[#D6E6DC]",
   superseded: "bg-lyp-cherry/[0.07] text-lyp-cherry ring-lyp-cherry/15",
@@ -56,7 +56,7 @@ export default function ProposalStatusSelect({
   }
 
   const tone =
-    statusStyles[currentStatus] ?? "bg-[#F2EDED] text-[#8A7A7A] ring-[#E6DBDB]";
+    statusStyles[currentStatus] ?? "bg-[#F2EDED] text-[#6B5A5A] ring-[#E6DBDB]";
 
   return (
     <span className="relative inline-flex items-center">
@@ -82,7 +82,7 @@ export default function ProposalStatusSelect({
       <ChevronDown
         strokeWidth={1.75}
         aria-hidden="true"
-        className="pointer-events-none absolute right-2 h-3 w-3 text-[#A89898]"
+        className="pointer-events-none absolute right-2 h-3 w-3 text-[#867474]"
       />
     </span>
   );

@@ -35,7 +35,7 @@ export default async function NewVenuePage() {
       <header className="animate-rise mb-6">
         <Link
           href="/admin/venues"
-          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#8A7A7A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+          className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
           <ArrowLeft
             strokeWidth={1.5}

@@ -14,6 +14,7 @@ import {
   ScrollText,
 } from "lucide-react";
 import { useCopy, useProposal } from "../ProposalContext";
+import FlowProgress from "../FlowProgress";
 import {
   TextField,
   TextareaField,
@@ -60,6 +61,40 @@ function readSameAs(config: unknown): SameAsConfig | null {
         Array.isArray(p) && p.length === 2 && p.every((x) => typeof x === "string"),
     ),
   };
+}
+
+/**
+ * THE BAR ALONG THE BOTTOM.
+ *
+ * Every other screen in the portal carries the stage tracker in the fixed bar
+ * at the foot of the deck, beside Back and Next. This form used to carry its
+ * own across the top instead, and the agency asked for one answer: "all the
+ * others are at the bottom of the page, maybe it would be good to keep them
+ * consistent. either all on the top margin or bottom, but consistent."
+ *
+ * So the form builds the deck's bar itself — it is a route rather than a
+ * slide, and its own Back and Continue have to share that bar — down to the
+ * chrome: the hairline rule, the black at 80% with the blur behind it, and a
+ * 1400px row at `px-6 py-3` holding three slots. `Back | tracker | Next`
+ * there, `Back | tracker | Continue` here.
+ *
+ * It is the last child of a `h-full` flex column rather than `position:
+ * fixed`: the scroller above it is then sized by what is left over, so the
+ * one screen in the portal that may scroll still scrolls, and no answer ends
+ * up underneath the bar.
+ */
+function FlowBar({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex-shrink-0 border-t border-lyp-white/10 bg-lyp-black/80 backdrop-blur-md">
+      {/* `justify-between` with an empty slot at either end is how the deck's
+          bar holds its tracker in the middle when a button is hidden, so the
+          All Done screen does the same rather than inventing a second
+          layout. */}
+      <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-6 py-3">
+        {children}
+      </div>
+    </div>
+  );
 }
 
 interface IntakePageProps {
@@ -192,7 +227,7 @@ export default function IntakePage({
   hasContract,
   pageTitles = {},
 }: IntakePageProps) {
-  const { proposal, selections, agreement } = useProposal();
+  const { proposal, selections, agreement, updateProposal } = useProposal();
   const t = useCopy("intake");
   const [sameAsOn, setSameAsOn] = useState<Record<string, boolean>>({});
   // Prefilled once, at mount: from here on the answers are the client's own.
@@ -404,12 +439,21 @@ export default function IntakePage({
    * The server has told us the answers are already in — a second tab got
    * there first, or a double click outran the button. Show the client the
    * finished screen rather than an error they can do nothing about.
+   *
+   * `status` moves with `completed`, because the stage tracker in the bar
+   * reads the record rather than this component: left on `signed`, it put an
+   * open circle marked "Onboarding form" under a screen headed "All Done!"
+   * until the next page load. The server has already written
+   * `intake_complete` by the time either path reaches here, so this is the
+   * client catching up with the record, not guessing ahead of it — and a
+   * reload reports exactly the same thing.
    */
   function fallIntoLockedState() {
     setCompleted(true);
     setReviewing(false);
     setSaving(false);
     setError("");
+    updateProposal({ status: "intake_complete" });
   }
 
   async function handleSaveAndNavigate(targetPage: number | null) {
@@ -452,6 +496,8 @@ export default function IntakePage({
       } else {
         setCompleted(true);
         setReviewing(false);
+        // The third stage ticks on this line, not on the next page load.
+        updateProposal({ status: "intake_complete" });
       }
     }
 
@@ -520,94 +566,106 @@ export default function IntakePage({
     ];
 
     return (
-      <div className="flex h-full flex-col items-center justify-center px-6 py-8 text-center">
-        <Reveal
-          variant="pop"
-          index={0}
-          className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-lyp-cherry/20"
-        >
-          <Check className="h-8 w-8 text-lyp-cherry" />
-        </Reveal>
-        <Reveal as="h1" index={1} className="font-heading text-3xl md:text-5xl text-lyp-white">
-          {t("doneTitle")}
-        </Reveal>
-        <Reveal as="p" index={2} className="mt-3 max-w-md font-body text-lyp-white/60">
-          {t("doneBody")}
-        </Reveal>
+      <div className="flex h-full flex-col">
+        {/* Centred in what the bar leaves it, the way every portal screen is
+            centred in what the deck's bars leave. */}
+        <div className="flex min-h-0 flex-1 flex-col items-center justify-center px-6 py-8 text-center">
+          <Reveal
+            variant="pop"
+            index={0}
+            className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-lyp-cherry/20"
+          >
+            <Check className="h-8 w-8 text-lyp-cherry" />
+          </Reveal>
+          <Reveal as="h1" index={1} className="font-heading text-3xl md:text-5xl text-lyp-white">
+            {t("doneTitle")}
+          </Reveal>
+          <Reveal as="p" index={2} className="mt-3 max-w-md font-body text-lyp-white/60">
+            {t("doneBody")}
+          </Reveal>
 
-        {/* A rule with the heading sitting in it: a break between what has
-            happened and what they can take away with them. */}
-        <Reveal index={3} className="mt-8 flex w-full max-w-3xl items-center gap-4">
-          <span className="h-px flex-1 bg-lyp-white/10" />
-          <span className="font-body text-[10px] uppercase tracking-[0.3em] text-lyp-white/40">
-            {t("downloadsTitle")}
-          </span>
-          <span className="h-px flex-1 bg-lyp-white/10" />
-        </Reveal>
+          {/* A rule with the heading sitting in it: a break between what has
+              happened and what they can take away with them. */}
+          <Reveal index={3} className="mt-8 flex w-full max-w-3xl items-center gap-4">
+            <span className="h-px flex-1 bg-lyp-white/10" />
+            <span className="font-body text-[10px] uppercase tracking-[0.3em] text-lyp-white/40">
+              {t("downloadsTitle")}
+            </span>
+            <span className="h-px flex-1 bg-lyp-white/10" />
+          </Reveal>
 
-        <div className="mt-5 grid w-full max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {takeaways.map((doc, i) => (
-            <Reveal key={doc.href} index={4 + i} className="h-full">
-              {/* Plain links, so the browser downloads them the way it
-                  downloads anything else — no fetch, no spinner, no state.
+          <div className="mt-5 grid w-full max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {takeaways.map((doc, i) => (
+              <Reveal key={doc.href} index={4 + i} className="h-full">
+                {/* Plain links, so the browser downloads them the way it
+                    downloads anything else — no fetch, no spinner, no state.
 
-                  All three open a new tab. The agreement card redirects to
-                  the stored file and the terms card can be a page the agency
-                  hosts, so in the same tab either one REPLACES the portal —
-                  and Back from there drops the client at the start of the
-                  journey rather than where they left off. The two that do
-                  come back as a download lose nothing by it: a browser
-                  handed an attachment never paints the tab it was given. */}
-              <a
-                href={doc.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex h-full flex-col items-center gap-2 rounded-xl border border-lyp-white/10 bg-lyp-white/[0.04] px-5 py-5 transition-[background-color,border-color,transform] duration-300 ease-brand hover:-translate-y-0.5 hover:border-lyp-cherry/40 hover:bg-lyp-cherry/[0.08] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
-              >
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-lyp-cherry/15 text-lyp-cherry transition-colors duration-300 ease-brand group-hover:bg-lyp-cherry/25 motion-reduce:transition-none">
-                  <doc.Icon className="h-4 w-4" />
-                </span>
-                <span className="font-heading text-base text-lyp-white">
-                  {doc.label}
-                </span>
-                <span className="font-body text-xs leading-relaxed text-lyp-white/40">
-                  {doc.note}
-                </span>
-                <span className="mt-auto inline-flex items-center gap-1.5 pt-2 font-body text-[11px] text-lyp-cherry">
-                  {doc.external ? (
-                    <ExternalLink className="h-3 w-3 transition-transform duration-300 ease-brand group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0" />
-                  ) : (
-                    <Download className="h-3 w-3 transition-transform duration-300 ease-brand group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0" />
-                  )}
-                  {doc.external ? t("openAction") : t("downloadAction")}
-                </span>
-              </a>
-            </Reveal>
-          ))}
+                    All three open a new tab. The agreement card redirects to
+                    the stored file and the terms card can be a page the agency
+                    hosts, so in the same tab either one REPLACES the portal —
+                    and Back from there drops the client at the start of the
+                    journey rather than where they left off. The two that do
+                    come back as a download lose nothing by it: a browser
+                    handed an attachment never paints the tab it was given. */}
+                <a
+                  href={doc.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group flex h-full flex-col items-center gap-2 rounded-xl border border-lyp-white/10 bg-lyp-white/[0.04] px-5 py-5 transition-[background-color,border-color,transform] duration-300 ease-brand hover:-translate-y-0.5 hover:border-lyp-cherry/40 hover:bg-lyp-cherry/[0.08] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                >
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-lyp-cherry/15 text-lyp-cherry transition-colors duration-300 ease-brand group-hover:bg-lyp-cherry/25 motion-reduce:transition-none">
+                    <doc.Icon className="h-4 w-4" />
+                  </span>
+                  <span className="font-heading text-base text-lyp-white">
+                    {doc.label}
+                  </span>
+                  <span className="font-body text-xs leading-relaxed text-lyp-white/40">
+                    {doc.note}
+                  </span>
+                  <span className="mt-auto inline-flex items-center gap-1.5 pt-2 font-body text-[11px] text-lyp-cherry">
+                    {doc.external ? (
+                      <ExternalLink className="h-3 w-3 transition-transform duration-300 ease-brand group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0" />
+                    ) : (
+                      <Download className="h-3 w-3 transition-transform duration-300 ease-brand group-hover:translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0" />
+                    )}
+                    {doc.external ? t("openAction") : t("downloadAction")}
+                  </span>
+                </a>
+              </Reveal>
+            ))}
+          </div>
+
+          {/* Said plainly, once: the answers are in, and a person handles any
+              change. No warning colour — nothing has gone wrong. */}
+          <Reveal
+            as="p"
+            index={4 + takeaways.length}
+            className="mt-8 flex max-w-md items-start gap-2 font-body text-sm leading-relaxed text-lyp-white/40"
+          >
+            <Lock className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+            <span>{t("lockedNote")}</span>
+          </Reveal>
+          <Reveal index={5 + takeaways.length} className="mt-5">
+            <button
+              type="button"
+              onClick={() => {
+                setReviewing(true);
+                setCurrentIntakePage(1);
+              }}
+              className="font-body text-sm text-lyp-cherry transition-colors duration-300 ease-brand hover:text-lyp-cherry/80"
+            >
+              {t("reviewResponses")}
+            </button>
+          </Reveal>
         </div>
 
-        {/* Said plainly, once: the answers are in, and a person handles any
-            change. No warning colour — nothing has gone wrong. */}
-        <Reveal
-          as="p"
-          index={4 + takeaways.length}
-          className="mt-8 flex max-w-md items-start gap-2 font-body text-sm leading-relaxed text-lyp-white/40"
-        >
-          <Lock className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-          <span>{t("lockedNote")}</span>
-        </Reveal>
-        <Reveal index={5 + takeaways.length} className="mt-5">
-          <button
-            type="button"
-            onClick={() => {
-              setReviewing(true);
-              setCurrentIntakePage(1);
-            }}
-            className="font-body text-sm text-lyp-cherry transition-colors duration-300 ease-brand hover:text-lyp-cherry/80"
-          >
-            {t("reviewResponses")}
-          </button>
-        </Reveal>
+        {/* No Back and no Continue here — the journey is over — so the tracker
+            takes the bar on its own, with all three stages ticked. */}
+        <FlowBar>
+          <span aria-hidden />
+          <FlowProgress />
+          <span aria-hidden />
+        </FlowBar>
       </div>
     );
   }
@@ -780,53 +838,58 @@ export default function IntakePage({
         </div>
       )}
 
-      {/* Navigation */}
-      <div className="flex-shrink-0 border-t border-lyp-white/10 px-6 py-4">
-        <div className="mx-auto flex max-w-2xl items-center justify-between">
-          {/* No Back on the final step — nothing should compete with
-              Submit once the last question is answered. Reading the answers
-              back there is no Submit, so Back stays. */}
-          {isLastPage && !locked ? (
-            <span aria-hidden />
-          ) : (
-            <button
-              type="button"
-              onClick={() => {
-                if (prevPage !== null) setCurrentIntakePage(prevPage);
-              }}
-              disabled={isFirstPage || saving}
-              className="group flex items-center gap-1 font-body text-sm text-lyp-white/60 transition-colors duration-300 ease-brand hover:text-lyp-white disabled:opacity-20"
-            >
-              <ChevronLeft className="h-4 w-4 transition-transform duration-300 ease-brand group-hover:-translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
-              {t("backButton")}
-            </button>
-          )}
-
-          {/* Locked, this button only turns pages and then closes the read —
-              it never saves, and there is no second Submit to press. */}
+      {/* Navigation, with the tracker between the two buttons: the deck's
+          bar, rebuilt around this form's own way forward. */}
+      <FlowBar>
+        {/* No Back on the final step — nothing should compete with Submit
+            once the last question is answered. Reading the answers back
+            there is no Submit, so Back stays. An empty slot in its place,
+            as in the deck's bar, so the tracker does not slide sideways on
+            the last step. */}
+        {isLastPage && !locked ? (
+          <span aria-hidden />
+        ) : (
           <button
             type="button"
             onClick={() => {
-              if (!locked) {
-                handleSaveAndNavigate(isLastPage ? null : nextPage);
-                return;
-              }
-              if (isLastPage) setReviewing(false);
-              else if (nextPage !== null) setCurrentIntakePage(nextPage);
+              if (prevPage !== null) setCurrentIntakePage(prevPage);
             }}
-            disabled={saving}
-            className="group flex items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100"
+            disabled={isFirstPage || saving}
+            // `shrink-0`, as in the deck's bar: the tracker beside it is the
+            // thing that gives, never the buttons.
+            className="group flex shrink-0 items-center gap-1 font-body text-sm text-lyp-white/60 transition-colors duration-300 ease-brand hover:text-lyp-white disabled:opacity-20"
           >
-            {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-            {isLastPage
-              ? t(locked ? "reviewDone" : "submitButton")
-              : t("continueButton")}
-            {!isLastPage && (
-              <ChevronRight className="h-4 w-4 transition-transform duration-300 ease-brand group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
-            )}
+            <ChevronLeft className="h-4 w-4 transition-transform duration-300 ease-brand group-hover:-translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
+            {t("backButton")}
           </button>
-        </div>
-      </div>
+        )}
+
+        <FlowProgress />
+
+        {/* Locked, this button only turns pages and then closes the read —
+            it never saves, and there is no second Submit to press. */}
+        <button
+          type="button"
+          onClick={() => {
+            if (!locked) {
+              handleSaveAndNavigate(isLastPage ? null : nextPage);
+              return;
+            }
+            if (isLastPage) setReviewing(false);
+            else if (nextPage !== null) setCurrentIntakePage(nextPage);
+          }}
+          disabled={saving}
+          className="group flex shrink-0 items-center gap-2 rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100"
+        >
+          {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+          {isLastPage
+            ? t(locked ? "reviewDone" : "submitButton")
+            : t("continueButton")}
+          {!isLastPage && (
+            <ChevronRight className="h-4 w-4 transition-transform duration-300 ease-brand group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
+          )}
+        </button>
+      </FlowBar>
     </div>
   );
 }

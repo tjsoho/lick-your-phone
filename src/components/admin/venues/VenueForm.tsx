@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { upsertVenue } from "@/server-actions/venues";
@@ -7,13 +8,14 @@ import toast from "react-hot-toast";
 import { Check, X } from "lucide-react";
 import { useAutosave } from "@/hooks/use-autosave";
 import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
+import VenueLogoField from "@/components/admin/venues/VenueLogoField";
 
 const EASE = "ease-brand";
 
 const labelClasses =
-  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
-const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`;
+const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`;
 
 const errorClasses = "mt-2 font-body text-[11px] text-lyp-cherry";
 
@@ -31,6 +33,8 @@ type Props = {
     client_id?: string | null;
     state_id: string;
     address?: string | null;
+    /** This venue's own logo, which its proposal covers prefer over the client's. */
+    logo_url?: string | null;
   };
   clients: { id: string; name: string }[];
   states: { id: string; name: string }[];
@@ -39,6 +43,10 @@ type Props = {
 export default function VenueForm({ venue, clients, states }: Props) {
   const router = useRouter();
   const isEditing = !!venue;
+
+  // The logo is a media-library pick rather than a text input, so it sits
+  // outside the form and is folded into the payloads below.
+  const [logoUrl, setLogoUrl] = useState(venue?.logo_url ?? "");
 
   const {
     register,
@@ -57,7 +65,7 @@ export default function VenueForm({ venue, clients, states }: Props) {
   // An existing venue saves as you type; creating one still needs the button.
   const venueValues = watch();
   const { status: autosaveStatus } = useAutosave(
-    venueValues,
+    { ...venueValues, logo_url: logoUrl },
     async (v) => {
       if (!venue) return { error: null };
       const { error } = await upsertVenue({
@@ -66,6 +74,9 @@ export default function VenueForm({ venue, clients, states }: Props) {
         client_id: v.client_id || null,
         state_id: v.state_id,
         address: v.address || null,
+        // null, not undefined: removing the logo has to clear the column so
+        // the cover falls back to the client's own.
+        logo_url: v.logo_url.trim() || null,
       });
       return { error };
     },
@@ -82,6 +93,7 @@ export default function VenueForm({ venue, clients, states }: Props) {
       client_id: values.client_id || null,
       state_id: values.state_id,
       address: values.address || null,
+      logo_url: logoUrl.trim() || null,
     };
 
     const { error } = await upsertVenue(payload);
@@ -162,6 +174,16 @@ export default function VenueForm({ venue, clients, states }: Props) {
             placeholder="Street, suburb, postcode"
             className={`${fieldClasses} resize-y`}
             {...register("address")}
+          />
+        </div>
+
+        {/* This restaurant's own branding, which is not the client's. Last in
+            the form because it is the one optional field here. */}
+        <div className="border-t border-[#F1E8E8] pt-5 sm:col-span-2">
+          <VenueLogoField
+            value={logoUrl}
+            onChange={setLogoUrl}
+            idPrefix="venue-form-logo"
           />
         </div>
       </div>

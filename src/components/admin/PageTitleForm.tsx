@@ -10,7 +10,7 @@ import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 const EASE = "ease-brand";
 
 const labelClasses =
-  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
 interface PageTitleFormProps {
   /** Called on every keystroke so a live preview can follow along. */
@@ -75,7 +75,7 @@ export default function PageTitleForm({
     { enabled: isValid },
   );
 
-  const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+  const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
   return (
     <div>
@@ -99,7 +99,7 @@ export default function PageTitleForm({
             className={fieldClasses}
           />
           {isService && (
-            <p className="mt-1.5 font-body text-[11px] text-[#A89898]">
+            <p className="mt-1.5 font-body text-[11px] text-[#867474]">
               Shown on the slide, the summary and the contract.
             </p>
           )}
@@ -114,9 +114,9 @@ export default function PageTitleForm({
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
             placeholder="page-slug"
-            className={`${fieldClasses} font-mono text-[11px] text-[#8A7A7A]`}
+            className={`${fieldClasses} font-mono text-[11px] text-[#6B5A5A]`}
           />
-          <p className="mt-1.5 font-body text-[11px] text-[#A89898]">
+          <p className="mt-1.5 font-body text-[11px] text-[#867474]">
             Part of the portal address. Cover, Summary, Signature, Payment and
             Onboarding are found by slug — renaming those breaks the flow.
           </p>

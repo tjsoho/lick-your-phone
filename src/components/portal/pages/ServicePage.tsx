@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Switch } from "@/components/ui/switch";
 import {
   PageData,
   useCopy,
@@ -42,10 +41,12 @@ const TIGHT_FRAME_PX = 1200;
      │  01 …………………   07 …………………              ╷                 │
      │  02 …………………   08 …………………              ╷    PICTURE      │
      │  YOUR COMMITMENTS  Food / Drinks / …   ╷   (centred on    │
-     │  ┌───────────────────────────────────┐ ╷    the text)     │
-     │  │ INVESTMENT   $4,791 + GST  [tier] │ ╷                 │  the offer
-     │  └───────────────────────────────────┘ ╷                 │
-     │                              [ SELECTED ]                │  ← beside it
+     │  ┌──────────────────────┐ ┌──────────┐ ╷    the text)     │
+     │  │ INVESTMENT  20% OFF  │ │          │ ╷                 │  the quote,
+     │  │ $4,791 + GST         │ │ ◉ I WANT │ ╷                 │  and beside
+     │  │ PER MONTH            │ │   THIS   │ ╷                 │  it, at the
+     │  └──────────────────────┘ └──────────┘ ╷                 │  same height,
+     │                                                          │  the decision
      │                                                          │  ← free space
      └──────────────────────────────────────────────────────────┘
 
@@ -60,7 +61,9 @@ const TIGHT_FRAME_PX = 1200;
      │ │  $389   │ │  $489   │ │   $589    │ │
      │ └─────────┘ └─────────┘ └───────────┘ │
      └───────────────────────────────────────┘
-                              [ I WANT THIS ]   ← and only then the decision
+     ┌───────────────────────────────────────┐  and only then the decision,
+     │            ◉  I WANT THIS             │  the width of everything it
+     └───────────────────────────────────────┘  is deciding about
 
    Why this and not the old two-column stack:
    - The title gets the full page width, so it can run at display scale on one
@@ -72,8 +75,9 @@ const TIGHT_FRAME_PX = 1200;
      a rail, so the two halves of the spread share one optical axis.
    - The offer follows the index immediately — one rhythm from masthead to
      price, no dead air in the middle of the page — and the selection control
-     sits OUTSIDE the panel, on its bottom-right corner, so the panel reads as
-     the quote and the toggle reads as the decision.
+     sits OUTSIDE the panel, as its own card of the same height, so the panel
+     reads as the quote and the control reads as the decision. Two cards of
+     equal weight: here is the number, here is the one thing to do about it.
 
    Hierarchy is carried by scale, weight, letterspacing and rhythm. There is
    one surface on the page (the offer panel), one hairline, and — on a
@@ -88,10 +92,33 @@ const TIGHT_FRAME_PX = 1200;
        1280 x 720                 24.8px          10.8px
        1440 x 900                 29.4px          15.4px
 
-   — about 6px tighter than the layout this replaced, in every case. The
-   density notch above is what pays for the rest. If you add to the offer,
-   re-measure: the next thing to give is the index, and it is already at
-   "mid" on these pages.
+   — about 6px tighter than the layout that preceded them, in every case. The
+   density notch above is what pays for the rest.
+
+   Those four numbers STILL STAND after the decision control grew into a
+   full-weight card, and they stand by construction rather than by a second
+   measurement: the card never asks the body row for a pixel.
+
+     - On a three-term service it sits on its own row, where its new weight
+       comes from WIDTH — the panel's full width instead of a right-hand pill.
+       Padding is byte-for-byte what the pill had (py-1.5) and the 24px switch
+       still sets the content height, so the row measures exactly what it
+       measured before. Delta 0px. These are the numbers above: Meta Digital
+       Ads is a three-term service, so the worst case on the slide is the case
+       that did not move.
+     - Everywhere else it is the offer row's second item under
+       `lg:items-stretch`, so its height IS the panel's height and the row is
+       as tall as the panel either way. Its own content measures 44px (a 24px
+       switch inside py-2.5, unchanged), and the shortest panel this file can
+       draw — an in-kind service: one caption against a 20px "Complimentary",
+       inside py-3 — is 49px. The control is never the taller of the two, so
+       the stretch is always into air that already existed.
+
+   If you add to the offer, re-measure: the next thing to give is the index,
+   and it is already at "mid" on these pages. In particular, anything that
+   makes the decision card taller than 49px of content — a second line of
+   label, a caption above the switch — stops being free and starts pushing the
+   in-kind spreads down.
    ------------------------------------------------------------------------- */
 
 /**
@@ -485,47 +512,97 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   // index rather than queueing behind it.
   const D_RAIL = D_RULE + 80;
 
-  /* Selection — one action, identical on every service slide, whether or
-     not a term had to be chosen. Beside the quote normally; on its own row
-     under the terms when three of them need the panel's full width. Either
-     way it is the LAST thing on the reading path. */
+  /* ---------------------------------------------------------------------
+     THE DECISION, AT THE WEIGHT OF THE DECISION.
+
+     One action, identical on every service slide, whether or not a term had to
+     be chosen. Beside the quote normally; on its own row under the terms when
+     three of them need the panel's full width. Either way it is the LAST thing
+     on the reading path — and it has to LOOK like the one thing left to do.
+
+     It used to be a small pill dropped on the panel's bottom-right corner:
+     a third of the panel's height, a sixth of its area, in a lighter weight
+     than the price it was deciding on. It is now the offer row's second card —
+     the panel's corner radius, the panel's FULL HEIGHT beside it, and on a
+     three-term service the panel's full width underneath it.
+
+     None of that costs the spread a pixel, which is the whole point of doing
+     it this way:
+       - Beside the quote, the height comes from `lg:items-stretch` on the
+         offer row. The control takes the panel's height instead of asking the
+         slide for more, and the row was already as tall as the panel.
+       - Under the terms, the weight comes from WIDTH, which is free. The
+         padding there is byte-for-byte what the pill had.
+     So the FITTING figures at the head of this file still stand.
+
+     The ground is the TERM CARDS' ground, not the panel's: cut into the slide
+     (near-black, rose edge) rather than laid on it, because this is a control
+     and the panel is a quote. Choosing it fills it with the same rose as a
+     chosen term, so the slide has one language for "this one".
+
+     The whole card is the switch — `role="switch"` on the card, with the track
+     and thumb drawn inside it as ornament — so the target is the card and not
+     a 44px toggle in its corner. Geometry copied from the portal's `Switch`
+     (h-6/w-11 track, h-5/w-5 thumb, 20px of travel) so it reads as the same
+     component it has always been.
+     --------------------------------------------------------------------- */
   const wantToggle = (
-    <Reveal
-      // `pop` scales UP to its final size, so it never occupies more
-      // room than it settles into — safe at the foot of the slide.
-      variant="pop"
-      delay={D_TOGGLE}
+    <button
+      type="button"
+      role="switch"
+      aria-checked={selected}
+      aria-label={selected ? `Remove ${service.name}` : `I want ${service.name}`}
+      disabled={isDisabled}
+      onClick={handleWantThis}
+      // `pop` scales UP to its final size, so it never occupies more room than
+      // it settles into — safe at the foot of the slide.
+      style={{ animationDelay: `${D_TOGGLE}ms` }}
       className={cn(
-        "flex shrink-0 items-center gap-3 self-end rounded-xl ring-1 ring-inset transition-colors duration-300 ease-brand",
-        // On its own row the padding comes in: the row is the separation, and
-        // the slide has no height to spare for both.
-        stackOffer ? "px-4 py-1.5" : "px-4 py-2.5",
+        "portal-reveal portal-reveal-pop flex shrink-0 items-center justify-center gap-2.5 rounded-2xl ring-1 ring-inset transition-[background-color,box-shadow] duration-300 ease-brand",
+        // The edge is the resting/selected state, so focus can't live in the
+        // ring without reading as a third state. It takes an outline just
+        // outside the card instead.
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f0c9c9]",
+        stackOffer
+          ? // Its own row, so it takes the whole of it.
+            "w-full px-4 py-1.5"
+          : // In the offer row it stretches to the panel; on a phone, where the
+            // offer stacks, it keeps the pill's right-hand anchor. The floor on
+            // the width is so the card does not SHRINK when it is chosen —
+            // "Added" is half the length of "I want this", and a decision that
+            // gets smaller the moment you make it is the opposite of the point.
+            "self-end px-4 py-2.5 lg:min-w-[12.5rem] lg:self-auto",
         selected
-          ? "bg-[#f0c9c9]/[0.14] ring-[#f0c9c9]/60"
-          : "bg-lyp-white/[0.04] ring-lyp-white/[0.14]",
-        isDisabled && "opacity-40",
+          ? "bg-[#f0c9c9]/[0.16] ring-[#f0c9c9]/75"
+          : "bg-[#120406]/70 ring-[#f0c9c9]/30",
+        !selected &&
+          !isDisabled &&
+          "hover:bg-[#120406]/50 hover:ring-[#f0c9c9]/55",
+        isDisabled && "cursor-not-allowed opacity-40",
       )}
     >
-      <Switch
-        checked={selected}
-        onCheckedChange={handleWantThis}
-        disabled={isDisabled}
-        aria-label={
-          selected ? `Remove ${service.name}` : `I want ${service.name}`
-        }
-        className="data-[state=checked]:bg-lyp-cherry"
-      />
       <span
+        aria-hidden
         className={cn(
-          "font-heading font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:850px)]:text-xs",
-          // On its own row it is the last thing on the slide and the only
-          // thing left to do, so it is set a size up.
-          stackOffer ? "text-[12px]" : "text-[11px]",
+          "flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-300 ease-brand",
+          selected ? "bg-lyp-cherry" : "bg-lyp-white/25",
         )}
       >
+        <span
+          className={cn(
+            "block h-5 w-5 rounded-full bg-lyp-white shadow-lg transition-transform duration-300 ease-brand motion-reduce:transition-none",
+            selected ? "translate-x-5" : "translate-x-0",
+          )}
+        />
+      </span>
+      {/* The switch sets the card's content height at every size, so the label
+          can be set up two notches from the old pill's 11px for nothing.
+          `whitespace-nowrap` keeps it that way: a second line would be the one
+          thing on this card that costs the spread height. */}
+      <span className="whitespace-nowrap font-heading text-[13px] font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:850px)]:text-[14px]">
         {isInKind ? t("paidInKind") : selected ? t("added") : t("wantThis")}
       </span>
-    </Reveal>
+    </button>
   );
 
   return (
@@ -751,8 +828,10 @@ export default function ServicePage({ service, page }: ServicePageProps) {
               "flex shrink-0 flex-col",
               // Three terms fill the panel, so the toggle takes the row under
               // it rather than the column beside it. Everything else keeps the
-              // quote-then-decision row.
-              stackOffer ? "gap-2" : "gap-3 lg:flex-row lg:items-end lg:gap-5",
+              // quote-then-decision row — and `items-stretch` is what makes the
+              // decision the same height as the quote: the row is already as
+              // tall as the panel, so the control grows into air that exists.
+              stackOffer ? "gap-2" : "gap-3 lg:flex-row lg:items-stretch lg:gap-5",
               stackOffer
                 ? "mt-4 [@media(min-height:850px)]:mt-7"
                 : compactOffer

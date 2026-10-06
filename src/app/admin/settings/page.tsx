@@ -18,7 +18,7 @@ export default async function SettingsPage() {
         <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
           Agreement Settings
         </h1>
-        <p className="mt-2.5 max-w-xl font-body text-[13px] leading-relaxed text-[#8A7A7A]">
+        <p className="mt-2.5 max-w-xl font-body text-[13px] leading-relaxed text-[#6B5A5A]">
           Shared by every proposal. Edits save as you type.
         </p>
       </header>

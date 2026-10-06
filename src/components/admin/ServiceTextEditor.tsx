@@ -16,12 +16,12 @@ import { cn } from "@/lib/utils";
 
 const EASE = "ease-brand";
 
-const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
 const labelClasses =
-  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
-const hintClasses = "mt-1.5 font-body text-[11px] text-[#A89898]";
+const hintClasses = "mt-1.5 font-body text-[11px] text-[#867474]";
 
 /** A row carries a local key so reordering doesn't hand focus to a neighbour. */
 interface Row {
@@ -209,7 +209,7 @@ export default function ServiceTextEditor({
 
   if (!serviceId) {
     return (
-      <div className="flex items-center gap-2 font-body text-[12.5px] text-[#A89898]">
+      <div className="flex items-center gap-2 font-body text-[12.5px] text-[#867474]">
         <Loader2 strokeWidth={1.5} className="h-3.5 w-3.5 animate-spin" />
         Loading service text
       </div>
@@ -340,7 +340,7 @@ function ListEditor({
       </div>
 
       {rows.length === 0 ? (
-        <p className="mt-2 font-body text-[12.5px] text-[#8A7A7A]">
+        <p className="mt-2 font-body text-[12.5px] text-[#6B5A5A]">
           None yet — this section is hidden on the slide.
         </p>
       ) : (
@@ -357,7 +357,7 @@ function ListEditor({
                     `rounded-full p-1 transition-colors duration-500 ${EASE}`,
                     index === 0
                       ? "cursor-not-allowed text-[#E4D8D8]"
-                      : "text-[#A89898] hover:text-lyp-cherry",
+                      : "text-[#867474] hover:text-lyp-cherry",
                   )}
                 >
                   <ChevronUp strokeWidth={1.5} className="h-3.5 w-3.5" />
@@ -371,7 +371,7 @@ function ListEditor({
                     `rounded-full p-1 transition-colors duration-500 ${EASE}`,
                     index === rows.length - 1
                       ? "cursor-not-allowed text-[#E4D8D8]"
-                      : "text-[#A89898] hover:text-lyp-cherry",
+                      : "text-[#867474] hover:text-lyp-cherry",
                   )}
                 >
                   <ChevronDown strokeWidth={1.5} className="h-3.5 w-3.5" />
@@ -396,7 +396,7 @@ function ListEditor({
                   onChange((prev) => prev.filter((r) => r.key !== row.key))
                 }
                 aria-label={`Remove ${itemLabel.toLowerCase()} ${index + 1}`}
-                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-transparent text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/15 hover:bg-lyp-cherry/[0.04] hover:text-lyp-cherry`}
+                className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-transparent text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/15 hover:bg-lyp-cherry/[0.04] hover:text-lyp-cherry`}
               >
                 <Trash2 strokeWidth={1.5} className="h-3.5 w-3.5" />
               </button>

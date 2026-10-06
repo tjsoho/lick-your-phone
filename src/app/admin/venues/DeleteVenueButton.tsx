@@ -38,7 +38,7 @@ export default function DeleteVenueButton({ id, name }: Props) {
       disabled={isDeleting}
       aria-label={`Delete ${name}`}
       title="Delete"
-      className={`rounded-full p-1.5 text-[#A89898] transition-colors duration-500 ${EASE} hover:bg-lyp-cherry/[0.06] hover:text-lyp-cherry focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-cherry/30 disabled:opacity-50`}
+      className={`rounded-full p-1.5 text-[#867474] transition-colors duration-500 ${EASE} hover:bg-lyp-cherry/[0.06] hover:text-lyp-cherry focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-cherry/30 disabled:opacity-50`}
     >
       <Trash2 strokeWidth={1.5} className="h-4 w-4" />
     </button>

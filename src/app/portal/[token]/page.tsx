@@ -46,7 +46,7 @@ export default async function PortalPage({ params }: Props) {
       discount_timer_active,
       signer_email,
       client:clients!client_id ( id, name, contact_name, email, logo_url ),
-      venue:venues!venue_id ( id, name ),
+      venue:venues!venue_id ( id, name, logo_url ),
       payments(*),
       proposal_line_items(*)
     `,
@@ -134,6 +134,7 @@ export default async function PortalPage({ params }: Props) {
   const venueObj = proposal.venue as unknown as {
     id: string;
     name: string;
+    logo_url: string | null;
   } | null;
 
   const proposalData: ProposalData = {
@@ -154,9 +155,12 @@ export default async function PortalPage({ params }: Props) {
       (proposal as { signer_email?: string | null }).signer_email ??
       clientObj?.email ??
       null,
-    // The cover shows this in place of the LickYourPhone mark. Passed raw;
-    // the fallback to the cover's copy slot lives in `resolveCoverLogo`.
+    // The cover shows one of these in place of the LickYourPhone mark — the
+    // venue's own logo first, the client's behind it. Both passed raw; the
+    // precedence and the fallback to the cover's copy slot live in
+    // `resolveCoverLogo`.
     clientLogoUrl: clientObj?.logo_url ?? null,
+    venueLogoUrl: venueObj?.logo_url ?? null,
     venueName: venueObj?.name ?? "Venue",
   };
 

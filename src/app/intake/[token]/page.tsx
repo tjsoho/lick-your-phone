@@ -1,7 +1,6 @@
 import { createClient } from "@/utils/server";
 import IntakePage from "@/components/portal/pages/IntakePage";
 import { ProposalProvider } from "@/components/portal/ProposalContext";
-import FlowProgress from "@/components/portal/FlowProgress";
 import type { ProposalData } from "@/components/portal/ProposalContext";
 import { getIntakeQuestions } from "@/server-actions/intake";
 import { getIntakePageTitles } from "@/server-actions/intake-questions";
@@ -242,7 +241,7 @@ export default async function IntakeRoutePage({ params }: Props) {
         pages={[]}
         services={services}
         initialSelections={selections}
-        // The tracker in the bar above reads this: without it the payment
+        // The tracker in the bar below reads this: without it the payment
         // stage would sit open on the one screen that proves it is closed.
         paymentCaptured={paymentCaptured || nothingPayable}
         pageCopy={{ intake: intakeCopy }}
@@ -267,21 +266,21 @@ export default async function IntakeRoutePage({ params }: Props) {
         {/* The onboarding form leaves the deck behind, so the tracker comes
             with it: the client asked for the last stage, and a client who has
             just been carried here by two automatic jumps should be able to
-            see that this is the end of it. */}
-        <div className="flex h-full flex-col">
-          <div className="flex flex-shrink-0 justify-center border-b border-lyp-white/10 px-6 py-3">
-            <FlowProgress />
-          </div>
-          <div className="min-h-0 flex-1">
-            <IntakePage
-              questions={intakeQuestions}
-              providers={intakeProviders}
-              existingResponses={intakeResponses}
-              pageTitles={intakePageTitles}
-              hasContract={!!contractDoc?.file_url}
-            />
-          </div>
-        </div>
+            see that this is the end of it.
+
+            It used to hang in a bar across the top of this shell, and the
+            agency wanted one answer for all of them — "either all on the top
+            margin or bottom, but consistent" — which in the deck is the bar
+            along the bottom. So the form carries it there itself, in a bar it
+            shares with its own Back and Continue, and this route is left to
+            hand it the full height. */}
+        <IntakePage
+          questions={intakeQuestions}
+          providers={intakeProviders}
+          existingResponses={intakeResponses}
+          pageTitles={intakePageTitles}
+          hasContract={!!contractDoc?.file_url}
+        />
       </ProposalProvider>
       </div>
     </div>

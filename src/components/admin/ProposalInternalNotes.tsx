@@ -60,14 +60,14 @@ export default function ProposalInternalNotes({
               <p className="whitespace-pre-wrap text-[13px] leading-relaxed text-lyp-black">
                 {note.content}
               </p>
-              <p className="mt-1.5 text-[11px] tabular-nums text-[#C3B5B5]">
+              <p className="mt-1.5 text-[11px] tabular-nums text-[#9C8C8C]">
                 {formatDate(note.created_at)}
               </p>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="font-body text-[13px] text-[#A89898]">
+        <p className="font-body text-[13px] text-[#867474]">
           No internal notes yet.
         </p>
       )}
@@ -85,7 +85,7 @@ export default function ProposalInternalNotes({
           placeholder="Add an internal note…"
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          className={`w-full flex-1 rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`}
+          className={`w-full flex-1 rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:opacity-50`}
           disabled={submitting}
         />
         <button

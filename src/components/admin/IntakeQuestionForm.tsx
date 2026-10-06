@@ -65,16 +65,16 @@ interface IntakeQuestionFormData {
 
 const EASE = "ease-brand";
 
-const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
+const inputClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
 const selectClasses = `${inputClasses} appearance-none pr-11`;
 
 const labelClasses =
-  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#A89898]";
+  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
 
 const errorClasses = "mt-1.5 font-body text-[12px] text-lyp-cherry";
 
-const helperClasses = "font-body text-[12px] text-[#8A7A7A]";
+const helperClasses = "font-body text-[12px] text-[#6B5A5A]";
 
 const cardClasses =
   "rounded-2xl border border-[#EFE6E6] bg-lyp-white p-5 sm:p-6";
@@ -92,7 +92,7 @@ const pillIcon = `flex h-8 w-8 items-center justify-center rounded-full bg-lyp-w
 
 const destructivePillIcon = `flex h-8 w-8 items-center justify-center rounded-full bg-lyp-cherry/10 transition-transform duration-500 ${EASE} group-hover:scale-105`;
 
-const iconButtonClasses = `flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[#A89898] transition-colors duration-500 ${EASE} hover:bg-lyp-cherry/[0.06] hover:text-lyp-cherry`;
+const iconButtonClasses = `flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[#867474] transition-colors duration-500 ${EASE} hover:bg-lyp-cherry/[0.06] hover:text-lyp-cherry`;
 
 /** Native selects need their own chevron once appearance is stripped. */
 function SelectShell({ children }: { children: React.ReactNode }) {
@@ -101,7 +101,7 @@ function SelectShell({ children }: { children: React.ReactNode }) {
       {children}
       <ChevronDown
         strokeWidth={1.5}
-        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A89898]"
+        className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#867474]"
       />
     </div>
   );
@@ -403,7 +403,7 @@ export default function IntakeQuestionForm({
               {...register("section_subtitle")}
               className={inputClasses}
             />
-            <p className="mt-1.5 font-body text-[11px] text-[#A89898]">
+            <p className="mt-1.5 font-body text-[11px] text-[#867474]">
               Shown under the section heading, so clients know what the section
               is for. Taken from the first question in the section.
             </p>
@@ -560,7 +560,7 @@ export default function IntakeQuestionForm({
             <div className="mt-4 space-y-2.5">
               {optionFields.map((field, index) => (
                 <div key={field.id} className="flex items-center gap-2.5">
-                  <span className="w-6 flex-shrink-0 font-body text-[11px] tabular-nums text-[#A89898]">
+                  <span className="w-6 flex-shrink-0 font-body text-[11px] tabular-nums text-[#867474]">
                     #{index + 1}
                   </span>
                   <input

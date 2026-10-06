@@ -191,7 +191,7 @@ export default function MediaLibraryModal({
               {title}
             </h2>
             {hint && (
-              <p className="mt-1.5 font-body text-[11.5px] text-[#A89898]">
+              <p className="mt-1.5 font-body text-[11.5px] text-[#867474]">
                 {hint}
               </p>
             )}
@@ -200,7 +200,7 @@ export default function MediaLibraryModal({
             type="button"
             onClick={onClose}
             aria-label="Close media library"
-            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#EFE6E6] text-[#A89898] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`}
+            className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#EFE6E6] text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`}
           >
             <X strokeWidth={1.5} className="h-4 w-4" />
           </button>
@@ -232,9 +232,9 @@ export default function MediaLibraryModal({
                 className="h-5 w-5 animate-spin text-lyp-cherry"
               />
             ) : (
-              <Upload strokeWidth={1.25} className="h-5 w-5 text-[#A89898]" />
+              <Upload strokeWidth={1.25} className="h-5 w-5 text-[#867474]" />
             )}
-            <span className="font-body text-[13px] text-[#8A7A7A]">
+            <span className="font-body text-[13px] text-[#6B5A5A]">
               {uploading
                 ? progress
                   ? `Compressing and uploading ${progress.done + 1} of ${progress.total}…`
@@ -257,14 +257,14 @@ export default function MediaLibraryModal({
           <div className="relative mt-4">
             <Search
               strokeWidth={1.5}
-              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#C3B5B5]"
+              className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9C8C8C]"
             />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by filename…"
-              className={`w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] py-2.5 pl-11 pr-4 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#C3B5B5] focus:border-lyp-cherry/40 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`}
+              className={`w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] py-2.5 pl-11 pr-4 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/40 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`}
             />
           </div>
         </div>
@@ -277,7 +277,7 @@ export default function MediaLibraryModal({
                 strokeWidth={1.5}
                 className="h-4 w-4 animate-spin text-lyp-cherry"
               />
-              <span className="font-body text-[13px] text-[#8A7A7A]">
+              <span className="font-body text-[13px] text-[#6B5A5A]">
                 Loading library…
               </span>
             </div>
@@ -289,13 +289,13 @@ export default function MediaLibraryModal({
                   className="h-6 w-6 text-lyp-cherry/60"
                 />
               </span>
-              <p className="mt-5 font-body text-[14px] text-[#8A7A7A]">
+              <p className="mt-5 font-body text-[14px] text-[#6B5A5A]">
                 {query.trim()
                   ? `Nothing matches “${query.trim()}”.`
                   : "No images in the library yet."}
               </p>
               {!query.trim() && (
-                <p className="mt-1 font-body text-[13px] text-[#C3B5B5]">
+                <p className="mt-1 font-body text-[13px] text-[#9C8C8C]">
                   Upload one above to get started.
                 </p>
               )}
@@ -324,7 +324,7 @@ export default function MediaLibraryModal({
                         are blank squares you cannot tell apart. The ground
                         belongs to the tile; the image keeps object-contain and
                         nothing else. */}
-                    <div className="aspect-square w-full overflow-hidden bg-[#6B5B5B]">
+                    <div className="aspect-square w-full overflow-hidden bg-[#6B5A5A]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={item.url}
@@ -351,7 +351,7 @@ export default function MediaLibraryModal({
                         {item.name}
                       </p>
                       {item.size > 0 && (
-                        <p className="mt-0.5 font-body text-[10px] tabular-nums text-[#C3B5B5]">
+                        <p className="mt-0.5 font-body text-[10px] tabular-nums text-[#9C8C8C]">
                           {formatBytes(item.size)}
                         </p>
                       )}
@@ -365,7 +365,7 @@ export default function MediaLibraryModal({
 
         {/* Footer */}
         <div className="flex items-center justify-between gap-4 border-t border-[#F1E8E8] bg-[#FCFAFA] px-6 py-4">
-          <p className="font-body text-[11px] text-[#A89898]">
+          <p className="font-body text-[11px] text-[#867474]">
             {visible.length} image{visible.length === 1 ? "" : "s"}
             {" · up to "}
             {formatBytes(MAX_BATCH_SIZE)} per upload, auto-compressed
