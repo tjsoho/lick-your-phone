@@ -263,6 +263,10 @@ export default function ProposalWizard({
 
   const canProceed = !!selectedClientId && !!selectedVenueId;
 
+  /** An inline "new client" or "new venue" form is on screen, with its own
+   *  button to finish it. The wizard's own bar stands down while it is. */
+  const inlineFormOpen = step === 1 && (showNewClient || showNewVenue);
+
   const reviewTitle =
     mode === "edit"
       ? "Review & Save"
@@ -618,6 +622,14 @@ export default function ProposalWizard({
       </div>
 
       {/* ─────────────── Navigation ─────────────── */}
+      {/* ONE BUTTON AT A TIME.
+
+          The inline forms carry their own action — "Add Client", "Add Venue" —
+          and the bar below was offering a "Next" beside it: "why do we still
+          have double up buttons … we don't need both." Adding the client is
+          the step forward, and it selects what it just made, so the bar comes
+          back by itself with the client in place. */}
+      {!inlineFormOpen && (
       <div className="flex items-center justify-between gap-4 border-t border-[#F1E8E8] bg-[#FCFAFA] px-6 py-5 sm:px-8">
         <button
           type="button"
@@ -666,6 +678,7 @@ export default function ProposalWizard({
           </button>
         )}
       </div>
+      )}
     </div>
   );
 }
