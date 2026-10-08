@@ -2,6 +2,7 @@ import { Toaster } from "react-hot-toast";
 import { headers } from "next/headers";
 import Sidebar from "@/components/admin/Sidebar";
 import NotificationBell from "@/components/admin/NotificationBell";
+import HoverTips from "@/components/admin/HoverTips";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -24,6 +25,10 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
   // Login page renders without sidebar
   return (
     <>
+      {/* Draws the hover text for every control that carries a `title`, half
+          a second in — the browser's own tooltip is far slower and its delay
+          cannot be set. One listener for the whole dashboard, login included. */}
+      <HoverTips />
       <Toaster
         position="top-right"
         toastOptions={{
