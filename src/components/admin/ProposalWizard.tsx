@@ -1,7 +1,11 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { createClientWithVenue, createVenue } from "@/server-actions/clients";
+import {
+  createClientWithVenue,
+  createVenue,
+  updateVenue,
+} from "@/server-actions/clients";
 import {
   createProposal,
   supersedeProposal,
@@ -20,10 +24,13 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import ClientLogoField from "./ClientLogoField";
+import VenueLogoField from "./venues/VenueLogoField";
 
 type Venue = {
   id: string;
   name: string;
+  /** This venue's own logo, which its proposal covers prefer over the client's. */
+  logo_url?: string | null;
 };
 
 type Client = {
@@ -130,7 +137,17 @@ export default function ProposalWizard({
   );
   const [showNewVenue, setShowNewVenue] = useState(false);
   const [extraVenueName, setExtraVenueName] = useState("");
+  const [extraVenueLogo, setExtraVenueLogo] = useState("");
   const [createdVenues, setCreatedVenues] = useState<Venue[]>([]);
+  /**
+   * Logos edited here, by venue id. The server props are a snapshot from the
+   * page load, so a logo swapped on this screen has to be remembered locally
+   * or the field would snap back to the old one the moment it re-renders.
+   */
+  const [venueLogoEdits, setVenueLogoEdits] = useState<
+    Record<string, string | null>
+  >({});
+  const [venueLogoSaving, setVenueLogoSaving] = useState(false);
 
   const allClients = dedupeById([...clients, ...createdClients]);
   const selectedClient = allClients.find((c) => c.id === selectedClientId);
@@ -139,6 +156,28 @@ export default function ProposalWizard({
     ...createdVenues,
   ]);
   const selectedVenue = allVenues.find((v) => v.id === selectedVenueId);
+  /** What the field shows: this screen's edit if there is one, else the venue's. */
+  const selectedVenueLogo =
+    (selectedVenueId in venueLogoEdits
+      ? venueLogoEdits[selectedVenueId]
+      : selectedVenue?.logo_url) ?? "";
+
+  /** A logo picked for an existing venue is saved to that venue there and then. */
+  async function handleVenueLogoChange(next: string) {
+    if (!selectedVenueId) return;
+    setVenueLogoEdits((prev) => ({ ...prev, [selectedVenueId]: next }));
+    setVenueLogoSaving(true);
+    // null, not "": clearing it has to fall the cover back to the client's logo.
+    const { error } = await updateVenue(selectedVenueId, {
+      logo_url: next.trim() || null,
+    });
+    setVenueLogoSaving(false);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    toast.success(next.trim() ? "Venue logo saved" : "Venue logo removed");
+  }
 
   /** Picking a client resets the venue, unless that client has exactly one. */
   function handleSelectClient(clientId: string) {
@@ -207,6 +246,7 @@ export default function ProposalWizard({
     const { data, error } = await createVenue({
       client_id: selectedClientId,
       name: extraVenueName.trim(),
+      logo_url: extraVenueLogo.trim() || null,
     });
     setLoading(false);
     if (error) {
@@ -214,9 +254,13 @@ export default function ProposalWizard({
       return;
     }
     if (data) {
-      setCreatedVenues((prev) => [...prev, { id: data.id, name: data.name }]);
+      setCreatedVenues((prev) => [
+        ...prev,
+        { id: data.id, name: data.name, logo_url: data.logo_url ?? null },
+      ]);
       setSelectedVenueId(data.id);
       setExtraVenueName("");
+      setExtraVenueLogo("");
       setShowNewVenue(false);
       toast.success("Venue added");
     }
@@ -403,6 +447,27 @@ export default function ProposalWizard({
                   </div>
                 )}
 
+                {/* THE CHOSEN VENUE'S OWN LOGO.
+                    "The client logo is still not showing when choosing an old
+                     venue … because the old venue has it, it should show
+                     there, so that we can update it, for example, the client
+                     changes their logo — or showing empty, in this case that
+                     we don't have the logo yet."
+                    So it appears the moment a venue is picked, carrying what
+                    that venue already has, and saves straight to the venue. */}
+                {selectedVenue && !showNewVenue && (
+                  <div className="rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] p-5">
+                    <VenueLogoField
+                      value={selectedVenueLogo}
+                      onChange={handleVenueLogoChange}
+                      idPrefix="wizard-venue-logo"
+                    />
+                    {venueLogoSaving && (
+                      <p className={hintClasses}>Saving…</p>
+                    )}
+                  </div>
+                )}
+
                 {/* Adding another venue under a client we already have */}
                 {selectedClient &&
                   (showNewVenue ? (
@@ -418,6 +483,15 @@ export default function ProposalWizard({
                         className={fieldClasses}
                         placeholder="e.g. Riverside Ballroom"
                       />
+                      {/* "It should also show when creating a new venue for
+                          an existing client." */}
+                      <div className="mt-5 border-t border-[#F1E8E8] pt-5">
+                        <VenueLogoField
+                          value={extraVenueLogo}
+                          onChange={setExtraVenueLogo}
+                          idPrefix="wizard-new-venue-logo"
+                        />
+                      </div>
                       <div className="mt-5 flex flex-wrap items-center gap-3">
                         <button
                           type="button"

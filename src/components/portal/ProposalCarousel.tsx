@@ -262,10 +262,10 @@ function CarouselInner() {
   const nextLocked =
     !!currentSlug &&
     SELF_ADVANCING_SLUGS.includes(currentSlug) &&
-    // The signature slide carries them to payment — unless the card is already
-    // on file, or the deck has no payment slide to carry them to (it can be
-    // hidden for a client), either of which leaves Next as the only way on.
-    !(currentSlug === "signature" && (paymentCaptured || paymentIndex < 0)) &&
+    // "I Agree & Sign" is the only way off the signature slide now — it
+    // carries them to payment, or, where there is no payment to take, to
+    // whatever comes next. The slide hands off either way, so Next has
+    // nothing left to do beside it.
     !(currentSlug === "summary" && !summaryCarriesOn);
 
   const goNext = useCallback(() => {

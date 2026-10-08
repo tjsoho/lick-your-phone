@@ -122,8 +122,6 @@ export default function ProposalDeckOverview({
     return page.overrideVisible ?? page.globalVisible;
   }
 
-  const shownCount = pages.filter(effectiveVisible).length;
-
   async function handleToggle(page: PresentationPage) {
     const next = !effectiveVisible(page);
     // Matching the global setting again means there is nothing to override.
@@ -234,27 +232,10 @@ export default function ProposalDeckOverview({
 
   return (
     <div>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <p className="font-body text-[12px] text-[#6B5A5A]">
-          <span className="font-semibold text-lyp-black tabular-nums">
-            {shownCount}
-          </span>{" "}
-          {shownCount === 1 ? "page" : "pages"} in this client&rsquo;s deck.{" "}
-          {overrideCount === 0 ? (
-            <>
-              Following the standard deck — changes here affect this proposal
-              only.
-            </>
-          ) : (
-            <>
-              <span className="font-semibold text-lyp-cherry">
-                {overrideCount} tailored
-              </span>{" "}
-              for this proposal; everything else follows Content Pages.
-            </>
-          )}
-        </p>
-
+      {/* The count line that used to sit here is gone at the agency's
+          request — "please remove the page count line". The list below says
+          how many pages there are by being the list. */}
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
         {overrideCount > 0 && (
           <button
             type="button"
@@ -272,12 +253,11 @@ export default function ProposalDeckOverview({
         )}
       </div>
 
-      {/* The rule, said plainly: per-proposal choices here, company words and
-          pictures under Content Pages. */}
+      {/* Their wording, kept to the sentence they asked for: "in the section
+          intro, please keep only the first part of the sentence." */}
       <p className="mb-4 rounded-2xl border border-[#F1E8E8] bg-[#FCFAFA] px-4 py-3 font-body text-[12px] leading-relaxed text-[#6B5A5A]">
-        Wording and images are shared across every proposal and are edited
-        under{" "}
-        <span className="font-semibold text-lyp-black">Content Pages</span>.
+        Here you choose which pages this client sees and tailor their
+        discounts.
       </p>
 
       {discountsIdle && pages.some((p) => effectiveDiscount(p) > 0) && (
@@ -286,14 +266,18 @@ export default function ProposalDeckOverview({
             strokeWidth={1.75}
             className="mt-0.5 h-4 w-4 flex-shrink-0 text-lyp-cherry"
           />
+          {/* Their wording, to the word: "in the discount warning banner,
+              please keep only the highlighted part and remove the rest."
+              The headline and the page tally are gone; what is left is the
+              consequence and the switch that changes it. */}
           <span>
-            <span className="font-semibold">Discounts are not reaching this client.</span>{" "}
-            {pages.filter((p) => effectiveDiscount(p) > 0).length} page
-            {pages.filter((p) => effectiveDiscount(p) > 0).length === 1 ? " has" : "s have"} a
-            discount set, but the client sees full prices{" "}
+            Client sees full prices until{" "}
+            <span className="font-semibold">
+              {timerRunning && !started ? "the scheduled start" : "Activate Timer"}
+            </span>{" "}
             {timerRunning && !started
-              ? "until the scheduled start under Ready to Send below."
-              : "until the discount timer is switched on under Ready to Send below."}{" "}
+              ? "is reached below."
+              : "is switched on below."}{" "}
             When the countdown ends, prices go back to full.
           </span>
         </p>

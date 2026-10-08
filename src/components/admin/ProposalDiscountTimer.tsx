@@ -206,9 +206,18 @@ export default function ProposalDiscountTimer({
 
         <div className="flex items-center gap-3">
           <SaveStatusBadge status={status} />
+          {/* The deck's warning banner tells them to switch on "Activate
+              Timer", so the switch wears that name rather than leaving them
+              hunting for a control nothing is called. */}
+          <label
+            htmlFor={switchId}
+            className="cursor-pointer whitespace-nowrap font-body text-[10px] font-medium uppercase tracking-[0.18em] text-[#867474]"
+          >
+            Activate timer
+          </label>
           <Switch
             id={switchId}
-            aria-label="Discount timer"
+            aria-label="Activate timer"
             checked={active}
             disabled={locked || status === "saving"}
             onCheckedChange={handleToggle}

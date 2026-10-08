@@ -291,8 +291,27 @@ export default function SignaturePage() {
    * `findIndex` then returns -1), or a card already on file, in which case the
    * provider has removed the slide entirely.
    */
-  const handsOffToPayment =
-    confirming && paymentPageIndex !== -1 && !paymentCaptured;
+  const signaturePageIndex = pages.findIndex((p) => p.slug === "signature");
+
+  /**
+   * Where signing lets go of them. Payment, normally. Failing that — a deck
+   * with no payment slide, or a card already on file — simply the next slide,
+   * because "I Agree & Sign" is now the only way off this one:
+   *
+   *   "Can we please remove the NEXT button here as well: click agree and
+   *    sign will act as the next button."
+   *
+   * Null only when the signature is the last slide in the deck, which is the
+   * one visit that still ends on the confirmation below.
+   */
+  const handOffIndex =
+    paymentPageIndex !== -1 && !paymentCaptured
+      ? paymentPageIndex
+      : signaturePageIndex >= 0 && signaturePageIndex + 1 < pages.length
+        ? signaturePageIndex + 1
+        : null;
+
+  const handsOffToPayment = confirming && handOffIndex !== null;
 
   /* NOTHING IN BETWEEN.
 
@@ -307,9 +326,9 @@ export default function SignaturePage() {
      there is nothing to announce and nothing for `prefers-reduced-motion` to
      ask for: everyone now gets what it used to get. */
   useEffect(() => {
-    if (!handsOffToPayment) return;
-    setCurrentPage(paymentPageIndex);
-  }, [handsOffToPayment, paymentPageIndex, setCurrentPage]);
+    if (!handsOffToPayment || handOffIndex === null) return;
+    setCurrentPage(handOffIndex);
+  }, [handsOffToPayment, handOffIndex, setCurrentPage]);
 
   /* ---------------------------------------------------------------- */
   /*  Signed                                                          */

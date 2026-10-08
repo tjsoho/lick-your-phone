@@ -298,6 +298,14 @@ export default async function ProposalDetailPage({
                   formatStatus(proposal.status)}
               </span>
             </div>
+
+            {/* The same pill the send banner ends with, repeated here:
+                "love this button below, can we please duplicate it on top."
+                Where a proposal stands is the first thing they look for, and
+                it was eight sections down. */}
+            <div className="mt-3">
+              <StageChip label={sendStage.label} tone={sendStage.tone} />
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
