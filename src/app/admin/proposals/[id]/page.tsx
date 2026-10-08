@@ -390,7 +390,15 @@ export default async function ProposalDetailPage({
       </dl>
 
       {/* ─────────────── Deck overview ─────────────── */}
-      <Section title="Deck Overview" delay="140ms">
+      {/* The pill again, over the deck's pages: "not sent yet button needs to
+          be at the top of the content pages as well so we can see if it's sent
+          or not." Twenty-five page cards is a long way to scroll with no idea
+          whether any of it has reached the client. */}
+      <Section
+        title="Deck Overview"
+        delay="140ms"
+        aside={<StageChip label={sendStage.label} tone={sendStage.tone} />}
+      >
         <ProposalDeckOverview
           proposalId={id}
           initialPages={presentationPages ?? []}
@@ -870,16 +878,22 @@ function Section({
   title,
   children,
   delay,
+  aside,
 }: {
   title: string;
   children: React.ReactNode;
   delay: string;
+  /** Sits on the heading row, hard right. Used for the send-stage pill. */
+  aside?: React.ReactNode;
 }) {
   return (
     <section className="animate-rise mb-8" style={{ animationDelay: delay }}>
-      <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
-        {title}
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <h2 className="font-heading text-[16px] font-bold tracking-[-0.02em] text-lyp-black">
+          {title}
+        </h2>
+        {aside}
+      </div>
       <div className="mt-3.5 overflow-hidden rounded-2xl border border-[#EFE6E6] bg-lyp-white p-5">
         {children}
       </div>

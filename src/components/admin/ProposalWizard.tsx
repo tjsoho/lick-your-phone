@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import {
   createClientWithVenue,
   createVenue,
+  updateClient,
   updateVenue,
 } from "@/server-actions/clients";
 import {
@@ -38,6 +39,8 @@ type Client = {
   /** The person. Their venues hang off them. */
   name: string;
   email?: string | null;
+  /** Their own logo, used on covers where the venue has none of its own. */
+  logo_url?: string | null;
   venues: Venue[];
 };
 
@@ -148,6 +151,11 @@ export default function ProposalWizard({
     Record<string, string | null>
   >({});
   const [venueLogoSaving, setVenueLogoSaving] = useState(false);
+  /** The same, for the client's own logo. Same reason: props are a snapshot. */
+  const [clientLogoEdits, setClientLogoEdits] = useState<
+    Record<string, string | null>
+  >({});
+  const [clientLogoSaving, setClientLogoSaving] = useState(false);
 
   const allClients = dedupeById([...clients, ...createdClients]);
   const selectedClient = allClients.find((c) => c.id === selectedClientId);
@@ -161,6 +169,29 @@ export default function ProposalWizard({
     (selectedVenueId in venueLogoEdits
       ? venueLogoEdits[selectedVenueId]
       : selectedVenue?.logo_url) ?? "";
+
+  /** What the field shows for the chosen client: this screen's edit, else theirs. */
+  const selectedClientLogo =
+    (selectedClientId in clientLogoEdits
+      ? clientLogoEdits[selectedClientId]
+      : selectedClient?.logo_url) ?? "";
+
+  /** And the client's own, saved to the client the moment it changes. */
+  async function handleClientLogoChange(next: string) {
+    if (!selectedClientId) return;
+    setClientLogoEdits((prev) => ({ ...prev, [selectedClientId]: next }));
+    setClientLogoSaving(true);
+    // null, not "": clearing it falls the cover back to the LickYourPhone mark.
+    const { error } = await updateClient(selectedClientId, {
+      logo_url: next.trim() || null,
+    });
+    setClientLogoSaving(false);
+    if (error) {
+      toast.error(error);
+      return;
+    }
+    toast.success(next.trim() ? "Client logo saved" : "Client logo removed");
+  }
 
   /** A logo picked for an existing venue is saved to that venue there and then. */
   async function handleVenueLogoChange(next: string) {
@@ -414,6 +445,23 @@ export default function ProposalWizard({
                     <p className={hintClasses}>{selectedClient.email}</p>
                   )}
                 </div>
+
+                {/* THE CHOSEN CLIENT'S OWN LOGO.
+                    "In the choose client or add new client can we see their
+                     logo?" — the new-client form has always had one; picking
+                     an existing client showed nothing. Same behaviour as the
+                     venue field below it: what they have, or an empty box,
+                     and a change saves straight to the client. */}
+                {selectedClient && (
+                  <div className="rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] p-5">
+                    <ClientLogoField
+                      value={selectedClientLogo}
+                      onChange={handleClientLogoChange}
+                      idPrefix="wizard-client-logo"
+                    />
+                    {clientLogoSaving && <p className={hintClasses}>Saving…</p>}
+                  </div>
+                )}
 
                 {/* Their venues, listed so a client with several reads clearly */}
                 {selectedClient && allVenues.length > 0 && (
