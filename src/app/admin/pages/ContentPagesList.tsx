@@ -191,6 +191,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
         </p>
         <button
           onClick={startAdd}
+          title="Add the first page to the client's deck"
           className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
         >
           <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
@@ -277,6 +278,11 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                     disabled={isPending && loadingId === page.id}
                     onCheckedChange={() => handleToggle(page.id, page.visible)}
                     aria-label={`Toggle visibility for ${page.title ?? "page"}`}
+                    title={
+                      page.visible
+                        ? "Hide this page from the client's deck"
+                        : "Show this page in the client's deck"
+                    }
                     className={switchClasses}
                   />
                   {isPending && loadingId === page.id && (
@@ -400,6 +406,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#F1E8E8] px-4 py-3">
         <button
           onClick={startAdd}
+          title="Add a new page to the client's deck"
           className={`inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
         >
           <Plus strokeWidth={1.5} className="h-4 w-4" /> Add Page

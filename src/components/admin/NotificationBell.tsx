@@ -135,6 +135,13 @@ export default function NotificationBell() {
         aria-label={
           unread > 0 ? `Notifications, ${unread} new` : "Notifications"
         }
+        title={
+          open
+            ? "Hide recent activity"
+            : unread > 0
+              ? `Show recent activity, ${unread} new`
+              : "Show recent activity"
+        }
         className={cn(
           `relative flex h-9 w-9 items-center justify-center rounded-full border border-[#EFE6E6] bg-lyp-white text-[#6B5A5A] transition-colors duration-500 ${EASE}`,
           "hover:border-lyp-cherry/25 hover:text-lyp-cherry",
@@ -174,6 +181,7 @@ export default function NotificationBell() {
                     <Link
                       href={`/admin/proposals/${item.proposalId}`}
                       onClick={() => setOpen(false)}
+                      title={`Open ${who}'s proposal`}
                       className={`flex items-start gap-3 px-4 py-3 transition-colors duration-500 ${EASE} hover:bg-[#FBF8F8]`}
                     >
                       <span

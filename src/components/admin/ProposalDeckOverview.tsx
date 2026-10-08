@@ -241,6 +241,7 @@ export default function ProposalDeckOverview({
             type="button"
             onClick={handleReset}
             disabled={resetting}
+            title="Drop every change and show this client the standard deck"
             className={`inline-flex items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-1.5 font-body text-[12px] font-semibold text-[#6B5A5A] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985] disabled:opacity-40`}
           >
             {resetting ? (
@@ -379,6 +380,11 @@ export default function ProposalDeckOverview({
                       <Switch
                         checked={shown}
                         onCheckedChange={() => handleToggle(page)}
+                        title={
+                          shown
+                            ? `Hide ${title} from this client's deck`
+                            : `Show ${title} in this client's deck`
+                        }
                         aria-label={`Show ${title} in this proposal`}
                         className={switchClasses}
                       />

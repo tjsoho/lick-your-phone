@@ -321,6 +321,7 @@ function ClientInfoCard({
 
         <div className="mt-7 flex flex-wrap items-center gap-2.5 border-t border-[#F1E8E8] pt-6">
           <button
+            title="Close the editor — changes save as you type"
             type="button"
             onClick={() => {
               setEditing(false);
@@ -369,6 +370,7 @@ function ClientInfoCard({
           </div>
         </div>
         <button
+          title={`Edit ${client.name}’s details`}
           onClick={() => setEditing(true)}
           className={secondaryPill}
           aria-label={`Edit ${client.name}`}
@@ -529,13 +531,13 @@ function VenueAddForm({
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-2.5">
-        <button type="submit" disabled={isSubmitting} className={primaryPill}>
+        <button type="submit" disabled={isSubmitting} className={primaryPill} title="Add this venue to the client">
           {isSubmitting ? "Adding..." : "Add Venue"}
           <span className={pillIcon}>
             <Plus strokeWidth={1.5} className="h-4 w-4" />
           </span>
         </button>
-        <button type="button" onClick={onDone} className={plainPill}>
+        <button type="button" onClick={onDone} className={plainPill} title="Discard this new venue">
           Cancel
         </button>
       </div>
@@ -654,13 +656,13 @@ function ContactAddForm({
       </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-2.5">
-        <button type="submit" disabled={isSubmitting} className={primaryPill}>
+        <button type="submit" disabled={isSubmitting} className={primaryPill} title="Add this contact to the client">
           {isSubmitting ? "Adding..." : "Add Contact"}
           <span className={pillIcon}>
             <Plus strokeWidth={1.5} className="h-4 w-4" />
           </span>
         </button>
-        <button type="button" onClick={onDone} className={plainPill}>
+        <button type="button" onClick={onDone} className={plainPill} title="Discard this new contact">
           Cancel
         </button>
       </div>
@@ -720,6 +722,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
       {/* Back link */}
       <div className="animate-rise">
         <Link
+          title="Back to the client list"
           href="/admin/clients"
           className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
@@ -757,6 +760,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
           </div>
           {!showVenueForm && (
             <button
+              title={`Add a venue for ${client.name}`}
               onClick={() => setShowVenueForm(true)}
               className={secondaryPill}
             >
@@ -810,6 +814,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                       </p>
                       {!showVenueForm && (
                         <button
+                          title={`Add the first venue for ${client.name}`}
                           onClick={() => setShowVenueForm(true)}
                           className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
                         >
@@ -846,6 +851,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
           <h2 className={sectionHeading}>Contacts</h2>
           {!showContactForm && (
             <button
+              title={`Add a contact for ${client.name}`}
               onClick={() => setShowContactForm(true)}
               className={secondaryPill}
             >
@@ -911,6 +917,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                       </p>
                       {!showContactForm && (
                         <button
+                          title={`Add the first contact for ${client.name}`}
                           onClick={() => setShowContactForm(true)}
                           className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
                         >
@@ -945,6 +952,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
         <div className="mb-3.5 flex flex-wrap items-end justify-between gap-3">
           <h2 className={sectionHeading}>Proposals</h2>
           <Link
+            title={`Start a new proposal for ${client.name}`}
             href={`/admin/proposals/new?clientId=${client.id}`}
             className={primaryPill}
           >
@@ -1047,6 +1055,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
                       {contract ? (
                         <div className="space-y-1">
                           <a
+                            title="Download the signed contract"
                             href={contract.file_url ?? "#"}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -1170,6 +1179,7 @@ export default function ClientDetailView({ client, states, appUrl }: Props) {
               No proposals yet.
             </p>
             <Link
+              title={`Create the first proposal for ${client.name}`}
               href={`/admin/proposals/new?clientId=${client.id}`}
               className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
             >

@@ -95,6 +95,7 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition, onDraf
             ) : (
               <button
                 onClick={() => setLibraryOpen(true)}
+                title="Choose a featured image from the library"
                 className={`mt-2 flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry`}
               >
                 <Images strokeWidth={1.25} className="h-7 w-7" />
@@ -104,6 +105,7 @@ export function PageSettingsForm({ pageId, initialImage, initialPosition, onDraf
             {image && (
               <button
                 onClick={() => setLibraryOpen(true)}
+                title="Choose a different featured image"
                 className={`mt-3 flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
               >
                 <Images strokeWidth={1.5} className="h-3.5 w-3.5" />

@@ -35,6 +35,7 @@ export default function PageEditorNav({
         <Link
           href={`/admin/pages/${previous.id}`}
           className={`${pill} pr-5`}
+          title={`Edit the previous page, ${previous.title ?? "Untitled"}`}
           aria-label={`Previous page: ${previous.title ?? "Untitled"}`}
         >
           <span className={`${icon} group-hover:-translate-x-0.5`}>
@@ -61,6 +62,7 @@ export default function PageEditorNav({
         <Link
           href={`/admin/pages/${next.id}`}
           className={`${pill} pl-5 pr-2 text-right`}
+          title={`Edit the next page, ${next.title ?? "Untitled"}`}
           aria-label={`Next page: ${next.title ?? "Untitled"}`}
         >
           <span className="min-w-0">

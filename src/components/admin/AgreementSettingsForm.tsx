@@ -305,6 +305,7 @@ export default function AgreementSettingsForm({
           </p>
           {urlValid && urlTyped !== "" && (
             <a
+              title="Open your live terms page in a new tab"
               href={urlTyped}
               target="_blank"
               rel="noopener noreferrer"
@@ -332,6 +333,7 @@ export default function AgreementSettingsForm({
                 {documentName || "Terms document"}
               </span>
               <a
+                title="Open the full terms document in a new tab"
                 href={documentUrl}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -341,6 +343,7 @@ export default function AgreementSettingsForm({
                 Open
               </a>
               <button
+                title="Replace the full terms document"
                 type="button"
                 onClick={() => documentInputRef.current?.click()}
                 className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
@@ -363,6 +366,7 @@ export default function AgreementSettingsForm({
             </div>
           ) : (
             <button
+              title={uploading ? "Uploading the terms document" : "Upload the full terms document"}
               type="button"
               onClick={() => documentInputRef.current?.click()}
               disabled={uploading}
@@ -491,6 +495,7 @@ export default function AgreementSettingsForm({
 
               <div className="mt-3 flex flex-wrap items-center gap-3">
                 <button
+                  title={signatureUploading ? "Uploading the signature image" : "Replace the signature image"}
                   type="button"
                   onClick={() => signatureInputRef.current?.click()}
                   disabled={signatureUploading}
@@ -507,6 +512,7 @@ export default function AgreementSettingsForm({
                   {signatureUploading ? "Uploading…" : "Replace signature"}
                 </button>
                 <button
+                  title="Pick a signature image from the media library"
                   type="button"
                   onClick={() => setLibraryOpen(true)}
                   className={`inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
@@ -528,6 +534,7 @@ export default function AgreementSettingsForm({
           ) : (
             <div>
               <button
+                title={signatureUploading ? "Uploading the signature image" : "Upload the counter-signature image"}
                 type="button"
                 onClick={() => signatureInputRef.current?.click()}
                 disabled={signatureUploading}
@@ -548,6 +555,7 @@ export default function AgreementSettingsForm({
                 </span>
               </button>
               <button
+                title="Pick a signature image from the media library"
                 type="button"
                 onClick={() => setLibraryOpen(true)}
                 className={`mt-3 inline-flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}

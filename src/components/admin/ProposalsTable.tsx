@@ -115,12 +115,32 @@ export type ProposalRow = {
 
 /** The filter's buckets, in the order a proposal travels through them. */
 const FILTERS = [
-  { value: "all", label: "All" },
-  { value: "draft", label: "Draft" },
-  { value: "sent", label: "Sent" },
-  { value: "signed", label: "Signed" },
-  { value: "payment", label: "Payment details" },
-  { value: "intake_complete", label: "Onboarding complete" },
+  { value: "all", label: "All", title: "Show every proposal" },
+  {
+    value: "draft",
+    label: "Draft",
+    title: "Show only proposals still in draft",
+  },
+  {
+    value: "sent",
+    label: "Sent",
+    title: "Show only proposals that have been sent",
+  },
+  {
+    value: "signed",
+    label: "Signed",
+    title: "Show only proposals the client has signed",
+  },
+  {
+    value: "payment",
+    label: "Payment details",
+    title: "Show only proposals the client has given payment details for",
+  },
+  {
+    value: "intake_complete",
+    label: "Onboarding complete",
+    title: "Show only proposals the client has finished onboarding for",
+  },
 ] as const;
 
 type FilterValue = (typeof FILTERS)[number]["value"];
@@ -235,6 +255,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
               type="button"
               onClick={() => setFilter(entry.value)}
               aria-pressed={filter === entry.value}
+              title={entry.title}
               className={cn(
                 "rounded-full border px-3 py-1.5 font-body text-[11.5px] font-medium transition-all duration-500 active:scale-[0.985]",
                 EASE,
@@ -335,6 +356,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                       <div className="max-w-[160px]">
                         <Link
                           href={`/admin/clients/${proposal.clientId}`}
+                          title={`Open ${proposal.clientName ?? "this client"}`}
                           className={`block truncate font-medium text-lyp-black transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                         >
                           {proposal.clientName ?? "—"}
@@ -483,6 +505,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                         setQuery("");
                         setFilter("all");
                       }}
+                      title="Clear the search and show every proposal"
                       className={`mt-3 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
                     >
                       Clear search and filters
@@ -497,6 +520,7 @@ export default function ProposalsTable({ rows }: { rows: ProposalRow[] }) {
                     </p>
                     <Link
                       href="/admin/proposals/new"
+                      title="Start your first proposal"
                       className={`mt-3 inline-block font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
                     >
                       Create your first proposal

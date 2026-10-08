@@ -54,6 +54,7 @@ export default function AdminSearchField({
           type="button"
           onClick={() => onChange("")}
           aria-label="Clear search"
+          title="Clear the search and show everything again"
           className={`absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-[#6B5A5A] outline-none transition-all duration-500 ${EASE} hover:bg-[#EFE6E6] hover:text-lyp-cherry focus-visible:ring-2 focus-visible:ring-lyp-cherry/40 active:scale-95`}
         >
           <X strokeWidth={2} className="h-3.5 w-3.5" />

@@ -472,6 +472,7 @@ export default function ProposalWizard({
                         const isSelected = selectedVenueId === venue.id;
                         return (
                           <button
+                            title={isSelected ? `${venue.name} is the chosen venue` : `Use ${venue.name} for this proposal`}
                             key={venue.id}
                             type="button"
                             onClick={() => setSelectedVenueId(venue.id)}
@@ -542,6 +543,7 @@ export default function ProposalWizard({
                       </div>
                       <div className="mt-5 flex flex-wrap items-center gap-3">
                         <button
+                          title={loading ? "Adding this venue" : "Add this venue to the client"}
                           type="button"
                           onClick={handleCreateVenue}
                           disabled={loading}
@@ -560,6 +562,7 @@ export default function ProposalWizard({
                           </span>
                         </button>
                         <button
+                          title="Discard this new venue"
                           type="button"
                           onClick={() => setShowNewVenue(false)}
                           className={secondaryPill}
@@ -570,6 +573,7 @@ export default function ProposalWizard({
                     </div>
                   ) : (
                     <button
+                      title={allVenues.length > 0 ? "Add another venue for this client" : "Add a venue for this client"}
                       type="button"
                       onClick={() => setShowNewVenue(true)}
                       className={`group inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
@@ -592,6 +596,7 @@ export default function ProposalWizard({
                 </div>
 
                 <button
+                  title="Create a new client and their first venue"
                   type="button"
                   onClick={() => setShowNewClient(true)}
                   className={`group inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
@@ -676,6 +681,7 @@ export default function ProposalWizard({
 
                 <div className="mt-6 flex flex-wrap items-center gap-3">
                   <button
+                    title={loading ? "Adding this client" : "Add this client and their first venue"}
                     type="button"
                     onClick={handleCreateClient}
                     disabled={loading}
@@ -694,6 +700,7 @@ export default function ProposalWizard({
                     </span>
                   </button>
                   <button
+                    title="Discard this new client"
                     type="button"
                     onClick={() => setShowNewClient(false)}
                     className={secondaryPill}
@@ -754,6 +761,7 @@ export default function ProposalWizard({
       {!inlineFormOpen && (
       <div className="flex items-center justify-between gap-4 border-t border-[#F1E8E8] bg-[#FCFAFA] px-6 py-5 sm:px-8">
         <button
+          title="Go back to the previous step"
           type="button"
           onClick={() => setStep((s) => Math.max(1, s - 1))}
           disabled={step === 1}
@@ -772,6 +780,7 @@ export default function ProposalWizard({
 
         {step < 2 ? (
           <button
+            title="Go on to review this proposal"
             type="button"
             onClick={() => setStep((s) => s + 1)}
             disabled={!canProceed}
@@ -784,6 +793,7 @@ export default function ProposalWizard({
           </button>
         ) : (
           <button
+            title={mode === "edit" ? "Save changes to this proposal" : mode === "supersede" ? "Create a new version of this proposal" : "Create this proposal"}
             type="button"
             onClick={handleSubmit}
             disabled={loading}

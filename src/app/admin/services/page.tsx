@@ -74,6 +74,7 @@ export default async function ServicesPage() {
 
         <Link
           href="/admin/services/new"
+          title="Add a new service to the catalogue"
           className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`}
         >
           Add Service
@@ -125,6 +126,7 @@ export default async function ServicesPage() {
                     <td className="whitespace-nowrap px-5 py-3">
                       <Link
                         href={`/admin/services/${service.slug}`}
+                        title={`Edit ${service.name}`}
                         className={`font-medium text-lyp-black transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                       >
                         {service.name}
@@ -168,6 +170,7 @@ export default async function ServicesPage() {
                     </p>
                     <Link
                       href="/admin/services/new"
+                      title="Add the first service to the catalogue"
                       className={`mt-3 inline-block font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
                     >
                       Add your first service

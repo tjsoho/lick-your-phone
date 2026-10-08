@@ -218,6 +218,13 @@ export default function ProposalDiscountTimer({
           <Switch
             id={switchId}
             aria-label="Activate timer"
+            title={
+              locked
+                ? "Locked — this proposal's prices can no longer change"
+                : active
+                  ? "Switch the discount off — the client goes back to full prices"
+                  : "Switch the discount on — the client sees the discounted prices"
+            }
             checked={active}
             disabled={locked || status === "saving"}
             onCheckedChange={handleToggle}

@@ -543,6 +543,7 @@ export default function IntakeQuestionForm({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className={sectionHeadingClasses}>Options</h2>
             <button
+              title="Add another answer option"
               type="button"
               onClick={() => appendOption({ value: "" })}
               className={ghostAddClasses}
@@ -601,6 +602,7 @@ export default function IntakeQuestionForm({
             </p>
           </div>
           <button
+            title="Add a condition that decides when this question shows"
             type="button"
             onClick={() =>
               appendCondition({
@@ -792,7 +794,7 @@ export default function IntakeQuestionForm({
         {isEditing ? (
           <SaveStatusBadge status={autosaveStatus} />
         ) : (
-          <button type="submit" disabled={saving} className={primaryPill}>
+          <button type="submit" disabled={saving} title="Create this question" className={primaryPill}>
             {saving ? "Saving..." : "Create Question"}
             <span className={pillIcon}>
               {saving ? (
@@ -806,6 +808,7 @@ export default function IntakeQuestionForm({
 
         {isEditing && (
           <button
+            title="Delete this question — cannot be undone"
             type="button"
             onClick={handleDelete}
             disabled={deleting}

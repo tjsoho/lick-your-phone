@@ -199,6 +199,7 @@ export default function MediaLibraryModal({
           <button
             type="button"
             onClick={onClose}
+            title="Close the media library"
             aria-label="Close media library"
             className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[#EFE6E6] text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-95`}
           >
@@ -379,6 +380,7 @@ export default function MediaLibraryModal({
             <button
               type="button"
               onClick={onClose}
+              title="Close without choosing an image"
               className={`inline-flex items-center rounded-full border border-[#EFE6E6] bg-lyp-white px-5 py-2 font-body text-[13px] font-semibold text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
             >
               Cancel
@@ -387,6 +389,11 @@ export default function MediaLibraryModal({
               type="button"
               disabled={selected.length === 0}
               onClick={() => confirm(selected)}
+              title={
+                multiple && selected.length > 1
+                  ? `Use these ${selected.length} images`
+                  : "Use the selected image"
+              }
               className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none`}
             >
               {multiple && selected.length > 1

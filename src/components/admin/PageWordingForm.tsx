@@ -120,6 +120,7 @@ export function CopyFields({
                       <button
                         type="button"
                         onClick={() => reset(slot.key)}
+                        title={`Reset ${slot.label} to the default wording`}
                         className={`font-body text-[10px] font-medium uppercase tracking-[0.18em] text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                       >
                         Reset
@@ -144,6 +145,7 @@ export function CopyFields({
                         <button
                           type="button"
                           onClick={() => setLibrarySlot({ kind, slot })}
+                          title={`Choose an image for ${slot.label}`}
                           className={quietButton}
                         >
                           <Images strokeWidth={1.5} className="h-3.5 w-3.5" />
@@ -153,6 +155,7 @@ export function CopyFields({
                           <button
                             type="button"
                             onClick={() => reset(slot.key)}
+                            title={`Remove this image and use the default ${slot.label}`}
                             className={quietButton}
                           >
                             <Trash2 strokeWidth={1.5} className="h-3.5 w-3.5" />

@@ -163,10 +163,11 @@ function ImageUploadEditor({ value, onChange, sizeHint }: { value: string; onCha
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={value} alt="Block image" className="max-h-48 w-auto max-w-xs rounded-xl object-contain" />
           <div className="flex items-center gap-4">
-            <button onClick={() => setLibraryOpen(true)} className={ghostButtonClasses}>
+            <button onClick={() => setLibraryOpen(true)} className={ghostButtonClasses} title="Choose a different image from the library">
               <Images strokeWidth={1.5} className="h-4 w-4" /> Replace
             </button>
             <button
+              title="Remove this image from the block"
               onClick={() => onChange("")}
               className={`flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
             >
@@ -176,6 +177,7 @@ function ImageUploadEditor({ value, onChange, sizeHint }: { value: string; onCha
         </div>
       ) : (
         <button onClick={() => setLibraryOpen(true)}
+          title="Choose an image from the library"
           className={`flex h-32 w-full max-w-xs flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry`}>
           <Images strokeWidth={1.25} className="h-6 w-6" />
           <span className="font-body text-[13px]">Choose from library</span>
@@ -263,6 +265,7 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
             />
           ) : (
             <button
+              title={`Choose an image for item ${i + 1}`}
               onClick={() => setLibrary(i)}
               aria-label={`Choose image for item ${i + 1}`}
               className={`flex h-16 w-16 flex-shrink-0 items-center justify-center border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] text-[#9C8C8C] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry ${showText ? "rounded-full" : "rounded-lg"}`}
@@ -291,6 +294,7 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
             )}
             {logo.url && (
               <button
+                title={`Choose a different image for item ${i + 1}`}
                 onClick={() => setLibrary(i)}
                 className={`flex items-center gap-1 font-body text-[11px] font-medium text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
               >
@@ -321,6 +325,7 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
       />
       <div className="flex flex-wrap items-center gap-4">
         <button
+          title="Add images from the media library"
           onClick={() => {
             pendingRef.current = null;
             setLibrary("add");
@@ -329,7 +334,7 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
         >
           <Images strokeWidth={1.5} className="h-4 w-4" /> Add images from library
         </button>
-        <button onClick={addRow} className={ghostButtonClasses}>
+        <button onClick={addRow} className={ghostButtonClasses} title={`${addLabel} as an empty row`}>
           <Plus strokeWidth={1.5} className="h-4 w-4" /> {addLabel}
         </button>
       </div>
@@ -590,6 +595,7 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
           <SaveStatusBadge status={blockStatus} />
         </div>
         <button onClick={() => setAddingNew(true)} disabled={addingNew}
+          title="Add a content block to this page"
           className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none`}>
           Add Block
           <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}>
@@ -607,6 +613,7 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
             No content blocks yet.
           </p>
           <button
+            title="Add the first content block to this page"
             onClick={() => setAddingNew(true)}
             className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
           >
@@ -632,6 +639,7 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
               }
               <div className="flex flex-wrap items-center gap-3">
                 <button onClick={() => handleSave(block.id)} disabled={saving}
+                  title="Close this block — changes save as you type"
                   className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none`}>
                   Done
                   <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}>
@@ -663,6 +671,7 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
           }
           <div className="flex flex-wrap items-center gap-2.5">
             <button onClick={handleAdd} disabled={saving}
+              title="Save this new block to the page"
               className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none`}>
               Add
               <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}>
@@ -670,6 +679,7 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
               </span>
             </button>
             <button onClick={() => { setAddingNew(false); setNewContent(""); setNewLogos([]); }}
+              title="Discard this new block"
               className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}>
               Cancel
               <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-[#F7F1F1] transition-transform duration-500 ${EASE} group-hover:scale-105`}>

@@ -110,6 +110,7 @@ export default function ServiceTiersSection({
             setEditingTier(null);
             setIsModalOpen(true);
           }}
+          title="Add a pricing tier to this service"
           className={`group inline-flex items-center gap-2.5 rounded-full bg-lyp-cherry py-1 pl-4 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`}
         >
           Add Tier
@@ -139,6 +140,7 @@ export default function ServiceTiersSection({
               setEditingTier(null);
               setIsModalOpen(true);
             }}
+            title="Add the first pricing tier to this service"
             className={`mt-3 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
           >
             Add your first tier
@@ -171,6 +173,7 @@ export default function ServiceTiersSection({
                           onClick={() => handleMove(index, "up")}
                           disabled={index === 0}
                           aria-label={`Move ${tier.name} up`}
+                          title={`Move ${tier.name} up the list`}
                           className={iconButtonClasses}
                         >
                           <ChevronUp strokeWidth={1.5} className="h-3.5 w-3.5" />
@@ -180,6 +183,7 @@ export default function ServiceTiersSection({
                           onClick={() => handleMove(index, "down")}
                           disabled={index === tiers.length - 1}
                           aria-label={`Move ${tier.name} down`}
+                          title={`Move ${tier.name} down the list`}
                           className={iconButtonClasses}
                         >
                           <ChevronDown

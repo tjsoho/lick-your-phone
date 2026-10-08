@@ -84,6 +84,7 @@ export default async function AdminIntakePage({
       <header className="animate-rise mb-6">
         <Link
           href={`/admin/proposals/${id}`}
+          title={`Back to ${clientName}'s proposal`}
           className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
           <ArrowLeft
@@ -185,6 +186,7 @@ function ResponseValue({
                 href={f.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                title={`Open ${f.name ?? "this file"} in a new tab`}
                 className={`inline-flex items-center gap-1.5 font-body text-[13px] font-medium text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
               >
                 {f.name ?? "File"}

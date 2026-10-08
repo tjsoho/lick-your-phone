@@ -66,6 +66,7 @@ export default async function VenuesPage(props: {
 
         <Link
           href="/admin/venues/new"
+          title="Add a new venue"
           className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`}
         >
           Create Venue
@@ -129,6 +130,7 @@ export default async function VenuesPage(props: {
                     </p>
                     <Link
                       href="/admin/venues/new"
+                      title="Add the first venue"
                       className={`mt-3 inline-block font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
                     >
                       Create a venue

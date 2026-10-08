@@ -319,6 +319,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
         <div className="flex items-center justify-between gap-4">
           <h2 className={sectionTitleClasses}>{title}</h2>
           <button
+            title={`Add an item to ${title}`}
             type="button"
             onClick={() => addItem(items, setItems)}
             className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
@@ -338,6 +339,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
               <div key={index} className="flex items-center gap-2">
                 <div className="flex flex-col">
                   <button
+                    title={`Move ${title} item ${index + 1} up`}
                     type="button"
                     onClick={() => moveItem(index, "up", items, setItems)}
                     disabled={index === 0}
@@ -352,6 +354,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
                     <ChevronUp strokeWidth={1.5} className="h-3.5 w-3.5" />
                   </button>
                   <button
+                    title={`Move ${title} item ${index + 1} down`}
                     type="button"
                     onClick={() => moveItem(index, "down", items, setItems)}
                     disabled={index === items.length - 1}
@@ -375,6 +378,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
                   aria-label={`${title} item ${index + 1}`}
                 />
                 <button
+                  title={`Remove ${title} item ${index + 1}`}
                   type="button"
                   onClick={() => removeItem(index, items, setItems)}
                   aria-label={`Remove ${title} item ${index + 1}`}
@@ -546,6 +550,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
       {/* Actions */}
       <div className="flex flex-wrap items-center gap-3">
         <button
+          title={isEditing ? "Save changes to this service" : "Create this service"}
           type="submit"
           disabled={saving}
           className={cn(
@@ -570,6 +575,7 @@ export default function ServiceForm({ service }: ServiceFormProps) {
 
         {isEditing && (
           <button
+            title={`Delete ${service?.name ?? "this service"} — cannot be undone`}
             type="button"
             onClick={handleDelete}
             disabled={deleting}

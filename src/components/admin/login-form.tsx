@@ -109,6 +109,7 @@ export default function LoginForm() {
               type="button"
               onClick={() => setShowPassword((v) => !v)}
               className={`absolute inset-y-0 right-0 flex items-center px-5 text-[#9C8C8C] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
+              title={showPassword ? "Hide the password" : "Show the password"}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
@@ -123,6 +124,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={isLoading}
+          title={isLoading ? "Signing in" : "Sign in to the admin dashboard"}
           className={`group mt-2 flex w-full items-center justify-between rounded-full bg-lyp-cherry py-2 pl-7 pr-2 font-body text-[14px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-8px_rgba(178,38,38,0.45)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] hover:shadow-[0_14px_38px_-8px_rgba(178,38,38,0.55)] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-60`}
         >
           <span>{isLoading ? "Signing in" : "Sign in"}</span>

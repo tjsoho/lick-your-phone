@@ -222,6 +222,11 @@ export default function PageEditorWorkspace({
               href={
                 serviceSlug ? `/admin/services/${serviceSlug}` : "/admin/services"
               }
+              title={
+                serviceSlug
+                  ? "Edit this service's prices and terms"
+                  : "Open the services list"
+              }
               className={`mt-4 inline-flex items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-2 font-body text-[12.5px] font-semibold text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
             >
               Edit prices &amp; terms
@@ -281,6 +286,11 @@ export default function PageEditorWorkspace({
                   onClick={() => setDevice(option)}
                   aria-label={`${option} preview`}
                   aria-pressed={active}
+                  title={
+                    option === "desktop"
+                      ? "Preview this page at desktop size"
+                      : "Preview this page at phone size"
+                  }
                   className={`rounded-full p-1.5 transition-colors duration-500 ${EASE} ${
                     active
                       ? "bg-lyp-cherry/[0.08] text-lyp-cherry"

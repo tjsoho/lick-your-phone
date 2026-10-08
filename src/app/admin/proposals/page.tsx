@@ -128,6 +128,7 @@ export default async function ProposalsPage() {
 
         <Link
           href="/admin/proposals/new"
+          title="Start a new proposal for a client"
           className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`}
         >
           New Proposal

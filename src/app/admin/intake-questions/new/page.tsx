@@ -19,6 +19,7 @@ export default async function NewIntakeQuestionPage() {
       <header className="animate-rise mb-6">
         <Link
           href="/admin/intake-questions"
+          title="Back to all onboarding questions"
           className={`group inline-flex items-center gap-2.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
           <span

@@ -195,6 +195,7 @@ export default function VenueForm({ venue, clients, states }: Props) {
         <button
           type="submit"
           disabled={isSubmitting}
+          title={isSubmitting ? "Saving this venue" : "Create this venue"}
           className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:opacity-50`}
         >
           {isSubmitting
@@ -213,6 +214,11 @@ export default function VenueForm({ venue, clients, states }: Props) {
         <button
           type="button"
           onClick={() => router.back()}
+          title={
+            isEditing
+              ? "Go back to the previous page"
+              : "Cancel and go back without creating this venue"
+          }
           className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
         >
           {isEditing ? "Back" : "Cancel"}

@@ -191,6 +191,7 @@ export default function IntakeQuestionsList({
           </p>
           <Link
             href="/admin/intake-questions/new"
+            title="Write the first onboarding question"
             className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
           >
             Add Question

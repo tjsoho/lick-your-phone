@@ -99,6 +99,7 @@ export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
                       <td className="whitespace-nowrap px-5 py-3">
                         <Link
                           href={`/admin/clients/${client.id}`}
+                          title={`Open ${client.name}`}
                           className={`font-medium text-lyp-black transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                         >
                           {client.name}
@@ -148,6 +149,7 @@ export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
                     <button
                       type="button"
                       onClick={() => setQuery("")}
+                      title="Clear the search and show every client"
                       className={`mt-3 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
                     >
                       Clear search
@@ -168,6 +170,7 @@ export default function ClientsTable({ clients }: { clients: ClientRow[] }) {
                     </p>
                     <Link
                       href="/admin/proposals/new"
+                      title="Start your first proposal"
                       className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
                     >
                       Create your first proposal

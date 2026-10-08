@@ -61,6 +61,7 @@ export default function StatesList({ states }: Props) {
       {!showForm && (
         <button
           onClick={() => setShowForm(true)}
+          title="Add a state providers can cover"
           className={`group mb-4 inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`}
         >
           Add State
@@ -106,6 +107,7 @@ export default function StatesList({ states }: Props) {
             <button
               onClick={handleCreate}
               disabled={saving}
+              title={saving ? "Saving this state" : "Save this new state"}
               className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:opacity-50`}
             >
               {saving ? "Saving..." : "Add State"}
@@ -125,6 +127,7 @@ export default function StatesList({ states }: Props) {
                 setCode("");
                 setName("");
               }}
+              title="Discard this new state"
               className={`group inline-flex items-center gap-3 rounded-full border border-[#EFE6E6] bg-lyp-white py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
             >
               Cancel
@@ -153,6 +156,7 @@ export default function StatesList({ states }: Props) {
             </p>
             <button
               onClick={() => setShowForm(true)}
+              title="Add your first state"
               className={`mt-3 inline-block font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
             >
               Add your first state

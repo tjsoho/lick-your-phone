@@ -65,30 +65,35 @@ export default async function AdminDashboard() {
       value: clientsRes.count ?? 0,
       icon: Users,
       href: "/admin/clients",
+      title: "Open the client list",
     },
     {
       label: "Active Proposals",
       value: proposalsRes.count ?? 0,
       icon: FileText,
       href: "/admin/proposals",
+      title: "Open the proposal list",
     },
     {
       label: "New This Week",
       value: newProposalsRes.count ?? 0,
       icon: FileText,
       href: "/admin/proposals",
+      title: "Open the proposal list to see this week's new ones",
     },
     {
       label: "Services",
       value: servicesRes.count ?? 0,
       icon: Package,
       href: "/admin/services",
+      title: "Manage services and their pricing tiers",
     },
     {
       label: "States",
       value: statesRes.count ?? 0,
       icon: MapPin,
       href: "/admin/states",
+      title: "Manage the states providers can cover",
     },
   ];
 
@@ -122,6 +127,7 @@ export default async function AdminDashboard() {
             <Link
               key={stat.label}
               href={stat.href}
+              title={stat.title}
               className={`group flex items-center gap-3.5 rounded-2xl border border-[#E2D5D5] bg-lyp-white px-4 py-3.5 transition-all duration-500 ${EASE} hover:border-lyp-cherry/20 hover:shadow-[0_12px_28px_-16px_rgba(61,11,17,0.25)]`}
             >
               <span
@@ -163,6 +169,7 @@ export default async function AdminDashboard() {
         <div className="mt-3.5 flex flex-wrap gap-2.5">
           <Link
             href="/admin/proposals/new"
+            title="Start a new proposal"
             className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1 pl-5 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] hover:shadow-[0_14px_36px_-10px_rgba(178,38,38,0.6)] active:scale-[0.985]`}
           >
             New Proposal
@@ -175,6 +182,7 @@ export default async function AdminDashboard() {
 
           <Link
             href="/admin/services"
+            title="Manage services and their pricing tiers"
             className={`group inline-flex items-center gap-3 rounded-full border border-[#E2D5D5] bg-lyp-white py-1 pl-5 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
           >
             Manage Services
@@ -187,6 +195,7 @@ export default async function AdminDashboard() {
 
           <Link
             href="/admin/settings"
+            title="Edit the terms and the signature settings"
             className={`group inline-flex items-center gap-3 rounded-full border border-[#E2D5D5] bg-lyp-white py-1 pl-5 pr-1 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
           >
             Terms &amp; Signature
@@ -211,6 +220,7 @@ export default async function AdminDashboard() {
           {recentProposals.length > 0 && (
             <Link
               href="/admin/proposals"
+              title="Open the full proposal list"
               className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
             >
               View all
@@ -236,6 +246,7 @@ export default async function AdminDashboard() {
               </p>
               <Link
                 href="/admin/proposals/new"
+                title="Start your first proposal"
                 className={`mt-4 inline-flex items-center gap-2 font-body text-[13px] font-semibold text-lyp-cherry transition-opacity duration-500 ${EASE} hover:opacity-70`}
               >
                 Create your first proposal
@@ -269,6 +280,7 @@ export default async function AdminDashboard() {
                       <td className="whitespace-nowrap px-5 py-3">
                         <Link
                           href={`/admin/clients/${proposal.clients?.id}`}
+                          title={`Open ${proposal.clients?.name ?? "this client"}`}
                           className={`font-medium text-lyp-black transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
                         >
                           {proposal.clients?.name ?? "Unknown"}

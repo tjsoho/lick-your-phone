@@ -328,6 +328,7 @@ function ListEditor({
       <div className="flex items-center justify-between gap-4">
         <span className={labelClasses}>{title}</span>
         <button
+          title={`Add another ${itemLabel.toLowerCase()}`}
           type="button"
           onClick={() =>
             onChange((prev) => [...prev, { key: newKey(), text: "" }])
@@ -349,6 +350,7 @@ function ListEditor({
             <div key={row.key} className="flex items-center gap-2">
               <div className="flex flex-col">
                 <button
+                  title={`Move ${itemLabel.toLowerCase()} ${index + 1} up`}
                   type="button"
                   onClick={() => move(index, -1)}
                   disabled={index === 0}
@@ -363,6 +365,7 @@ function ListEditor({
                   <ChevronUp strokeWidth={1.5} className="h-3.5 w-3.5" />
                 </button>
                 <button
+                  title={`Move ${itemLabel.toLowerCase()} ${index + 1} down`}
                   type="button"
                   onClick={() => move(index, 1)}
                   disabled={index === rows.length - 1}
@@ -391,6 +394,7 @@ function ListEditor({
                 className={cn(inputClasses, "flex-1")}
               />
               <button
+                title={`Remove ${itemLabel.toLowerCase()} ${index + 1}`}
                 type="button"
                 onClick={() =>
                   onChange((prev) => prev.filter((r) => r.key !== row.key))

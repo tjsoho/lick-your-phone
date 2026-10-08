@@ -266,6 +266,7 @@ export default async function ProposalDetailPage({
       <header className="animate-rise mb-6">
         <Link
           href="/admin/proposals"
+          title="Back to all proposals"
           className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
           <ArrowLeft
@@ -666,6 +667,7 @@ export default async function ProposalDetailPage({
               </div>
               <Link
                 href={`/admin/proposals/${id}/intake`}
+                title="Read the client's onboarding answers"
                 className={`inline-flex flex-shrink-0 items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-2 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
               >
                 Review form

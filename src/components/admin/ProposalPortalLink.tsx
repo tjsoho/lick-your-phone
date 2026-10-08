@@ -67,6 +67,9 @@ export default function ProposalPortalLink({
         <button
           type="button"
           onClick={handleCopy}
+          title={
+            copied ? "Link copied" : "Copy the client's link to the clipboard"
+          }
           className={`inline-flex flex-shrink-0 items-center gap-2 rounded-full border border-lyp-cherry/25 bg-lyp-white px-4 py-2 font-body text-[12.5px] font-semibold tracking-wide text-lyp-cherry outline-none transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.08] focus-visible:ring-2 focus-visible:ring-lyp-cherry/40 active:scale-[0.985]`}
         >
           {copied ? (
@@ -81,6 +84,7 @@ export default function ProposalPortalLink({
           href={url}
           target="_blank"
           rel="noopener noreferrer"
+          title="Open the client's view in a new tab"
           className={`inline-flex flex-shrink-0 items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-2 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black outline-none transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry focus-visible:ring-2 focus-visible:ring-lyp-cherry/40 active:scale-[0.985]`}
         >
           <ExternalLink strokeWidth={1.75} className="h-3.5 w-3.5" />

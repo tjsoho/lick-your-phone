@@ -91,6 +91,7 @@ export default function ProposalInternalNotes({
         <button
           type="submit"
           disabled={submitting || !content.trim()}
+          title="Save this note to the proposal — the client never sees it"
           className={`group inline-flex flex-shrink-0 items-center justify-center gap-3 self-start rounded-full bg-lyp-cherry py-1.5 pl-5 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none sm:self-auto`}
         >
           {submitting ? "Adding" : "Add Note"}

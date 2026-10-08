@@ -66,6 +66,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
       <button
         onClick={() => setMobileOpen(true)}
         className={`fixed left-4 top-4 z-50 flex h-9 w-9 items-center justify-center rounded-full bg-lyp-black text-lyp-white shadow-[0_10px_30px_-12px_rgba(61,11,17,0.5)] transition-transform duration-500 lg:hidden ${EASE} active:scale-95`}
+        title="Open the admin menu"
         aria-label="Open menu"
       >
         <Menu strokeWidth={1.5} className="h-4 w-4" />
@@ -104,6 +105,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
             <button
               onClick={() => setMobileOpen(false)}
               className={`flex h-7 w-7 items-center justify-center rounded-full text-lyp-white/60 transition-colors duration-500 lg:hidden ${EASE} hover:bg-lyp-white/10 hover:text-lyp-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-white/40`}
+              title="Close the admin menu"
               aria-label="Close menu"
             >
               <X strokeWidth={1.5} className="h-4 w-4" />
@@ -112,6 +114,11 @@ export default function Sidebar({ userEmail }: SidebarProps) {
             <button
               onClick={() => setCollapsed(!collapsed)}
               className={`hidden h-7 w-7 items-center justify-center rounded-full text-lyp-white/60 transition-colors duration-500 lg:flex ${EASE} hover:bg-lyp-white/10 hover:text-lyp-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-white/40`}
+              title={
+                collapsed
+                  ? "Expand the sidebar to show labels"
+                  : "Collapse the sidebar to icons"
+              }
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               <ChevronLeft
@@ -148,7 +155,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
                         ? "bg-lyp-cherry text-lyp-white shadow-[0_10px_28px_-12px_rgba(178,38,38,0.7)]"
                         : "text-lyp-white/60 hover:bg-lyp-white/[0.07] hover:text-lyp-white",
                     )}
-                    title={collapsed ? item.label : undefined}
+                    title={`Go to ${item.label}`}
                     aria-current={active ? "page" : undefined}
                     aria-label={collapsed ? item.label : undefined}
                   >
@@ -177,7 +184,7 @@ export default function Sidebar({ userEmail }: SidebarProps) {
               `flex w-full items-center gap-3 rounded-full px-3 py-2 text-[12.5px] font-medium tracking-wide text-lyp-white/60 transition-all duration-500 ${EASE} hover:bg-lyp-white/[0.07] hover:text-lyp-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lyp-white/40`,
               collapsed && "justify-center",
             )}
-            title={collapsed ? "Logout" : undefined}
+            title="Log out of the admin dashboard"
             aria-label={collapsed ? "Logout" : undefined}
           >
             <LogOut strokeWidth={1.5} className="h-[18px] w-[18px] flex-shrink-0" />

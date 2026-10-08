@@ -28,6 +28,7 @@ export default async function EditVenuePage(props: {
       <header className="animate-rise mb-6">
         <Link
           href="/admin/venues"
+          title="Back to all venues"
           className={`group inline-flex items-center gap-1.5 font-body text-[12px] font-semibold tracking-wide text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
         >
           <ArrowLeft

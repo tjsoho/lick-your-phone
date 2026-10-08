@@ -60,6 +60,7 @@ export default function ClientLogoField({
             <button
               type="button"
               onClick={() => setLibraryOpen(true)}
+              title="Choose a different client logo"
               className={`flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
             >
               <Images strokeWidth={1.5} className="h-3.5 w-3.5" />
@@ -68,6 +69,7 @@ export default function ClientLogoField({
             <button
               type="button"
               onClick={() => onChange("")}
+              title="Remove the client logo"
               className={`flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`}
             >
               <Trash2 strokeWidth={1.5} className="h-3.5 w-3.5" />
@@ -79,6 +81,7 @@ export default function ClientLogoField({
         <button
           type="button"
           onClick={() => setLibraryOpen(true)}
+          title="Choose the client's logo from the media library"
           aria-labelledby={`${idPrefix}-label`}
           className={`mt-2.5 flex w-full max-w-xs flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#EFE6E6] bg-[#FBF8F8] py-7 text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/30 hover:text-lyp-cherry`}
         >

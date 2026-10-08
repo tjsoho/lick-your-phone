@@ -204,6 +204,7 @@ export default function TierForm({
         <button
           type="button"
           onClick={onCancel}
+          title="Discard this tier and close the form"
           className={`inline-flex items-center rounded-full border border-[#EFE6E6] bg-lyp-white px-5 py-2 font-body text-[13px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
         >
           Cancel
@@ -213,6 +214,13 @@ export default function TierForm({
           type={isEditing ? "button" : "submit"}
           onClick={isEditing ? onSuccess : undefined}
           disabled={saving}
+          title={
+            saving
+              ? "Saving this tier"
+              : isEditing
+                ? "Close this tier, which saves as you type"
+                : "Add this tier to the service"
+          }
           className={cn(
             `group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-5 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`,
             saving && "cursor-not-allowed opacity-50"
