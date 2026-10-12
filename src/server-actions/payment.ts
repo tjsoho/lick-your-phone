@@ -1,6 +1,15 @@
 "use server";
 
-import { createAdminClient } from "@/utils/server";
+import { createAdminClient, createClient } from "@/utils/server";
+import {
+  bankDetailsConfigured,
+  decryptField,
+  encryptField,
+  formatBsb,
+  lastThree,
+  normaliseAccountNumber,
+  normaliseBsb,
+} from "@/lib/bank-details";
 import { createPayer, vaultSource } from "@/lib/pinch";
 import crypto from "crypto";
 import { dispatchNotification } from "@/lib/notification-service";
@@ -316,5 +325,181 @@ export async function resedNotificationForPayment(proposalId: string) {
     throw new Error(
       `Failed to resend notification: ${(error as Error).message}`,
     );
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Bank account details, held for accounting                         */
+/* ------------------------------------------------------------------ */
+
+/**
+ * HOLDING AN ACCOUNT, NOT CHARGING IT.
+ *
+ * "Collect BSB and account number instead of credit card details", and no
+ * payment is taken: accounting debits the account later out of band. So this
+ * does none of the Pinch work above. It validates, encrypts, and records that
+ * the client gave their authority.
+ *
+ * The numbers are encrypted before they reach the database and never come
+ * back to a browser from here. Reading them again is a separate, deliberate
+ * act by a signed-in member of staff, and it leaves a line in the timeline.
+ */
+export async function captureBankDetails(
+  proposalId: string,
+  input: { accountName: string; bsb: string; accountNumber: string },
+): Promise<CaptureResult> {
+  try {
+    if (!bankDetailsConfigured()) {
+      throw new Error(
+        "Bank details cannot be stored yet: the server is missing BANK_DETAILS_KEY.",
+      );
+    }
+
+    const accountName = input.accountName.trim();
+    if (accountName.length < 2) {
+      throw new Error("Enter the name on the account.");
+    }
+
+    const bsb = normaliseBsb(input.bsb);
+    if (!bsb) throw new Error("A BSB is six digits, e.g. 083-004.");
+
+    const accountNumber = normaliseAccountNumber(input.accountNumber);
+    if (!accountNumber) {
+      throw new Error("An account number is between six and ten digits.");
+    }
+
+    const supabase = await createAdminClient();
+
+    const { data: proposal, error: proposalErr } = await supabase
+      .from("proposals")
+      .select(
+        "id, status, token, signer_email, clients(id, name, email), venues(name, address)",
+      )
+      .eq("id", proposalId)
+      .single();
+
+    if (proposalErr || !proposal) {
+      throw new Error(proposalErr?.message || "Proposal not found");
+    }
+    // The same gate the card path has: nothing is collected before signing.
+    if (proposal.status !== "signed") {
+      throw new Error(
+        "Proposal must be signed before bank details can be captured",
+      );
+    }
+
+    const now = new Date().toISOString();
+    const { data: payment, error: paymentErr } = await supabase
+      .from("payments")
+      .insert({
+        proposal_id: proposalId,
+        bank_account_name: accountName,
+        bank_bsb_encrypted: encryptField(bsb),
+        bank_account_number_encrypted: encryptField(accountNumber),
+        bank_account_last_three: lastThree(accountNumber),
+        // Submitting the form IS the authority; the wording sits above the
+        // button and the tick is required before it can be pressed.
+        bank_authorised_at: now,
+        status: "details_captured",
+        details_captured_at: now,
+      })
+      .select("id")
+      .single();
+
+    if (paymentErr || !payment) {
+      throw new Error(paymentErr?.message || "Failed to store bank details");
+    }
+
+    const client = proposal.clients as unknown as {
+      name: string;
+      email: string;
+    } | null;
+    const venue = proposal.venues as unknown as {
+      name: string;
+      address: string | null;
+    } | null;
+    const appUrl = await getAppUrl();
+
+    // No card, no schedule, so the payload says what there is: an account on
+    // file, by its last three digits, which is all anyone needs to recognise
+    // it. The digits themselves never go in a notification or an audit row.
+    const payload = {
+      proposalId,
+      accountName,
+      accountLastThree: lastThree(accountNumber),
+      client: {
+        clientName: client?.name || "",
+        clientEmail: proposal.signer_email || client?.email || "",
+        venueName: venue?.name || "",
+        venueAddress: venue?.address || "",
+        portalUrl: `${appUrl}/portal/${proposal.token}`,
+      },
+      intakeUrl: `${appUrl}/intake/${proposal.token}`,
+    };
+
+    await Promise.allSettled([
+      logAuditEvent(proposalId, "PAYMENT_CAPTURED", payload),
+      dispatchNotification("PAYMENT_CAPTURED", payload),
+    ]);
+
+    return { data: { paymentId: payment.id }, error: null };
+  } catch (error) {
+    return { data: null, error: (error as Error).message };
+  }
+}
+
+/**
+ * Show a member of staff the whole account, once, on purpose.
+ *
+ * Guarded by a real session rather than the service role alone, and every
+ * look is written to the proposal's timeline with the email of whoever asked.
+ * Accounting needs the numbers; nobody needs them by accident.
+ */
+export async function revealBankDetails(proposalId: string): Promise<{
+  data: { accountName: string; bsb: string; accountNumber: string } | null;
+  error: string | null;
+}> {
+  try {
+    const session = await createClient();
+    const {
+      data: { user },
+    } = await session.auth.getUser();
+    if (!user) return { data: null, error: "Not signed in." };
+
+    const supabase = await createAdminClient();
+    const { data: payment, error } = await supabase
+      .from("payments")
+      .select(
+        "bank_account_name, bank_bsb_encrypted, bank_account_number_encrypted",
+      )
+      .eq("proposal_id", proposalId)
+      .not("bank_bsb_encrypted", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    if (!payment?.bank_bsb_encrypted || !payment.bank_account_number_encrypted) {
+      return { data: null, error: "No bank details on file." };
+    }
+
+    const bsb = decryptField(payment.bank_bsb_encrypted);
+    const accountNumber = decryptField(payment.bank_account_number_encrypted);
+
+    await logAuditEvent(proposalId, "BANK_DETAILS_VIEWED", {
+      proposalId,
+      viewedBy: user.email ?? user.id,
+    });
+
+    return {
+      data: {
+        accountName: payment.bank_account_name ?? "",
+        bsb: formatBsb(bsb),
+        accountNumber,
+      },
+      error: null,
+    };
+  } catch (error) {
+    return { data: null, error: (error as Error).message };
   }
 }

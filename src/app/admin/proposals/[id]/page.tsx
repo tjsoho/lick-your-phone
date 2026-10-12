@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 import ProposalDeckOverview from "@/components/admin/ProposalDeckOverview";
+import BankDetailsCard from "@/components/admin/BankDetailsCard";
 import ProposalDiscountTimer from "@/components/admin/ProposalDiscountTimer";
 import SendProposalButton from "@/components/admin/SendProposalButton";
 import ProposalPortalLink from "@/components/admin/ProposalPortalLink";
@@ -169,6 +170,18 @@ export default async function ProposalDetailPage({
     .order("created_at", { ascending: false });
 
   const events = auditEvents || [];
+
+  // The account the client put on file, if they gave one. Only the name, the
+  // last three digits and the authority date are read here: the numbers stay
+  // encrypted in the row and come out one deliberate click at a time.
+  const { data: bankRow } = await supabase
+    .from("payments")
+    .select("bank_account_name, bank_account_last_three, bank_authorised_at")
+    .eq("proposal_id", id)
+    .not("bank_account_last_three", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   const notes = (proposal.internal_notes ?? []) as unknown as InternalNote[];
 
@@ -627,6 +640,15 @@ export default async function ProposalDetailPage({
           </div>
         ) : (
           <div className="space-y-6">
+            {bankRow && (
+              <BankDetailsCard
+                proposalId={id}
+                accountName={bankRow.bank_account_name}
+                lastThree={bankRow.bank_account_last_three}
+                authorisedAt={bankRow.bank_authorised_at}
+              />
+            )}
+
             {/* Onboarding form check */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] px-4 py-3.5">
               <div className="flex items-start gap-3">

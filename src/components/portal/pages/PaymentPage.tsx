@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { useReducedMotion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useCopy, useProposal } from "../ProposalContext";
-import { capturePaymentDetails } from "@/server-actions/payment";
+import { captureBankDetails } from "@/server-actions/payment";
 import Link from "next/link";
 import Reveal, { revealDelay } from "../Reveal";
 
@@ -57,65 +57,15 @@ const capturedThisSession = new Set<string>();
 /*  Types                                                             */
 /* ------------------------------------------------------------------ */
 
-interface PinchCapture {
-  createToken: (opts: {
-    sourceType: string;
-    cardNumber: string;
-    expiryMonth: string;
-    expiryYear: string;
-    cvc: string;
-    cardholderName: string;
-  }) => Promise<{ token: string }>;
-}
+/* The card path lived here: a Pinch capture type, the brand and expiry
+   formatters, and a loader for their capture.js. All of it has gone with the
+   card form. No payment is taken in the portal any more, so nothing needs
+   tokenising; the account is held for accounting to debit later. The server
+   action beside the new one still does the Pinch work for any proposal that
+   captured a card before this change.
 
-declare global {
-  interface Window {
-    Pinch?: {
-      Capture: new (params: { publishableKey: string }) => PinchCapture;
-    };
-  }
-}
-
-/* ------------------------------------------------------------------ */
-/*  Helpers                                                           */
-/* ------------------------------------------------------------------ */
-
-function detectCardBrand(number: string): string {
-  const cleaned = number.replace(/\s/g, "");
-  if (/^4/.test(cleaned)) return "visa";
-  if (/^5[1-5]/.test(cleaned) || /^2[2-7]/.test(cleaned)) return "mastercard";
-  if (/^3[47]/.test(cleaned)) return "amex";
-  if (/^36/.test(cleaned)) return "diners";
-  return "unknown";
-}
-
-function formatCardNumber(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 16);
-  return digits.replace(/(.{4})/g, "$1 ").trim();
-}
-
-function formatExpiry(value: string): string {
-  const digits = value.replace(/\D/g, "").slice(0, 4);
-  if (digits.length >= 3) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
-  return digits;
-}
-
-/** Load Pinch capture.js dynamically – only when the user submits */
-function loadPinchScript(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (window.Pinch) {
-      resolve();
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://cdn.getpinch.com.au/capturejs/pinch.capture.v2.js";
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () =>
-      reject(new Error("Failed to load Pinch capture script"));
-    document.head.appendChild(script);
-  });
-}
+   Restoring the card form means bringing that block back from history; it is
+   a clean revert of this commit rather than a rewrite. */
 
 /* ------------------------------------------------------------------ */
 /*  The hand-off to onboarding                                        */
@@ -441,37 +391,25 @@ function PaymentForm({
     return () => clearTimeout(id);
   }, [stage, alreadyDone, reduceMotion, goAuto]);
 
-  // Form state
-  const [cardNumber, setCardNumber] = useState("");
-  const [expiry, setExpiry] = useState("");
-  const [cvc, setCvc] = useState("");
-  const [cardholderName, setCardholderName] = useState("");
+  // Form state. An account rather than a card: no payment is taken here, the
+  // details are held for accounting to debit later.
+  const [accountName, setAccountName] = useState("");
+  const [bsb, setBsb] = useState("");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [authorised, setAuthorised] = useState(false);
 
-  // Refs for the raw digits
-  const rawCardRef = useRef("");
-  const rawExpiryRef = useRef("");
-
-  const handleCardNumberChange = useCallback(
+  /** 083-004, which is how a BSB is written on every form in the country. */
+  const handleBsbChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = e.target.value.replace(/\D/g, "").slice(0, 16);
-      rawCardRef.current = raw;
-      setCardNumber(formatCardNumber(e.target.value));
+      const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+      setBsb(digits.length > 3 ? `${digits.slice(0, 3)}-${digits.slice(3)}` : digits);
     },
     [],
   );
 
-  const handleExpiryChange = useCallback(
+  const handleAccountNumberChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const raw = e.target.value.replace(/\D/g, "").slice(0, 4);
-      rawExpiryRef.current = raw;
-      setExpiry(formatExpiry(e.target.value));
-    },
-    [],
-  );
-
-  const handleCvcChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setCvc(e.target.value.replace(/\D/g, "").slice(0, 4));
+      setAccountNumber(e.target.value.replace(/\D/g, "").slice(0, 10));
     },
     [],
   );
@@ -479,24 +417,21 @@ function PaymentForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const rawCard = rawCardRef.current;
-    const rawExp = rawExpiryRef.current;
-
-    // Basic validation
-    if (rawCard.length < 13) {
-      setErrorMsg("Please enter a valid card number");
+    const bsbDigits = bsb.replace(/\D/g, "");
+    if (!accountName.trim()) {
+      setErrorMsg("Please enter the name on the account");
       return;
     }
-    if (rawExp.length < 4) {
-      setErrorMsg("Please enter a valid expiry date (MM/YY)");
+    if (bsbDigits.length !== 6) {
+      setErrorMsg("A BSB is six digits, e.g. 083-004");
       return;
     }
-    if (cvc.length < 3) {
-      setErrorMsg("Please enter a valid CVC");
+    if (accountNumber.length < 6) {
+      setErrorMsg("Please enter the full account number");
       return;
     }
-    if (!cardholderName.trim()) {
-      setErrorMsg("Please enter the cardholder name");
+    if (!authorised) {
+      setErrorMsg("Please confirm you authorise the direct debit");
       return;
     }
 
@@ -504,49 +439,16 @@ function PaymentForm({
     setErrorMsg("");
 
     try {
-      // Load Pinch script dynamically
-      const publishableKey = process.env.NEXT_PUBLIC_PINCH_PUBLISHABLE_KEY;
-
-      if (!publishableKey) {
-        // Dev mode – skip tokenisation but still call the server action
-        // In production this would be an error
-        throw new Error(
-          "Pinch publishable key not configured. Set NEXT_PUBLIC_PINCH_PUBLISHABLE_KEY.",
-        );
-      }
-
-      await loadPinchScript();
-
-      if (!window.Pinch) {
-        throw new Error("Pinch capture library failed to initialise");
-      }
-
-      const capture = new window.Pinch.Capture({ publishableKey });
-
-      // Tokenise the card client-side – raw number never leaves the browser
-      const expiryFormatted = `${rawExp.slice(0, 2)}/${rawExp.slice(2)}`;
-      const expiryMonth = rawExp.slice(0, 2);
-      const expiryYear = `20${rawExp.slice(2)}`;
-
-      const { token } = await capture.createToken({
-        sourceType: "credit-card",
-        cardNumber: rawCard,
-        expiryMonth: expiryMonth,
-        expiryYear: expiryYear,
-        cvc: cvc,
-        cardholderName: cardholderName.trim(),
+      // Straight to the server, which encrypts before it stores. There is no
+      // provider in the middle: nothing is being charged, the account is
+      // being put on file.
+      const result = await captureBankDetails(proposalId, {
+        accountName: accountName.trim(),
+        bsb: bsbDigits,
+        accountNumber,
       });
 
-      // Send ONLY the token to the server
-      const result = await capturePaymentDetails(proposalId, token, {
-        lastFour: rawCard.slice(-4),
-        brand: detectCardBrand(rawCard),
-        expiry: expiryFormatted,
-      });
-
-      if (result.error) {
-        throw new Error(result.error);
-      }
+      if (result.error) throw new Error(result.error);
 
       // Remembered beyond this component: from here on, every arrival on
       // this slide is a confirmation, never the form again.
@@ -620,85 +522,89 @@ function PaymentForm({
         className="w-full max-w-md space-y-5"
         autoComplete="off"
       >
-        {/* Cardholder Name */}
+        {/* Account name */}
         <Reveal index={2}>
-          <label className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block">
-            {t("cardholderLabel")}
+          <label
+            htmlFor="bank-account-name"
+            className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block"
+          >
+            {t("accountNameLabel")}
           </label>
           <input
+            id="bank-account-name"
             type="text"
-            value={cardholderName}
-            onChange={(e) => setCardholderName(e.target.value)}
-            placeholder="Name on card"
+            value={accountName}
+            onChange={(e) => setAccountName(e.target.value)}
+            placeholder="Name on the account"
             className="w-full rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3.5 font-body text-sm text-lyp-white placeholder:text-lyp-white/30 focus:border-lyp-cherry focus:outline-none focus:ring-1 focus:ring-lyp-cherry transition-colors"
             disabled={stage === "processing"}
             autoComplete="off"
           />
         </Reveal>
 
-        {/* Card Number */}
-        <Reveal index={3}>
-          <label className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block">
-            {t("cardNumberLabel")}
-          </label>
-          <div className="relative">
+        {/* BSB and account number */}
+        <Reveal index={3} className="grid grid-cols-[7rem_minmax(0,1fr)] gap-4">
+          <div>
+            <label
+              htmlFor="bank-bsb"
+              className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block"
+            >
+              {t("bsbLabel")}
+            </label>
             <input
+              id="bank-bsb"
               type="text"
               inputMode="numeric"
-              value={cardNumber}
-              onChange={handleCardNumberChange}
-              placeholder="1234 5678 9012 3456"
-              className="w-full rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3.5 font-body text-sm text-lyp-white placeholder:text-lyp-white/30 focus:border-lyp-cherry focus:outline-none focus:ring-1 focus:ring-lyp-cherry transition-colors pr-16"
+              value={bsb}
+              onChange={handleBsbChange}
+              placeholder="083-004"
+              className="w-full rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3.5 font-body text-sm tabular-nums text-lyp-white placeholder:text-lyp-white/30 focus:border-lyp-cherry focus:outline-none focus:ring-1 focus:ring-lyp-cherry transition-colors"
               disabled={stage === "processing"}
               autoComplete="off"
             />
-            {/* Card brand indicator */}
-            {rawCardRef.current.length >= 2 && (
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 font-body text-xs text-lyp-white/40 uppercase">
-                {detectCardBrand(rawCardRef.current)}
-              </span>
-            )}
+          </div>
+          <div>
+            <label
+              htmlFor="bank-account-number"
+              className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block"
+            >
+              {t("accountNumberLabel")}
+            </label>
+            <input
+              id="bank-account-number"
+              type="text"
+              inputMode="numeric"
+              value={accountNumber}
+              onChange={handleAccountNumberChange}
+              placeholder="12345678"
+              className="w-full rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3.5 font-body text-sm tabular-nums text-lyp-white placeholder:text-lyp-white/30 focus:border-lyp-cherry focus:outline-none focus:ring-1 focus:ring-lyp-cherry transition-colors"
+              disabled={stage === "processing"}
+              autoComplete="off"
+            />
           </div>
         </Reveal>
 
-        {/* Expiry + CVC row */}
-        <Reveal index={4} className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block">
-              {t("expiryLabel")}
-            </label>
+        {/* THE AUTHORITY.
+            A direct debit needs the account holder's agreement, so it is
+            asked for here rather than assumed, and the moment they give it is
+            stored beside the account. */}
+        <Reveal index={4}>
+          <label
+            htmlFor="bank-authority"
+            className="flex cursor-pointer items-start gap-3 rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3.5"
+          >
             <input
-              type="text"
-              inputMode="numeric"
-              value={expiry}
-              onChange={handleExpiryChange}
-              placeholder="MM/YY"
-              className="w-full rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3.5
-                         font-body text-sm text-lyp-white placeholder:text-lyp-white/30
-                         focus:border-lyp-cherry focus:outline-none focus:ring-1 focus:ring-lyp-cherry
-                         transition-colors"
+              id="bank-authority"
+              type="checkbox"
+              checked={authorised}
+              onChange={(e) => setAuthorised(e.target.checked)}
               disabled={stage === "processing"}
-              autoComplete="off"
+              className="mt-0.5 h-4 w-4 flex-shrink-0 accent-lyp-cherry"
             />
-          </div>
-          <div>
-            <label className="font-body text-xs text-lyp-white/50 uppercase tracking-wider mb-1.5 block">
-              {t("cvcLabel")}
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={cvc}
-              onChange={handleCvcChange}
-              placeholder="123"
-              className="w-full rounded-lg border border-lyp-white/10 bg-lyp-white/5 px-4 py-3.5
-                         font-body text-sm text-lyp-white placeholder:text-lyp-white/30
-                         focus:border-lyp-cherry focus:outline-none focus:ring-1 focus:ring-lyp-cherry
-                         transition-colors"
-              disabled={stage === "processing"}
-              autoComplete="off"
-            />
-          </div>
+            <span className="font-body text-[12.5px] leading-relaxed text-lyp-white/70">
+              {t("authorityText")}
+            </span>
+          </label>
         </Reveal>
 
         {/* Error message */}

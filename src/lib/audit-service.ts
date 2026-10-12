@@ -15,7 +15,8 @@ export type AuditEvent =
   | "INTAKE_COMPLETED"
   | "PAYMENT_SUCCEEDED"
   | "PAYMENT_CAPTURED"
-  | "PROPOSAL_VIEWED";
+  | "PROPOSAL_VIEWED"
+  | "BANK_DETAILS_VIEWED";
 
 interface AuditPayloadMap {
   PROPOSAL_SENT: Client;
@@ -61,15 +62,26 @@ interface AuditPayloadMap {
   };
   PAYMENT_CAPTURED: {
     client: Client;
-    amount: number;
-    paymentId: string;
     intakeUrl: string;
-    paymentSchedules: {
+    /** A card capture schedules the debits; a bank account on file does not. */
+    amount?: number;
+    paymentId?: string;
+    paymentSchedules?: {
       date: string;
       description: string;
       amount: number;
     }[];
+    /** Set when what was captured was a bank account rather than a card. */
+    accountName?: string;
+    accountLastThree?: string;
+    proposalId?: string;
   };
+  /**
+   * A member of staff asked to see a stored account in full. Timeline only,
+   * never dispatched: it is a record of who looked, for the agency's own
+   * sake, and it carries no part of the number.
+   */
+  BANK_DETAILS_VIEWED: { proposalId: string; viewedBy: string };
 }
 
 export async function logAuditEvent<K extends AuditEvent>(

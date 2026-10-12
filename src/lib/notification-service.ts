@@ -55,14 +55,22 @@ interface PayloadMap {
   };
   PAYMENT_CAPTURED: {
     client: Client;
-    amount: number;
-    paymentId: string;
     intakeUrl: string;
-    paymentSchedules: {
+    /** A card capture schedules the debits; a bank account on file does not. */
+    amount?: number;
+    paymentId?: string;
+    paymentSchedules?: {
       date: string;
       description: string;
       amount: number;
     }[];
+    /**
+     * Set when what was captured was a bank account rather than a card. The
+     * last three digits only: no webhook ever carries the whole number.
+     */
+    accountName?: string;
+    accountLastThree?: string;
+    proposalId?: string;
   };
 }
 
