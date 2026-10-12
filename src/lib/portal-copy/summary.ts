@@ -29,5 +29,5 @@ export const SUMMARY_COPY: CopySlot[] = [
   { key: "paymentCapturedTitle", label: "Payment on file: title", default: "Payment details captured" },
   { key: "paymentCapturedBody", label: "Payment on file: message", default: "Your payment information is on file. No further action needed.", multiline: true },
   { key: "addPaymentButton", label: "Add payment button", default: "Add your payment details" },
-  { key: "proceedButton", label: "Proceed button", default: "Proceed to Signature" },
+  { key: "proceedButton", label: "Proceed button", default: "Proceed" },
 ];

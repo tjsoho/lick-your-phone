@@ -17,6 +17,16 @@ const LOGO_SRC = "/images/Website logo.PNG";
 const LOGO_W = 383;
 const LOGO_H = 120;
 
+/**
+ * The circular lips mark, for places with no room for the full wordmark.
+ *
+ * "Change the white left top corner logo to the lips circle logo." Its corners
+ * are genuinely transparent (checked: alpha 0 in all four), so it needs no
+ * plate behind it on the dark sidebar and gets none.
+ */
+const MARK_SRC = "/images/lips-mark.webp";
+const MARK_SIZE = 1080;
+
 interface LogoProps {
   /**
    * The artwork ships with an OPAQUE white background (verified: alpha 255 in
@@ -36,6 +46,11 @@ interface LogoProps {
   priority?: boolean;
   /** Replacement artwork, e.g. the portal cover's editable logo. */
   src?: string;
+  /**
+   * "mark" is the circular lips badge, for a narrow space where the wordmark
+   * would have to shrink to nothing. It needs no plate on any ground.
+   */
+  variant?: "wordmark" | "mark";
 }
 
 export default function Logo({
@@ -43,11 +58,28 @@ export default function Logo({
   className = "h-9",
   fullWidth = false,
   priority = false,
-  src = LOGO_SRC,
+  src,
+  variant = "wordmark",
 }: LogoProps) {
+  const isMark = variant === "mark";
+  const resolved = src ?? (isMark ? MARK_SRC : LOGO_SRC);
+
+  if (isMark) {
+    return (
+      <Image
+        src={resolved}
+        alt="LickYourPhone Media"
+        width={MARK_SIZE}
+        height={MARK_SIZE}
+        priority={priority}
+        className={cn("w-auto object-contain", className)}
+      />
+    );
+  }
+
   const image = (
     <Image
-      src={src}
+      src={resolved}
       alt="LickYourPhone Media"
       width={LOGO_W}
       height={LOGO_H}
@@ -63,7 +95,7 @@ export default function Logo({
   // The plate exists only for the built-in artwork, which ships with an opaque
   // white background. An uploaded logo is expected to be a light, transparent
   // one, and a plate behind it would hide it entirely.
-  if (!onDark || src !== LOGO_SRC) return image;
+  if (!onDark || resolved !== LOGO_SRC) return image;
 
   return (
     <span

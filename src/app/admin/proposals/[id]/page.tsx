@@ -426,16 +426,10 @@ export default async function ProposalDetailPage({
 
         {review && (
           <>
-            <dl className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-              <ReviewTile
-                label="Pages they see"
-                value={String(review.shownPages)}
-                hint={
-                  review.hiddenPages > 0
-                    ? `${review.hiddenPages} hidden for this client`
-                    : "the standard deck, nothing hidden"
-                }
-              />
+            {/* Three tiles, not four: "remove the pages the client sees from
+                this step". The deck's own list above already says how many
+                pages there are, by being the list. */}
+            <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <ReviewTile
                 label="Services offered"
                 value={String(review.lines.length)}

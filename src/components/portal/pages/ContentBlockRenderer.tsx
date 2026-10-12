@@ -14,7 +14,7 @@ import Reveal, { STEP } from "../Reveal";
 const ITEM_STEP = 46;
 
 /** One radius for every content image, so nothing looks half-styled. */
-export const IMAGE_RADIUS = "rounded-xl";
+export const IMAGE_RADIUS = "rounded-3xl";
 
 /* -------------------------------------------------------------------------
    HOW WIDE EACH PICTURE ACTUALLY RENDERS.

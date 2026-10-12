@@ -48,7 +48,7 @@ export default function ContentPage({ page }: ContentPageProps) {
               src={page.featuredImage}
               alt={page.title || "Cover image"}
               sizes={SIZES.cover}
-              className="portal-reveal portal-reveal-lift h-auto w-full max-h-[45vh] object-contain lg:max-h-[75vh]"
+              className={`portal-reveal portal-reveal-lift h-auto w-full max-h-[45vh] object-contain lg:max-h-[75vh] ${IMAGE_RADIUS}`}
               style={{ animationDelay: `${revealDelay(0)}ms` }}
               width={800}
               height={600}
@@ -511,9 +511,15 @@ export default function ContentPage({ page }: ContentPageProps) {
           <Reveal
             as="h1"
             index={2}
-            className={`mx-auto max-w-[16ch] text-balance font-heading text-5xl uppercase leading-[0.95] tracking-tight text-lyp-white md:text-7xl ${
-              statementImage ? "mt-8 [@media(min-height:850px)]:mt-10" : ""
-            }`}
+            className={`mx-auto text-balance font-heading uppercase leading-[0.95] tracking-tight text-lyp-white ${
+              // A long title drops a size and takes a wider measure, so it
+              // sits on one line instead of breaking in two. The agency asked
+              // for this by name: "Marketing Growth Strategy: keep the title
+              // on one line."
+              page.title.length > 19
+                ? "max-w-[26ch] text-4xl md:text-6xl"
+                : "max-w-[16ch] text-5xl md:text-7xl"
+            } ${statementImage ? "mt-8 [@media(min-height:850px)]:mt-10" : ""}`}
           >
             {page.title}
           </Reveal>
@@ -596,7 +602,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                   // object-contain inside a fixed column: mixed device aspects
                   // (portrait phones beside a landscape tablet) share a common
                   // height and nothing is ever cropped.
-                  className="portal-reveal portal-reveal-lift mx-auto h-auto max-h-[46vh] w-full object-contain lg:max-h-[60vh]"
+                  className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[46vh] w-full object-contain lg:max-h-[60vh] ${IMAGE_RADIUS}`}
                 />
               ))}
             </div>
@@ -655,15 +661,23 @@ export default function ContentPage({ page }: ContentPageProps) {
             }`}
           >
             {page.title && (
-              // max-w-[18ch] is a font-relative measure, so it scales with the
-              // responsive heading size. Titles up to ~19 characters
-              // ("Complimentary Visit") stay on one line; longer ones
-              // ("Marketing Growth Strategy") break over two without any manual
-              // line break. No current page title needs three lines.
+              // ONE LINE, WHATEVER THE TITLE'S LENGTH.
+              //
+              // The measure is font-relative, so it scales with the responsive
+              // heading size. Short titles keep the big size. A long one
+              // ("Marketing Growth Strategy", which the agency asked to keep on
+              // one line) drops a step and takes a wider measure instead, which
+              // is what lets it sit on one line in either column width rather
+              // than breaking in two. Anything longer still wraps rather than
+              // running off the page.
               <Reveal
                 as="h1"
                 index={0}
-                className="max-w-[18ch] font-heading text-4xl md:text-6xl leading-[1.02] text-lyp-white text-balance uppercase tracking-tight"
+                className={`font-heading leading-[1.02] text-lyp-white text-balance uppercase tracking-tight ${
+                  page.title.length > 19
+                    ? "max-w-[28ch] text-3xl md:text-5xl"
+                    : "max-w-[18ch] text-4xl md:text-6xl"
+                }`}
               >
                 {page.title}
               </Reveal>

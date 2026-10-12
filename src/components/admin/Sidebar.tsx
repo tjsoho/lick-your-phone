@@ -90,15 +90,26 @@ export default function Sidebar({ userEmail }: SidebarProps) {
       >
         {/* Header */}
         <div className="border-b border-lyp-white/[0.08] p-3">
-          {/* The logo gets its own full-width row so it is not competing with
-              the controls for horizontal space. */}
-          {!collapsed && (
-            <Logo onDark fullWidth className="" priority />
-          )}
+          {/* The lips mark, which the agency asked for in place of the white
+              wordmark plate that used to sit here. Being square and round it
+              also survives the collapse, where the wordmark had to be hidden
+              altogether. */}
           <div
             className={cn(
               "flex items-center",
-              collapsed ? "justify-center" : "mt-2 justify-end",
+              collapsed ? "justify-center" : "justify-start pl-1",
+            )}
+          >
+            <Logo
+              variant="mark"
+              priority
+              className={collapsed ? "h-9" : "h-12"}
+            />
+          </div>
+          <div
+            className={cn(
+              "flex items-center",
+              collapsed ? "mt-2 justify-center" : "mt-2 justify-end",
             )}
           >
             {/* Close on mobile */}
