@@ -29,6 +29,9 @@ export default function ContentPage({ page }: ContentPageProps) {
   // Called before the slug branches below so the hook order never changes.
   const tCover = useCopy("cover", page);
   const tResults = useCopy("results", page);
+  // The trusted-by label is one wording for the whole portal, so it lives in
+  // the global set rather than being retyped on every page that shows logos.
+  const tGlobal = useCopy("global");
   const slug = page.slug;
   // Read unconditionally so the cover branch below has it; cheap and keeps
   // the precedence rule resolved in exactly one call.
@@ -541,8 +544,13 @@ export default function ContentPage({ page }: ContentPageProps) {
   if (isShowcase) {
     return (
       <div className="flex h-full flex-col overflow-y-auto">
-        <div className="flex flex-1 flex-col justify-center px-6 pt-10 pb-8 md:px-12 lg:px-16">
-          <div className="mx-auto flex w-full max-w-[1400px] flex-col items-center">
+        {/* Narrower gutters and a wider cap than the other pages. The device
+            row here is the page, and it was width-limited rather than
+            height-limited, so "make images a bit bigger and closer together"
+            is bought by giving the row more room rather than by raising a
+            height that never bound. */}
+        <div className="flex flex-1 flex-col justify-center px-4 pt-8 pb-6 md:px-6 lg:px-8">
+          <div className="mx-auto flex w-full max-w-[1700px] flex-col items-center">
           {page.title && (
             <Reveal
               as="h1"
@@ -580,8 +588,11 @@ export default function ContentPage({ page }: ContentPageProps) {
               style={{
                 gridTemplateColumns: `repeat(${showcaseImages.length}, minmax(0, 1fr))`,
               }}
-              className={`grid w-full items-center gap-4 md:gap-6 lg:gap-8 ${
-                page.title || subheadBlocks.length > 0 ? "mt-10" : ""
+              // Tighter gaps than before, because the agency wants the row to
+              // read as one group: "make images a bit bigger and closer
+              // together". The height below grew to match.
+              className={`grid w-full items-center gap-2 md:gap-3 lg:gap-4 ${
+                page.title || subheadBlocks.length > 0 ? "mt-6" : ""
               }`}
             >
               {/* The device row deals itself out left to right. */}
@@ -602,7 +613,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                   // object-contain inside a fixed column: mixed device aspects
                   // (portrait phones beside a landscape tablet) share a common
                   // height and nothing is ever cropped.
-                  className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[46vh] w-full object-contain lg:max-h-[60vh] ${IMAGE_RADIUS}`}
+                  className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[56vh] w-full object-contain lg:max-h-[72vh] ${IMAGE_RADIUS}`}
                 />
               ))}
             </div>
@@ -642,6 +653,8 @@ export default function ContentPage({ page }: ContentPageProps) {
       </div>
     );
   }
+
+  const trustedByLabel = tGlobal("trustedByLabel");
 
   return (
     <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col overflow-y-auto">
@@ -683,7 +696,7 @@ export default function ContentPage({ page }: ContentPageProps) {
               </Reveal>
             )}
             <ContentBlockRenderer
-              blocks={textBlocks}
+              blocks={textBlocks.filter((b) => b.type !== "logos")}
               leadingGap={page.title ? RHYTHM.section : ""}
               revealFrom={revealDelay(page.title ? 1 : 0)}
             />
@@ -698,6 +711,41 @@ export default function ContentPage({ page }: ContentPageProps) {
           )}
         </div>
       </div>
+
+      {/* TRUSTED BY, ALONG THE FOOT.
+          The logos used to sit mid-column, small, in the middle of the copy.
+          "Add more logos but not where they currently are, add them in the
+          same style as the Forbes logo. Also add the words: Trusted by: and
+          then all logos." So they move out of the text and into the same
+          black band the press strip uses, with the label leading them. The
+          band carries any number of logos and wraps rather than shrinking
+          them, so adding more costs nothing. */}
+      {showcaseLogos.length > 0 && (
+        <Reveal
+          variant="fade"
+          delay={revealDelay(3)}
+          className="w-full bg-black"
+        >
+          <div className="mx-auto flex max-w-[100rem] flex-wrap items-center justify-center gap-x-10 gap-y-4 px-6 py-5 md:gap-x-14 md:px-10">
+            {trustedByLabel && (
+              <span className="font-heading text-[11px] font-semibold uppercase tracking-[0.22em] text-lyp-white/70 md:text-[13px]">
+                {trustedByLabel}
+              </span>
+            )}
+            {showcaseLogos.map((logo, i) => (
+              <Image
+                key={`${logo.url}-${i}`}
+                src={logo.url}
+                alt={logo.alt || ""}
+                sizes={SIZES.pressLogo}
+                width={600}
+                height={240}
+                className="h-12 w-auto object-contain md:h-16"
+              />
+            ))}
+          </div>
+        </Reveal>
+      )}
     </div>
   );
 }

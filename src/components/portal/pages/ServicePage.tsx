@@ -419,7 +419,18 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   const savingsCents = displayList - displayTarget;
 
   const { images, logos, textBlocks } = collectMedia(page);
-  const hasArtwork = images.length > 0 || logos.length > 0;
+  /**
+   * LOGOS ARE NOT THE PICTURE ANY MORE.
+   *
+   * The ads and influencer pages carry only platform marks, and the rail used
+   * to blow them up into the slide's artwork. The agency wants them the size
+   * they are in their own deck: "as little logos, instead of the big logos we
+   * currently have in the new proposal", sitting at the foot of the page.
+   * So a logos-only service gives its width back to the copy and shows the
+   * marks as a small row underneath.
+   */
+  const marksOnly = images.length === 0 && logos.length > 0;
+  const hasArtwork = images.length > 0;
 
   const inclusions = [...service.inclusions].sort(
     (a, b) => (a.sequence ?? 0) - (b.sequence ?? 0),
@@ -1138,6 +1149,29 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           />
         )}
       </div>
+
+      {marksOnly && (
+        // A quiet row at the foot: which platforms this service runs on, said
+        // once and small. No plate, ring or shadow; the marks sit straight on
+        // the ground like every other image in the deck.
+        <Reveal
+          variant="fade"
+          delay={D_RAIL}
+          className="mt-4 flex shrink-0 flex-wrap items-center justify-center gap-5 pb-1 [@media(min-height:850px)]:mt-6"
+        >
+          {logos.map((logo, i) => (
+            <Image
+              key={`${logo.url}-${i}`}
+              src={logo.url}
+              alt={logo.alt || "Platform logo"}
+              sizes="40px"
+              width={160}
+              height={160}
+              className="h-8 w-auto object-contain [@media(min-height:850px)]:h-10"
+            />
+          ))}
+        </Reveal>
+      )}
     </article>
   );
 }
