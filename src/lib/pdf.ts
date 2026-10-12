@@ -744,22 +744,6 @@ function createContractDocument(
         ),
       ),
 
-      /* Contract terms */
-      React.createElement(
-        Text,
-        { style: s.sectionTitle },
-        "Terms & Conditions",
-      ),
-      // Clauses are authored in Agreement Settings and numbered here, so
-      // adding a service's terms never means touching this file.
-      ...(input.termsClauses ?? []).map((clause, i) =>
-        React.createElement(
-          Text,
-          { key: `term-${i}`, style: s.termsText },
-          `${i + 1}. ${clause}`,
-        ),
-      ),
-
       /* Signature blocks */
       React.createElement(Text, { style: s.sectionTitle }, "Signatures"),
       React.createElement(
@@ -824,6 +808,35 @@ function createContractDocument(
           ),
         ),
       ),
+
+      /* THE FULL TERMS, UNDER THE SIGNATURE.
+         They used to sit above it, with a separate T&C sheet handed over
+         afterwards: "instead of having a separate T&C's sheet once they
+         finish, the contract pdf will have all the full Terms and Conditions
+         below the signature." One document now, signed at the point the
+         client reaches it, with everything they agreed to set out after.
+         `break` starts them on a fresh page so the signatures are never
+         split from the names beneath them. */
+      (input.termsClauses ?? []).length > 0
+        ? React.createElement(
+            View,
+            { break: true },
+            React.createElement(
+              Text,
+              { style: s.sectionTitle },
+              "Terms & Conditions",
+            ),
+            // Clauses are authored in Agreement Settings and numbered here,
+            // so adding a service's terms never means touching this file.
+            ...(input.termsClauses ?? []).map((clause, i) =>
+              React.createElement(
+                Text,
+                { key: `term-${i}`, style: s.termsText },
+                `${i + 1}. ${clause}`,
+              ),
+            ),
+          )
+        : null,
 
       /* Footer */
       React.createElement(

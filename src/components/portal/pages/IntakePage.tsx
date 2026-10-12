@@ -547,16 +547,27 @@ export default function IntakePage({
             },
           ]
         : []),
-      {
-        href: `/api/terms/${proposal.token}`,
-        Icon: ScrollText,
-        label: t("downloadTerms"),
-        note: t("downloadTermsNote"),
-        // The agency may have pointed the terms at a page they host, in which
-        // case this opens a website rather than saving a file, and the card
-        // should say so.
-        external: agreement.termsKind === "link",
-      },
+      // THE TERMS CARD IS GONE WHEN THE CONTRACT CARRIES THEM.
+      //
+      // "Instead of having a separate T&C's sheet once they finish, the
+      // contract pdf will have all the full Terms and Conditions below the
+      // signature." It does now, so handing them a second copy only invites
+      // the question of which one counts. The card survives for the one case
+      // the contract cannot answer: terms the agency hosts elsewhere, or a
+      // document they uploaded, neither of which is inside the PDF.
+      ...(hasContract && agreement.termsKind !== "link" && agreement.termsKind !== "document"
+        ? []
+        : [
+            {
+              href: `/api/terms/${proposal.token}`,
+              Icon: ScrollText,
+              label: t("downloadTerms"),
+              note: t("downloadTermsNote"),
+              // A page they host opens a website rather than saving a file,
+              // and the card should say so.
+              external: agreement.termsKind === "link",
+            },
+          ]),
       {
         href: `/api/intake/${proposal.token}`,
         Icon: ClipboardList,
