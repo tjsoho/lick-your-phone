@@ -628,6 +628,24 @@ export default async function ProposalDetailPage({
         </div>
       </Section>
 
+      {/* ─────────────── How They Read It ───────────────
+
+          This sits ABOVE Post-Signature Review and outside its signed-only
+          branch, on purpose. It used to live inside it, which meant the
+          reading report only appeared once the client had signed — by which
+          point nobody needs to know how far they got. The whole reason the
+          agency asked for it was the client who goes quiet, and that client
+          has not signed. It now shows the moment they open their link. */}
+      <Section title="How They Read It" delay="220ms">
+        <ReadingReport
+          firstViewedAt={proposal.first_viewed_at}
+          lastViewedAt={proposal.last_viewed_at}
+          furthestPage={proposal.furthest_page}
+          pageSeconds={(proposal.page_seconds ?? {}) as Record<string, number>}
+          pageTitles={deckTitles}
+        />
+      </Section>
+
       {/* ─────────────── Post-Signature Review ─────────────── */}
       <Section title="Post-Signature Review" delay="240ms">
         {!isSigned ? (
@@ -663,16 +681,6 @@ export default async function ProposalDetailPage({
           </div>
         ) : (
           <div className="space-y-6">
-            <ReadingReport
-              firstViewedAt={proposal.first_viewed_at}
-              lastViewedAt={proposal.last_viewed_at}
-              furthestPage={proposal.furthest_page}
-              pageSeconds={
-                (proposal.page_seconds ?? {}) as Record<string, number>
-              }
-              pageTitles={deckTitles}
-            />
-
             {methodRow && (
               <PaymentMethodCard
                 proposalId={id}
