@@ -232,7 +232,7 @@ function PictureRail({
   // Same picture, same size, so the same radius as `MAIN_IMAGE`. It used to
   // take the small one, which is why a carousel slide on a service page looked
   // squarer than the single picture on the slide before it.
-  const IMG_IN_FRAME = `h-full w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
+  const IMG_IN_FRAME = `max-h-full h-auto w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
 
   return (
     <div

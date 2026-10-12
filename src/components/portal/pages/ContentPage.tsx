@@ -263,7 +263,7 @@ export default function ContentPage({ page }: ContentPageProps) {
             src={columnImages[0].url}
             alt={columnImages[0].alt || "Page illustration"}
             sizes={SIZES.offsetPair}
-            className={`mx-auto h-full w-auto max-w-full object-contain object-top ${IMAGE_RADIUS}`}
+            className={`mx-auto max-h-full h-auto w-auto max-w-full object-contain object-top ${IMAGE_RADIUS}`}
             width={600}
             height={1200}
           />
@@ -277,7 +277,7 @@ export default function ContentPage({ page }: ContentPageProps) {
             src={columnImages[1].url}
             alt={columnImages[1].alt || "Page illustration"}
             sizes={SIZES.offsetPair}
-            className={`mx-auto h-full w-auto max-w-full object-contain object-bottom ${IMAGE_RADIUS}`}
+            className={`mx-auto max-h-full h-auto w-auto max-w-full object-contain object-bottom ${IMAGE_RADIUS}`}
             width={600}
             height={1200}
           />
@@ -376,7 +376,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                           src={columnImages[0].url}
                           alt={columnImages[0].alt || "Page illustration"}
                           sizes={SIZES.offsetPair}
-                          className={`mx-auto h-full w-auto max-w-full object-contain object-top ${IMAGE_RADIUS}`}
+                          className={`mx-auto max-h-full h-auto w-auto max-w-full object-contain object-top ${IMAGE_RADIUS}`}
                           width={600}
                           height={1200}
                         />
@@ -390,7 +390,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                           src={columnImages[1].url}
                           alt={columnImages[1].alt || "Page illustration"}
                           sizes={SIZES.offsetPair}
-                          className={`mx-auto h-full w-auto max-w-full object-contain object-bottom ${IMAGE_RADIUS}`}
+                          className={`mx-auto max-h-full h-auto w-auto max-w-full object-contain object-bottom ${IMAGE_RADIUS}`}
                           width={600}
                           height={1200}
                         />

@@ -28,5 +28,7 @@ export const IMAGE_RADIUS = "rounded-3xl";
  * curve is as legible at 600px as it is at 140px. It matters most where the
  * artwork's own edge happens to be the same colour as the page behind it,
  * which is when a shallow curve disappears altogether.
+ *
+ * 2.8rem is 44.8px: 56px less the 20% Toby asked for after seeing it live.
  */
-export const IMAGE_RADIUS_LARGE = "rounded-[3.5rem]";
+export const IMAGE_RADIUS_LARGE = "rounded-[2.8rem]";

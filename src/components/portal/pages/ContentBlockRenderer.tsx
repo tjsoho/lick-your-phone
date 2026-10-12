@@ -83,14 +83,29 @@ export const SIZES = {
  * the picture rather than on letterbox space.
  */
 export const MAIN_IMAGE_HEIGHT =
-  "h-[58vh] [@media(min-height:850px)]:h-[56vh] max-lg:h-[40vh]";
+  "max-h-[58vh] [@media(min-height:850px)]:max-h-[56vh] max-lg:max-h-[40vh]";
 
 /**
  * `MAIN_IMAGE_HEIGHT` plus the rules every image on a content page obeys:
  * shrink-wrapped box, never cropped, radius on the photo. No plate, no border,
  * no shadow.
+ *
+ * BOTH axes are a cap, and both are auto. That combination is the only one
+ * that guarantees the box is exactly the photo.
+ *
+ * It used to state the height and leave the width auto under a `max-w-full`.
+ * When the column was narrower than the photo wanted, the width clamped and
+ * the height did NOT come down with it, so `object-contain` sat the photo in
+ * the middle of a box that was too tall. At 1280x1024 that left 132px of dead
+ * space, 66px above and below. The radius is on the box, so the curve was
+ * cutting that empty strip and the photo's own top and bottom corners were
+ * never touched. It looked like the rounding had stopped working, and on a
+ * wide window, where the width never clamped, it looked perfect.
+ *
+ * With both axes capped the browser shrinks the picture to fit whichever cap
+ * binds and keeps the ratio, so there is nothing for the curve to miss.
  */
-export const MAIN_IMAGE = `${MAIN_IMAGE_HEIGHT} w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
+export const MAIN_IMAGE = `${MAIN_IMAGE_HEIGHT} h-auto w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
 
 /**
  * The single vertical spacing scale for a content page's text column.
