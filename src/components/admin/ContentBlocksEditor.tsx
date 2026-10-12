@@ -349,13 +349,36 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
  * Image blocks show thumbnails: a row of storage URLs is unreadable and tells
  * you nothing about what the block actually contains.
  */
-function BlockPreview({ block }: { block: Block }) {
+function BlockPreview({ block, onAdd }: { block: Block; onAdd?: () => void }) {
   const type = block.type;
 
   if (isImageListType(type) && Array.isArray(block.content)) {
     const items = (block.content as LogoItem[]).filter((i) => i?.url);
+
+    /* ADD ANOTHER WITHOUT OPENING THE BLOCK.
+       Putting one more logo in used to mean pressing Edit, scrolling to the
+       bottom of the editor, adding it and pressing Done. The row already
+       shows what is in the block, so the place to add to it is here, at the
+       end of the row it is being added to. */
+    const plus = onAdd ? (
+      <button
+        type="button"
+        onClick={onAdd}
+        title={`${addLabelFor(type)} to this block`}
+        aria-label={addLabelFor(type)}
+        className={`flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg border border-dashed border-[#D9C9C9] text-[#867474] transition-all duration-500 ${EASE} hover:border-lyp-cherry/40 hover:text-lyp-cherry`}
+      >
+        <Plus strokeWidth={1.5} className="h-4 w-4" />
+      </button>
+    ) : null;
+
     if (items.length === 0)
-      return <p className="font-body text-[13px] text-[#9C8C8C]">(no images yet)</p>;
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-body text-[13px] text-[#9C8C8C]">(no images yet)</p>
+          {plus}
+        </div>
+      );
 
     const shown = items.slice(0, 8);
     return (
@@ -375,6 +398,7 @@ function BlockPreview({ block }: { block: Block }) {
             +{items.length - shown.length} more
           </span>
         )}
+        {plus}
       </div>
     );
   }
@@ -397,9 +421,11 @@ function BlockPreview({ block }: { block: Block }) {
   );
 }
 
-function BlockRow({ block, idx, total, onEdit, onDelete, onMove }: {
+function BlockRow({ block, idx, total, onEdit, onDelete, onMove, onAddImage }: {
   block: Block; idx: number; total: number;
   onEdit: () => void; onDelete: () => void; onMove: (dir: "up" | "down") => void;
+  /** Only for image-list blocks; opens the library and appends what is chosen. */
+  onAddImage?: () => void;
 }) {
   const iconButton =
     `rounded-full p-1.5 text-[#867474] transition-all duration-500 ${EASE} hover:text-lyp-cherry disabled:opacity-30 disabled:hover:text-[#867474]`;
@@ -412,7 +438,7 @@ function BlockRow({ block, idx, total, onEdit, onDelete, onMove }: {
           <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${typeBadge(block.type)}`}>{typeLabel(block.type)}</span>
           <span className="font-mono text-[11px] tabular-nums text-[#9C8C8C]">#{block.sequence}</span>
         </div>
-        <BlockPreview block={block} />
+        <BlockPreview block={block} onAdd={onAddImage} />
       </div>
       <div className={`flex items-center gap-0.5 opacity-0 transition-opacity duration-500 ${EASE} group-focus-within:opacity-100 group-hover:opacity-100`}>
         <button onClick={() => onMove("up")} disabled={idx === 0} className={iconButton} title="Move up" aria-label="Move block up"><ArrowUp strokeWidth={1.5} className="h-4 w-4" /></button>
@@ -561,6 +587,46 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
     }
   };
 
+  /**
+   * APPEND TO AN IMAGE BLOCK FROM ITS OWN ROW.
+   *
+   * The plus on a collapsed logos row opens the library; whatever is chosen is
+   * added to the end of that block and saved there and then. The block is
+   * never opened, so there is nothing left half-edited if they wander off.
+   */
+  const [addingToBlockId, setAddingToBlockId] = useState<string | null>(null);
+  const addingToBlock = blocks.find((b) => b.id === addingToBlockId) ?? null;
+
+  const handleAppendImages = async (blockId: string, urls: string[]) => {
+    const block = blocks.find((b) => b.id === blockId);
+    if (!block || urls.length === 0) return;
+
+    const current = Array.isArray(block.content)
+      ? (block.content as LogoItem[])
+      : [];
+    const next = [...current, ...urls.map((url) => ({ url, alt: "" }))];
+
+    setSaving(true);
+    const res = await upsertContentBlock({
+      id: block.id,
+      page_id: pageId,
+      type: (block.type ?? "logos") as BlockType,
+      content: next,
+      sequence: block.sequence ?? 0,
+    });
+    setSaving(false);
+    if (res.error) {
+      toast.error(res.error);
+      return;
+    }
+    if (res.data) {
+      setBlocks((prev) =>
+        prev.map((b) => (b.id === blockId ? { ...b, ...res.data } : b)),
+      );
+      toast.success(urls.length === 1 ? "Image added" : `${urls.length} images added`);
+    }
+  };
+
   const handleDelete = async (blockId: string) => {
     if (!confirm("Delete this content block?")) return;
     const res = await deleteContentBlock(blockId, pageId);
@@ -652,7 +718,12 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
           ) : (
             <BlockRow key={block.id} block={block} idx={idx} total={blocks.length}
               onEdit={() => startEdit(block)} onDelete={() => handleDelete(block.id)}
-              onMove={(dir) => handleMove(block.id, dir)} />
+              onMove={(dir) => handleMove(block.id, dir)}
+              onAddImage={
+                isImageListType(block.type)
+                  ? () => setAddingToBlockId(block.id)
+                  : undefined
+              } />
           )
         )}
       </div>
@@ -689,6 +760,23 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
           </div>
         </div>
       )}
+
+      {/* The library behind the plus on a collapsed image row. Several can be
+          picked in one visit, and each one lands at the end of that block. */}
+      <MediaLibraryModal
+        open={addingToBlockId !== null}
+        onClose={() => setAddingToBlockId(null)}
+        multiple
+        onSelect={(url) => {
+          if (addingToBlockId) void handleAppendImages(addingToBlockId, [url]);
+        }}
+        title={addingToBlock ? typeLabel(addingToBlock.type) : "Images"}
+        hint={
+          addingToBlock?.type
+            ? IMAGE_SIZE_HINTS[addingToBlock.type] ?? undefined
+            : undefined
+        }
+      />
     </div>
   );
 }
