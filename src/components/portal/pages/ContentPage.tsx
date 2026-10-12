@@ -64,7 +64,7 @@ export default function ContentPage({ page }: ContentPageProps) {
           <Logo
             variant="mark"
             priority
-            className="h-24 sm:h-32 md:h-40 [@media(min-height:850px)]:h-48"
+            className="h-[7.8rem] sm:h-[10.4rem] md:h-[13rem] [@media(min-height:850px)]:h-[15.6rem]"
           />
           {hasClientMark && (
             <>
@@ -81,7 +81,7 @@ export default function ContentPage({ page }: ContentPageProps) {
               <img
                 src={coverLogo.src}
                 alt={`${proposal.venueName} logo`}
-                className="h-24 w-auto max-w-[14rem] object-contain sm:h-32 md:h-40 md:max-w-[20rem] [@media(min-height:850px)]:h-48"
+                className="h-[7.8rem] w-auto max-w-[18.2rem] object-contain sm:h-[10.4rem] md:h-[13rem] md:max-w-[26rem] [@media(min-height:850px)]:h-[15.6rem]"
               />
             </>
           )}
@@ -91,7 +91,7 @@ export default function ContentPage({ page }: ContentPageProps) {
           <Reveal
             as="h1"
             index={2}
-            className="mt-8 max-w-[22ch] text-balance font-heading text-3xl font-extrabold uppercase leading-[1.02] tracking-tight text-lyp-white sm:text-4xl md:text-5xl [@media(min-height:850px)]:mt-10 [@media(min-height:850px)]:text-6xl"
+            className="mt-8 max-w-[22ch] text-balance font-heading text-[1.65rem] font-extrabold uppercase leading-[1.02] tracking-tight text-lyp-white sm:text-[2rem] md:text-[2.65rem] [@media(min-height:850px)]:mt-10 [@media(min-height:850px)]:text-[3.3rem]"
           >
             {strapline}
           </Reveal>
