@@ -27,6 +27,7 @@ import {
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 import ProposalDeckOverview from "@/components/admin/ProposalDeckOverview";
 import PaymentMethodCard from "@/components/admin/PaymentMethodCard";
+import ReadingReport from "@/components/admin/ReadingReport";
 import ProposalDiscountTimer from "@/components/admin/ProposalDiscountTimer";
 import SendProposalButton from "@/components/admin/SendProposalButton";
 import ProposalPortalLink from "@/components/admin/ProposalPortalLink";
@@ -187,6 +188,13 @@ export default async function ProposalDetailPage({
   const notes = (proposal.internal_notes ?? []) as unknown as InternalNote[];
 
   const { data: presentationPages } = await getProposalPresentation(id);
+
+  // The deck as the client sees it, so a slide index in the reading report
+  // can be named rather than numbered. Hidden pages are dropped, because the
+  // client never counted them either.
+  const deckTitles = (presentationPages ?? [])
+    .filter((p) => p.overrideVisible ?? p.globalVisible)
+    .map((p) => p.title ?? "Untitled");
   const { data: review } = await getProposalReview(id);
 
   // Versions started at 1 and only legacy rows are missing a number.
@@ -641,6 +649,16 @@ export default async function ProposalDetailPage({
           </div>
         ) : (
           <div className="space-y-6">
+            <ReadingReport
+              firstViewedAt={proposal.first_viewed_at}
+              lastViewedAt={proposal.last_viewed_at}
+              furthestPage={proposal.furthest_page}
+              pageSeconds={
+                (proposal.page_seconds ?? {}) as Record<string, number>
+              }
+              pageTitles={deckTitles}
+            />
+
             {methodRow && (
               <PaymentMethodCard
                 proposalId={id}

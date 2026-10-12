@@ -22,9 +22,10 @@ import { logAuditEvent } from "@/lib/audit-service";
  */
 export async function POST(request: NextRequest) {
   try {
-    const { token, page } = (await request.json()) as {
+    const { token, page, seconds } = (await request.json()) as {
       token?: unknown;
       page?: unknown;
+      seconds?: unknown;
     };
 
     if (typeof token !== "string" || !token) {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     const { data: proposal } = await supabase
       .from("proposals")
-      .select("id, status, first_viewed_at, furthest_page")
+      .select("id, status, first_viewed_at, furthest_page, page_seconds")
       .eq("token", token)
       .single();
 
@@ -62,6 +63,27 @@ export async function POST(request: NextRequest) {
       (proposal.furthest_page == null || pageIndex > proposal.furthest_page)
     ) {
       update.furthest_page = pageIndex;
+    }
+
+    // TIME ON THE SLIDE THEY JUST LEFT.
+    //
+    // Added to whatever is already there rather than replacing it: a client
+    // who comes back to the pricing twice has spent both visits on it, and
+    // the heat map should say so. Read-then-write races only against the
+    // same client's own tab, and the cost of losing one reading is a few
+    // seconds off a figure nobody reads to the second.
+    const dwell =
+      typeof seconds === "number" && Number.isFinite(seconds) && seconds > 0
+        ? Math.min(Math.floor(seconds), 1200)
+        : null;
+
+    if (dwell !== null && pageIndex !== null) {
+      const tally = (proposal.page_seconds ?? {}) as Record<string, number>;
+      const key = String(pageIndex);
+      update.page_seconds = {
+        ...tally,
+        [key]: (Number(tally[key]) || 0) + dwell,
+      };
     }
 
     await supabase.from("proposals").update(update).eq("id", proposal.id);
