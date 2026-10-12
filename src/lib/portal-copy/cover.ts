@@ -10,4 +10,5 @@ import type { CopySlot } from "./types";
 export const COVER_COPY: CopySlot[] = [
   { key: "logo", label: "Logo", default: "/images/Website logo.PNG", image: true, hint: "Shown above the client's name on the dark cover, so upload a light or white version on a transparent background." },
   { key: "preparedFor", label: "Prepared for label", default: "Prepared for" },
+  { key: "strapline", label: "Cover strapline", default: "Be the business on everyone's lips", multiline: true, hint: "The line under the two marks, set large and in capitals. Leave it empty to show the lockup on its own." },
 ];

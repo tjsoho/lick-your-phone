@@ -42,118 +42,104 @@ export default function ContentPage({ page }: ContentPageProps) {
   );
 
   if (slug === "cover") {
+    /* THE HANDSHAKE, BUILT LIKE THEIR OWN DECK.
+       "First page: needs to look exactly like the pandadoc one." That cover
+       is a lockup: the lips mark, a small x, the client's own mark, and the
+       line underneath. So the proposal opens the same way, and the client
+       sees their badge beside the agency's before they read a word.
+
+       The x only appears when there are two marks to put it between. A
+       client with no logo of their own gets the lips mark alone and centred
+       rather than an orphaned multiplication sign. */
+    const strapline = tCover("strapline").trim();
+    const hasClientMark = coverLogo.isCustomLogo;
+
     return (
-      <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col justify-center overflow-y-auto px-6 py-12 sm:px-10 lg:px-16">
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
-          {/* Featured image — bare, no container, border or shadow */}
-          {page.featuredImage && (
-            <Image
-              src={page.featuredImage}
-              alt={page.title || "Cover image"}
-              sizes={SIZES.cover}
-              className={`portal-reveal portal-reveal-lift h-auto w-full max-h-[45vh] object-contain lg:max-h-[75vh] ${IMAGE_RADIUS}`}
-              style={{ animationDelay: `${revealDelay(0)}ms` }}
-              width={800}
-              height={600}
-              priority
-            />
+      <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col items-center justify-center overflow-y-auto px-6 py-10 text-center sm:px-10">
+        {/* The lockup */}
+        <Reveal
+          index={1}
+          className="flex items-center justify-center gap-6 md:gap-10"
+        >
+          <Logo
+            variant="mark"
+            priority
+            className="h-24 sm:h-32 md:h-40 [@media(min-height:850px)]:h-48"
+          />
+          {hasClientMark && (
+            <>
+              <span
+                aria-hidden
+                className="font-heading text-2xl font-extrabold uppercase text-lyp-white/60 md:text-4xl"
+              >
+                x
+              </span>
+              {/* Their artwork, at the mark's own height. Not drawn through
+                  `Logo`: that declares the brand mark's 383 x 120 box and
+                  would letterbox anything squarer. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={coverLogo.src}
+                alt={`${proposal.venueName} logo`}
+                className="h-24 w-auto max-w-[14rem] object-contain sm:h-32 md:h-40 md:max-w-[20rem] [@media(min-height:850px)]:h-48"
+              />
+            </>
           )}
+        </Reveal>
 
-          {/* Proposal info */}
-          <div
-            className={`text-center lg:text-left ${
-              page.featuredImage ? "" : "lg:col-span-2 lg:text-center"
-            }`}
+        {strapline && (
+          <Reveal
+            as="h1"
+            index={2}
+            className="mt-8 max-w-[22ch] text-balance font-heading text-3xl font-extrabold uppercase leading-[1.02] tracking-tight text-lyp-white sm:text-4xl md:text-5xl [@media(min-height:850px)]:mt-10 [@media(min-height:850px)]:text-6xl"
           >
-            {/* The cover is the proposal's handshake, so it is the one
-                slide whose stagger is stretched: the mark lands, a beat, then
-                the client's own name. */}
-            <Reveal
-              index={1}
-              className={`mb-8 flex justify-center ${
-                page.featuredImage ? "lg:justify-start" : ""
-              }`}
-            >
-              {/* This venue's own logo, the client's if the venue has none,
-                  and the cover's copy slot if neither does —
-                  `resolveCoverLogo` is the only place that decision is made.
+            {strapline}
+          </Reveal>
+        )}
 
-                  Their logo is NOT drawn through `Logo`. That component
-                  declares the brand mark's own 383 x 120 box, and anything
-                  squarer sent through it would be letterboxed inside that
-                  box — sitting visibly indented from the client's name below
-                  on the left-aligned cover. A bare <img> at a fixed height
-                  takes its width from the artwork itself, so the lockup lines
-                  up whatever shape arrives. Height is what is capped, so the
-                  cover cannot grow and start scrolling; the width cap only
-                  catches a very wide mark, which then simply sits shorter. */}
-              {coverLogo.isCustomLogo ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={coverLogo.src}
-                  alt={`${proposal.venueName} logo`}
-                  className="h-14 w-auto max-w-[240px] object-contain md:h-16 md:max-w-[300px]"
-                />
-              ) : (
-                <Logo
-                  onDark
-                  src={coverLogo.src}
-                  className="h-14 md:h-16"
-                  priority
-                />
-              )}
-            </Reveal>
+        {/* Who it is for. Below the statement, because the statement is what
+            the slide is; this is the address on the envelope. */}
+        <Reveal
+          as="p"
+          index={3}
+          className="mt-10 font-body text-[11px] uppercase tracking-[0.3em] text-lyp-white/50 md:text-sm [@media(min-height:850px)]:mt-12"
+        >
+          {tCover("preparedFor")}
+        </Reveal>
+        <Reveal
+          as="h2"
+          index={4}
+          className="mt-2 font-heading text-3xl font-extrabold text-lyp-white md:text-4xl"
+        >
+          {proposal.venueName}
+        </Reveal>
+        {proposal.contactName && (
+          <Reveal
+            as="p"
+            index={5}
+            className="mt-1 font-body text-lg text-lyp-white/50"
+          >
+            {proposal.contactName}
+          </Reveal>
+        )}
 
-            <Reveal
-              as="p"
-              index={2}
-              className="font-body text-sm text-lyp-white/60 mb-3 tracking-[0.3em] uppercase"
+        {proposal.status === "signed" && (
+          <Reveal index={6} className="mt-8 flex flex-col items-center gap-3">
+            <span className="inline-flex items-center gap-2 rounded-full bg-green-500/15 px-4 py-1.5 font-body text-sm text-green-400 ring-1 ring-green-500/30">
+              <span className="h-2 w-2 rounded-full bg-green-400" />
+              {SIGNED_BADGE}
+            </span>
+            <button
+              onClick={() => {
+                const idx = pages.findIndex((p) => p.slug === "summary");
+                if (idx !== -1) setCurrentPage(idx);
+              }}
+              className="rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
             >
-              {tCover("preparedFor")}
-            </Reveal>
-            {/* The venue is the account, the contact is the person reading
-                this. Show the venue first, then who it is addressed to. */}
-            <Reveal
-              as="h2"
-              index={3}
-              className="font-heading text-4xl md:text-5xl text-lyp-white mb-2"
-            >
-              {proposal.venueName}
-            </Reveal>
-            {proposal.contactName && (
-              <Reveal
-                as="p"
-                index={4}
-                className="font-body text-xl text-lyp-white/50"
-              >
-                {proposal.contactName}
-              </Reveal>
-            )}
-
-            {proposal.status === "signed" && (
-              <Reveal
-                index={5}
-                className={`mt-8 flex flex-col items-center gap-3 ${
-                  page.featuredImage ? "lg:items-start" : ""
-                }`}
-              >
-                <span className="inline-flex items-center gap-2 rounded-full bg-green-500/15 px-4 py-1.5 font-body text-sm text-green-400 ring-1 ring-green-500/30">
-                  <span className="h-2 w-2 rounded-full bg-green-400" />
-                  {SIGNED_BADGE}
-                </span>
-                <button
-                  onClick={() => {
-                    const idx = pages.findIndex((p) => p.slug === "summary");
-                    if (idx !== -1) setCurrentPage(idx);
-                  }}
-                  className="rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
-                >
-                  {VIEW_SUMMARY_BUTTON}
-                </button>
-              </Reveal>
-            )}
-          </div>
-        </div>
+              {VIEW_SUMMARY_BUTTON}
+            </button>
+          </Reveal>
+        )}
       </div>
     );
   }
