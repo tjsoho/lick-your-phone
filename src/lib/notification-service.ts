@@ -16,7 +16,8 @@ export type NotificationEvent =
   | "PAYMENT_FAILED"
   | "INTAKE_COMPLETED"
   | "PAYMENT_SUCCEEDED"
-  | "PAYMENT_CAPTURED";
+  | "PAYMENT_CAPTURED"
+  | "OFFER_ENDING";
 
 interface PayloadMap {
   PROPOSAL_SENT: Client;
@@ -71,6 +72,15 @@ interface PayloadMap {
     accountName?: string;
     accountLastThree?: string;
     proposalId?: string;
+  };
+  /**
+   * The client's offer window closes soon and they have not signed. Fired
+   * once per window by the daily job; n8n decides what the email says.
+   */
+  OFFER_ENDING: {
+    client: Client;
+    proposalId: string;
+    endsAt: string;
   };
 }
 
@@ -139,6 +149,12 @@ export async function dispatchNotification<K extends NotificationEvent>(
 
       case "PAYMENT_CAPTURED": {
         const data = payload as PayloadMap["PAYMENT_CAPTURED"];
+        await sendWebhook(event, data);
+        break;
+      }
+
+      case "OFFER_ENDING": {
+        const data = payload as PayloadMap["OFFER_ENDING"];
         await sendWebhook(event, data);
         break;
       }

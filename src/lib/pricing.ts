@@ -10,8 +10,27 @@
 /** Signing a moment after the countdown ends still honours the price on screen. */
 export const DISCOUNT_GRACE_MS = 2 * 60_000;
 
+/**
+ * A standing discount is always a fraction of the price. It can never be the
+ * whole of it, because the full price is derived by dividing by (1 - pct) and
+ * there is no dividing by nothing.
+ */
 const validPct = (pct: number | null | undefined): pct is number =>
   pct != null && pct > 0 && pct < 1;
+
+/**
+ * A proposal's own discount may go all the way to 100%, which a standing one
+ * cannot.
+ *
+ * "If we want to give someone one videoshoot or one photoshoot or something
+ * like that for free, how do we set that up? For example now, we are running
+ * a campaign where sales can offer a free videoshoot if they want." This is
+ * how: set that service to 100% on that one proposal and it costs the client
+ * nothing, without touching the catalogue or inventing a second free version
+ * of the service.
+ */
+const validEffectivePct = (pct: number | null | undefined): pct is number =>
+  pct != null && pct > 0 && pct <= 1;
 
 export function fullPriceCents(targetCents: number, standingPct: number | null) {
   return validPct(standingPct)
@@ -20,7 +39,7 @@ export function fullPriceCents(targetCents: number, standingPct: number | null) 
 }
 
 export function discountedCents(fullCents: number, pct: number | null) {
-  return validPct(pct) ? Math.round(fullCents * (1 - pct)) : fullCents;
+  return validEffectivePct(pct) ? Math.round(fullCents * (1 - pct)) : fullCents;
 }
 
 /** What one service or tier actually costs, given whether the discount is on. */
@@ -101,7 +120,7 @@ export function priceServices<T extends PricedService>(
   return services.map((service) => {
     const standing = service.discount_pct;
     const effective = overrides[service.id] ?? standing;
-    const apply = discountLive && validPct(effective);
+    const apply = discountLive && validEffectivePct(effective);
     const price = (targetCents: number) =>
       payableCents({
         targetCents,

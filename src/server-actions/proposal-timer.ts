@@ -106,6 +106,10 @@ export async function setDiscountTimer(
         discount_timer_active: active,
         discount_starts_at: startsAt,
         discount_expires_at: expiresAt,
+        // A new window is a new offer, so it earns its own reminder. Without
+        // clearing this, a proposal reminded once would never be reminded
+        // again however many times the window was reset.
+        offer_reminder_sent_at: null,
         updated_at: new Date().toISOString(),
       })
       .eq("id", proposalId);

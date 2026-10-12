@@ -141,12 +141,38 @@ const FILTERS = [
     label: "Onboarding complete",
     title: "Show only proposals the client has finished onboarding for",
   },
+  {
+    value: "gone_quiet",
+    label: "Gone quiet",
+    title:
+      "Show only proposals the client opened, never signed, and has not come back to for three days",
+  },
 ] as const;
 
 type FilterValue = (typeof FILTERS)[number]["value"];
 
+/**
+ * Opened, never signed, and nothing since.
+ *
+ * The question the agency asked was "sometimes people just open it and they
+ * don't really start completing it, so it makes us understand the status,
+ * whether they're doubting, whether to chase." This is that row: they have
+ * read it, so they know it exists; they have not signed; and they have not
+ * been back for three days. One click instead of remembering.
+ */
+const QUIET_AFTER_DAYS = 3;
+
+function hasGoneQuiet(row: ProposalRow): boolean {
+  if (!row.firstViewedAt) return false;
+  if (hasSigned(row)) return false;
+  const last = row.lastViewedAt ?? row.firstViewedAt;
+  const days = (Date.now() - new Date(last).getTime()) / 86_400_000;
+  return days >= QUIET_AFTER_DAYS;
+}
+
 function matchesFilter(row: ProposalRow, filter: FilterValue): boolean {
   if (filter === "all") return true;
+  if (filter === "gone_quiet") return hasGoneQuiet(row);
   // The three stage filters ask "has this happened", not "is this the latest
   // thing that happened" — the same rule the badges draw themselves by, so a
   // row you can see a Signed badge on is always in the Signed filter.

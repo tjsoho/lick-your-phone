@@ -23,6 +23,7 @@ import {
   ClipboardCheck,
   DollarSign,
   Activity,
+  Landmark,
 } from "lucide-react";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 import ProposalDeckOverview from "@/components/admin/ProposalDeckOverview";
@@ -142,6 +143,19 @@ const eventDetails: Record<
     icon: DollarSign,
     getDescription: (meta) =>
       `Payment of ${meta?.amount ? formatCents(meta.amount) : "—"} succeeded.`,
+  },
+  PROPOSAL_VIEWED: {
+    title: "Opened by the Client",
+    color: "border-[#E2E8F1] bg-[#EDF1F7] text-[#5B7394]",
+    icon: Eye,
+    getDescription: () => "The client opened their proposal for the first time.",
+  },
+  BANK_DETAILS_VIEWED: {
+    title: "Bank Details Viewed",
+    color: "border-[#F0E4C9] bg-[#FBF3E3] text-[#9A7B2E]",
+    icon: Landmark,
+    getDescription: (meta) =>
+      `${meta?.viewedBy || "A staff member"} viewed the full account number.`,
   },
   PAYMENT_FAILED: {
     title: "Payment Failed",

@@ -1,3 +1,8 @@
 {
-  "crons": []
+  "crons": [
+    {
+      "path": "/api/cron/offer-ending",
+      "schedule": "0 8 * * *"
+    }
+  ]
 }

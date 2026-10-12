@@ -414,6 +414,15 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   const displayTarget = service.target_price_cents;
   const displayList = listFromTarget(displayTarget, service.discount_pct);
   const hasDiscount = service.discount_pct != null && service.discount_pct > 0;
+  /**
+   * Given away on this proposal. A 100% offer on one service is how sales
+   * hand over a free shoot without a second free version of the service
+   * existing in the catalogue, and the price panel should say so in words
+   * rather than showing "$0".
+   */
+  const costsNothing =
+    displayTarget === 0 &&
+    (!hasTiers || sortedTiers.every((t) => t.target_price_cents === 0));
   const periodLabel =
     service.price_display_period === "week" ? t("perWeek") : t("perMonth");
   const savingsCents = displayList - displayTarget;
@@ -936,7 +945,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 )}
               </div>
 
-              {isInKind ? (
+              {isInKind || costsNothing ? (
                 <div className="flex-1">
                   <p
                     className={`font-heading text-[20px] leading-tight [@media(min-height:850px)]:text-[26px] ${ROSE}`}
