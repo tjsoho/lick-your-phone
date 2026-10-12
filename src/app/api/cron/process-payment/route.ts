@@ -15,13 +15,15 @@ import { schedulePayment } from "@/lib/pinch";
  * written and nothing has ever been charged by it. The cron entry has been
  * removed rather than corrected.
  *
- * The flag below is the real protection. At the time of writing there are ten
- * overdue schedules worth about $36,900 sitting in `pending`, left behind by
- * captures that happened while the job was silently broken. Correcting a path
- * one day and watching thirty-six thousand dollars leave ten clients' accounts
- * in one morning is exactly the accident this prevents. Nothing here runs
- * unless PAYMENTS_AUTOMATED is explicitly "true", and if that day comes those
- * stale rows want reviewing first.
+ * The flag below is the real protection. The job had left 105 schedules queued
+ * as `pending`, ten of them overdue and worth about $36,900 between them, all
+ * from the team's own testing. Correcting that path one day and watching that
+ * leave ten accounts in a single morning is the accident this prevents. Those
+ * rows are now marked `cancelled`, so there is nothing left to fire, and
+ * nothing here runs at all unless PAYMENTS_AUTOMATED is explicitly "true".
+ *
+ * If automatic billing is ever wanted, turn the flag on and schedule this
+ * route again, but read what is queued before you do.
  */
 export async function GET() {
   if (process.env.PAYMENTS_AUTOMATED !== "true") {
