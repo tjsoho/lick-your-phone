@@ -145,26 +145,39 @@ const FILTERS = [
     value: "gone_quiet",
     label: "Gone quiet",
     title:
-      "Show only proposals the client opened, never signed, and has not come back to for three days",
+      "Show only sent proposals the client opened, never signed, and has not come back to for three days",
   },
 ] as const;
 
 type FilterValue = (typeof FILTERS)[number]["value"];
 
 /**
- * Opened, never signed, and nothing since.
+ * SENT, OPENED, NEVER SIGNED, AND NOTHING SINCE.
  *
- * The question the agency asked was "sometimes people just open it and they
- * don't really start completing it, so it makes us understand the status,
- * whether they're doubting, whether to chase." This is that row: they have
- * read it, so they know it exists; they have not signed; and they have not
- * been back for three days. One click instead of remembering.
+ * "Sometimes people just open it and they don't really start completing it,
+ * so it makes us understand the status, whether they're doubting, whether to
+ * chase." This is that row, and all four conditions matter:
+ *
+ *   SENT.    A draft has never reached anybody, so it cannot have gone quiet
+ *            however long it sits. Drafts carry an opened date only because
+ *            the portal link works for whoever holds it, including the agency
+ *            checking its own work, and that is not a client reading it.
+ *   OPENED.  They know it exists. An unopened proposal is a different problem
+ *            and a different conversation.
+ *   UNSIGNED. A signed one has gone as far as it needs to.
+ *   QUIET.   Three days since they last looked.
+ *
+ * Three days rather than one: a proposal sent on a Friday should not be
+ * flashing by Saturday, and most people take a weekend over a decision this
+ * size. Change the number here and the filter follows.
  */
 const QUIET_AFTER_DAYS = 3;
 
 function hasGoneQuiet(row: ProposalRow): boolean {
+  const stage = lifecycleOf(row);
+  // Anything beyond "sent" has moved on; anything before it never went out.
+  if (stage !== "sent") return false;
   if (!row.firstViewedAt) return false;
-  if (hasSigned(row)) return false;
   const last = row.lastViewedAt ?? row.firstViewedAt;
   const days = (Date.now() - new Date(last).getTime()) / 86_400_000;
   return days >= QUIET_AFTER_DAYS;
