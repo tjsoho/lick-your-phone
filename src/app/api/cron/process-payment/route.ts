@@ -2,7 +2,41 @@ import { NextResponse } from "next/server";
 import { createAdminClient } from "@/utils/server";
 import { schedulePayment } from "@/lib/pinch";
 
+/**
+ * AUTOMATIC CHARGING IS OFF, AND STAYS OFF UNTIL SOMEONE MEANS IT.
+ *
+ * The agency does not take payments through this system: "we don't want
+ * automatic payment we are simply storing details to pass on to accounting."
+ * Details are captured in the portal and charged by hand elsewhere.
+ *
+ * This route used to be scheduled daily in vercel.json, at
+ * `/api/cron/process-payments`. That path has a trailing "s" and this route
+ * does not, so the job has been answering 404 every morning since it was
+ * written and nothing has ever been charged by it. The cron entry has been
+ * removed rather than corrected.
+ *
+ * The flag below is the real protection. At the time of writing there are ten
+ * overdue schedules worth about $36,900 sitting in `pending`, left behind by
+ * captures that happened while the job was silently broken. Correcting a path
+ * one day and watching thirty-six thousand dollars leave ten clients' accounts
+ * in one morning is exactly the accident this prevents. Nothing here runs
+ * unless PAYMENTS_AUTOMATED is explicitly "true", and if that day comes those
+ * stale rows want reviewing first.
+ */
 export async function GET() {
+  if (process.env.PAYMENTS_AUTOMATED !== "true") {
+    return NextResponse.json(
+      {
+        message:
+          "Automatic payment processing is switched off. Payment details are " +
+          "captured in the portal and charged by accounting. Set " +
+          "PAYMENTS_AUTOMATED=true to enable this job, after reviewing any " +
+          "schedules left pending.",
+      },
+      { status: 200 },
+    );
+  }
+
   const supabase = await createAdminClient();
   const todayStr = new Date().toISOString().split("T")[0];
   console.log("CRON: Processing payment schedules for date:", todayStr);
