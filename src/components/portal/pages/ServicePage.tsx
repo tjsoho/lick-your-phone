@@ -234,7 +234,10 @@ function PictureRail({
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-col items-center justify-center gap-6 max-lg:min-h-[12rem]",
+        // Top aligned on a wide screen so the picture starts level with
+        // "What's Included" beside it; still centred when it stacks under the
+        // copy on a narrow one, where there is nothing to line up with.
+        "flex min-h-0 flex-col items-center justify-center gap-6 max-lg:min-h-[12rem] lg:justify-start",
       )}
     >
       {images.length === 1 && (
@@ -546,7 +549,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   const wantToggle = (
     <button
       type="button"
-      role="switch"
+      role="checkbox"
       aria-checked={selected}
       aria-label={selected ? `Remove ${service.name}` : `I want ${service.name}`}
       disabled={isDisabled}
@@ -555,7 +558,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
       // it settles into — safe at the foot of the slide.
       style={{ animationDelay: `${D_TOGGLE}ms` }}
       className={cn(
-        "portal-reveal portal-reveal-pop flex shrink-0 items-center justify-center gap-2.5 rounded-2xl ring-1 ring-inset transition-[background-color,box-shadow] duration-300 ease-brand",
+        "portal-reveal portal-reveal-pop flex shrink-0 items-center justify-center gap-2.5 rounded-2xl transition-[box-shadow] duration-300 ease-brand",
         // The edge is the resting/selected state, so focus can't live in the
         // ring without reading as a third state. It takes an outline just
         // outside the card instead.
@@ -565,39 +568,47 @@ export default function ServicePage({ service, page }: ServicePageProps) {
             "w-full px-4 py-1.5"
           : // In the offer row it stretches to the panel; on a phone, where the
             // offer stacks, it keeps the pill's right-hand anchor. The floor on
-            // the width is so the card does not SHRINK when it is chosen —
+            // the width is so the card does not SHRINK when it is chosen:
             // "Added" is half the length of "I want this", and a decision that
             // gets smaller the moment you make it is the opposite of the point.
             "self-end px-4 py-2.5 lg:min-w-[12.5rem] lg:self-auto",
+        // ONE GROUND, A TICK AND AN EDGE — the same language as the term
+        // cards. "Single-price services: use a tick box instead of a toggle."
+        "bg-[#120406]/70 ring-inset",
         selected
-          ? "bg-[#f0c9c9]/[0.16] ring-[#f0c9c9]/75"
-          : "bg-[#120406]/70 ring-[#f0c9c9]/30",
-        !selected &&
-          !isDisabled &&
-          "hover:bg-[#120406]/50 hover:ring-[#f0c9c9]/55",
+          ? "ring-2 ring-lyp-cherry"
+          : "ring-1 ring-[#f0c9c9]/30",
+        !selected && !isDisabled && "hover:ring-[#f0c9c9]/55",
         isDisabled && "cursor-not-allowed opacity-40",
       )}
     >
       <span
         aria-hidden
         className={cn(
-          "flex h-6 w-11 shrink-0 items-center rounded-full border-2 border-transparent transition-colors duration-300 ease-brand",
-          selected ? "bg-lyp-cherry" : "bg-lyp-white/25",
+          "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors duration-300 ease-brand",
+          selected
+            ? "border-[#4ADE80] bg-[#4ADE80]/[0.14]"
+            : "border-lyp-white/30 bg-transparent",
         )}
       >
-        <span
+        <Check
+          strokeWidth={3}
           className={cn(
-            "block h-5 w-5 rounded-full bg-lyp-white shadow-lg transition-transform duration-300 ease-brand motion-reduce:transition-none",
-            selected ? "translate-x-5" : "translate-x-0",
+            "h-3 w-3 text-[#4ADE80] transition-opacity duration-300 ease-brand",
+            selected ? "opacity-100" : "opacity-0",
           )}
         />
       </span>
-      {/* The switch sets the card's content height at every size, so the label
-          can be set up two notches from the old pill's 11px for nothing.
-          `whitespace-nowrap` keeps it that way: a second line would be the one
-          thing on this card that costs the spread height. */}
+      {/* `whitespace-nowrap` matters: a second line would be the one thing on
+          this card that costs the spread any height.
+
+          A complimentary service reads the same as every other one now. It
+          used to say "Paid in kind", which told the client what the agency
+          calls it rather than what the button does: "instead of paid in kind
+          say 'I want this' as all the rest." The price beside it still says
+          Complimentary, which is where that fact belongs. */}
       <span className="whitespace-nowrap font-heading text-[13px] font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:850px)]:text-[14px]">
-        {isInKind ? t("paidInKind") : selected ? t("added") : t("wantThis")}
+        {selected ? t("added") : t("wantThis")}
       </span>
     </button>
   );
@@ -677,19 +688,20 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           --------------------------------------------------------------- */}
       <div
         className={cn(
-          // The body owns the height left under the masthead and CENTRES its
-          // row inside it (`content-center`), so there is deliberate air
-          // between the rule and the copy and the same air below the offer.
-          // Items still stretch inside that row, so the picture rail matches
-          // the text column and the two share a midpoint.
-          "grid min-h-0 flex-1 content-center grid-cols-1 gap-x-12 gap-y-8 pt-4 [@media(min-height:850px)]:pt-5",
+          // The body used to centre its row in the height left under the
+          // masthead, which on a short service left a visible hole between
+          // the rule and the copy: "can we please remove the excess space
+          // between the title and the what's included text". It starts at the
+          // top now, so the index follows the rule directly and the picture
+          // beside it starts on the same line.
+          "grid min-h-0 flex-1 content-start grid-cols-1 gap-x-12 gap-y-8 pt-4 [@media(min-height:850px)]:pt-5",
           hasArtwork &&
             (wideRail
               ? "lg:grid-cols-[minmax(0,1fr)_41%] xl:grid-cols-[minmax(0,1fr)_43%]"
               : "lg:grid-cols-[minmax(0,1fr)_35%] xl:grid-cols-[minmax(0,1fr)_37%]"),
         )}
       >
-        <div className="flex min-h-0 flex-col justify-center">
+        <div className="flex min-h-0 flex-col justify-start">
           {/* Safety net only. Every real service fits the frame; if one ever
               outgrows it this column scrolls rather than clipping copy. */}
           <div className="portal-scroll min-h-0 max-lg:overflow-visible">
@@ -878,7 +890,15 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   {t("investmentHeading")}
                 </h2>
                 {hasDiscount && (
-                  <p className={cn(!compactOffer && "mt-2", "inline-flex items-center gap-2 rounded-full px-2.5 py-1 font-heading text-[10px] font-semibold uppercase tracking-[0.18em] text-lyp-gold ring-1 ring-inset ring-lyp-gold/45 [@media(min-height:850px)]:text-[11px]")}>
+                  // THE OFFER HAS TO BE SEEN.
+                  //
+                  // It was a thin gold outline at 10px, which on a dark red
+                  // wash reads as a footnote: "make it stand out more, maybe
+                  // yellow background? And bigger? Something that makes it
+                  // pop more." So it is filled, not outlined, and set two
+                  // sizes up. Black on yellow is the strongest pairing the
+                  // palette has.
+                  <p className={cn(!compactOffer && "mt-2", "inline-flex items-center gap-2 rounded-full bg-lyp-gold px-3 py-1.5 font-heading text-[13px] font-bold uppercase tracking-[0.12em] text-lyp-black shadow-[0_6px_18px_-6px_rgba(218,165,32,0.7)] [@media(min-height:850px)]:text-[15px]")}>
                     {t("discountBadge", {
                       pct: Math.round((service.discount_pct ?? 0) * 100),
                     })}

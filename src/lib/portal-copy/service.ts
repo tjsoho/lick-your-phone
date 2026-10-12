@@ -5,7 +5,7 @@ export const SERVICE_COPY: CopySlot[] = [
   { key: "includedHeading", label: "Inclusions heading", default: "What's Included" },
   { key: "commitmentsHeading", label: "Commitments heading", default: "Your Commitments" },
   { key: "investmentHeading", label: "Price panel heading", default: "Investment" },
-  { key: "discountBadge", label: "Discount badge", default: "{pct}% off — limited time", hint: "{pct} is replaced with the discount percentage." },
+  { key: "discountBadge", label: "Offer badge", default: "{pct}% OFF", hint: "{pct} is replaced with the offer percentage. Kept short: it sits on a filled badge beside the price, and a long line shrinks it back to a footnote." },
   { key: "perWeek", label: "Weekly price label", default: "per week" },
   { key: "perMonth", label: "Monthly price label", default: "per month" },
   { key: "plusGst", label: "GST label", default: "+ GST" },

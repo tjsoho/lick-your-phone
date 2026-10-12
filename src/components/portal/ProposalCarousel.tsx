@@ -306,7 +306,21 @@ function CarouselInner() {
   const isSigned = proposal.status === "signed" || proposal.status === "intake_complete";
   const showRunningTotal = hasTop && !isSummary && !isSigned;
   // The countdown is a buying aid too, so it goes once the client has signed.
-  const showTimer = discountLive && !isSigned && !!proposal.discountExpiresAt;
+  //
+  // It also does not start at slide one. "Show that discount red banner at the
+  // top only after the marketing growth strategy slide (when the services
+  // start), not from the beginning." Nothing is for sale while they are
+  // reading about the agency, so a clock over that stretch only hurries them
+  // through it. The first priced slide is where it earns its place, and it is
+  // found rather than hard coded to a slug, so a reordered deck still works.
+  const firstServiceIndex = pages.findIndex((p) => p.type === "service");
+  const reachedTheServices =
+    firstServiceIndex >= 0 && currentPage >= firstServiceIndex;
+  const showTimer =
+    discountLive &&
+    !isSigned &&
+    !!proposal.discountExpiresAt &&
+    reachedTheServices;
   // The fixed bars sit outside the flow, so the slide has to reserve their
   // height itself: the countdown strip is 44px (h-11), the price bar 52px. On
   // sm and up the price bar carries the countdown, so only one bar is on
