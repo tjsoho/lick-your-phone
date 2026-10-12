@@ -11,7 +11,7 @@ import {
 } from "../ProposalContext";
 import { cn } from "@/lib/utils";
 import ContentBlockRenderer, {
-  IMAGE_RADIUS,
+  IMAGE_RADIUS_LARGE,
   MAIN_IMAGE,
   MAIN_IMAGE_HEIGHT,
   SIZES,
@@ -229,7 +229,10 @@ function PictureRail({
   // The picture rail is the reference size for every main single image in the
   // proposal; `MAIN_IMAGE` is where that size lives.
   const IMG = MAIN_IMAGE;
-  const IMG_IN_FRAME = `h-full w-auto max-w-full object-contain ${IMAGE_RADIUS}`;
+  // Same picture, same size, so the same radius as `MAIN_IMAGE`. It used to
+  // take the small one, which is why a carousel slide on a service page looked
+  // squarer than the single picture on the slide before it.
+  const IMG_IN_FRAME = `h-full w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
 
   return (
     <div

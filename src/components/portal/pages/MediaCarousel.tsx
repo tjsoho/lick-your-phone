@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { IMAGE_RADIUS_LARGE } from "./image-style";
 
 const AUTO_INTERVAL = 5000;
 
@@ -79,7 +80,11 @@ export default function MediaCarousel({
               sizes={sizes}
               className={
                 imageClassName ??
-                "mx-auto h-auto max-h-[60vh] w-full object-contain"
+                // Same rules as every other picture: the radius sits on the
+                // image, and the box shrink-wraps it so the curve cannot land
+                // on letterbox space. This used to be `w-full` with no radius
+                // at all, which is why carousel slides had square corners.
+                `mx-auto h-auto max-h-[60vh] w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`
               }
               width={800}
               height={450}

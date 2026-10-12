@@ -4,6 +4,7 @@ import { resolveCopy } from "@/lib/portal-copy";
 import { ContentBlock } from "../ProposalContext";
 import MediaCarousel from "./MediaCarousel";
 import Reveal, { STEP } from "../Reveal";
+import { IMAGE_RADIUS, IMAGE_RADIUS_LARGE } from "./image-style";
 
 /**
  * Interval between the ITEMS INSIDE a block — the rows of a list, the cells of
@@ -13,20 +14,8 @@ import Reveal, { STEP } from "../Reveal";
  */
 const ITEM_STEP = 46;
 
-/** One radius for every content image, so nothing looks half-styled. */
-export const IMAGE_RADIUS = "rounded-3xl";
-
-/**
- * A heavier radius for the pictures that render large.
- *
- * A fixed 24px is a quarter of a small logo's width and a twentieth of a
- * full-height photograph's, so the same number reads as very round on one and
- * almost square on the other. The big pictures take their own figure so the
- * curve is as legible at 600px as it is at 140px. It matters most where the
- * artwork's own edge happens to be the same colour as the page behind it,
- * which is when a shallow curve disappears altogether.
- */
-export const IMAGE_RADIUS_LARGE = "rounded-[2.5rem]";
+// Both radii, and the rules that go with them, live in `image-style`.
+export { IMAGE_RADIUS, IMAGE_RADIUS_LARGE };
 
 /* -------------------------------------------------------------------------
    HOW WIDE EACH PICTURE ACTUALLY RENDERS.
@@ -304,12 +293,15 @@ function renderBlock(
 
   if (block.type === "image" && typeof block.content === "string") {
     return (
-      <Reveal variant="lift" delay={base} className={`overflow-hidden ${IMAGE_RADIUS}`}>
+      <Reveal variant="lift" delay={base}>
         <Image
           src={block.content}
           alt="Content image"
           sizes={SIZES.bodyImage}
-          className="mx-auto h-auto max-h-[60vh] w-full object-contain"
+          // The radius is on the picture and the box shrink-wraps it: `w-auto`
+          // with a max, not `w-full`, so the curve can only ever land on the
+          // artwork. See `image-style`.
+          className={`mx-auto h-auto max-h-[60vh] w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`}
           width={800}
           height={600}
         />

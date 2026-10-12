@@ -404,7 +404,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                       // photo exactly, so the radius lands on the artwork and
                       // never on letterbox space. No plate, border or shadow.
                       sizes={SIZES.resultsDevice}
-                      className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[50vh] w-auto max-w-full object-contain lg:max-h-full ${IMAGE_RADIUS}`}
+                      className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[50vh] w-auto max-w-full object-contain lg:max-h-full ${IMAGE_RADIUS_LARGE}`}
                       style={{ animationDelay: `${revealDelay(2)}ms` }}
                       width={600}
                       height={1200}
@@ -600,7 +600,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                   // object-contain inside a fixed column: mixed device aspects
                   // (portrait phones beside a landscape tablet) share a common
                   // height and nothing is ever cropped.
-                  className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[56vh] w-full object-contain lg:max-h-[72vh] ${IMAGE_RADIUS_LARGE}`}
+                  className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[56vh] w-auto max-w-full object-contain lg:max-h-[72vh] ${IMAGE_RADIUS_LARGE}`}
                 />
               ))}
             </div>
