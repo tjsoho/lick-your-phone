@@ -16,6 +16,18 @@ const ITEM_STEP = 46;
 /** One radius for every content image, so nothing looks half-styled. */
 export const IMAGE_RADIUS = "rounded-3xl";
 
+/**
+ * A heavier radius for the pictures that render large.
+ *
+ * A fixed 24px is a quarter of a small logo's width and a twentieth of a
+ * full-height photograph's, so the same number reads as very round on one and
+ * almost square on the other. The big pictures take their own figure so the
+ * curve is as legible at 600px as it is at 140px. It matters most where the
+ * artwork's own edge happens to be the same colour as the page behind it,
+ * which is when a shallow curve disappears altogether.
+ */
+export const IMAGE_RADIUS_LARGE = "rounded-[2.5rem]";
+
 /* -------------------------------------------------------------------------
    HOW WIDE EACH PICTURE ACTUALLY RENDERS.
 
@@ -89,7 +101,7 @@ export const MAIN_IMAGE_HEIGHT =
  * shrink-wrapped box, never cropped, radius on the photo. No plate, no border,
  * no shadow.
  */
-export const MAIN_IMAGE = `${MAIN_IMAGE_HEIGHT} w-auto max-w-full object-contain ${IMAGE_RADIUS}`;
+export const MAIN_IMAGE = `${MAIN_IMAGE_HEIGHT} w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
 
 /**
  * The single vertical spacing scale for a content page's text column.

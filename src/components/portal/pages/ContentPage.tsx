@@ -7,6 +7,7 @@ import { useCopy, useProposal, type PageData } from "../ProposalContext";
 import ContentBlockRenderer, {
   RHYTHM,
   IMAGE_RADIUS,
+  IMAGE_RADIUS_LARGE,
   MAIN_IMAGE,
   SIZES,
 } from "./ContentBlockRenderer";
@@ -599,7 +600,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                   // object-contain inside a fixed column: mixed device aspects
                   // (portrait phones beside a landscape tablet) share a common
                   // height and nothing is ever cropped.
-                  className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[56vh] w-full object-contain lg:max-h-[72vh] ${IMAGE_RADIUS}`}
+                  className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[56vh] w-full object-contain lg:max-h-[72vh] ${IMAGE_RADIUS_LARGE}`}
                 />
               ))}
             </div>
