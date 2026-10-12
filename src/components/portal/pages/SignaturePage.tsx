@@ -402,6 +402,12 @@ export default function SignaturePage() {
 
   const noSelections = selections.length === 0;
 
+  /** One paragraph per line, blank lines dropped. */
+  const beforeYouSign = t("beforeYouSign")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
   if (noSelections) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6 text-center">
@@ -479,6 +485,28 @@ export default function SignaturePage() {
               {t("intro")}
             </Reveal>
           </div>
+
+          {/* WHAT THEY ARE AGREEING TO, BEFORE THEY AGREE TO IT.
+              Set apart on its own panel rather than buried in the consent
+              sentence further down: a client who signs without reading this
+              is the one the late fees are about. */}
+          {beforeYouSign.length > 0 && (
+            <Reveal
+              index={2}
+              className="rounded-2xl bg-[#120406]/70 px-4 py-3.5 ring-1 ring-inset ring-[#f0c9c9]/25 [@media(min-height:850px)]:px-5 [@media(min-height:850px)]:py-4"
+            >
+              {beforeYouSign.map((line, i) => (
+                <p
+                  key={i}
+                  className={`font-body text-[12.5px] leading-relaxed text-lyp-white/80 [@media(min-height:850px)]:text-[13.5px] ${
+                    i > 0 ? "mt-2" : ""
+                  }`}
+                >
+                  {line}
+                </p>
+              ))}
+            </Reveal>
+          )}
 
           {/* Email. It arrives filled in with the address this proposal was
               sent to and stays the client's to change — a different person

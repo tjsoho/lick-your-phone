@@ -340,7 +340,7 @@ export default function ContentPage({ page }: ContentPageProps) {
               <Reveal
                 as="h1"
                 index={0}
-                className="font-heading text-4xl uppercase leading-[1.02] tracking-tight text-lyp-white md:text-5xl xl:text-6xl"
+                className="font-heading text-4xl font-extrabold uppercase leading-[1.02] tracking-tight text-lyp-white md:text-5xl xl:text-6xl"
               >
                 {page.title}
               </Reveal>
@@ -514,7 +514,7 @@ export default function ContentPage({ page }: ContentPageProps) {
           <Reveal
             as="h1"
             index={2}
-            className={`mx-auto text-balance font-heading uppercase leading-[0.95] tracking-tight text-lyp-white ${
+            className={`mx-auto text-balance font-heading font-extrabold uppercase leading-[0.95] tracking-tight text-lyp-white ${
               // A long title drops a size and takes a wider measure, so it
               // sits on one line instead of breaking in two. The agency asked
               // for this by name: "Marketing Growth Strategy: keep the title
@@ -555,7 +555,7 @@ export default function ContentPage({ page }: ContentPageProps) {
             <Reveal
               as="h1"
               index={0}
-              className="text-center font-heading text-4xl md:text-6xl leading-[1.02] text-lyp-white uppercase tracking-tight"
+              className="text-center font-heading text-4xl font-extrabold md:text-6xl leading-[1.02] text-lyp-white uppercase tracking-tight"
             >
               {page.title}
             </Reveal>
@@ -686,7 +686,7 @@ export default function ContentPage({ page }: ContentPageProps) {
               <Reveal
                 as="h1"
                 index={0}
-                className={`font-heading leading-[1.02] text-lyp-white text-balance uppercase tracking-tight ${
+                className={`font-heading font-extrabold leading-[1.02] text-lyp-white text-balance uppercase tracking-tight ${
                   page.title.length > 19
                     ? "max-w-[28ch] text-3xl md:text-5xl"
                     : "max-w-[18ch] text-4xl md:text-6xl"

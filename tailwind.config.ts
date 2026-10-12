@@ -53,7 +53,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        heading: ["var(--font-fira-sans)", "Fira Sans", "sans-serif"],
+        heading: ["var(--font-kanit)", "Kanit", "sans-serif"],
         body: ["var(--font-montserrat)", "Montserrat", "sans-serif"],
       },
       // Named so they compile. Tailwind rejects `ease-[cubic-bezier(...)]`

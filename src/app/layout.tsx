@@ -1,12 +1,25 @@
 import type { Metadata, Viewport } from "next";
-import { Fira_Sans, Montserrat } from "next/font/google";
+import { Kanit, Montserrat } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 
-const firaSans = Fira_Sans({
+/**
+ * Titles are set in Kanit, which is the typeface the agency's own PandaDoc
+ * deck uses: "You were right with using Fira Sans, it is the right font in
+ * our brand guidelines, but Rita wants to use a different one."
+ *
+ * Taken from Google Fonts rather than Adobe Fonts. It is the same typeface,
+ * and the Open Font Licence lets us serve it ourselves and embed it in a PDF,
+ * neither of which an Adobe Fonts licence allows.
+ *
+ * Several weights, because the old single 700 meant every heading rendered
+ * bold whatever class it carried. The deck's big titles ask for 800, which is
+ * the extrabold Rita is used to seeing.
+ */
+const kanit = Kanit({
   subsets: ["latin"],
-  weight: ["700"],
-  variable: "--font-fira-sans",
+  weight: ["400", "600", "700", "800"],
+  variable: "--font-kanit",
   display: "swap",
 });
 
@@ -41,7 +54,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${firaSans.variable} ${montserrat.variable}`}>
+    <html lang="en" className={`${kanit.variable} ${montserrat.variable}`}>
       <body className="antialiased overflow-x-clip">
         <Toaster
           position="top-right"

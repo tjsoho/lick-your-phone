@@ -660,7 +660,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
             <Reveal
               as="h1"
               delay={D_TITLE}
-              className="mt-2 font-heading text-[30px] uppercase leading-[0.94] tracking-[-0.015em] text-lyp-white sm:text-[38px] lg:text-[46px] [@media(min-height:850px)]:mt-3 [@media(min-height:850px)]:text-[58px]"
+              className="mt-2 font-heading text-[30px] font-extrabold uppercase leading-[0.94] tracking-[-0.015em] text-lyp-white sm:text-[38px] lg:text-[46px] [@media(min-height:850px)]:mt-3 [@media(min-height:850px)]:text-[58px]"
             >
               {service.name}
             </Reveal>

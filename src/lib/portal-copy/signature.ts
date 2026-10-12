@@ -5,6 +5,12 @@ export const SIGNATURE_COPY: CopySlot[] = [
   { key: "intro", label: "Intro", default: "Review and sign to confirm your selected services.", multiline: true },
   { key: "noServicesTitle", label: "Nothing selected: title", default: "No services selected." },
   { key: "noServicesBody", label: "Nothing selected: message", default: "Go back and select at least one service before signing.", multiline: true },
+  /* The three facts Rita wants a client to have read before they sign: when
+     the work starts, how they will be charged, and that late and early exit
+     both cost. One slot, three lines, kept editable in Settings so the agency
+     can reword it without a release. Empty hides the panel. */
+  { key: "beforeYouSign", label: "What they agree to, above the signature", multiline: true, default: "Your start date is the date of your onboarding meeting.\nPayments are collected monthly in advance via direct debit from your nominated bank account seven days before the start date.\nThis contract is legally binding and by signing, you agree all late payments will incur late fees and early termination of this contract will result in full enforcement of the termination fees.", hint: "Sits under the heading, above the email and signature. One line per paragraph. Leave it empty to hide the panel." },
+
   { key: "emailLabel", label: "Email label", default: "Your email address" },
   { key: "signatureLabel", label: "Signature label", default: "Draw your signature below" },
   { key: "clearButton", label: "Clear signature button", default: "Clear signature" },
