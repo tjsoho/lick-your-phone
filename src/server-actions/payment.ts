@@ -57,6 +57,17 @@ export async function capturePaymentDetails(
   proposalId: string,
   token: string,
   cardMeta: CardMeta,
+  options?: {
+    /**
+     * Whether to lay down the debit schedule as well as vaulting the card.
+     *
+     * Off by default, and off from the portal: "we're not actually making any
+     * payment we're simply storing". The card is held at Pinch so accounting
+     * can charge it when they choose. Turn this on and the old behaviour
+     * comes back, a row per instalment for the cron to work through.
+     */
+    schedulePayments?: boolean;
+  },
 ): Promise<CaptureResult> {
   try {
     const supabase = await createAdminClient();
@@ -219,8 +230,8 @@ export async function capturePaymentDetails(
       sequence++;
     }
 
-    // 6. Insert payment schedules
-    if (schedules.length > 0) {
+    // 6. Insert payment schedules, if this capture is meant to charge at all.
+    if (options?.schedulePayments && schedules.length > 0) {
       const { error: schedErr } = await supabase
         .from("payment_schedules")
         .insert(schedules);

@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import ProposalInternalNotes from "@/components/admin/ProposalInternalNotes";
 import ProposalDeckOverview from "@/components/admin/ProposalDeckOverview";
-import BankDetailsCard from "@/components/admin/BankDetailsCard";
+import PaymentMethodCard from "@/components/admin/PaymentMethodCard";
 import ProposalDiscountTimer from "@/components/admin/ProposalDiscountTimer";
 import SendProposalButton from "@/components/admin/SendProposalButton";
 import ProposalPortalLink from "@/components/admin/ProposalPortalLink";
@@ -174,11 +174,12 @@ export default async function ProposalDetailPage({
   // The account the client put on file, if they gave one. Only the name, the
   // last three digits and the authority date are read here: the numbers stay
   // encrypted in the row and come out one deliberate click at a time.
-  const { data: bankRow } = await supabase
+  const { data: methodRow } = await supabase
     .from("payments")
-    .select("bank_account_name, bank_account_last_three, bank_authorised_at")
+    .select(
+      "bank_account_name, bank_account_last_three, bank_authorised_at, card_brand, card_last_four, card_expiry",
+    )
     .eq("proposal_id", id)
-    .not("bank_account_last_three", "is", null)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -640,12 +641,15 @@ export default async function ProposalDetailPage({
           </div>
         ) : (
           <div className="space-y-6">
-            {bankRow && (
-              <BankDetailsCard
+            {methodRow && (
+              <PaymentMethodCard
                 proposalId={id}
-                accountName={bankRow.bank_account_name}
-                lastThree={bankRow.bank_account_last_three}
-                authorisedAt={bankRow.bank_authorised_at}
+                accountName={methodRow.bank_account_name}
+                lastThree={methodRow.bank_account_last_three}
+                authorisedAt={methodRow.bank_authorised_at}
+                cardBrand={methodRow.card_brand}
+                cardLastFour={methodRow.card_last_four}
+                cardExpiry={methodRow.card_expiry}
               />
             )}
 

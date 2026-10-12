@@ -1,6 +1,6 @@
 "use client";
 
-import { Eye, EyeOff, Landmark, Loader2 } from "lucide-react";
+import { CreditCard, Eye, EyeOff, Landmark, Loader2 } from "lucide-react";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { revealBankDetails } from "@/server-actions/payment";
@@ -17,18 +17,27 @@ const EASE = "ease-brand";
  * click. That click decrypts on the server and writes a line to the timeline
  * naming who looked.
  */
-export default function BankDetailsCard({
+export default function PaymentMethodCard({
   proposalId,
   accountName,
   lastThree,
   authorisedAt,
+  cardBrand,
+  cardLastFour,
+  cardExpiry,
 }: {
   proposalId: string;
   accountName: string | null;
   lastThree: string | null;
-  /** When the client agreed to the debit. Null for a pre-existing card row. */
+  /** When the client agreed to the payments. Null on older card rows. */
   authorisedAt: string | null;
+  cardBrand: string | null;
+  cardLastFour: string | null;
+  cardExpiry: string | null;
 }) {
+  // A card is held at Pinch, not here, so there is nothing of it to reveal:
+  // the card tile is a statement of what is on file and where to charge it.
+  const isCard = Boolean(cardLastFour);
   const [revealed, setRevealed] = useState<{
     bsb: string;
     accountNumber: string;
@@ -50,6 +59,31 @@ export default function BankDetailsCard({
     setRevealed({ bsb: data.bsb, accountNumber: data.accountNumber });
   }
 
+  if (isCard) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] px-4 py-3.5">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-lyp-cherry/[0.08]">
+            <CreditCard strokeWidth={1.25} className="h-4 w-4 text-lyp-cherry" />
+          </span>
+          <div className="min-w-0">
+            <p className="font-body text-[13px] font-semibold text-lyp-black">
+              Card on file
+            </p>
+            <p className="mt-0.5 font-body text-[12px] tabular-nums text-[#6B5A5A]">
+              {(cardBrand ?? "Card").toUpperCase()} ending {cardLastFour}
+              {cardExpiry ? ` · expires ${cardExpiry}` : ""}
+            </p>
+            <p className="mt-0.5 font-body text-[11px] text-[#867474]">
+              Held by Pinch, not here. Charge it from the Pinch dashboard; the
+              number has never touched this system.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] px-4 py-3.5">
       <div className="flex items-start gap-3">
@@ -69,7 +103,7 @@ export default function BankDetailsCard({
           </p>
           <p className="mt-0.5 font-body text-[11px] text-[#867474]">
             {authorisedAt
-              ? `The client authorised the debit on ${new Date(authorisedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}.`
+              ? `The client authorised the payments on ${new Date(authorisedAt).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" })}.`
               : "Held for accounting. Nothing is debited from here."}
           </p>
         </div>
