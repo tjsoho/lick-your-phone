@@ -643,8 +643,11 @@ export default function ContentPage({ page }: ContentPageProps) {
   const trustedByLabel = tGlobal("trustedByLabel");
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col overflow-y-auto">
-      <div className="flex-1 flex flex-col justify-center px-8 pt-8 pb-12 md:px-14 lg:px-20 lg:pt-6 lg:pb-8">
+    /* No cap on this element. The trusted-by band below is a direct child of
+       it and has to reach both edges of the window, so the 1400px measure
+       moves onto the content row instead, where it was always meant to be. */
+    <div className="flex h-full w-full flex-col overflow-y-auto">
+      <div className="mx-auto w-full max-w-[1400px] flex-1 flex flex-col justify-center px-8 pt-8 pb-12 md:px-14 lg:px-20 lg:pt-6 lg:pb-8">
         {/* lg:items-center centres the featured image against the text column.
             The title lives INSIDE the text column, so title, subheadings,
             paragraphs and list items all share one left edge — including on the
