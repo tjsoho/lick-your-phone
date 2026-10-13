@@ -1176,10 +1176,15 @@ export default function ServicePage({ service, page }: ServicePageProps) {
               key={`${logo.url}-${i}`}
               src={logo.url}
               alt={logo.alt || "Platform logo"}
-              sizes="40px"
+              // The same height as a mark in a `logos` block elsewhere in the
+              // deck, so a platform icon on a service page reads at the same
+              // weight as the client logos: "increase the socials icons to
+              // make sure they are the same size as the logos". They were 32px
+              // against the logos' 64px.
+              sizes="80px"
               width={160}
               height={160}
-              className="h-8 w-auto object-contain [@media(min-height:850px)]:h-10"
+              className="h-14 w-auto object-contain [@media(min-height:850px)]:h-16"
             />
           ))}
         </Reveal>

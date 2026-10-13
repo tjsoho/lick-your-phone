@@ -45,6 +45,7 @@ export default async function PortalPage({ params }: Props) {
       id, token, status, signed_at, discount_expires_at, discount_starts_at,
       discount_timer_active,
       signer_email,
+      furthest_page,
       client:clients!client_id ( id, name, contact_name, email, logo_url ),
       venue:venues!venue_id ( id, name, logo_url ),
       payments(*),
@@ -159,6 +160,11 @@ export default async function PortalPage({ params }: Props) {
     // venue's own logo first, the client's behind it. Both passed raw; the
     // precedence and the fallback to the cover's copy slot live in
     // `resolveCoverLogo`.
+    // The slide they had reached last time, so a client who closes the tab
+    // half way through comes back where they left off instead of at the cover.
+    // Recorded by `api/portal/viewed` in this same index space.
+    furthestPage:
+      (proposal as { furthest_page?: number | null }).furthest_page ?? null,
     clientLogoUrl: clientObj?.logo_url ?? null,
     venueLogoUrl: venueObj?.logo_url ?? null,
     venueName: venueObj?.name ?? "Venue",

@@ -70,6 +70,8 @@ export interface ProposalData {
   discountExpiresAt: string | null;
   /** Show the client a countdown to discountExpiresAt. */
   discountTimerActive: boolean;
+  /** The furthest slide this client has reached, or null if never opened. */
+  furthestPage: number | null;
   /** When a scheduled discount window opens. Null means "as soon as it is on". */
   discountStartsAt?: string | null;
   /** When the client signed; the discount is judged at that moment from then on. */
@@ -261,7 +263,23 @@ export function ProposalProvider({
     });
   }, [pages, paymentCaptured, proposal.status]);
 
-  const [currentPage, setCurrentPage] = useState(0);
+  /**
+   * Opens where the client left off, not back at the cover.
+   *
+   * `furthestPage` is recorded in this same index space by
+   * `api/portal/viewed`, so it can be used as-is. It is clamped because the
+   * deck can change between visits — a page switched off, or the payment slide
+   * appearing once they sign — and a stale index must never strand anyone on a
+   * slide that no longer exists.
+   *
+   * A client who has never opened it, or who stopped on the cover, starts at
+   * the cover, which is the same as before.
+   */
+  const [currentPage, setCurrentPage] = useState(() => {
+    const saved = proposal.furthestPage;
+    if (saved == null || saved <= 0) return 0;
+    return Math.min(saved, filteredPages.length - 1);
+  });
   const [selections, setSelections] = useState<Selection[]>(
     initialSelections ?? [],
   );
