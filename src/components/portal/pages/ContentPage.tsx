@@ -86,7 +86,10 @@ export default function ContentPage({ page }: ContentPageProps) {
           <Reveal
             as="h1"
             index={2}
-            className="mt-10 max-w-[24ch] text-balance font-heading text-[1.9rem] font-extrabold uppercase leading-[1.02] tracking-tight text-lyp-white sm:text-[2.4rem] md:text-[3.1rem] [@media(min-height:850px)]:mt-12 [@media(min-height:850px)]:text-[3.8rem]"
+            // The 24ch cap is what was breaking this over two lines, not the
+            // size. It stays below `lg`, where one long row genuinely will not
+            // fit, and comes off from `lg` up where the slide is wide enough.
+            className="mt-10 max-w-[24ch] text-balance font-heading text-[1.7rem] font-extrabold uppercase leading-[1.02] tracking-tight text-lyp-white sm:text-[2.1rem] md:text-[2.6rem] lg:max-w-none [@media(min-height:850px)]:mt-12 [@media(min-height:850px)]:text-[3rem]"
           >
             {strapline}
           </Reveal>
@@ -535,8 +538,15 @@ export default function ContentPage({ page }: ContentPageProps) {
               // One grid column per image so the row never wraps. Percentage
               // widths plus gaps always exceeded 100% and pushed the third
               // device onto a second row.
+              // Columns size to the devices, not to equal fractions. An equal
+              // fraction is narrower than a device wants, so the width clamped
+              // and, with the height stated, the picture letterboxed inside a
+              // box that was too tall — which put the corner radius back on
+              // empty space. Auto columns cannot clamp, so they cannot
+              // letterbox.
               style={{
-                gridTemplateColumns: `repeat(${showcaseImages.length}, minmax(0, 1fr))`,
+                gridTemplateColumns: `repeat(${showcaseImages.length}, auto)`,
+                justifyContent: "center",
               }}
               // The row reads as one group, so the gaps are nearly nothing.
               // Most of what used to separate these devices was never a gap at
@@ -571,7 +581,16 @@ export default function ContentPage({ page }: ContentPageProps) {
                   // object-contain inside a fixed column: mixed device aspects
                   // (portrait phones beside a landscape tablet) share a common
                   // height and nothing is ever cropped.
-                  className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[62vh] w-auto max-w-full object-contain lg:max-h-[78vh] ${IMAGE_RADIUS_LARGE}`}
+                  // The height is STATED here, not capped, and that is deliberate.
+                  // Capping it meant the size came from the picture's own
+                  // intrinsic dimensions, and next/image reports those through
+                  // a srcset whose declared widths the server does not honour
+                  // once the source is smaller than the largest candidate. The
+                  // browser then applies a density correction and a 506px-wide
+                  // device claims to be 239px, so it drew at 239. Firefox and
+                  // Chrome disagreed about it, which is the worst kind of bug.
+                  // A stated height is the same number everywhere.
+                  className={`portal-reveal portal-reveal-lift mx-auto h-[40vh] w-auto max-w-full object-contain lg:h-[62vh] ${IMAGE_RADIUS_LARGE}`}
                 />
               ))}
             </div>

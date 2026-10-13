@@ -24,8 +24,16 @@ const LOGO_H = 120;
  * are genuinely transparent (checked: alpha 0 in all four), so it needs no
  * plate behind it on the dark sidebar and gets none.
  */
-const MARK_SRC = "/images/lips-mark.webp";
-const MARK_SIZE = 1080;
+/**
+ * Trimmed to the artwork. The original was a 1080 square with the circle
+ * filling only 88% of it, so beside a client's own mark at the same element
+ * height it read as the smaller of the two — "the logos need to be the same
+ * size". With the padding gone the circle fills its box, so equal heights
+ * now mean equal circles.
+ */
+const MARK_SRC = "/images/lips-mark.png";
+const MARK_W = 954;
+const MARK_H = 953;
 
 interface LogoProps {
   /**
@@ -69,8 +77,8 @@ export default function Logo({
       <Image
         src={resolved}
         alt="LickYourPhone Media"
-        width={MARK_SIZE}
-        height={MARK_SIZE}
+        width={MARK_W}
+        height={MARK_H}
         priority={priority}
         className={cn("w-auto object-contain", className)}
       />
