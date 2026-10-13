@@ -6,7 +6,15 @@ import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { IMAGE_RADIUS_LARGE } from "./image-style";
 
-const AUTO_INTERVAL = 5000;
+/**
+ * How long a slide holds before the carousel moves itself on. Two seconds,
+ * asked for on 13 October 2026. The slide transition is 700ms, so a slide is
+ * still at rest for well over a second between moves.
+ *
+ * Hovering pauses it, and reduced motion stops it driving itself at all; the
+ * arrows and dots keep working either way.
+ */
+const AUTO_INTERVAL = 2000;
 
 interface MediaCarouselProps {
   items: { url: string; alt: string }[];
