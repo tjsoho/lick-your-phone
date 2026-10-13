@@ -548,13 +548,15 @@ export default function ContentPage({ page }: ContentPageProps) {
                 gridTemplateColumns: `repeat(${showcaseImages.length}, auto)`,
                 justifyContent: "center",
               }}
-              // The row reads as one group, so the gaps are nearly nothing.
-              // Most of what used to separate these devices was never a gap at
-              // all: each source was a 1080x1080 transparent square with the
-              // device filling 47-64% of it, so half of every picture was
-              // empty padding. The artwork is trimmed to the device now, which
-              // is what actually made them bigger and closer.
-              className={`grid w-full items-center gap-1 md:gap-2 lg:gap-3 ${
+              // 112px between the devices on desktop, asked for once the real
+              // gap was visible. Worth knowing why it moved twice: most of
+              // what used to separate these devices was never a gap at all.
+              // Each source was a 1080x1080 transparent square with the device
+              // filling 47-64% of it, so half of every picture was empty
+              // padding and the row looked airy at a 16px gap. With the
+              // artwork trimmed to the device, the gap is the only thing
+              // holding them apart, so it has to carry the spacing itself.
+              className={`grid w-full items-center gap-3 md:gap-10 lg:gap-[112px] ${
                 page.title || subheadBlocks.length > 0 ? "mt-6" : ""
               }`}
             >
