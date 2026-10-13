@@ -220,6 +220,100 @@ const FIELD_COMPONENTS: Record<
   static_content: StaticContentField,
 };
 
+/**
+ * Whether a question shows, given what the client bought and what they have
+ * answered so far. Module scope on purpose: the form uses it to decide what to
+ * draw, and `resumeAtPage` below uses it to decide where to put the client
+ * back. One rule, used twice, so the two can never disagree.
+ */
+function questionIsVisible(
+  q: IntakeQuestionWithConditions,
+  responses: Record<string, unknown>,
+  signedServiceIds: Set<string>,
+): boolean {
+  if (q.intake_conditions.length === 0) return true;
+
+  // Conditions of the SAME kind are alternatives; different kinds all have
+  // to hold. Two "service signed" rows on one question mean "either of
+  // these services", which is how the agency writes them — the
+  // videographer picker is tied to both videography services and is meant
+  // to appear for a client who bought one of them. ANDing those hid it
+  // from everyone who had not bought both.
+  const met = (c: IntakeQuestionWithConditions["intake_conditions"][number]) => {
+    switch (c.condition_type) {
+      case "service_signed":
+        if (!c.condition_service_id) return true;
+        return signedServiceIds.has(c.condition_service_id);
+
+      case "venue_state":
+        // If no state filtering is possible at client level, show the question
+        // The provider picker will filter by state server-side
+        return true;
+
+      case "answer_equals":
+        if (!c.condition_question_id || c.condition_value == null) return true;
+        return responses[c.condition_question_id] === c.condition_value;
+
+      default:
+        return true;
+    }
+  };
+
+  const byKind = new Map<string, IntakeQuestionWithConditions["intake_conditions"]>();
+  for (const c of q.intake_conditions) {
+    const list = byKind.get(c.condition_type) ?? [];
+    list.push(c);
+    byKind.set(c.condition_type, list);
+  }
+
+  return [...byKind.values()].every((group) => group.some(met));
+}
+
+/**
+ * WHERE A RETURNING CLIENT PICKS UP.
+ *
+ * The form used to open on step one every time, however much had already been
+ * answered. A client who signed, filled in four steps and closed the tab came
+ * back to a form that looked untouched — their answers were all still there,
+ * but they had to page through them to find where they had stopped.
+ *
+ * This returns the first step that still has an unanswered required question,
+ * using exactly the rules the Next button validates against: invisible
+ * questions do not count, nor does a required question with no options to
+ * choose from, because that one can never be satisfied and would strand them.
+ *
+ * If every step is already satisfied they land on the last one, which is where
+ * the submit button is, rather than being made to walk the whole form again.
+ */
+function resumeAtPage(
+  questions: IntakeQuestionWithConditions[],
+  responses: Record<string, unknown>,
+  providers: Provider[],
+  signedServiceIds: Set<string>,
+): number {
+  const pageNumbers = [...new Set(questions.map((q) => q.page_number))].sort(
+    (a, b) => a - b,
+  );
+  if (pageNumbers.length === 0) return 1;
+
+  for (const pageNumber of pageNumbers) {
+    const unfinished = questions.some((q) => {
+      if (q.page_number !== pageNumber) return false;
+      if (!q.required) return false;
+      if (q.field_type === "static_content") return false;
+      if (!questionIsVisible(q, responses, signedServiceIds)) return false;
+      if (availableOptionCount(q, providers) === 0) return false;
+      const val = responses[q.id];
+      return (
+        val == null || val === "" || (Array.isArray(val) && val.length === 0)
+      );
+    });
+    if (unfinished) return pageNumber;
+  }
+
+  return pageNumbers[pageNumbers.length - 1];
+}
+
 export default function IntakePage({
   questions,
   providers,
@@ -234,7 +328,21 @@ export default function IntakePage({
   const [responses, setResponses] = useState<Record<string, unknown>>(() =>
     withClientEmail(existingResponses ?? {}, questions, proposal.clientEmail),
   );
-  const [currentIntakePage, setCurrentIntakePage] = useState(1);
+  /**
+   * Opens on the step the client stopped at, not on step one. Computed once,
+   * at mount, from the answers that came back with the page — see
+   * `resumeAtPage`. `selections` is read directly rather than through the
+   * `signedServiceIds` memo below, because this runs before it exists and only
+   * ever runs once.
+   */
+  const [currentIntakePage, setCurrentIntakePage] = useState(() =>
+    resumeAtPage(
+      questions,
+      withClientEmail(existingResponses ?? {}, questions, proposal.clientEmail),
+      providers,
+      new Set(selections.map((sel) => sel.serviceId)),
+    ),
+  );
   /** The form's own scroller — the one thing in the portal that may scroll. */
   const formScrollRef = useRef<HTMLDivElement>(null);
   const [saving, setSaving] = useState(false);
@@ -284,48 +392,8 @@ export default function IntakePage({
 
   // Evaluate whether a question should be visible
   const isQuestionVisible = useCallback(
-    (q: IntakeQuestionWithConditions): boolean => {
-      if (q.intake_conditions.length === 0) return true;
-
-      // Conditions of the SAME kind are alternatives; different kinds all have
-      // to hold. Two "service signed" rows on one question mean "either of
-      // these services", which is how the agency writes them — the
-      // videographer picker is tied to both videography services and is meant
-      // to appear for a client who bought one of them. ANDing those hid it
-      // from everyone who had not bought both.
-      const met = (c: IntakeQuestionWithConditions["intake_conditions"][number]) => {
-        switch (c.condition_type) {
-          case "service_signed":
-            if (!c.condition_service_id) return true;
-            return signedServiceIds.has(c.condition_service_id);
-
-          case "venue_state":
-            // If no state filtering is possible at client level, show the question
-            // The provider picker will filter by state server-side
-            return true;
-
-          case "answer_equals":
-            if (!c.condition_question_id || c.condition_value == null)
-              return true;
-            return responses[c.condition_question_id] === c.condition_value;
-
-          default:
-            return true;
-        }
-      };
-
-      const byKind = new Map<
-        string,
-        IntakeQuestionWithConditions["intake_conditions"]
-      >();
-      for (const c of q.intake_conditions) {
-        const list = byKind.get(c.condition_type) ?? [];
-        list.push(c);
-        byKind.set(c.condition_type, list);
-      }
-
-      return [...byKind.values()].every((group) => group.some(met));
-    },
+    (q: IntakeQuestionWithConditions): boolean =>
+      questionIsVisible(q, responses, signedServiceIds),
     [signedServiceIds, responses],
   );
 

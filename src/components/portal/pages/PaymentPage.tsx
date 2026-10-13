@@ -42,6 +42,20 @@ const CONFIRM_GREEN_TINT = "bg-[#86D6A5]/[0.18]";
 const HANDOFF_MS = 2000;
 
 /**
+ * WHETHER THE CLIENT MAY PAY BY CARD.
+ *
+ * Off. The agency's review on 13 October 2026: payment is to be limited to
+ * bank accounts. This flipped twice before landing there, which is why the
+ * card path is switched off rather than deleted — the Pinch tokenisation, the
+ * form and the admin card view all still work, and turning this back on is a
+ * one-word change with nothing to rebuild.
+ *
+ * Nothing is ever charged either way. Details are captured and passed to
+ * accounting; see the interlock in `api/cron/process-payment`.
+ */
+const CARD_PAYMENTS_ENABLED = false;
+
+/**
  * Proposals whose card was captured in THIS tab.
  *
  * The server's `paymentCaptured` is decided when the portal is served, so it
@@ -457,6 +471,8 @@ function PaymentForm({
    * account is encrypted and held, because there is no vault for one.
    */
   const [method, setMethod] = useState<"bank" | "card">("bank");
+  // `method` can only ever be "bank" while cards are switched off, because
+  // the only thing that calls `setMethod` is the hidden switcher.
 
   // Form state. An account rather than a card: no payment is taken here, the
   // details are held for accounting to debit later.
@@ -695,7 +711,12 @@ function PaymentForm({
       >
         {/* How they want to pay. Two buttons rather than a dropdown: there
             are only ever two, and a dropdown hides the fact that a card is
-            an option at all. */}
+            an option at all.
+
+            Hidden while `CARD_PAYMENTS_ENABLED` is false, which it is. With
+            one method there is nothing to choose, so the client goes straight
+            to the bank fields. */}
+        {CARD_PAYMENTS_ENABLED && (
         <Reveal index={1} className="grid grid-cols-2 gap-2 rounded-xl bg-lyp-white/5 p-1">
           {(["bank", "card"] as const).map((option) => (
             <button
@@ -717,6 +738,7 @@ function PaymentForm({
             </button>
           ))}
         </Reveal>
+        )}
 
         {method === "bank" ? (
           <>

@@ -15,7 +15,10 @@ export const GLOBAL_COPY: CopySlot[] = [
   { key: "flowStageDone", label: "Progress tracker: screen-reader word for a finished stage", default: "done" },
   /* The same instruction on every service slide that offers three terms, so
      it is worded once here rather than retyped on each page. */
-  { key: "trustedByLabel", label: "Trusted-by strip: label", default: "Trusted by:", hint: "Sits before the row of client and press logos along the foot of a content page. Empty to show the logos with no label." },
+  // Empty by default. The words were there briefly, then taken out again:
+  // "remove the 'trusted by' text and present the logos in a row". The slot
+  // stays so the label can be put back from the page editor without a deploy.
+  { key: "trustedByLabel", label: "Trusted-by strip: label", default: "", hint: "Sits before the row of client and press logos along the foot of a content page. Leave it empty to show the logos on their own, which is how it is set now." },
   { key: "serviceChooseTerm", label: "Service page: choose-a-term prompt", default: "Select your preferred term", hint: "Sits on the price panel's label row, directly above the term cards, on every service that offers a choice of term. Ticking one of those cards is what adds the service, so this line is the instruction for the whole panel. Keep it short: a longer wording takes a line of its own, which the slide has no room for at 1280x720." },
   { key: "servicesSelectedOne", label: "Price bar: one service", default: "service selected" },
   { key: "servicesSelectedMany", label: "Price bar: several services", default: "services selected" },

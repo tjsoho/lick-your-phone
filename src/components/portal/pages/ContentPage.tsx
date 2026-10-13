@@ -19,14 +19,8 @@ interface ContentPageProps {
   page: PageData;
 }
 
-/* The cover's post-signature wording. Fixed, not editable: both only appear
-   on a signed proposal, and the page editor always previews a draft, so the
-   fields could never show their effect. Same words as before. */
-const SIGNED_BADGE = "Signed";
-const VIEW_SUMMARY_BUTTON = "View Summary";
-
 export default function ContentPage({ page }: ContentPageProps) {
-  const { proposal, pages, setCurrentPage } = useProposal();
+  const { proposal } = useProposal();
   // Called before the slug branches below so the hook order never changes.
   const tCover = useCopy("cover", page);
   const tResults = useCopy("results", page);
@@ -65,13 +59,13 @@ export default function ContentPage({ page }: ContentPageProps) {
           <Logo
             variant="mark"
             priority
-            className="h-[7.8rem] sm:h-[10.4rem] md:h-[13rem] [@media(min-height:850px)]:h-[15.6rem]"
+            className="h-[26vh] sm:h-[32vh] md:h-[42vh] [@media(min-height:850px)]:h-[46vh]"
           />
           {hasClientMark && (
             <>
               <span
                 aria-hidden
-                className="font-heading text-2xl font-extrabold uppercase text-lyp-white/60 md:text-4xl"
+                className="font-heading text-4xl font-extrabold uppercase text-lyp-white/60 md:text-6xl"
               >
                 x
               </span>
@@ -82,7 +76,7 @@ export default function ContentPage({ page }: ContentPageProps) {
               <img
                 src={coverLogo.src}
                 alt={`${proposal.venueName} logo`}
-                className="h-[7.8rem] w-auto max-w-[18.2rem] object-contain sm:h-[10.4rem] md:h-[13rem] md:max-w-[26rem] [@media(min-height:850px)]:h-[15.6rem]"
+                className="h-[26vh] w-auto max-w-[24rem] object-contain sm:h-[32vh] md:h-[42vh] md:max-w-[34rem] [@media(min-height:850px)]:h-[46vh]"
               />
             </>
           )}
@@ -92,55 +86,24 @@ export default function ContentPage({ page }: ContentPageProps) {
           <Reveal
             as="h1"
             index={2}
-            className="mt-8 max-w-[22ch] text-balance font-heading text-[1.65rem] font-extrabold uppercase leading-[1.02] tracking-tight text-lyp-white sm:text-[2rem] md:text-[2.65rem] [@media(min-height:850px)]:mt-10 [@media(min-height:850px)]:text-[3.3rem]"
+            className="mt-10 max-w-[24ch] text-balance font-heading text-[1.9rem] font-extrabold uppercase leading-[1.02] tracking-tight text-lyp-white sm:text-[2.4rem] md:text-[3.1rem] [@media(min-height:850px)]:mt-12 [@media(min-height:850px)]:text-[3.8rem]"
           >
             {strapline}
           </Reveal>
         )}
 
-        {/* Who it is for. Below the statement, because the statement is what
-            the slide is; this is the address on the envelope. */}
-        <Reveal
-          as="p"
-          index={3}
-          className="mt-10 font-body text-[11px] uppercase tracking-[0.3em] text-lyp-white/50 md:text-sm [@media(min-height:850px)]:mt-12"
-        >
-          {tCover("preparedFor")}
-        </Reveal>
-        <Reveal
-          as="h2"
-          index={4}
-          className="mt-2 font-heading text-3xl font-extrabold text-lyp-white md:text-4xl"
-        >
-          {proposal.venueName}
-        </Reveal>
-        {proposal.contactName && (
-          <Reveal
-            as="p"
-            index={5}
-            className="mt-1 font-body text-lg text-lyp-white/50"
-          >
-            {proposal.contactName}
-          </Reveal>
-        )}
+        {/* The "Prepared for" line, the venue name and the contact name used to
+            sit here. They have gone: the client already knows who they are,
+            their own mark is half the lockup above, and four more lines of
+            type made the marks small. The slide is now the two marks and one
+            sentence, which is what it is for. The wording stays editable in
+            the copy registry in case it is ever wanted back. */}
 
-        {proposal.status === "signed" && (
-          <Reveal index={6} className="mt-8 flex flex-col items-center gap-3">
-            <span className="inline-flex items-center gap-2 rounded-full bg-green-500/15 px-4 py-1.5 font-body text-sm text-green-400 ring-1 ring-green-500/30">
-              <span className="h-2 w-2 rounded-full bg-green-400" />
-              {SIGNED_BADGE}
-            </span>
-            <button
-              onClick={() => {
-                const idx = pages.findIndex((p) => p.slug === "summary");
-                if (idx !== -1) setCurrentPage(idx);
-              }}
-              className="rounded-lg bg-lyp-cherry px-6 py-2.5 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
-            >
-              {VIEW_SUMMARY_BUTTON}
-            </button>
-          </Reveal>
-        )}
+        {/* The "Signed" badge and its View Summary shortcut used to sit here
+            too. Gone with the rest: the cover is two marks and one sentence
+            now. A signed client still reaches their summary the ordinary way,
+            through the deck's own Next button, and the badge already shows on
+            the summary slide itself. */}
       </div>
     );
   }
@@ -575,10 +538,13 @@ export default function ContentPage({ page }: ContentPageProps) {
               style={{
                 gridTemplateColumns: `repeat(${showcaseImages.length}, minmax(0, 1fr))`,
               }}
-              // Tighter gaps than before, because the agency wants the row to
-              // read as one group: "make images a bit bigger and closer
-              // together". The height below grew to match.
-              className={`grid w-full items-center gap-2 md:gap-3 lg:gap-4 ${
+              // The row reads as one group, so the gaps are nearly nothing.
+              // Most of what used to separate these devices was never a gap at
+              // all: each source was a 1080x1080 transparent square with the
+              // device filling 47-64% of it, so half of every picture was
+              // empty padding. The artwork is trimmed to the device now, which
+              // is what actually made them bigger and closer.
+              className={`grid w-full items-center gap-1 md:gap-2 lg:gap-3 ${
                 page.title || subheadBlocks.length > 0 ? "mt-6" : ""
               }`}
             >
@@ -588,11 +554,16 @@ export default function ContentPage({ page }: ContentPageProps) {
                   key={`${img.url}-${i}`}
                   src={img.url}
                   alt={img.alt || ""}
-                  // One grid column each inside a capped 1400px row, so the
-                  // render width is a clean fraction of the page.
+                  // One grid column each inside the row, with headroom.
+                  // This number matters more than it looks: the box shrink-
+                  // wraps the picture now (see `image-style`), so the served
+                  // candidate is also the largest the picture can ever draw.
+                  // Understate it and the device renders small no matter what
+                  // the column allows — which is exactly what happened when
+                  // this said 1300/3 and the column was 472.
                   sizes={`(min-width: 1024px) ${Math.round(
-                    1300 / showcaseImages.length,
-                  )}px, ${Math.round(92 / showcaseImages.length)}vw`}
+                    1700 / showcaseImages.length,
+                  )}px, ${Math.round(96 / showcaseImages.length)}vw`}
                   style={{ animationDelay: `${revealDelay(2) + i * STEP}ms` }}
                   width={900}
                   height={1600}
@@ -600,7 +571,7 @@ export default function ContentPage({ page }: ContentPageProps) {
                   // object-contain inside a fixed column: mixed device aspects
                   // (portrait phones beside a landscape tablet) share a common
                   // height and nothing is ever cropped.
-                  className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[56vh] w-auto max-w-full object-contain lg:max-h-[72vh] ${IMAGE_RADIUS_LARGE}`}
+                  className={`portal-reveal portal-reveal-lift mx-auto h-auto max-h-[62vh] w-auto max-w-full object-contain lg:max-h-[78vh] ${IMAGE_RADIUS_LARGE}`}
                 />
               ))}
             </div>
@@ -705,9 +676,12 @@ export default function ContentPage({ page }: ContentPageProps) {
       {/* TRUSTED BY, ALONG THE FOOT.
           The logos used to sit mid-column, small, in the middle of the copy.
           "Add more logos but not where they currently are, add them in the
-          same style as the Forbes logo. Also add the words: Trusted by: and
-          then all logos." So they move out of the text and into the same
-          black band the press strip uses, with the label leading them. The
+          same style as the Forbes logo." So they move out of the text and into
+          the same black band the press strip uses. The words "Trusted by:"
+          were asked for, added, then taken out again on the next review:
+          "remove the 'trusted by' text and present the logos in a row". The
+          label is an empty copy slot now rather than deleted markup, so it
+          can come back from the page editor without a deploy. The
           band carries any number of logos and wraps rather than shrinking
           them, so adding more costs nothing. */}
       {showcaseLogos.length > 0 && (
