@@ -92,7 +92,13 @@ export default function MediaCarousel({
                 // image, and the box shrink-wraps it so the curve cannot land
                 // on letterbox space. This used to be `w-full` with no radius
                 // at all, which is why carousel slides had square corners.
-                `mx-auto h-auto max-h-[60vh] w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`
+                // Stated height, not a cap, for the same reason as the main
+                // picture: a capped height takes its size from the file's
+                // intrinsic dimensions, which next/image under-reports once the
+                // source is smaller than the biggest srcset candidate. A
+                // carousel slide was drawing at 201px on a slide with room for
+                // 540.
+                `mx-auto h-[60vh] w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`
               }
               width={800}
               height={450}

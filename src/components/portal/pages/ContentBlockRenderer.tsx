@@ -83,29 +83,31 @@ export const SIZES = {
  * the picture rather than on letterbox space.
  */
 export const MAIN_IMAGE_HEIGHT =
-  "max-h-[58vh] [@media(min-height:850px)]:max-h-[56vh] max-lg:max-h-[40vh]";
+  "h-[58vh] [@media(min-height:850px)]:h-[56vh] max-lg:h-[40vh]";
 
 /**
  * `MAIN_IMAGE_HEIGHT` plus the rules every image on a content page obeys:
  * shrink-wrapped box, never cropped, radius on the photo. No plate, no border,
  * no shadow.
  *
- * BOTH axes are a cap, and both are auto. That combination is the only one
- * that guarantees the box is exactly the photo.
+ * The height is STATED, not capped, and that is the whole point.
  *
- * It used to state the height and leave the width auto under a `max-w-full`.
- * When the column was narrower than the photo wanted, the width clamped and
- * the height did NOT come down with it, so `object-contain` sat the photo in
- * the middle of a box that was too tall. At 1280x1024 that left 132px of dead
- * space, 66px above and below. The radius is on the box, so the curve was
- * cutting that empty strip and the photo's own top and bottom corners were
- * never touched. It looked like the rounding had stopped working, and on a
- * wide window, where the width never clamped, it looked perfect.
+ * Capping it meant the size came from the picture's own intrinsic dimensions.
+ * next/image reports those through a srcset whose declared widths the server
+ * stops honouring once the source file is smaller than the largest candidate,
+ * so the browser applies a density correction: a 619px-wide photograph
+ * declared itself 204px and drew at 204px, on a slide with room for 520. The
+ * pictures looked tiny and no amount of layout would have fixed it.
  *
- * With both axes capped the browser shrinks the picture to fit whichever cap
- * binds and keeps the ratio, so there is nothing for the curve to miss.
+ * A stated height is the same number in every browser and on every source.
+ *
+ * The cost is that a column narrower than the picture wants will clamp the
+ * width while the height stays put, which letterboxes — and the radius is on
+ * the box, so the curve would cut empty space. That is measured rather than
+ * assumed: see the service-page sweep in the notes. If a new service ever
+ * does clamp, widen its column rather than capping this height again.
  */
-export const MAIN_IMAGE = `${MAIN_IMAGE_HEIGHT} h-auto w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
+export const MAIN_IMAGE = `${MAIN_IMAGE_HEIGHT} w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
 
 /**
  * The single vertical spacing scale for a content page's text column.
@@ -316,7 +318,7 @@ function renderBlock(
           // The radius is on the picture and the box shrink-wraps it: `w-auto`
           // with a max, not `w-full`, so the curve can only ever land on the
           // artwork. See `image-style`.
-          className={`mx-auto h-auto max-h-[60vh] w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`}
+          className={`mx-auto h-[60vh] w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`}
           width={800}
           height={600}
         />

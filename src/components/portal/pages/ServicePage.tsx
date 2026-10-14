@@ -135,7 +135,7 @@ const ROSE_RULE = "text-[#f0c9c9]/70";
 
 /** Caption style shared by every section label, so they read as one system. */
 const CAPTION =
-  "font-heading text-[11px] font-semibold uppercase tracking-[0.28em] [@media(min-height:850px)]:text-xs";
+  "font-heading text-[11px] font-semibold uppercase tracking-[0.28em] [@media(min-height:950px)]:text-xs";
 
 /** Block types that belong in the picture rail, not the text column. */
 const MEDIA_TYPES = ["image", "logos", "collage", "media_carousel"];
@@ -232,15 +232,20 @@ function PictureRail({
   // Same picture, same size, so the same radius as `MAIN_IMAGE`. It used to
   // take the small one, which is why a carousel slide on a service page looked
   // squarer than the single picture on the slide before it.
-  const IMG_IN_FRAME = `max-h-full h-auto w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
+  // `h-full`, not `max-h-full h-auto`. A capped height takes its size from the
+  // file's intrinsic dimensions, which next/image under-reports once the source
+  // is smaller than the largest srcset candidate — a carousel slide here was
+  // drawing at 198px inside a frame with room for 500.
+  const IMG_IN_FRAME = `h-full w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
 
   return (
     <div
       className={cn(
-        // Top aligned on a wide screen so the picture starts level with
-        // "What's Included" beside it; still centred when it stacks under the
-        // copy on a narrow one, where there is nothing to line up with.
-        "flex min-h-0 flex-col items-center justify-center gap-6 max-lg:min-h-[12rem] lg:justify-start",
+        // Centred in its column at every width — "the images should be large
+        // and also centered". It used to be top aligned from `lg` up so the
+        // picture started level with "What's Included" beside it; the copy is
+        // centred now, so the picture lines up by being centred too.
+        "flex min-h-0 flex-col items-center justify-center gap-6 max-lg:min-h-[12rem]",
       )}
     >
       {images.length === 1 && (
@@ -342,7 +347,7 @@ function PictureRail({
               alt={logo.alt || "Platform logo"}
               sizes={SIZES.platformMarkSmall}
               style={{ animationDelay: `${delay + 160 + i * 70}ms` }}
-              className="portal-reveal portal-reveal-pop h-9 w-auto object-contain [@media(min-height:850px)]:h-11"
+              className="portal-reveal portal-reveal-pop h-9 w-auto object-contain [@media(min-height:950px)]:h-11"
               width={320}
               height={320}
             />
@@ -359,6 +364,24 @@ interface ServicePageProps {
   page: PageData;
 }
 
+/**
+ * THE TALL-SCREEN BREAKPOINT ON THIS PAGE IS 950px, NOT 850.
+ *
+ * Every generous value on a service slide — the masthead inset, the type
+ * sizes, the gaps, the mark heights — switches on above this height. It was
+ * 850px, which left a band between roughly 850 and 950 where the slide asked
+ * for the generous spacing and then did not fit in it. The platform marks are
+ * last in the column, so they were the part that got pushed under the bottom
+ * bar and clipped. Measured at 1920x900: the slide overflowed by 14px and the
+ * marks ended 12px from the bar.
+ *
+ * A 14-inch laptop sits around 790px of viewport once the browser chrome is
+ * taken off, so it was always on the compact side of this and is unaffected.
+ *
+ * If this page ever gains another row, check this number again rather than
+ * shaving padding: the failure is quiet, because nothing scrolls and nothing
+ * errors — the marks simply disappear behind the bar.
+ */
 export default function ServicePage({ service, page }: ServicePageProps) {
   const {
     proposal,
@@ -630,7 +653,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           calls it rather than what the button does: "instead of paid in kind
           say 'I want this' as all the rest." The price beside it still says
           Complimentary, which is where that fact belongs. */}
-      <span className="whitespace-nowrap font-heading text-[13px] font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:850px)]:text-[14px]">
+      <span className="whitespace-nowrap font-heading text-[13px] font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:950px)]:text-[14px]">
         {selected ? t("added") : t("wantThis")}
       </span>
     </button>
@@ -640,7 +663,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
     <article
       ref={frameRef}
       className={cn(
-        "flex h-full flex-col px-7 pb-2 max-lg:h-auto max-lg:min-h-full lg:px-12 xl:px-16 [@media(min-height:850px)]:pb-8",
+        "flex h-full flex-col px-7 pb-2 max-lg:h-auto max-lg:min-h-full lg:px-12 xl:px-16 [@media(min-height:950px)]:pb-8",
         // The masthead sits DOWN from the top edge, not against it. When the
         // running-total bar is up it has already put 52px of air above the
         // slide, so the inset drops back to keep the height budget intact on a
@@ -650,8 +673,8 @@ export default function ServicePage({ service, page }: ServicePageProps) {
         // is a height budget: the longest service (Media Event) has to keep its
         // twelve inclusions inside a 720px frame.
         hasRunningTotal
-          ? "pt-6 [@media(min-height:850px)]:pt-16"
-          : "pt-12 [@media(min-height:850px)]:pt-20",
+          ? "pt-6 [@media(min-height:950px)]:pt-16"
+          : "pt-12 [@media(min-height:950px)]:pt-20",
       )}
     >
       {/* ---------------------------------------------------------------
@@ -665,14 +688,14 @@ export default function ServicePage({ service, page }: ServicePageProps) {
             <Reveal
               as="p"
               delay={D_EYEBROW}
-              className={`font-heading text-[10px] font-semibold uppercase tracking-[0.42em] [@media(min-height:850px)]:text-[11px] ${ROSE}`}
+              className={`font-heading text-[10px] font-semibold uppercase tracking-[0.42em] [@media(min-height:950px)]:text-[11px] ${ROSE}`}
             >
               {t("eyebrow")}
             </Reveal>
             <Reveal
               as="h1"
               delay={D_TITLE}
-              className="mt-2 font-heading text-[30px] font-extrabold uppercase leading-[0.94] tracking-[-0.015em] text-lyp-white sm:text-[38px] lg:text-[46px] [@media(min-height:850px)]:mt-3 [@media(min-height:850px)]:text-[58px]"
+              className="mt-2 font-heading text-[30px] font-extrabold uppercase leading-[0.94] tracking-[-0.015em] text-lyp-white sm:text-[38px] lg:text-[46px] [@media(min-height:950px)]:mt-3 [@media(min-height:950px)]:text-[58px]"
             >
               {service.name}
             </Reveal>
@@ -681,7 +704,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
             <Reveal
               as="p"
               delay={D_TITLE}
-              className="hidden max-w-[16rem] shrink-0 pb-1 text-right font-body text-[11px] uppercase leading-snug tracking-[0.16em] text-lyp-white/75 lg:block [@media(min-height:850px)]:text-xs"
+              className="hidden max-w-[16rem] shrink-0 pb-1 text-right font-body text-[11px] uppercase leading-snug tracking-[0.16em] text-lyp-white/75 lg:block [@media(min-height:950px)]:text-xs"
             >
               {service.term}
             </Reveal>
@@ -693,7 +716,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
         <div
           aria-hidden
           style={{ animationDelay: `${D_RULE}ms` }}
-          className="portal-reveal portal-reveal-rule mt-3.5 h-px w-full bg-gradient-to-r from-[#f0c9c9]/55 via-lyp-white/15 to-transparent [@media(min-height:850px)]:mt-6"
+          className="portal-reveal portal-reveal-rule mt-3.5 h-px w-full bg-gradient-to-r from-[#f0c9c9]/55 via-lyp-white/15 to-transparent [@media(min-height:950px)]:mt-6"
         />
         {service.term && (
           <Reveal
@@ -711,13 +734,15 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           --------------------------------------------------------------- */}
       <div
         className={cn(
-          // The body used to centre its row in the height left under the
-          // masthead, which on a short service left a visible hole between
-          // the rule and the copy: "can we please remove the excess space
-          // between the title and the what's included text". It starts at the
-          // top now, so the index follows the rule directly and the picture
-          // beside it starts on the same line.
-          "grid min-h-0 content-start grid-cols-1 gap-x-12 gap-y-8 pt-4 [@media(min-height:850px)]:pt-5",
+          // The masthead stays at the top; everything under it sits in the
+          // middle of the height that is left. Asked for directly: "all
+          // content pages should have head at the top and then the content
+          // should be centered left on the page vertically".
+          //
+          // This was `content-start` for a while, to close a gap between the
+          // rule and the copy on a short service. Centring reopens that gap on
+          // those pages, which is the trade being asked for.
+          "grid min-h-0 content-center grid-cols-1 gap-x-12 gap-y-8 pt-4 [@media(min-height:950px)]:pt-5",
           // GROWS ONLY WHEN THERE IS A PICTURE TO FILL.
           //
           // This row used to take the whole height left under the masthead on
@@ -755,8 +780,8 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   className={cn(
                     "mt-3.5",
                     density === "tight"
-                      ? "[@media(min-height:850px)]:mt-3.5"
-                      : "[@media(min-height:850px)]:mt-5",
+                      ? "[@media(min-height:950px)]:mt-3.5"
+                      : "[@media(min-height:950px)]:mt-5",
                     twoColumnIndex
                       ? "sm:columns-2 sm:gap-x-10 sm:[column-rule:1px_solid_rgba(255,255,255,0.12)]"
                       : // One column, held to a reading measure so a wide page
@@ -772,14 +797,14 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                       className={cn(
                         "flex break-inside-avoid items-baseline gap-3 last:mb-0",
                         density === "open"
-                          ? "mb-3 [@media(min-height:850px)]:mb-4"
+                          ? "mb-3 [@media(min-height:950px)]:mb-4"
                           : density === "mid"
-                            ? "mb-2.5 [@media(min-height:850px)]:mb-3.5"
-                            : "mb-0.5 [@media(min-height:850px)]:mb-2",
+                            ? "mb-2.5 [@media(min-height:950px)]:mb-3.5"
+                            : "mb-0.5 [@media(min-height:950px)]:mb-2",
                       )}
                     >
                       <span
-                        className={`w-[1.45rem] shrink-0 font-heading text-[11px] font-semibold tabular-nums tracking-[0.1em] [@media(min-height:850px)]:text-[12px] ${ROSE_DIM}`}
+                        className={`w-[1.45rem] shrink-0 font-heading text-[11px] font-semibold tabular-nums tracking-[0.1em] [@media(min-height:950px)]:text-[12px] ${ROSE_DIM}`}
                       >
                         {String(i + 1).padStart(2, "0")}
                       </span>
@@ -787,10 +812,10 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                         className={cn(
                           "font-body leading-snug text-lyp-white",
                           density === "open"
-                            ? "text-[16px] [@media(min-height:850px)]:text-[19px]"
+                            ? "text-[16px] [@media(min-height:950px)]:text-[19px]"
                             : density === "mid"
-                              ? "text-[15px] [@media(min-height:850px)]:text-[17px]"
-                              : "text-[14px] leading-[1.3] [@media(min-height:850px)]:text-[16px] [@media(min-height:850px)]:leading-[1.3]",
+                              ? "text-[15px] [@media(min-height:950px)]:text-[17px]"
+                              : "text-[14px] leading-[1.3] [@media(min-height:950px)]:text-[16px] [@media(min-height:950px)]:leading-[1.3]",
                         )}
                       >
                         {inc.text}
@@ -806,8 +831,8 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 className={cn(
                   "mt-3",
                   density === "tight"
-                    ? "[@media(min-height:850px)]:mt-5"
-                    : "[@media(min-height:850px)]:mt-6",
+                    ? "[@media(min-height:950px)]:mt-5"
+                    : "[@media(min-height:950px)]:mt-6",
                 )}
               >
                 <Reveal
@@ -823,7 +848,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 <Reveal
                   as="p"
                   delay={D_OBLIGATIONS + 60}
-                  className="mt-1.5 font-body text-[14px] leading-normal text-lyp-white/85 [@media(min-height:850px)]:mt-2 [@media(min-height:850px)]:text-[16px] [@media(min-height:850px)]:leading-normal"
+                  className="mt-1.5 font-body text-[14px] leading-normal text-lyp-white/85 [@media(min-height:950px)]:mt-2 [@media(min-height:950px)]:text-[16px] [@media(min-height:950px)]:leading-normal"
                 >
                   {obligations.map((ob, i) => (
                     <span key={ob.id}>
@@ -838,13 +863,13 @@ export default function ServicePage({ service, page }: ServicePageProps) {
             )}
 
             {disclaimers.length > 0 && (
-              <div className="mt-3 [@media(min-height:850px)]:mt-7">
+              <div className="mt-3 [@media(min-height:950px)]:mt-7">
                 {disclaimers.map((d, i) => (
                   <Reveal
                     as="p"
                     key={d.id}
                     delay={D_DISCLAIMERS + i * 60}
-                    className="mt-1.5 font-body text-[11px] italic leading-snug text-lyp-white/70 first:mt-0 [@media(min-height:850px)]:text-xs"
+                    className="mt-1.5 font-body text-[11px] italic leading-snug text-lyp-white/70 first:mt-0 [@media(min-height:950px)]:text-xs"
                   >
                     {d.text}
                   </Reveal>
@@ -879,10 +904,10 @@ export default function ServicePage({ service, page }: ServicePageProps) {
               // tall as the panel, so the control grows into air that exists.
               stackOffer ? "gap-2" : "gap-3 lg:flex-row lg:items-stretch lg:gap-5",
               stackOffer
-                ? "mt-4 [@media(min-height:850px)]:mt-7"
+                ? "mt-4 [@media(min-height:950px)]:mt-7"
                 : compactOffer
-                  ? "mt-5 [@media(min-height:850px)]:mt-8"
-                  : "mt-9 [@media(min-height:850px)]:mt-12",
+                  ? "mt-5 [@media(min-height:950px)]:mt-8"
+                  : "mt-9 [@media(min-height:950px)]:mt-12",
             )}
           >
           <Reveal
@@ -894,10 +919,10 @@ export default function ServicePage({ service, page }: ServicePageProps) {
             variant="fade"
             delay={D_OFFER}
             className={cn(
-              "relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-gradient-to-b from-lyp-white/[0.11] to-lyp-white/[0.035] px-5 py-3 ring-1 ring-inset ring-lyp-white/[0.14] backdrop-blur-[2px] [@media(min-height:850px)]:px-7",
+              "relative min-w-0 flex-1 overflow-hidden rounded-2xl bg-gradient-to-b from-lyp-white/[0.11] to-lyp-white/[0.035] px-5 py-3 ring-1 ring-inset ring-lyp-white/[0.14] backdrop-blur-[2px] [@media(min-height:950px)]:px-7",
               // A stacked panel is already taller; it keeps the tighter padding
               // so the inclusions above it still fit the frame.
-              !compactOffer && "[@media(min-height:850px)]:py-4",
+              !compactOffer && "[@media(min-height:950px)]:py-4",
             )}
           >
             <div
@@ -935,7 +960,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   // pop more." So it is filled, not outlined, and set two
                   // sizes up. Black on yellow is the strongest pairing the
                   // palette has.
-                  <p className={cn(!compactOffer && "mt-2", "inline-flex items-center gap-2 rounded-full bg-lyp-gold px-3 py-1.5 font-heading text-[13px] font-bold uppercase tracking-[0.12em] text-lyp-black shadow-[0_6px_18px_-6px_rgba(218,165,32,0.7)] [@media(min-height:850px)]:text-[15px]")}>
+                  <p className={cn(!compactOffer && "mt-2", "inline-flex items-center gap-2 rounded-full bg-lyp-gold px-3 py-1.5 font-heading text-[13px] font-bold uppercase tracking-[0.12em] text-lyp-black shadow-[0_6px_18px_-6px_rgba(218,165,32,0.7)] [@media(min-height:950px)]:text-[15px]")}>
                     {t("discountBadge", {
                       pct: Math.round((service.discount_pct ?? 0) * 100),
                     })}
@@ -944,7 +969,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 {/* The lock note sits beside the price rather than under it,
                     so a signed proposal costs the page no extra height. */}
                 {isDisabled && (
-                  <p className="mt-2 max-w-[15rem] font-body text-[10px] leading-[1.4] text-lyp-white/75 [@media(min-height:850px)]:text-[11px]">
+                  <p className="mt-2 max-w-[15rem] font-body text-[10px] leading-[1.4] text-lyp-white/75 [@media(min-height:950px)]:text-[11px]">
                     {proposal.status === "signed"
                       ? t("signedNote")
                       : t("requiresOtherNote")}
@@ -956,7 +981,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                     longer wording pushes itself onto its own line rather than
                     breaking mid-phrase. */}
                 {stackOffer && (
-                  <p className="whitespace-nowrap font-heading text-[10px] font-semibold uppercase tracking-[0.14em] text-lyp-white/65 [@media(min-height:850px)]:text-[11px]">
+                  <p className="whitespace-nowrap font-heading text-[10px] font-semibold uppercase tracking-[0.14em] text-lyp-white/65 [@media(min-height:950px)]:text-[11px]">
                     {g("serviceChooseTerm")}
                   </p>
                 )}
@@ -965,7 +990,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
               {isInKind || costsNothing ? (
                 <div className="flex-1">
                   <p
-                    className={`font-heading text-[20px] leading-tight [@media(min-height:850px)]:text-[26px] ${ROSE}`}
+                    className={`font-heading text-[20px] leading-tight [@media(min-height:950px)]:text-[26px] ${ROSE}`}
                   >
                     {t("complimentary")}
                   </p>
@@ -1064,7 +1089,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                               className={cn(
                                 "min-w-0 font-heading font-semibold uppercase leading-tight tracking-[0.12em] text-lyp-white/85",
                                 stackOffer
-                                  ? "text-[12px] [@media(min-height:850px)]:text-[13px]"
+                                  ? "text-[12px] [@media(min-height:950px)]:text-[13px]"
                                   : "text-[11px]",
                               )}
                             >
@@ -1095,8 +1120,8 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                             className={cn(
                               "mt-1 flex flex-wrap items-baseline gap-x-1.5 font-heading leading-none tabular-nums text-lyp-white",
                               stackOffer
-                                ? "text-[21px] [@media(min-height:850px)]:text-[25px]"
-                                : "text-[19px] [@media(min-height:850px)]:text-[23px]",
+                                ? "text-[21px] [@media(min-height:950px)]:text-[25px]"
+                                : "text-[19px] [@media(min-height:950px)]:text-[23px]",
                             )}
                           >
                             <span className="whitespace-nowrap">
@@ -1122,7 +1147,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 <div className="flex min-w-0 flex-1 flex-wrap items-end gap-x-6 gap-y-2">
                   <div className="min-w-0">
                     {hasDiscount && (
-                      <p className="whitespace-nowrap font-body text-[13px] leading-none text-lyp-white/70 line-through [@media(min-height:850px)]:text-sm">
+                      <p className="whitespace-nowrap font-body text-[13px] leading-none text-lyp-white/70 line-through [@media(min-height:950px)]:text-sm">
                         {formatCents(displayList)} {t("plusGst")}
                       </p>
                     )}
@@ -1131,20 +1156,20 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                         panel — which is how "$1,595 + G" happened, on the one
                         service whose label column carries a two-line note
                         beside it. */}
-                    <p className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 font-heading text-[32px] leading-none tabular-nums text-lyp-white [@media(min-height:850px)]:text-[42px]">
+                    <p className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 font-heading text-[32px] leading-none tabular-nums text-lyp-white [@media(min-height:950px)]:text-[42px]">
                       <span className="whitespace-nowrap">
                         {formatCents(displayTarget)}
                       </span>
-                      <span className="text-[15px] text-lyp-white/80 [@media(min-height:850px)]:text-[18px]">
+                      <span className="text-[15px] text-lyp-white/80 [@media(min-height:950px)]:text-[18px]">
                         {t("plusGst")}
                       </span>
                     </p>
-                    <p className="mt-1.5 font-body text-[10px] uppercase tracking-[0.22em] text-lyp-white/75 [@media(min-height:850px)]:text-[11px]">
+                    <p className="mt-1.5 font-body text-[10px] uppercase tracking-[0.22em] text-lyp-white/75 [@media(min-height:950px)]:text-[11px]">
                       {periodLabel}
                     </p>
                   </div>
                   {hasDiscount && savingsCents > 0 && (
-                    <p className="pb-1 font-body text-[11px] text-lyp-gold [@media(min-height:850px)]:text-xs">
+                    <p className="pb-1 font-body text-[11px] text-lyp-gold [@media(min-height:950px)]:text-xs">
                       {t("savingLine", {
                         amount: formatCents(savingsCents),
                         period: periodLabel,
@@ -1202,7 +1227,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           // swallow the leftover space rather than sit in it. That changed the
           // column's height algebra and pushed the pricing card's own layout
           // out of shape, which is not what "move it up a bit" should ever do.
-          className="flex shrink-0 flex-wrap items-center justify-center gap-5 pt-6 [@media(min-height:850px)]:pt-8"
+          className="flex shrink-0 flex-wrap items-center justify-center gap-5 pt-6 [@media(min-height:950px)]:pt-8"
         >
           {logos.map((logo, i) => (
             <Image
@@ -1217,7 +1242,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
               sizes="80px"
               width={160}
               height={160}
-              className="h-14 w-auto object-contain [@media(min-height:850px)]:h-16"
+              className="h-14 w-auto object-contain [@media(min-height:950px)]:h-16"
             />
           ))}
         </Reveal>
