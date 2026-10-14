@@ -1,6 +1,11 @@
 import type { CopySlot } from "./types";
 
 export const INTAKE_COPY: CopySlot[] = [
+  // The deck's own onboarding slide, which is a signpost to the form rather
+  // than the form itself.
+  { key: "slideBody", label: "Deck slide: message", default: "The last step. A few details about your business so your marketer can get started.", multiline: true },
+  { key: "slideAction", label: "Deck slide: button", default: "Open the onboarding form" },
+  { key: "slideResume", label: "Deck slide: button, part way through", default: "Pick up where you left off" },
   { key: "stepProgress", label: "Step counter", default: "Step {current} of {total}", hint: "{current} and {total} are replaced with numbers." },
   { key: "backButton", label: "Back button", default: "Back" },
   { key: "continueButton", label: "Continue button", default: "Continue" },

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import Logo from "@/components/Logo";
 import { resolveCoverLogo } from "@/lib/client-logo";
 import { useCopy, useProposal, type PageData } from "../ProposalContext";
@@ -27,6 +28,7 @@ export default function ContentPage({ page }: ContentPageProps) {
   // The trusted-by label is one wording for the whole portal, so it lives in
   // the global set rather than being retyped on every page that shows logos.
   const tGlobal = useCopy("global");
+  const tIntake = useCopy("intake");
   const slug = page.slug;
   // Read unconditionally so the cover branch below has it; cheap and keeps
   // the precedence rule resolved in exactly one call.
@@ -120,8 +122,44 @@ export default function ContentPage({ page }: ContentPageProps) {
 
   if (slug === "signature") return <SignaturePage />;
   if (slug === "payment") return <PaymentPage />;
-  // if (slug === "intake") return <IntakeFormWrapper />
   if (slug === "summary") return null;
+
+  /* THE ONBOARDING SLIDE IS A SIGNPOST, NOT THE FORM.
+     The form lives on its own address so it can be mailed, bookmarked and
+     come back to. This slide had no branch at all, so it fell through to the
+     ordinary content page and drew its title and nothing else — a client who
+     reached it, or who came back to the deck and was put back on it, had a
+     page with a dead Next button and no way forward. Reported exactly that
+     way. It now says what the step is and opens the form. */
+  if (slug === "intake") {
+    const started = proposal.status === "intake_complete";
+    return (
+      <div className="flex h-full flex-col items-center justify-center px-7 text-center lg:px-12">
+        <Reveal
+          as="h1"
+          index={0}
+          className="font-heading text-[2rem] font-extrabold uppercase leading-[1.02] tracking-tight text-lyp-white md:text-[3rem]"
+        >
+          {page.title}
+        </Reveal>
+        <Reveal
+          as="p"
+          index={1}
+          className="mt-5 max-w-[42ch] font-body text-[15px] leading-relaxed text-lyp-white/70 md:text-base"
+        >
+          {started ? tIntake("lockedNote") : tIntake("slideBody")}
+        </Reveal>
+        <Reveal index={2} className="mt-8">
+          <Link
+            href={`/intake/${proposal.token}`}
+            className="inline-flex items-center gap-2 rounded-lg bg-lyp-cherry px-7 py-3 font-body text-sm font-semibold text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-cherry/90 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+          >
+            {started ? tIntake("reviewResponses") : tIntake("slideAction")}
+          </Link>
+        </Reveal>
+      </div>
+    );
+  }
 
   // `offset_image` blocks are layout data for the image column, not body copy.
   // They are pulled out here so they neither render in the text flow nor make

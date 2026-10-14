@@ -572,9 +572,70 @@ export default function IntakePage({
     setSaving(false);
   }
 
+  /**
+   * AUTOSAVE, SO HALF A STEP IS NEVER LOST.
+   *
+   * Answers used to reach the server only when the client pressed Next on a
+   * step, and only if that step validated. So someone who typed their name,
+   * their bank details and their address, then closed the tab before the end
+   * of the step, lost the lot — and came back to an empty form. Reported
+   * exactly that way.
+   *
+   * Every change now schedules a save a second later. The second is there so a
+   * name being typed is one write rather than one per keystroke; each new
+   * keystroke replaces the pending one.
+   *
+   * No validation runs here on purpose. A half-typed answer is still worth
+   * keeping, and nothing downstream reads these until the client submits.
+   * `pendingRef` holds what has changed since the last write, so a save only
+   * ever sends the fields that actually moved.
+   */
+  const pendingRef = useRef<Record<string, unknown>>({});
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flushAutosave = useCallback(async () => {
+    const pending = pendingRef.current;
+    pendingRef.current = {};
+    const entries = Object.entries(pending).filter(([, v]) => v != null);
+    if (entries.length === 0) return;
+    try {
+      await saveIntakeResponses(
+        proposal.id,
+        entries.map(([questionId, value]) => ({ questionId, value })),
+      );
+    } catch {
+      // A failed autosave is not the client's problem: the answer is still in
+      // the form, the next change schedules another write, and pressing Next
+      // saves the whole step anyway.
+    }
+  }, [proposal.id]);
+
+  // Whatever is still pending when the tab goes away is written immediately.
+  // `visibilitychange` is the reliable one on a phone, where `beforeunload`
+  // often never fires at all.
+  useEffect(() => {
+    const bank = () => {
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+      void flushAutosave();
+    };
+    document.addEventListener("visibilitychange", bank);
+    window.addEventListener("pagehide", bank);
+    return () => {
+      document.removeEventListener("visibilitychange", bank);
+      window.removeEventListener("pagehide", bank);
+      bank();
+    };
+  }, [flushAutosave]);
+
   function handleChange(questionId: string, val: unknown) {
     setResponses((prev) => ({ ...prev, [questionId]: val }));
     if (error) setError("");
+
+    // Submitted answers are final, so nothing is written after that.
+    if (locked || completed) return;
+    pendingRef.current[questionId] = val;
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(() => void flushAutosave(), 1000);
   }
 
   /**
