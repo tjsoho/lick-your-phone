@@ -72,10 +72,19 @@ const config: Config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        // The thin bar that crosses the top of the dashboard while a page is
+        // fetching. It sweeps rather than filling, because it has no idea how
+        // long the wait is and a progress bar that lies is worse than one that
+        // only says "working".
+        "loading-sweep": {
+          "0%": { transform: "translateX(-100%)" },
+          "100%": { transform: "translateX(400%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "loading-sweep": "loading-sweep 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite",
       },
     },
   },
