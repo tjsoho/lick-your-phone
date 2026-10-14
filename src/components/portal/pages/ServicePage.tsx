@@ -756,7 +756,13 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           // rail is sized against it. A marks-only page has nothing that wants
           // the height, so the row is left at its content's size and the slack
           // falls below the marks, where it belongs.
-          marksOnly ? "flex-none" : "flex-1",
+          // `mt-auto` pushes this block, and the marks that follow it, to the
+          // foot of the slide. Without it the slack sits UNDER the marks, so on
+          // a tall window the pricing card and the marks floated in the middle
+          // with a hole beneath them, while on a short window they sat at the
+          // bottom — the same slide in two different places depending on the
+          // window. They are anchored to the bottom on every height now.
+          marksOnly ? "flex-none mt-auto" : "flex-1",
           hasArtwork &&
             (wideRail
               ? "lg:grid-cols-[minmax(0,1fr)_41%] xl:grid-cols-[minmax(0,1fr)_43%]"
@@ -1227,7 +1233,10 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           // swallow the leftover space rather than sit in it. That changed the
           // column's height algebra and pushed the pricing card's own layout
           // out of shape, which is not what "move it up a bit" should ever do.
-          className="flex shrink-0 flex-wrap items-center justify-center gap-5 pt-6 [@media(min-height:950px)]:pt-8"
+          // Anchored to the foot by the `mt-auto` on the body above, so this
+          // bottom padding is the only thing keeping the marks off the bar.
+          // Measured without it: they sat flush against it, 0px clearance.
+          className="flex shrink-0 flex-wrap items-center justify-center gap-5 pt-6 pb-8 [@media(min-height:950px)]:pt-8"
         >
           {logos.map((logo, i) => (
             <Image
