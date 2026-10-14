@@ -228,6 +228,11 @@ function PictureRail({
 
   // The picture rail is the reference size for every main single image in the
   // proposal; `MAIN_IMAGE` is where that size lives.
+  // NOT `h-full`. A portrait picture in a column about 547px wide can only be
+  // around 605px tall before its width clamps, so on a 2560x1440 screen
+  // filling the column left 208px of empty box under the artwork — and the
+  // radius is on the box, so the curve cut that empty strip. The picture takes
+  // its own size and the ROW is sized to it instead; see the grid below.
   const IMG = MAIN_IMAGE;
   // Same picture, same size, so the same radius as `MAIN_IMAGE`. It used to
   // take the small one, which is why a carousel slide on a service page looked
@@ -759,12 +764,14 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           // With no picture there is nothing to line up with, so the row takes
           // the whole slide and the quote, and the platform marks under it,
           // settle at the foot instead of floating in the middle.
-          // The row always takes the full height under the rule. Both columns
-          // stretch to it, so the quote at the foot of the copy column and the
-          // base of the picture land on the same line, and the copy centres in
-          // the space between the rule and the quote rather than in a shorter
-          // box that started part way down the slide.
-          "content-stretch",
+          // The row is only as tall as its content — which, beside a picture,
+          // means as tall as the picture — and it sits centred in the slide.
+          // So the copy, the picture and the quote move as one block with the
+          // space falling outside it rather than opening up inside it.
+          //
+          // Both columns still stretch to that row, so the quote at the foot of
+          // the copy column lands on the base of the picture beside it.
+          "content-center",
           // GROWS ONLY WHEN THERE IS A PICTURE TO FILL.
           //
           // This row used to take the whole height left under the masthead on

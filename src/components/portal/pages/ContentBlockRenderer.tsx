@@ -101,13 +101,14 @@ export const MAIN_IMAGE_HEIGHT =
  *
  * A stated height is the same number in every browser and on every source.
  *
- * `max-h-full` sits on top of it so the picture can never be taller than its
- * own column. Without that the stated height won: on a tall window 58vh came
- * to more than the slide had left once the masthead was taken off, so the
- * picture and the quote beside it ran off the bottom edge of the page. The
- * cap costs nothing, because it only ever binds when the stated height would
- * not have fitted anyway, and the height is still a stated number rather than
- * one derived from the file.
+ * `max-h-[38rem]` (608px) sits on top of it, and that number is about the
+ * column, not about taste. The picture column is at most ~600px wide, so a
+ * roughly square photograph cannot draw taller than about 600px before its
+ * WIDTH becomes the binding constraint. Past that the stated height keeps
+ * growing while the painted picture does not, which letterboxes — and the
+ * radius is on the box, so the curve starts cutting empty space. On a
+ * 2560x1440 screen that left a 208px empty strip. The cap does nothing on an
+ * ordinary laptop, where the viewport height binds first.
  *
  * The other cost is that a column narrower than the picture wants will clamp
  * the width while the height stays put, which letterboxes — and the radius is
@@ -115,7 +116,7 @@ export const MAIN_IMAGE_HEIGHT =
  * assumed: see the service-page sweep in the notes. If a new service ever
  * does clamp, widen its column rather than capping this height again.
  */
-export const MAIN_IMAGE = `${MAIN_IMAGE_HEIGHT} max-h-full w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
+export const MAIN_IMAGE = `${MAIN_IMAGE_HEIGHT} max-h-[38rem] w-auto max-w-full object-contain ${IMAGE_RADIUS_LARGE}`;
 
 /**
  * The single vertical spacing scale for a content page's text column.
