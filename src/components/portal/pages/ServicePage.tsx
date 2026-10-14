@@ -717,7 +717,21 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           // between the title and the what's included text". It starts at the
           // top now, so the index follows the rule directly and the picture
           // beside it starts on the same line.
-          "grid min-h-0 flex-1 content-start grid-cols-1 gap-x-12 gap-y-8 pt-4 [@media(min-height:850px)]:pt-5",
+          "grid min-h-0 content-start grid-cols-1 gap-x-12 gap-y-8 pt-4 [@media(min-height:850px)]:pt-5",
+          // GROWS ONLY WHEN THERE IS A PICTURE TO FILL.
+          //
+          // This row used to take the whole height left under the masthead on
+          // every service. With `content-start` its content sits at the top of
+          // that height, so on a page whose only footer is the platform marks
+          // the unused part of the row opened a hole between the pricing card
+          // and the marks — about 190px of it on a large screen, and none of
+          // it a margin, which is why nudging margins never fixed it.
+          //
+          // A page with a picture still needs the row to grow: the picture
+          // rail is sized against it. A marks-only page has nothing that wants
+          // the height, so the row is left at its content's size and the slack
+          // falls below the marks, where it belongs.
+          marksOnly ? "flex-none" : "flex-1",
           hasArtwork &&
             (wideRail
               ? "lg:grid-cols-[minmax(0,1fr)_41%] xl:grid-cols-[minmax(0,1fr)_43%]"
@@ -1169,7 +1183,17 @@ export default function ServicePage({ service, page }: ServicePageProps) {
         <Reveal
           variant="fade"
           delay={D_RAIL}
-          // `my-auto` and nothing else. The row keeps its own height, exactly
+          // `my-auto` for the centring, `py-5` for the floor.
+          //
+          // `my-auto` shares the column's FREE space equally above and below
+          // the row, which centres the marks on a laptop. On a big screen
+          // there is no free space to share — the copy and the pricing card
+          // have already filled the column — so the auto margins collapse to
+          // nothing and the marks ended up touching the card above them. The
+          // padding is the part that cannot collapse, so there is always at
+          // least 20px of air on each side however full the slide is.
+          //
+          // The row keeps its own height, exactly
           // as it always did, and the free space left in the column is shared
           // equally above and below it — so the marks land in the middle of
           // the gap that was already there.
@@ -1178,7 +1202,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           // swallow the leftover space rather than sit in it. That changed the
           // column's height algebra and pushed the pricing card's own layout
           // out of shape, which is not what "move it up a bit" should ever do.
-          className="my-auto flex shrink-0 flex-wrap items-center justify-center gap-5"
+          className="flex shrink-0 flex-wrap items-center justify-center gap-5 pt-6 [@media(min-height:850px)]:pt-8"
         >
           {logos.map((logo, i) => (
             <Image
