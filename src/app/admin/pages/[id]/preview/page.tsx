@@ -21,6 +21,7 @@ const SAMPLE_PROPOSAL: ProposalData = {
   discountStartsAt: null,
   signedAt: null,
   // A preview always opens at the page being edited, never on a resume.
+      lastPage: null,
       furthestPage: null,
   clientName: "Sample Venue",
   contactName: "Sample Contact",
@@ -93,6 +94,7 @@ async function loadProposalContext(
     discountTimerActive: row.discount_timer_active ?? false,
     signedAt: row.signed_at ?? null,
     // A preview always opens at the page being edited, never on a resume.
+        lastPage: null,
         furthestPage: null,
     clientName: client?.name ?? "Client",
     // The person. `contact_name` is legacy: older records carry them there.

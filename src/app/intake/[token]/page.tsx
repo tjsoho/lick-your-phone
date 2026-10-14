@@ -121,6 +121,7 @@ export default async function IntakeRoutePage({ params }: Props) {
     discountTimerActive: proposal.discount_timer_active ?? false,
     signedAt: proposal.signed_at ?? null,
     // Onboarding has its own resume, on the form's own steps.
+        lastPage: null,
         furthestPage: null,
     clientName: clientObj?.name ?? "Client",
     // The person. `contact_name` is legacy: records made before the client

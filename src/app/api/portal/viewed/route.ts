@@ -58,11 +58,14 @@ export async function POST(request: NextRequest) {
 
     const update: Record<string, unknown> = { last_viewed_at: now };
     if (firstVisit) update.first_viewed_at = now;
-    if (
-      pageIndex !== null &&
-      (proposal.furthest_page == null || pageIndex > proposal.furthest_page)
-    ) {
-      update.furthest_page = pageIndex;
+    if (pageIndex !== null) {
+      // Where they are now, which is where they will be put back.
+      update.last_page = pageIndex;
+      // How far they ever got, which only climbs. The reading report's "read
+      // as far as" is this one, not the one above.
+      if (proposal.furthest_page == null || pageIndex > proposal.furthest_page) {
+        update.furthest_page = pageIndex;
+      }
     }
 
     // TIME ON THE SLIDE THEY JUST LEFT.

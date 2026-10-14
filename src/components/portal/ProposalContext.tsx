@@ -70,6 +70,8 @@ export interface ProposalData {
   discountExpiresAt: string | null;
   /** Show the client a countdown to discountExpiresAt. */
   discountTimerActive: boolean;
+  /** The slide this client was last on, or null if never opened. */
+  lastPage: number | null;
   /** The furthest slide this client has reached, or null if never opened. */
   furthestPage: number | null;
   /** When a scheduled discount window opens. Null means "as soon as it is on". */
@@ -266,8 +268,9 @@ export function ProposalProvider({
   /**
    * Opens where the client left off, not back at the cover.
    *
-   * `furthestPage` is recorded in this same index space by
-   * `api/portal/viewed`, so it can be used as-is. It is clamped because the
+   * `lastPage` is recorded in this same index space by `api/portal/viewed`,
+   * so it can be used as-is. It moves in both directions, so a client who
+   * pages back to the pricing and closes the tab returns to the pricing. It is clamped because the
    * deck can change between visits — a page switched off, or the payment slide
    * appearing once they sign — and a stale index must never strand anyone on a
    * slide that no longer exists.
@@ -276,7 +279,9 @@ export function ProposalProvider({
    * the cover, which is the same as before.
    */
   const [currentPage, setCurrentPage] = useState(() => {
-    const saved = proposal.furthestPage;
+    // Where they actually left, falling back to how far they got for anyone
+    // whose last visit predates `last_page` being recorded.
+    const saved = proposal.lastPage ?? proposal.furthestPage;
     if (saved == null || saved <= 0) return 0;
     return Math.min(saved, filteredPages.length - 1);
   });

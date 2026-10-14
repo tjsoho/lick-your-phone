@@ -70,8 +70,13 @@ export default function RecordView({
     }
     timingRef.current = { page: currentPage, since: Date.now() };
 
-    // Reach, reported only when it grows.
-    if (reportedRef.current === null || currentPage > reportedRef.current) {
+    // Every move is reported, in both directions. It used to report only when
+    // the number grew, which was right while the only question was "how far
+    // did they get?". Reopening the deck where they left off asks a different
+    // question, and a client who reads to slide ten, pages back to the pricing
+    // and closes the tab left on the pricing. The server keeps both: this moves
+    // `last_page` either way, and `furthest_page` still only climbs.
+    if (reportedRef.current !== currentPage) {
       reportedRef.current = currentPage;
       send({ page: currentPage });
     }
