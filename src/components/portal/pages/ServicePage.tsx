@@ -665,7 +665,11 @@ export default function ServicePage({ service, page }: ServicePageProps) {
     <article
       ref={frameRef}
       className={cn(
-        "flex h-full flex-col px-7 pb-2 max-lg:h-auto max-lg:min-h-full lg:px-12 xl:px-16 [@media(min-height:950px)]:pb-8",
+        // The slide ends above the bottom bar, not against it. This was 8px, which
+        // was invisible while the content never reached the foot; now that the
+        // quote and the picture sit on a shared base line at the bottom of the
+        // row, 8px put them on the same line as the bar.
+        "flex h-full flex-col px-7 pb-8 max-lg:h-auto max-lg:min-h-full lg:px-12 xl:px-16 [@media(min-height:950px)]:pb-10",
         // The masthead sits DOWN from the top edge, not against it. When the
         // running-total bar is up it has already put 52px of air above the
         // slide, so the inset drops back to keep the height budget intact on a
