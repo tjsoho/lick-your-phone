@@ -60,8 +60,8 @@ export async function signProposal(input: SignProposalInput) {
         `
         id, status, token, discount_timer_active, discount_expires_at,
         discount_starts_at,
-        client:clients!client_id ( id, name, contact_name ),
-        venue:venues!venue_id ( id, name, address )
+        client:clients!client_id ( id, name, contact_name, logo_url ),
+        venue:venues!venue_id ( id, name, address, logo_url )
       `,
       )
       .eq("id", input.proposalId)
@@ -239,11 +239,13 @@ export async function signProposal(input: SignProposalInput) {
       id: string;
       name: string;
       contact_name: string | null;
+      logo_url: string | null;
     } | null;
     const venueObj = proposal.venue as unknown as {
       id: string;
       name: string;
       address: string;
+      logo_url: string | null;
     } | null;
 
     const signedAt = new Date().toISOString();
@@ -268,6 +270,10 @@ export async function signProposal(input: SignProposalInput) {
       countersignatureImage: settings.countersignatureImage,
       countersignatureName: settings.countersignatureName,
       countersignatureTitle: settings.countersignatureTitle,
+      // The venue's own mark first, the client record's behind it — the same
+      // precedence the deck's cover uses, so the contract is branded the way
+      // the proposal that led to it was.
+      clientLogoUrl: venueObj?.logo_url ?? clientObj?.logo_url ?? null,
     });
 
     // 6. Compute document hash

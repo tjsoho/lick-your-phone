@@ -71,6 +71,24 @@ const s = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 3,
   },
+  markRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 14,
+  },
+  brandMarkImage: {
+    height: 42,
+    width: 42,
+    objectFit: "contain",
+  },
+  // Capped on both axes: a client's logo can be any shape, and a wide one
+  // would otherwise push our own mark off the line.
+  clientMarkImage: {
+    height: 34,
+    maxWidth: 150,
+    objectFit: "contain",
+  },
   brandName: {
     fontFamily: "Fira Sans",
     fontWeight: 700,
@@ -268,6 +286,8 @@ export interface PdfContractInput {
   countersignatureImage?: string | null;
   countersignatureName?: string;
   countersignatureTitle?: string;
+  /** The venue's own logo, falling back to the client's. Drawn beside ours. */
+  clientLogoUrl?: string | null;
   signerEmail: string;
   signedAt: string;
   signatureDataUrl?: string;
@@ -345,6 +365,17 @@ function summariseTotals(items: PdfLineItem[]) {
 type SignatureImage = { data: Buffer; format: "png" | "jpg" };
 
 /**
+ * THE BRAND MARK ON THE CONTRACT.
+ *
+ * Held as a stored URL rather than read from `public/`, because the PDF is
+ * generated inside a serverless function where only traced files exist, and a
+ * logo that silently fails to load is exactly the class of fault this document
+ * had already. It is a 240px copy of the same lips mark the deck uses.
+ */
+const BRAND_MARK_URL =
+  "https://vccvaxewkcxhlabnolba.supabase.co/storage/v1/object/public/site-images/1791948768699-lyp-mark-contract.png";
+
+/**
  * Identify an image by its bytes rather than by its name or its content type.
  *
  * The media library re-encodes uploads to WebP, which the PDF generator
@@ -400,14 +431,27 @@ async function resolveSignatureImage(
     }
 
     const format = sniffSignatureFormat(bytes);
-    if (!format) {
+    if (format) return { data: bytes, format };
+
+    /* ANYTHING ELSE IS CONVERTED RATHER THAN DROPPED.
+       react-pdf embeds PNG and JPEG only, and this used to give up on
+       everything else with a warning nobody reads. Every logo in this account
+       is a WebP, and the countersignature was one too, so the rule quietly
+       removed images the document was supposed to carry — a contract that is
+       meant to show the director's signature and simply doesn't. sharp is
+       already in the tree for Next's own image work; one pass through it makes
+       a WebP, AVIF or anything else embeddable. */
+    try {
+      const sharp = (await import("sharp")).default;
+      const png = await sharp(bytes).png().toBuffer();
+      return { data: Buffer.from(png), format: "png" };
+    } catch (error) {
       console.warn(
-        `Contract signature image is not a PNG or JPEG and was left off the document: ${src.slice(0, 120)}`,
+        `Contract image could not be converted and was left off the document: ${src.slice(0, 120)}`,
+        error,
       );
       return null;
     }
-
-    return { data: bytes, format };
   } catch (error) {
     console.warn("Could not read a contract signature image:", error);
     return null;
@@ -423,14 +467,19 @@ export async function generateContractPdf(
 ): Promise<Buffer> {
   // Both signatures are resolved before layout, so an image the generator
   // cannot decode becomes a signature line rather than an empty space.
-  const [clientSignature, countersignature] = await Promise.all([
-    resolveSignatureImage(input.signatureDataUrl),
-    resolveSignatureImage(input.countersignatureImage),
-  ]);
+  const [clientSignature, countersignature, brandMark, clientMark] =
+    await Promise.all([
+      resolveSignatureImage(input.signatureDataUrl),
+      resolveSignatureImage(input.countersignatureImage),
+      resolveSignatureImage(BRAND_MARK_URL),
+      resolveSignatureImage(input.clientLogoUrl),
+    ]);
 
   const doc = createContractDocument(input, {
     clientSignature,
     countersignature,
+    brandMark,
+    clientMark,
   });
   const buffer = await renderToBuffer(doc);
   return Buffer.from(buffer);
@@ -441,6 +490,8 @@ function createContractDocument(
   signatures: {
     clientSignature: SignatureImage | null;
     countersignature: SignatureImage | null;
+    brandMark: SignatureImage | null;
+    clientMark: SignatureImage | null;
   },
 ) {
   const dateStr = formatDate(input.signedAt);
@@ -462,6 +513,36 @@ function createContractDocument(
 
       /* Header bar */
       React.createElement(View, { style: s.headerBar }),
+
+      /* THE TWO MARKS, OURS AND THEIRS.
+         Same pairing as the deck's cover: us on the left, the client opposite.
+         Either one is skipped if it could not be read, which leaves the
+         wordmark underneath doing the job on its own rather than leaving a
+         hole where a logo should be. */
+      (signatures.brandMark || signatures.clientMark)
+        ? React.createElement(
+            View,
+            { style: s.markRow },
+            signatures.brandMark
+              ? React.createElement(Image, {
+                  style: s.brandMarkImage,
+                  src: {
+                    data: signatures.brandMark.data,
+                    format: signatures.brandMark.format,
+                  },
+                })
+              : React.createElement(View, {}),
+            signatures.clientMark
+              ? React.createElement(Image, {
+                  style: s.clientMarkImage,
+                  src: {
+                    data: signatures.clientMark.data,
+                    format: signatures.clientMark.format,
+                  },
+                })
+              : null,
+          )
+        : null,
 
       /* Brand */
       React.createElement(Text, { style: s.brandName }, "LickYourPhone Media"),
