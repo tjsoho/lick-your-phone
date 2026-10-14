@@ -1169,13 +1169,16 @@ export default function ServicePage({ service, page }: ServicePageProps) {
         <Reveal
           variant="fade"
           delay={D_RAIL}
-          // The row TAKES the space left under the pricing card and centres
-          // the marks inside it, rather than sitting at the bottom of it. It
-          // used to be `shrink-0` with a small top margin, so the leftover
-          // space all collected above the marks and they ended up almost
-          // touching the black bar: "put it in the middle of the space between
-          // the cost buckets and the black banner".
-          className="flex min-h-0 flex-1 flex-wrap items-center justify-center gap-5"
+          // `my-auto` and nothing else. The row keeps its own height, exactly
+          // as it always did, and the free space left in the column is shared
+          // equally above and below it — so the marks land in the middle of
+          // the gap that was already there.
+          //
+          // An earlier attempt gave the row `flex-1` instead, which made it
+          // swallow the leftover space rather than sit in it. That changed the
+          // column's height algebra and pushed the pricing card's own layout
+          // out of shape, which is not what "move it up a bit" should ever do.
+          className="my-auto flex shrink-0 flex-wrap items-center justify-center gap-5"
         >
           {logos.map((logo, i) => (
             <Image
