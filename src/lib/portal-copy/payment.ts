@@ -12,7 +12,7 @@ export const PAYMENT_COPY: CopySlot[] = [
   { key: "accountNameLabel", label: "Account name label", default: "Account Name" },
   { key: "bsbLabel", label: "BSB label", default: "BSB" },
   { key: "accountNumberLabel", label: "Account number label", default: "Account Number" },
-  { key: "authorityText", label: "Payment authority", default: "I authorise LickYourPhone Media to take the payments set out in my agreement from the account or card above, and confirm I am authorised to use it.", multiline: true, hint: "The client has to tick this before they can submit, whichever method they chose. The moment they tick it is recorded." },
+  { key: "authorityText", label: "Payment authority", default: "I authorise LickYourPhone Media to take the payments set out in my agreement from the account above, and confirm I am authorised to use it.", multiline: true, hint: "The client has to tick this before they can submit. The moment they tick it is recorded." },
   { key: "saveButton", label: "Save button", default: "Save Payment Details" },
   { key: "savingButton", label: "Saving button", default: "Saving..." },
   { key: "tryAgainButton", label: "Try again button", default: "Try Again" },
