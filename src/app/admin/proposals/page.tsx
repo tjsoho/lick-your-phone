@@ -48,18 +48,22 @@ type LineItem = {
 export default async function ProposalsPage() {
   const supabase = await createClient();
 
-  const [{ data: proposals, error }, appUrl] = await Promise.all([
-    getProposals(),
-    getAppUrl(),
-  ]);
-
-  // Pulled separately rather than widened into getProposals(), which the
-  // proposal workspace shares.
-  const { data: lineItems } = await supabase
-    .from("proposal_line_items")
-    .select(
-      "proposal_id, price_snapshot_cents, billing, billing_cycle_snapshot_months",
-    );
+  // All three together. The line items used to be fetched after the proposals
+  // had come back, which made the page wait for two database round trips in
+  // series when it only ever needed the slower of the two. Nothing here
+  // depends on anything else here.
+  const [{ data: proposals, error }, appUrl, { data: lineItems }] =
+    await Promise.all([
+      getProposals(),
+      getAppUrl(),
+      // Pulled separately rather than widened into getProposals(), which the
+      // proposal workspace shares.
+      supabase
+        .from("proposal_line_items")
+        .select(
+          "proposal_id, price_snapshot_cents, billing, billing_cycle_snapshot_months",
+        ),
+    ]);
 
   const totals = new Map<string, { monthly: number; contract: number }>();
   for (const item of (lineItems ?? []) as LineItem[]) {
