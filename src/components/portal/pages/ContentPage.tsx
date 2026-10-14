@@ -54,18 +54,25 @@ export default function ContentPage({ page }: ContentPageProps) {
         {/* The lockup */}
         <Reveal
           index={1}
-          className="flex items-center justify-center gap-6 md:gap-10"
+          className="flex w-full items-center justify-center gap-3 sm:gap-6 md:gap-10"
         >
           <Logo
             variant="mark"
             priority
-            className="h-[26vh] sm:h-[32vh] md:h-[42vh] [@media(min-height:850px)]:h-[46vh]"
+            // Both axes are limits, never stated sizes. A stated height on a
+            // phone put two 219px marks plus the x into a 390px window, and
+            // they ran off both edges. `max-w-[40vw]` means the pair can never
+            // need more than the window has, whatever the window is.
+            // Letterboxing is harmless here, unlike on the photographs: these
+            // marks carry no corner radius for a curve to land in the wrong
+            // place.
+            className="h-auto w-auto max-h-[26vh] max-w-[40vw] object-contain sm:max-h-[32vh] md:max-h-[42vh] [@media(min-height:850px)]:max-h-[46vh]"
           />
           {hasClientMark && (
             <>
               <span
                 aria-hidden
-                className="font-heading text-4xl font-extrabold uppercase text-lyp-white/60 md:text-6xl"
+                className="shrink-0 font-heading text-2xl font-extrabold uppercase text-lyp-white/60 sm:text-4xl md:text-6xl"
               >
                 x
               </span>
@@ -76,7 +83,7 @@ export default function ContentPage({ page }: ContentPageProps) {
               <img
                 src={coverLogo.src}
                 alt={`${proposal.venueName} logo`}
-                className="h-[26vh] w-auto max-w-[24rem] object-contain sm:h-[32vh] md:h-[42vh] md:max-w-[34rem] [@media(min-height:850px)]:h-[46vh]"
+                className="h-auto w-auto max-h-[26vh] max-w-[40vw] object-contain sm:max-h-[32vh] md:max-h-[42vh] [@media(min-height:850px)]:max-h-[46vh]"
               />
             </>
           )}
