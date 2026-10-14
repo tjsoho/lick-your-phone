@@ -241,11 +241,13 @@ function PictureRail({
   return (
     <div
       className={cn(
-        // Centred in its column at every width — "the images should be large
-        // and also centered". It used to be top aligned from `lg` up so the
-        // picture started level with "What's Included" beside it; the copy is
-        // centred now, so the picture lines up by being centred too.
-        "flex min-h-0 flex-col items-center justify-center gap-6 max-lg:min-h-[12rem]",
+        // Centred horizontally, and from `lg` up the picture sits on the FOOT
+        // of its column — the same line the quote sits on in the column beside
+        // it. That is the alignment asked for: "the pricing containers should
+        // align at the bottom line of the images on the right". Below `lg` the
+        // picture stacks under the copy with nothing to line up with, so it
+        // stays centred there.
+        "flex min-h-0 flex-col items-center justify-center gap-6 max-lg:min-h-[12rem] lg:justify-end",
       )}
     >
       {images.length === 1 && (
@@ -742,7 +744,23 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           // This was `content-start` for a while, to close a gap between the
           // rule and the copy on a short service. Centring reopens that gap on
           // those pages, which is the trade being asked for.
-          "grid min-h-0 content-center grid-cols-1 gap-x-12 gap-y-8 pt-4 [@media(min-height:950px)]:pt-5",
+          "grid min-h-0 grid-cols-1 gap-x-12 gap-y-8 pt-4 [@media(min-height:950px)]:pt-5",
+          // HOW TALL THE ROW IS, WHICH DECIDES WHERE THE QUOTE LANDS.
+          //
+          // Beside a picture the row is only as tall as the picture and sits
+          // centred in the slide. The copy column stretches to that same
+          // height, so the quote at the foot of the column lands exactly on
+          // the base of the picture — which is the alignment asked for.
+          //
+          // With no picture there is nothing to line up with, so the row takes
+          // the whole slide and the quote, and the platform marks under it,
+          // settle at the foot instead of floating in the middle.
+          // The row always takes the full height under the rule. Both columns
+          // stretch to it, so the quote at the foot of the copy column and the
+          // base of the picture land on the same line, and the copy centres in
+          // the space between the rule and the quote rather than in a shorter
+          // box that started part way down the slide.
+          "content-stretch",
           // GROWS ONLY WHEN THERE IS A PICTURE TO FILL.
           //
           // This row used to take the whole height left under the masthead on
@@ -756,13 +774,11 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           // rail is sized against it. A marks-only page has nothing that wants
           // the height, so the row is left at its content's size and the slack
           // falls below the marks, where it belongs.
-          // `mt-auto` pushes this block, and the marks that follow it, to the
-          // foot of the slide. Without it the slack sits UNDER the marks, so on
-          // a tall window the pricing card and the marks floated in the middle
-          // with a hole beneath them, while on a short window they sat at the
-          // bottom — the same slide in two different places depending on the
-          // window. They are anchored to the bottom on every height now.
-          marksOnly ? "flex-none mt-auto" : "flex-1",
+          // The row always grows. The quote sits at the foot of its column and
+          // the copy centres in what is left above it — see the column below.
+          // Pushing the whole row down with `mt-auto` instead put the copy at
+          // the bottom too, which left a hole under the heading.
+          "flex-1",
           hasArtwork &&
             (wideRail
               ? "lg:grid-cols-[minmax(0,1fr)_41%] xl:grid-cols-[minmax(0,1fr)_43%]"
@@ -771,8 +787,13 @@ export default function ServicePage({ service, page }: ServicePageProps) {
       >
         <div className="flex min-h-0 flex-col justify-start">
           {/* Safety net only. Every real service fits the frame; if one ever
-              outgrows it this column scrolls rather than clipping copy. */}
-          <div className="portal-scroll min-h-0 max-lg:overflow-visible">
+              outgrows it this column scrolls rather than clipping copy.
+
+              `flex-1` with centred content: this takes all the height above the
+              quote and sits the copy in the middle of it, so the gap under the
+              heading and the gap above the quote match. The quote itself stays
+              at the foot of the column, where the picture's base is. */}
+          <div className="portal-scroll flex min-h-0 flex-1 flex-col justify-center max-lg:overflow-visible">
             {inclusions.length > 0 && (
               <section>
                 <Reveal
@@ -914,6 +935,19 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 : compactOffer
                   ? "mt-5 [@media(min-height:950px)]:mt-8"
                   : "mt-9 [@media(min-height:950px)]:mt-12",
+              // SITS ON THE SAME LINE AS THE FOOT OF THE PICTURE.
+              //
+              // From `lg` up, where the picture is beside the copy rather than
+              // under it, the quote drops to the bottom of its column. The
+              // column is already as tall as the row, and the row is as tall as
+              // the picture, so the bottom of this panel lands on the bottom of
+              // the picture.
+              //
+              // `mt-auto` takes the space, so only this panel moves — the copy
+              // above it stays exactly where it was. The margins above are kept
+              // for the stacked layout below `lg`, where there is no picture
+              // beside it to line up with.
+              hasArtwork && "lg:mt-auto",
             )}
           >
           <Reveal
