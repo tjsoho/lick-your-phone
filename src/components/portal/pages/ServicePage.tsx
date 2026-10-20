@@ -10,6 +10,7 @@ import {
   type ContentBlock,
 } from "../ProposalContext";
 import { cn } from "@/lib/utils";
+import { servicePeriod } from "@/lib/selection-pricing";
 import ContentBlockRenderer, {
   IMAGE_RADIUS_LARGE,
   MAIN_IMAGE,
@@ -456,8 +457,21 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   const costsNothing =
     displayTarget === 0 &&
     (!hasTiers || sortedTiers.every((t) => t.target_price_cents === 0));
-  const periodLabel =
-    service.price_display_period === "week" ? t("perWeek") : t("perMonth");
+  /**
+   * THE CADENCE, OR THE ABSENCE OF ONE.
+   *
+   * A subscription is quoted by the week unless it is one of the two the
+   * agency still quotes by the month. A single payment has no cadence at all
+   * and says so: it used to fall through to "per month", which turned a
+   * $2,495 photography shoot into a $2,495-a-month commitment on the slide.
+   */
+  const period = servicePeriod(service);
+  const isOneOff = period === "one_off";
+  const periodLabel = isOneOff
+    ? t("oneOffLabel")
+    : period === "week"
+      ? t("perWeek")
+      : t("perMonth");
   const savingsCents = displayList - displayTarget;
 
   const { images, logos, textBlocks } = collectMedia(page);
@@ -1221,10 +1235,14 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                   </div>
                   {hasDiscount && savingsCents > 0 && (
                     <p className="pb-1 font-body text-[11px] text-lyp-gold [@media(min-height:950px)]:text-xs">
-                      {t("savingLine", {
-                        amount: formatCents(savingsCents),
-                        period: periodLabel,
-                      })}
+                      {isOneOff
+                        ? t("savingLineOneOff", {
+                            amount: formatCents(savingsCents),
+                          })
+                        : t("savingLine", {
+                            amount: formatCents(savingsCents),
+                            period: periodLabel,
+                          })}
                     </p>
                   )}
                 </div>

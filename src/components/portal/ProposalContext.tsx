@@ -20,6 +20,11 @@ import {
   isDiscountLive,
   priceServices,
 } from "@/lib/pricing";
+import {
+  buildSelectionLines,
+  totalSelection,
+  type SelectionTotals,
+} from "@/lib/selection-pricing";
 
 /* ------------------------------------------------------------------ */
 /*  Types coming from the server component                            */
@@ -157,9 +162,12 @@ interface ProposalContextValue {
   /** Whether discounted prices apply right now. Full price otherwise. */
   discountLive: boolean;
 
-  totalListCents: number;
-  totalTargetCents: number;
-  totalDiscountCents: number;
+  /**
+   * The basket added up, in both cadences and with single payments kept
+   * apart. Worked out by `src/lib/selection-pricing` so the price bar, the
+   * basket, the summary slide and the signing card cannot disagree.
+   */
+  totals: SelectionTotals;
   selectedCount: number;
   paymentCaptured: boolean;
 }
@@ -170,26 +178,6 @@ export function useProposal() {
   const ctx = useContext(ProposalContext);
   if (!ctx) throw new Error("useProposal must be used inside ProposalProvider");
   return ctx;
-}
-
-/* ------------------------------------------------------------------ */
-/*  Price helpers                                                     */
-/* ------------------------------------------------------------------ */
-
-function listFromTarget(
-  targetCents: number,
-  discountPct: number | null,
-): number {
-  if (discountPct == null || discountPct === 0) return targetCents;
-  return Math.round(targetCents / (1 - discountPct));
-}
-
-/** Monthly-equivalent cents for totalling */
-function monthlyTarget(service: Service, tierTarget: number): number {
-  if (service.price_display_period === "week") {
-    return Math.round((tierTarget * 52) / 12);
-  }
-  return tierTarget;
 }
 
 /* ------------------------------------------------------------------ */
@@ -363,48 +351,11 @@ export function ProposalProvider({
     [serviceMap],
   );
 
-  // Computed totals
-  const {
-    totalListCents,
-    totalTargetCents,
-    totalDiscountCents,
-    selectedCount,
-  } = useMemo(() => {
-    let listTotal = 0;
-    let targetTotal = 0;
-    let count = 0;
-
-    for (const sel of selections) {
-      const svc = serviceMap[sel.serviceId];
-      if (!svc) continue;
-
-      if (svc.billing === "in_kind") {
-        count++;
-        continue;
-      }
-
-      let target: number;
-      if (sel.tierId) {
-        const tier = svc.service_tiers.find((t) => t.id === sel.tierId);
-        target = tier ? tier.target_price_cents : svc.target_price_cents;
-      } else {
-        target = svc.target_price_cents;
-      }
-
-      const monthlyT = monthlyTarget(svc, target);
-      const list = listFromTarget(monthlyT, svc.discount_pct);
-
-      targetTotal += monthlyT;
-      listTotal += list;
-      count++;
-    }
-
-    return {
-      totalListCents: listTotal,
-      totalTargetCents: targetTotal,
-      totalDiscountCents: listTotal - targetTotal,
-      selectedCount: count,
-    };
+  // Computed totals. The lines are built once and summed once, from the same
+  // module every other screen uses.
+  const { totals, selectedCount } = useMemo(() => {
+    const lines = buildSelectionLines(selections, serviceMap);
+    return { totals: totalSelection(lines), selectedCount: lines.length };
   }, [selections, serviceMap]);
 
   const value: ProposalContextValue = {
@@ -424,9 +375,7 @@ export function ProposalProvider({
     toggleService,
     selectTier,
     deselectService,
-    totalListCents,
-    totalTargetCents,
-    totalDiscountCents,
+    totals,
     selectedCount,
     paymentCaptured,
   };

@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronDown, Pencil, X } from "lucide-react";
+import { Check, ChevronDown, Clock, Pencil, X } from "lucide-react";
 import { useCopy, useProposal } from "../ProposalContext";
 import { cn } from "@/lib/utils";
 import Reveal, { STEP, revealDelay } from "../Reveal";
+import SelectionTotals from "../SelectionTotals";
+import { CountdownClock, useDiscountTimerLive } from "../DiscountCountdown";
+import { buildSelectionLines, totalSelection } from "@/lib/selection-pricing";
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -13,14 +16,6 @@ function formatCents(cents: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(cents / 100);
-}
-
-function listFromTarget(
-  targetCents: number,
-  discountPct: number | null,
-): number {
-  if (discountPct == null || discountPct === 0) return targetCents;
-  return Math.round(targetCents / (1 - discountPct));
 }
 
 export default function SummaryPage() {
@@ -35,86 +30,29 @@ export default function SummaryPage() {
     paymentCaptured,
   } = useProposal();
   const t = useCopy("summary");
+  const g = useCopy("global");
 
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  const selectedServices = selections
-    .map((sel) => {
-      const svc = serviceMap[sel.serviceId];
-      if (!svc) return null;
+  // The same test the countdown strip at the top of the deck applies, so the
+  // two can never disagree about whether an offer is still running.
+  const timerLive = useDiscountTimerLive(
+    proposal.discountTimerActive,
+    proposal.discountExpiresAt,
+    proposal.discountStartsAt,
+  );
+  const isSigned =
+    proposal.status === "signed" || proposal.status === "intake_complete";
+  const showOfferEnds =
+    timerLive && !isSigned && !!proposal.discountExpiresAt;
 
-      let targetCents: number;
-      let tierName: string | null = null;
-
-      if (sel.tierId) {
-        const tier = svc.service_tiers.find((t) => t.id === sel.tierId);
-        targetCents = tier ? tier.target_price_cents : svc.target_price_cents;
-        tierName = tier?.name ?? null;
-      } else {
-        targetCents = svc.target_price_cents;
-      }
-
-      const isWeekly = svc.price_display_period === "week";
-      const displayTarget = targetCents;
-      const monthlyTarget = isWeekly
-        ? Math.round((targetCents * 52) / 12)
-        : targetCents;
-      const listCents = listFromTarget(monthlyTarget, svc.discount_pct);
-      const hasDiscount = svc.discount_pct != null && svc.discount_pct > 0;
-
-      let billingCycleMonths = 1;
-      if (svc.billing === "recurring_monthly") {
-        const tierCycle = sel.tierId
-          ? svc.service_tiers.find((t) => t.id === sel.tierId)
-              ?.billing_cycle_months
-          : null;
-
-        billingCycleMonths = tierCycle ?? svc.billing_cycle_months ?? 1;
-      }
-
-      const totalContractCents = monthlyTarget * billingCycleMonths;
-      const totalListContractCents = listCents * billingCycleMonths;
-
-      return {
-        id: svc.id,
-        name: svc.name,
-        tierName,
-        tierId: sel.tierId ?? null,
-        tiers: svc.service_tiers ?? [],
-        billing: svc.billing,
-        isWeekly,
-        displayTarget,
-        monthlyTarget,
-        listCents,
-        hasDiscount,
-        discountPct: svc.discount_pct,
-        inclusions: svc.inclusions ?? [],
-        clientObligations: svc.client_obligations ?? [],
-        billingCycleMonths,
-        totalContractCents,
-        totalListContractCents,
-      };
-    })
-    .filter(Boolean);
+  // Every line, priced in the cadence it is sold in, by the one module that
+  // prices the price bar and the basket too.
+  const selectedServices = buildSelectionLines(selections, serviceMap);
+  const totals = totalSelection(selectedServices);
 
   const signatureIdx = pages.findIndex((p) => p.slug === "signature");
   const paymentIdx = pages.findIndex((p) => p.slug === "payment");
-
-  // The card closes on what they pay each month, with one-off payments kept
-  // apart so they're never folded into a monthly figure.
-  const sumBy = (billing: string, key: "monthlyTarget" | "listCents") =>
-    selectedServices.reduce(
-      (sum, item) => sum + (item?.billing === billing ? item[key] : 0),
-      0,
-    );
-  const monthlyTotal = sumBy("recurring_monthly", "monthlyTarget");
-  const monthlyFull = sumBy("recurring_monthly", "listCents");
-  const monthlySavings = monthlyFull - monthlyTotal;
-  const oneOffTotal = sumBy("one_off", "monthlyTarget");
-  const oneOffFull = sumBy("one_off", "listCents");
-  const oneOffCount = selectedServices.filter(
-    (item) => item?.billing === "one_off",
-  ).length;
 
   return (
     <div className="flex h-full flex-col overflow-y-auto">
@@ -206,14 +144,16 @@ export default function SummaryPage() {
                             <span className="font-heading text-base text-lyp-white">
                               {item.hasDiscount && (
                                 <span className="hidden font-body text-[13px]/[18px] text-lyp-white/70 line-through mr-2 sm:inline">
-                                  {formatCents(item.listCents)}
+                                  {formatCents(item.nativeListCents)}
                                 </span>
                               )}
-                              {formatCents(item.monthlyTarget)}
+                              {formatCents(item.nativeCents)}
                               <span className="font-body text-[13px]/[18px] text-lyp-white/75 ml-0.5">
-                                {item.billing === "recurring_monthly"
-                                  ? t("perMonthShort")
-                                  : ` ${t("oneOffShort")}`}
+                                {item.period === "week"
+                                  ? t("perWeekShort")
+                                  : item.period === "month"
+                                    ? t("perMonthShort")
+                                    : ` ${t("oneOffShort")}`}
                               </span>
                             </span>
                           )}
@@ -231,11 +171,11 @@ export default function SummaryPage() {
                         // The drawer body mounts on expand, so its own reveal
                         // fires each time it is opened.
                         <div className="portal-reveal border-t border-lyp-white/10 px-5 py-4 space-y-4">
-                          {item.isWeekly && (
+                          {item.period === "week" && (
                             <p className="font-body text-sm text-lyp-white/80">
                               {t("weeklyBreakdown", {
-                                weekly: formatCents(item.displayTarget),
-                                monthly: formatCents(item.monthlyTarget),
+                                weekly: formatCents(item.nativeCents),
+                                monthly: formatCents(item.monthlyCents),
                               })}
                             </p>
                           )}
@@ -253,11 +193,6 @@ export default function SummaryPage() {
                                 {[...item.tiers]
                                   .sort((a, b) => a.sequence - b.sequence)
                                   .map((tier) => {
-                                    const tierMonthly = item.isWeekly
-                                      ? Math.round(
-                                          (tier.target_price_cents * 52) / 12,
-                                        )
-                                      : tier.target_price_cents;
                                     const chosen = tier.id === item.tierId;
                                     return (
                                       <button
@@ -277,10 +212,12 @@ export default function SummaryPage() {
                                       >
                                         {tier.name}
                                         <span className="ml-2 font-heading">
-                                          {formatCents(tierMonthly)}
+                                          {formatCents(tier.target_price_cents)}
                                         </span>
                                         <span className="text-lyp-white/70">
-                                          {t("perMonthShort")}
+                                          {item.period === "week"
+                                            ? t("perWeekShort")
+                                            : t("perMonthShort")}
                                         </span>
                                       </button>
                                     );
@@ -289,13 +226,13 @@ export default function SummaryPage() {
                             </div>
                           )}
 
-                          {item.inclusions.length > 0 && (
+                          {item.service.inclusions.length > 0 && (
                             <div>
                               <p className="font-heading text-[13px]/[18px] text-lyp-cherry uppercase tracking-wider mb-2">
                                 {t("includedHeading")}
                               </p>
                               <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
-                                {item.inclusions
+                                {item.service.inclusions
                                   .sort(
                                     (
                                       a: { sequence?: number | null },
@@ -317,13 +254,13 @@ export default function SummaryPage() {
                             </div>
                           )}
 
-                          {item.clientObligations.length > 0 && (
+                          {item.service.client_obligations.length > 0 && (
                             <div>
                               <p className="font-heading text-[13px]/[18px] text-lyp-white/75 uppercase tracking-wider mb-2">
                                 {t("commitmentsHeading")}
                               </p>
                               <ul className="space-y-1">
-                                {item.clientObligations
+                                {item.service.client_obligations
                                   .sort(
                                     (
                                       a: { sequence?: number | null },
@@ -413,12 +350,17 @@ export default function SummaryPage() {
                           </span>
                           <div className="flex flex-col items-end shrink-0">
                             <span className="font-body text-[13.5px]/[18px] text-lyp-white">
-                              {item.billing === "in_kind" ? (
+                              {item.period === "in_kind" ? (
                                 t("free")
                               ) : (
                                 <>
-                                  {formatCents(item.monthlyTarget)}
-                                  {item.billing === "recurring_monthly" && (
+                                  {formatCents(item.nativeCents)}
+                                  {item.period === "week" && (
+                                    <span className="text-lyp-white/80">
+                                      {t("perWeekShort")}
+                                    </span>
+                                  )}
+                                  {item.period === "month" && (
                                     <span className="text-lyp-white/80">
                                       {t("perMonthShort")}
                                     </span>
@@ -439,7 +381,7 @@ export default function SummaryPage() {
                                       months: item.billingCycleMonths,
                                     })}
                               </span>
-                            ) : item.billing === "one_off" ? (
+                            ) : item.period === "one_off" ? (
                               <span className="font-body text-[12.5px]/[16px] text-lyp-white/75 mt-0.5">
                                 {t("oneOffPayment")}
                               </span>
@@ -450,89 +392,32 @@ export default function SummaryPage() {
                     })}
                   </div>
 
-                  <div className="border-t border-lyp-white/10 pt-3 space-y-2">
-                    {monthlySavings > 0 && (
-                      <>
-                        <div className="flex justify-between">
-                          <span className="font-body text-[13px]/[18px] text-lyp-white/75">
-                            {t("fullPrice")}
-                          </span>
-                          <span className="font-body text-[13px]/[18px] text-lyp-white/75 line-through">
-                            {formatCents(monthlyFull)}
-                            {t("perMonthShort")}
-                          </span>
-                        </div>
-                        {/* The saving is the best news on the page, so it is set
-                          in the heading face at the same weight as a total
-                          rather than whispered underneath one. */}
-                        <div className="flex justify-between items-baseline gap-3">
-                          <span className="font-heading text-[15px]/[22px] text-lyp-gold uppercase tracking-wide">
-                            {t("youSave")}
-                          </span>
-                          <span className="whitespace-nowrap font-heading text-lg/[22px] text-lyp-gold">
-                            -{formatCents(monthlySavings)}
-                            <span className="font-body text-[13px] ml-0.5">
-                              {t("perMonthShort")}
-                            </span>
-                          </span>
-                        </div>
-                      </>
-                    )}
+                  <SelectionTotals t={t} totals={totals} />
 
-                    {monthlyTotal > 0 && (
-                      <div className="flex justify-between items-baseline gap-3 pt-1">
-                        <span className="font-heading text-base text-lyp-white">
-                          {t("monthlyTotal")}
-                        </span>
-                        <span className="whitespace-nowrap font-heading text-2xl text-lyp-white">
-                          {formatCents(monthlyTotal)}
-                          <span className="font-body text-[13px] text-lyp-white/80 ml-1">
-                            {t("gstSuffixMonthly")}
-                          </span>
-                        </span>
-                      </div>
-                    )}
-
-                    {oneOffTotal > 0 && (
-                      <div className="flex justify-between items-baseline gap-3 pt-1">
-                        <span
-                          className={
-                            monthlyTotal > 0
-                              ? "font-body text-[13.5px]/[18px] text-lyp-white/90"
-                              : "font-heading text-base text-lyp-white"
-                          }
-                        >
-                          {oneOffCount === 1
-                            ? t("oneOffTotalSingle")
-                            : t("oneOffTotalPlural")}
-                        </span>
-                        <span
-                          className={cn(
-                            "whitespace-nowrap text-lyp-white",
-                            monthlyTotal > 0
-                              ? "font-body text-base"
-                              : "font-heading text-2xl",
-                          )}
-                        >
-                          {oneOffFull > oneOffTotal && (
-                            <span className="mr-2 font-body text-[13px] text-lyp-white/75 line-through">
-                              {formatCents(oneOffFull)}
-                            </span>
-                          )}
-                          {formatCents(oneOffTotal)}
-                          <span className="font-body text-[13px] text-lyp-white/80 ml-1">
-                            {t("gstSuffix")}
-                          </span>
-                        </span>
-                      </div>
-                    )}
-
-                    {monthlyTotal === 0 && oneOffTotal === 0 && (
-                      <p className="pt-1 text-center font-heading text-base text-lyp-white">
-                        {t("complimentary")}
-                      </p>
-                    )}
-                  </div>
+                  {/* "Could the Offer ends countdown also show on the Your
+                      Summary page?" The strip at the top of the deck is easy
+                      to lose while reading the card, and this is where the
+                      client decides, so the clock stands with the figures it
+                      applies to. Same rule as the strip: gone once signed. */}
+                  {showOfferEnds && (
+                    <div
+                      role="timer"
+                      className="flex items-center justify-center gap-2 rounded-lg bg-lyp-cherry px-3 py-2"
+                    >
+                      <Clock
+                        strokeWidth={2.25}
+                        className="h-3.5 w-3.5 flex-shrink-0 text-lyp-white"
+                      />
+                      <span className="whitespace-nowrap font-body text-[11px] font-semibold uppercase tracking-[0.14em] text-lyp-white">
+                        {g("discountEndsInShort")}
+                      </span>
+                      <CountdownClock
+                        expiresAt={proposal.discountExpiresAt!}
+                        className="text-[15px] font-bold"
+                        unitClassName="ml-px text-[10px] font-semibold text-lyp-white/70"
+                      />
+                    </div>
+                  )}
 
                   {paymentCaptured ? (
                     <div className="mt-2 flex flex-col items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/10 px-5 py-4">

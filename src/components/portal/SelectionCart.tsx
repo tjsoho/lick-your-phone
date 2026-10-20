@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ChevronDown, Pencil, ShoppingBag, X } from "lucide-react";
 import { useCopy, useProposal } from "./ProposalContext";
 import { cn } from "@/lib/utils";
+import { buildSelectionLines, totalSelection } from "@/lib/selection-pricing";
 
 /* -------------------------------------------------------------------------
    THE BASKET
@@ -62,14 +63,6 @@ function formatCents(cents: number): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(cents / 100);
-}
-
-function listFromTarget(
-  targetCents: number,
-  discountPct: number | null,
-): number {
-  if (discountPct == null || discountPct === 0) return targetCents;
-  return Math.round(targetCents / (1 - discountPct));
 }
 
 /**
@@ -154,47 +147,18 @@ export default function SelectionCart({
 
   if (!open) return null;
 
-  // Same shape the summary card builds, from the same context values, so the
-  // two can never disagree about what a line costs.
-  const lines = selections.flatMap((sel) => {
-    const svc = serviceMap[sel.serviceId];
-    if (!svc) return [];
+  // The same lines the summary card and the price bar build, from the same
+  // module, so the three can never disagree about what anything costs. Each
+  // line is quoted in its own cadence — weekly for a subscription unless the
+  // agency quotes it monthly, and neither for a single payment.
+  const lines = buildSelectionLines(selections, serviceMap).map((line) => ({
+    ...line,
+    saving: line.nativeListCents - line.nativeCents,
+    pageIndex: pages.findIndex((p) => p.serviceId === line.id),
+    image: pages.find((p) => p.serviceId === line.id)?.featuredImage ?? null,
+  }));
 
-    const tiers = [...svc.service_tiers].sort((a, b) => a.sequence - b.sequence);
-    const tier = sel.tierId ? tiers.find((x) => x.id === sel.tierId) : undefined;
-    const targetCents = tier ? tier.target_price_cents : svc.target_price_cents;
-
-    const monthlyTarget =
-      svc.price_display_period === "week"
-        ? Math.round((targetCents * 52) / 12)
-        : targetCents;
-    const listCents = listFromTarget(monthlyTarget, svc.discount_pct);
-
-    return [
-      {
-        id: svc.id,
-        name: svc.name,
-        billing: svc.billing,
-        tiers,
-        tierId: sel.tierId,
-        monthlyTarget,
-        listCents,
-        saving: listCents - monthlyTarget,
-        pageIndex: pages.findIndex((p) => p.serviceId === svc.id),
-        image: pages.find((p) => p.serviceId === svc.id)?.featuredImage ?? null,
-      },
-    ];
-  });
-
-  const sumBy = (billing: string, key: "monthlyTarget" | "listCents") =>
-    lines.reduce((sum, line) => sum + (line.billing === billing ? line[key] : 0), 0);
-
-  const monthlyTotal = sumBy("recurring_monthly", "monthlyTarget");
-  const monthlyFull = sumBy("recurring_monthly", "listCents");
-  const monthlySavings = monthlyFull - monthlyTotal;
-  const oneOffTotal = sumBy("one_off", "monthlyTarget");
-  const oneOffFull = sumBy("one_off", "listCents");
-  const oneOffCount = lines.filter((line) => line.billing === "one_off").length;
+  const totals = totalSelection(lines);
 
   const signatureIdx = pages.findIndex((p) => p.slug === "signature");
   const paymentIdx = pages.findIndex((p) => p.slug === "payment");
@@ -297,11 +261,11 @@ export default function SelectionCart({
                   {/* The price re-keys on its own value, so a term change is
                       felt rather than just seen. */}
                   <div
-                    key={line.monthlyTarget}
+                    key={line.nativeCents}
                     className="portal-reveal portal-reveal-fade mt-1 flex flex-wrap items-baseline gap-x-2"
                     style={{ animationDelay: "0ms", animationDuration: "380ms" }}
                   >
-                    {line.billing === "in_kind" ? (
+                    {line.period === "in_kind" ? (
                       <span className="font-body text-sm text-[#f0c9c9]">
                         {t("cartComplimentary")}
                       </span>
@@ -309,15 +273,17 @@ export default function SelectionCart({
                       <>
                         {line.saving > 0 && (
                           <span className="font-body text-[11px] text-lyp-white/60 line-through">
-                            {formatCents(line.listCents)}
+                            {formatCents(line.nativeListCents)}
                           </span>
                         )}
                         <span className="font-heading text-base tabular-nums text-lyp-white">
-                          {formatCents(line.monthlyTarget)}
+                          {formatCents(line.nativeCents)}
                           <span className="ml-0.5 font-body text-[11px] text-lyp-white/70">
-                            {line.billing === "recurring_monthly"
-                              ? t("cartPerMonth")
-                              : ` ${t("cartOneOff")}`}
+                            {line.period === "week"
+                              ? t("cartPerWeek")
+                              : line.period === "month"
+                                ? t("cartPerMonth")
+                                : ` ${t("cartOneOff")}`}
                           </span>
                         </span>
                         {line.saving > 0 && (
@@ -395,76 +361,93 @@ export default function SelectionCart({
         </ul>
       )}
 
-      {/* Totals. The same model the summary card closes on: what they pay each
-          month, with single payments kept apart from it. */}
+      {/* Totals. The same model the summary card closes on: subscriptions
+          quoted by the week, the month they are actually billed as directly
+          underneath, and single payments kept apart from both. */}
       {lines.length > 0 && (
         <div className="space-y-2 border-t border-lyp-white/10 bg-lyp-black/40 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4">
-          {monthlySavings > 0 && (
+          {totals.weeklySavingsCents > 0 && (
             <>
               <div className="flex items-baseline justify-between gap-3">
                 <span className="font-body text-xs text-lyp-white/75">
                   {t("cartFullPrice")}
                 </span>
                 <span className="font-body text-xs text-lyp-white/70 line-through">
-                  {formatCents(monthlyFull)}
-                  {t("cartPerMonth")}
+                  {formatCents(totals.weeklyFullCents)}
+                  {t("cartPerWeek")}
                 </span>
               </div>
+              {/* The saving is the best news in the basket, so it is set in
+                  the heading face at the weight of a total rather than
+                  whispered beneath one. */}
               <div className="flex items-baseline justify-between gap-3">
-                <span className="font-body text-xs text-lyp-gold">
+                <span className="font-heading text-[13px] uppercase tracking-wide text-lyp-gold">
                   {t("cartYouSave")}
                 </span>
-                <span className="font-body text-xs text-lyp-gold">
-                  -{formatCents(monthlySavings)}
-                  {t("cartPerMonth")}
+                <span className="whitespace-nowrap font-heading text-base tabular-nums text-lyp-gold">
+                  -{formatCents(totals.weeklySavingsCents)}
+                  <span className="font-body text-[11px]">
+                    {t("cartPerWeek")}
+                  </span>
                 </span>
               </div>
             </>
           )}
 
-          {monthlyTotal > 0 && (
-            <div className="flex items-baseline justify-between gap-3 pt-0.5">
-              <span className="font-heading text-sm text-lyp-white">
-                {t("cartMonthlyTotal")}
-              </span>
-              <span
-                key={monthlyTotal}
-                className="portal-reveal portal-reveal-fade whitespace-nowrap font-heading text-xl tabular-nums text-lyp-white"
-                style={{ animationDelay: "0ms", animationDuration: "380ms" }}
-              >
-                {formatCents(monthlyTotal)}
-                <span className="ml-1 font-body text-[10px] text-lyp-white/75">
-                  {t("cartGstSuffixMonthly")}
+          {totals.recurringCount > 0 && (
+            <div className="pt-0.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="font-heading text-sm text-lyp-white">
+                  {t("cartWeeklyTotal")}
                 </span>
-              </span>
+                <span
+                  key={totals.weeklyCents}
+                  className="portal-reveal portal-reveal-fade whitespace-nowrap font-heading text-xl tabular-nums text-lyp-white"
+                  style={{ animationDelay: "0ms", animationDuration: "380ms" }}
+                >
+                  {formatCents(totals.weeklyCents)}
+                  <span className="ml-1 font-body text-[10px] text-lyp-white/75">
+                    {t("cartGstSuffixWeekly")}
+                  </span>
+                </span>
+              </div>
+              {/* What actually leaves the account. Quoted by the week, billed
+                  by the month, and the client sees both before they sign. */}
+              <p className="mt-0.5 text-right font-body text-[11px] text-lyp-white/70">
+                {t("cartMonthlyNote", {
+                  amount: formatCents(totals.monthlyCents),
+                })}
+              </p>
             </div>
           )}
 
-          {oneOffTotal > 0 && (
+          {totals.oneOffCents > 0 && (
             <div className="flex items-baseline justify-between gap-3 pt-0.5">
               <span
                 className={
-                  monthlyTotal > 0
+                  totals.recurringCount > 0
                     ? "font-body text-xs text-lyp-white/85"
                     : "font-heading text-sm text-lyp-white"
                 }
               >
-                {oneOffCount === 1
+                {totals.oneOffCount === 1
                   ? t("cartOneOffTotalSingle")
                   : t("cartOneOffTotalPlural")}
               </span>
               <span
                 className={cn(
                   "whitespace-nowrap tabular-nums text-lyp-white",
-                  monthlyTotal > 0 ? "font-body text-sm" : "font-heading text-xl",
+                  totals.recurringCount > 0
+                    ? "font-body text-sm"
+                    : "font-heading text-xl",
                 )}
               >
-                {oneOffFull > oneOffTotal && (
+                {totals.oneOffFullCents > totals.oneOffCents && (
                   <span className="mr-2 font-body text-xs text-lyp-white/70 line-through">
-                    {formatCents(oneOffFull)}
+                    {formatCents(totals.oneOffFullCents)}
                   </span>
                 )}
-                {formatCents(oneOffTotal)}
+                {formatCents(totals.oneOffCents)}
                 <span className="ml-1 font-body text-[10px] text-lyp-white/75">
                   {t("cartGstSuffix")}
                 </span>
@@ -472,7 +455,7 @@ export default function SelectionCart({
             </div>
           )}
 
-          {monthlyTotal === 0 && oneOffTotal === 0 && (
+          {totals.recurringCount === 0 && totals.oneOffCents === 0 && (
             <p className="text-center font-heading text-sm text-lyp-white">
               {t("cartComplimentary")}
             </p>

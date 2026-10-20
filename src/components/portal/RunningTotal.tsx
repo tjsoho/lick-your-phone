@@ -31,13 +31,24 @@ export default function RunningTotal({
   cartOpen?: boolean
   onToggleCart?: () => void
 } = {}) {
-  const { selectedCount, totalListCents, totalTargetCents, totalDiscountCents } =
-    useProposal()
+  const { selectedCount, totals } = useProposal()
   const t = useCopy("global")
 
   if (selectedCount === 0) return null
 
-  const hasDiscount = totalDiscountCents > 0
+  /**
+   * THE BAR QUOTES BY THE WEEK, AND NEVER QUOTES A ONE-OFF AT ALL.
+   *
+   * It used to add every selection into one monthly figure, so a $2,495
+   * photography shoot — a single payment — read as $2,495 a month. The
+   * subscriptions now carry the headline in the cadence they are sold in,
+   * and single payments sit beside it as their own amount.
+   */
+  const hasRecurring = totals.recurringCount > 0
+  const hasOneOff = totals.oneOffCount > 0
+  const headlineCents = hasRecurring ? totals.weeklyCents : totals.oneOffCents
+  const fullCents = hasRecurring ? totals.weeklyFullCents : totals.oneOffFullCents
+  const hasDiscount = fullCents > headlineCents
 
   return (
     // The bar drops in from above the viewport edge the moment the first
@@ -88,23 +99,43 @@ export default function RunningTotal({
           </div>
         )}
         <div className="flex items-center gap-2 sm:gap-3">
-          {hasDiscount && (
-            <span className="hidden font-body text-sm text-lyp-white/60 line-through sm:inline">
-              {formatCents(totalListCents)}
-            </span>
+          {(hasRecurring || hasOneOff) && (
+            <>
+              {hasDiscount && (
+                <span className="hidden font-body text-sm text-lyp-white/60 line-through sm:inline">
+                  {formatCents(fullCents)}
+                </span>
+              )}
+              <span
+                key={headlineCents}
+                className="portal-reveal portal-reveal-fade font-heading text-xl text-lyp-white"
+                style={{ animationDelay: "0ms", animationDuration: "380ms" }}
+              >
+                {formatCents(headlineCents)}
+              </span>
+              {/* On a phone the bar has room for the count, the total and the
+                  handle, and little else — but the figure must never sit there
+                  unlabelled, or a weekly price reads as the whole cost. The
+                  cadence stays at phone width in short form; the GST line is
+                  waiting in the basket. */}
+              <span className="whitespace-nowrap font-body text-[11px] text-lyp-white/70 sm:hidden">
+                {hasRecurring ? t("perWeekGstShort") : ` ${t("cartOneOff")}`}
+              </span>
+              <span className="hidden whitespace-nowrap font-body text-[11px] text-lyp-white/70 sm:inline sm:text-xs">
+                {hasRecurring ? t("perWeekGst") : t("barOneOffGst")}
+              </span>
+              {/* Single payments alongside a subscription. Their own amount,
+                  never added into the weekly figure. Wide screens only: the
+                  basket carries it everywhere else. */}
+              {hasRecurring && hasOneOff && (
+                <span className="hidden whitespace-nowrap font-body text-[11px] text-lyp-white/70 lg:inline lg:text-xs">
+                  {t("barOneOffSuffix", {
+                    amount: formatCents(totals.oneOffCents),
+                  })}
+                </span>
+              )}
+            </>
           )}
-          <span
-            key={totalTargetCents}
-            className="portal-reveal portal-reveal-fade font-heading text-xl text-lyp-white"
-            style={{ animationDelay: "0ms", animationDuration: "380ms" }}
-          >
-            {formatCents(totalTargetCents)}
-          </span>
-          {/* On a phone the bar has room for the count, the total and the
-              handle, and nothing else; the GST line is waiting in the basket. */}
-          <span className="hidden whitespace-nowrap font-body text-[11px] text-lyp-white/70 sm:inline sm:text-xs">
-            {t("perMonthGst")}
-          </span>
           {/* The affordance. The words are for anyone with the room for them;
               the chevron carries the state on a phone, where they don't fit. */}
           <span className="ml-1 flex items-center gap-1 whitespace-nowrap border-l border-lyp-white/25 pl-2 font-body text-xs text-lyp-white sm:pl-3">
