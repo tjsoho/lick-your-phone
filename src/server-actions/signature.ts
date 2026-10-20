@@ -10,6 +10,7 @@ import {
   getTermsClauses,
 } from "@/server-actions/agreement-settings";
 import {
+  applyComplimentary,
   DISCOUNT_GRACE_MS,
   isDiscountLive,
   payableCents,
@@ -91,8 +92,6 @@ export async function signProposal(input: SignProposalInput) {
       return { error: "Failed to load service data." };
     }
 
-    const serviceMap = Object.fromEntries(services.map((s) => [s.id, s]));
-
     // 2b. Price exactly as the portal showed it: full price unless the
     //     discount timer was running, with this proposal's own discounts.
     const discountLive = isDiscountLive({
@@ -103,11 +102,14 @@ export async function signProposal(input: SignProposalInput) {
       graceMs: DISCOUNT_GRACE_MS,
     });
 
+    // Both per-proposal overrides in one read: the discount, and whether the
+    // service was given away. The second is not a discount and does not
+    // depend on the timer, so a row carrying only that one still matters.
     const { data: overrideRows } = await supabase
       .from("proposal_page_settings")
-      .select("page_id, discount_pct")
+      .select("page_id, discount_pct, complimentary")
       .eq("proposal_id", input.proposalId)
-      .not("discount_pct", "is", null);
+      .or("discount_pct.not.is.null,complimentary.is.true");
 
     const overridePageIds = (overrideRows ?? []).map((row) => row.page_id);
     const { data: overridePages } =
@@ -119,14 +121,27 @@ export async function signProposal(input: SignProposalInput) {
         : { data: [] as { id: string; service_id: string | null }[] };
 
     const discountOverrides: Record<string, number> = {};
+    const complimentaryServiceIds: string[] = [];
     for (const row of overrideRows ?? []) {
       const serviceId = overridePages?.find(
         (page) => page.id === row.page_id,
       )?.service_id;
-      if (serviceId && row.discount_pct != null) {
+      if (!serviceId) continue;
+      if (row.discount_pct != null) {
         discountOverrides[serviceId] = row.discount_pct;
       }
+      if (row.complimentary) complimentaryServiceIds.push(serviceId);
     }
+
+    // THE CONTRACT AGREES WITH THE SLIDE, BY USING THE SAME RULE.
+    //
+    // A service given away is rewritten here exactly as the portal rewrites
+    // it: billed in kind, at nothing, with no struck-through price. The total
+    // below already skips anything in kind, so the gift costs the client
+    // nothing on the document for the same reason it costs them nothing on
+    // screen, rather than because a second rule was written to say so.
+    const pricedServices = applyComplimentary(services, complimentaryServiceIds);
+    const serviceMap = Object.fromEntries(pricedServices.map((s) => [s.id, s]));
 
     // 3. Build line items and compute total
     const lineItemRows: Array<{
@@ -142,7 +157,7 @@ export async function signProposal(input: SignProposalInput) {
     const pdfLineItems: PdfLineItem[] = [];
     let totalCents = 0;
 
-    const tiers = services.flatMap((s) => s.service_tiers || []);
+    const tiers = pricedServices.flatMap((s) => s.service_tiers || []);
 
     for (const sel of input.selections) {
       const svc = serviceMap[sel.serviceId];

@@ -17,6 +17,12 @@ export type PresentationPage = {
   /** Per-proposal overrides. null means "follow the global setting". */
   overrideVisible: boolean | null;
   overrideDiscountPct: number | null;
+  /**
+   * Given away on this proposal, whatever the discount is doing. Separate
+   * from the discount on purpose: a 100% discount only holds while the
+   * countdown runs, and a gift should not expire with an offer.
+   */
+  overrideComplimentary: boolean | null;
 };
 
 type PageRow = {
@@ -33,6 +39,7 @@ type OverrideRow = {
   page_id: string;
   visible: boolean | null;
   discount_pct: number | null;
+  complimentary: boolean | null;
 };
 
 type ServiceRow = {
@@ -57,7 +64,7 @@ export async function getProposalPresentation(proposalId: string) {
         .order("sequence", { ascending: true }),
       supabase
         .from("proposal_page_settings")
-        .select("page_id, visible, discount_pct")
+        .select("page_id, visible, discount_pct, complimentary")
         .eq("proposal_id", proposalId),
       supabase.from("services").select("id, name, discount_pct"),
     ]);
@@ -92,6 +99,7 @@ export async function getProposalPresentation(proposalId: string) {
           globalDiscountPct: service?.discount_pct ?? null,
           overrideVisible: override?.visible ?? null,
           overrideDiscountPct: override?.discount_pct ?? null,
+          overrideComplimentary: override?.complimentary ?? null,
         };
       },
     );
@@ -112,14 +120,18 @@ export async function getProposalPresentation(proposalId: string) {
 export async function setProposalPageOverride(
   proposalId: string,
   pageId: string,
-  patch: { visible?: boolean | null; discountPct?: number | null },
+  patch: {
+    visible?: boolean | null;
+    discountPct?: number | null;
+    complimentary?: boolean | null;
+  },
 ) {
   try {
     const supabase = await createClient();
 
     const { data: existing, error: readError } = await supabase
       .from("proposal_page_settings")
-      .select("id, visible, discount_pct")
+      .select("id, visible, discount_pct, complimentary")
       .eq("proposal_id", proposalId)
       .eq("page_id", pageId)
       .maybeSingle();
@@ -132,8 +144,16 @@ export async function setProposalPageOverride(
       patch.discountPct !== undefined
         ? patch.discountPct
         : (existing?.discount_pct ?? null);
+    const nextComplimentary =
+      patch.complimentary !== undefined
+        ? patch.complimentary
+        : (existing?.complimentary ?? null);
 
-    if (nextVisible === null && nextDiscount === null) {
+    if (
+      nextVisible === null &&
+      nextDiscount === null &&
+      nextComplimentary === null
+    ) {
       if (existing) {
         const { error } = await supabase
           .from("proposal_page_settings")
@@ -151,6 +171,7 @@ export async function setProposalPageOverride(
         .update({
           visible: nextVisible,
           discount_pct: nextDiscount,
+          complimentary: nextComplimentary,
           updated_at: new Date().toISOString(),
         })
         .eq("id", existing.id);
@@ -161,6 +182,7 @@ export async function setProposalPageOverride(
         page_id: pageId,
         visible: nextVisible,
         discount_pct: nextDiscount,
+        complimentary: nextComplimentary,
       });
       if (error) throw error;
     }

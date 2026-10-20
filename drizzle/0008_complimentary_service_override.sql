@@ -1,0 +1,1 @@
+ALTER TABLE "proposal_page_settings" ADD COLUMN "complimentary" boolean;

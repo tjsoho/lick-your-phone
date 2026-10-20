@@ -482,6 +482,7 @@ export interface ProposalCarouselProps {
   savedSelections?: Selection[] | null;
   paymentCaptured?: boolean;
   discountOverrides?: Record<string, number>;
+  complimentaryServiceIds?: string[];
   /** Wording overrides for the structural pages, keyed by slug. */
   pageCopy?: Record<string, CopyOverrides>;
 }
@@ -494,6 +495,7 @@ export default function ProposalCarousel({
   savedSelections,
   paymentCaptured,
   discountOverrides,
+  complimentaryServiceIds,
   pageCopy,
 }: ProposalCarouselProps) {
   return (
@@ -505,6 +507,7 @@ export default function ProposalCarousel({
       initialSelections={savedSelections ?? undefined}
       paymentCaptured={paymentCaptured}
       discountOverrides={discountOverrides}
+      complimentaryServiceIds={complimentaryServiceIds}
       pageCopy={pageCopy}
     >
       <CarouselInner />

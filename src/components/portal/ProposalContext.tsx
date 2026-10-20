@@ -16,6 +16,7 @@ import {
 } from "@/lib/portal-copy";
 import type { TermsKind } from "@/lib/terms";
 import {
+  applyComplimentary,
   DISCOUNT_GRACE_MS,
   isDiscountLive,
   priceServices,
@@ -194,6 +195,11 @@ interface ProviderProps {
   /** Per-proposal discounts by service id, set in the dashboard's Presentation section. */
   discountOverrides?: Record<string, number>;
   /**
+   * Services given away on this proposal, set in the same place. Nothing to
+   * do with the discount: these are free whether or not the offer is running.
+   */
+  complimentaryServiceIds?: string[];
+  /**
    * Wording overrides for the structural pages, keyed by slug. Separate from
    * `pages` because some of those pages (payment, onboarding) aren't in the
    * slide deck at every stage but their wording is still needed.
@@ -203,6 +209,7 @@ interface ProviderProps {
 }
 
 const NO_OVERRIDES: Record<string, number> = {};
+const NO_COMPLIMENTARY: string[] = [];
 const NO_PAGE_COPY: Record<string, CopyOverrides> = {};
 
 export function ProposalProvider({
@@ -214,6 +221,7 @@ export function ProposalProvider({
   children,
   paymentCaptured = false,
   discountOverrides = NO_OVERRIDES,
+  complimentaryServiceIds = NO_COMPLIMENTARY,
   pageCopy = NO_PAGE_COPY,
 }: ProviderProps) {
   const [proposal, setProposal] = useState<ProposalData>(initialProposal);
@@ -235,9 +243,15 @@ export function ProposalProvider({
       })
     : timerLive;
 
+  // Priced first, then anything given away is overwritten outright. The
+  // order matters: a gift is not a discounted price, it is no price at all.
   const services = useMemo(
-    () => priceServices(rawServices, discountOverrides, discountLive),
-    [rawServices, discountOverrides, discountLive],
+    () =>
+      applyComplimentary(
+        priceServices(rawServices, discountOverrides, discountLive),
+        complimentaryServiceIds,
+      ),
+    [rawServices, discountOverrides, discountLive, complimentaryServiceIds],
   );
 
   const updateProposal = useCallback((updates: Partial<ProposalData>) => {

@@ -101,6 +101,18 @@ export const proposalPageSettings = pgTable('proposal_page_settings', {
   visible: boolean('visible'),
   // Same unit as services.discount_pct: a fraction, so 0.2 is 20% off.
   discountPct: real('discount_pct'),
+  /**
+   * Given away on this proposal, whatever the discount is doing.
+   *
+   * A 100% discount also makes a service free, but only while the offer
+   * countdown is running: switch the timer off and the client is quoted full
+   * price again. That is right for a discount and wrong for a gift, so the
+   * two are separate. This one does not look at the timer at all.
+   *
+   * Null means no override, the same as `visible`, so a row with nothing set
+   * is still deleted rather than left behind.
+   */
+  complimentary: boolean('complimentary'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 }, (t) => ({

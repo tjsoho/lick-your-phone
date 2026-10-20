@@ -115,7 +115,10 @@ export default function ProposalDeckOverview({
   const [resetting, setResetting] = useState(false);
 
   const overrideCount = pages.filter(
-    (p) => p.overrideVisible !== null || p.overrideDiscountPct !== null,
+    (p) =>
+      p.overrideVisible !== null ||
+      p.overrideDiscountPct !== null ||
+      p.overrideComplimentary !== null,
   ).length;
 
   function effectiveVisible(page: PresentationPage) {
@@ -149,6 +152,44 @@ export default function ProposalDeckOverview({
         ),
       );
     }
+  }
+
+  /**
+   * Given away on this proposal. Deliberately not the discount: a discount
+   * only reaches the client while the countdown is running, and a gift
+   * should not lapse with an offer.
+   */
+  async function handleComplimentary(page: PresentationPage, next: boolean) {
+    // Unticking clears the override rather than storing a false, so a row
+    // with nothing else on it is deleted and the deck reads as untailored.
+    const value = next ? true : null;
+
+    setBusyId(page.pageId);
+    setPages((prev) =>
+      prev.map((p) =>
+        p.pageId === page.pageId ? { ...p, overrideComplimentary: value } : p,
+      ),
+    );
+
+    const res = await setProposalPageOverride(proposalId, page.pageId, {
+      complimentary: value,
+    });
+    setBusyId(null);
+
+    if (res.error) {
+      toast.error(res.error);
+      setPages((prev) =>
+        prev.map((p) =>
+          p.pageId === page.pageId
+            ? { ...p, overrideComplimentary: page.overrideComplimentary }
+            : p,
+        ),
+      );
+      return;
+    }
+    toast.success(
+      next ? "Shown to this client as complimentary" : "Back to its usual price",
+    );
   }
 
   async function handleDiscount(page: PresentationPage, raw: string) {
@@ -289,7 +330,10 @@ export default function ProposalDeckOverview({
           const locked = !!page.slug && LOCKED_SLUGS.includes(page.slug);
           const shown = effectiveVisible(page);
           const tailored =
-            page.overrideVisible !== null || page.overrideDiscountPct !== null;
+            page.overrideVisible !== null ||
+            page.overrideDiscountPct !== null ||
+            page.overrideComplimentary !== null;
+          const free = page.overrideComplimentary === true;
           const title = page.title ?? page.slug ?? "Untitled";
           if (shown) position += 1;
 
@@ -347,7 +391,14 @@ export default function ProposalDeckOverview({
                           Tailored
                         </span>
                       )}
-                      {discountsIdle && effectiveDiscount(page) > 0 && (
+                      {free && (
+                        <span className="rounded-full bg-[#E8F5EC] px-2 py-0.5 font-body text-[9px] font-medium uppercase tracking-[0.16em] text-[#2F7D4F]">
+                          Complimentary
+                        </span>
+                      )}
+                      {/* A gift ignores the countdown, so the discount
+                          warning has nothing to say about it. */}
+                      {!free && discountsIdle && effectiveDiscount(page) > 0 && (
                         <span
                           title="The client sees full price until the discount window is running"
                           className="inline-flex items-center gap-1 rounded-full bg-[#FBF3E3] px-2 py-0.5 font-body text-[9px] font-medium uppercase tracking-[0.16em] text-[#9A7B2E]"
@@ -395,6 +446,28 @@ export default function ProposalDeckOverview({
                 {page.type === "service" && (
                   <label className="mt-3 flex items-center justify-between gap-3 border-t border-[#F7F1F1] pt-3">
                     <span className="font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]">
+                      Complimentary
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={free}
+                      onChange={(e) =>
+                        handleComplimentary(page, e.target.checked)
+                      }
+                      aria-label={`Give ${title} to this client for nothing`}
+                      title="Free on this proposal, whatever the discount is doing"
+                      className="h-4 w-4 flex-shrink-0 accent-lyp-cherry"
+                    />
+                  </label>
+                )}
+
+                {page.type === "service" && (
+                  <label className="mt-2 flex items-center justify-between gap-3 pt-0">
+                    <span
+                      className={`font-body text-[10px] font-medium uppercase tracking-[0.22em] ${
+                        free ? "text-[#C4B8B8]" : "text-[#867474]"
+                      }`}
+                    >
                       Discount
                     </span>
                     <span className="flex items-center gap-1.5">
@@ -405,10 +478,15 @@ export default function ProposalDeckOverview({
                         defaultValue={toPercent(page.overrideDiscountPct)}
                         placeholder={toPercent(page.globalDiscountPct) || "0"}
                         onBlur={(e) => handleDiscount(page, e.target.value)}
+                        // Nothing to discount while it is being given away.
+                        // The value is kept, so unticking restores it.
+                        disabled={free}
                         aria-label={`Discount for ${title}`}
-                        className={`w-16 rounded-xl border border-[#E4D6D6] bg-lyp-white px-2.5 py-1.5 text-right font-body text-[12.5px] tabular-nums text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#6F6060] hover:border-lyp-cherry/30 focus:border-lyp-cherry/40 focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`}
+                        className={`w-16 rounded-xl border border-[#E4D6D6] bg-lyp-white px-2.5 py-1.5 text-right font-body text-[12.5px] tabular-nums text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#6F6060] hover:border-lyp-cherry/30 focus:border-lyp-cherry/40 focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)] disabled:cursor-not-allowed disabled:border-[#EFE6E6] disabled:bg-[#FBF8F8] disabled:text-[#C4B8B8] disabled:hover:border-[#EFE6E6]`}
                       />
-                      <span className="font-body text-[11px] text-[#6B5A5A]">
+                      <span
+                        className={`font-body text-[11px] ${free ? "text-[#C4B8B8]" : "text-[#6B5A5A]"}`}
+                      >
                         %
                       </span>
                     </span>
@@ -424,7 +502,8 @@ export default function ProposalDeckOverview({
         Thumbnails are the live slides with this client&rsquo;s own details.
         Cover, Summary, Signature, Payment and Onboarding always show — the
         portal needs them. Discounts left blank follow the service&rsquo;s
-        standard rate.
+        standard rate. Complimentary gives a service away on this proposal
+        alone, whether or not the offer countdown is running.
       </p>
     </div>
   );

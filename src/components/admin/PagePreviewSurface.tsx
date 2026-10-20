@@ -30,6 +30,7 @@ type Props = {
   agreement: AgreementCopy;
   /** Per-proposal discounts by service id, when previewing a real proposal. */
   discountOverrides?: Record<string, number>;
+  complimentaryServiceIds?: string[];
 };
 
 export const PREVIEW_MESSAGE = "lyp:page-draft";
@@ -48,6 +49,7 @@ export default function PagePreviewSurface({
   services,
   agreement,
   discountOverrides,
+  complimentaryServiceIds,
 }: Props) {
   const [draft, setDraft] = useState<PageData>(page);
 
@@ -94,6 +96,7 @@ export default function PagePreviewSurface({
       pages={[draft]}
       services={services}
       discountOverrides={discountOverrides}
+      complimentaryServiceIds={complimentaryServiceIds}
       initialSelections={[]}
       pageCopy={pageCopy}
     >

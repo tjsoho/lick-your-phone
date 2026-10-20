@@ -91,7 +91,7 @@ export default async function PortalPage({ params }: Props) {
   // 3b. Per-proposal tailoring: which sections show, and any discount override.
   const { data: overridesRaw } = await supabase
     .from("proposal_page_settings")
-    .select("page_id, visible, discount_pct")
+    .select("page_id, visible, discount_pct, complimentary")
     .eq("proposal_id", proposal.id);
 
   const overrides = new Map(
@@ -99,6 +99,7 @@ export default async function PortalPage({ params }: Props) {
       page_id: string;
       visible: boolean | null;
       discount_pct: number | null;
+      complimentary: boolean | null;
     }>).map((o) => [o.page_id, o]),
   );
 
@@ -185,14 +186,21 @@ export default async function PortalPage({ params }: Props) {
   }
 
   // A discount set on the proposal wins over the service's standing one.
+  // A service given away on this proposal is a separate switch entirely: it
+  // owes nothing to the discount and nothing to the countdown.
   const discountByService = new Map<string, number>();
+  const complimentaryServiceIds: string[] = [];
   for (const page of (pagesRaw ?? []) as Array<{
     id: string;
     service_id: string | null;
   }>) {
-    const override = overrides.get(page.id)?.discount_pct;
-    if (page.service_id && override != null) {
-      discountByService.set(page.service_id, override);
+    if (!page.service_id) continue;
+    const override = overrides.get(page.id);
+    if (override?.discount_pct != null) {
+      discountByService.set(page.service_id, override.discount_pct);
+    }
+    if (override?.complimentary) {
+      complimentaryServiceIds.push(page.service_id);
     }
   }
 
@@ -236,6 +244,7 @@ export default async function PortalPage({ params }: Props) {
       savedSelections={savedSelections}
       paymentCaptured={paymentCaptured}
       discountOverrides={Object.fromEntries(discountByService)}
+      complimentaryServiceIds={complimentaryServiceIds}
     />
   );
 }

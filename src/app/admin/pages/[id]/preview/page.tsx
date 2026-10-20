@@ -32,6 +32,7 @@ type OverrideRow = {
   page_id: string;
   visible: boolean | null;
   discount_pct: number | null;
+  complimentary: boolean | null;
 };
 
 /**
@@ -58,7 +59,7 @@ async function loadProposalContext(
         .maybeSingle(),
       supabase
         .from("proposal_page_settings")
-        .select("page_id, visible, discount_pct")
+        .select("page_id, visible, discount_pct, complimentary")
         .eq("proposal_id", proposalId),
       supabase.from("pages").select("id, service_id"),
     ]);
@@ -78,11 +79,16 @@ async function loadProposalContext(
     ),
   );
   const discountOverrides: Record<string, number> = {};
+  // Given away on this proposal, which the thumbnail has to show too: the
+  // tick box that sets it sits directly beside the picture of the slide.
+  const complimentaryServiceIds: string[] = [];
   for (const override of (overridesRaw ?? []) as OverrideRow[]) {
     const serviceId = serviceByPage.get(override.page_id);
-    if (serviceId && override.discount_pct != null) {
+    if (!serviceId) continue;
+    if (override.discount_pct != null) {
       discountOverrides[serviceId] = override.discount_pct;
     }
+    if (override.complimentary) complimentaryServiceIds.push(serviceId);
   }
 
   const proposal: ProposalData = {
@@ -102,7 +108,7 @@ async function loadProposalContext(
     venueName: venue?.name ?? "Venue",
   };
 
-  return { proposal, discountOverrides };
+  return { proposal, discountOverrides, complimentaryServiceIds };
 }
 
 /**
@@ -168,6 +174,7 @@ export default async function PagePreviewRoute({
       page={page}
       services={services}
       discountOverrides={proposalContext?.discountOverrides}
+      complimentaryServiceIds={proposalContext?.complimentaryServiceIds}
       agreement={{
         termsClauses,
         postSignatureText: agreementSettings.postSignatureText,

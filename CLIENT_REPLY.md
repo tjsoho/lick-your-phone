@@ -56,6 +56,17 @@ automation that sends their email, so both can go out with it. They are the
 same two files the All Done screen offers, so the email and the screen can
 never give out different versions.
 
+**Free add-ons.** There is now a Complimentary tick box on each service, on
+the proposal's Presentation section next to the discount. Tick it and that
+service is given away on that proposal alone. It reads "Complimentary" on the
+slide, "Free" in the summary, no total counts it, and the agreement prints it
+as complimentary with no price.
+
+It is deliberately separate from the discount. A 100% discount also makes
+something free, but only while the offer countdown is running, so a lapsed
+timer would quote the client full price for something you had promised them
+for nothing. The tick box ignores the countdown.
+
 Happy to walk through any of it on a call.
 
 Toby

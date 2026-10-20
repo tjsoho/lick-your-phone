@@ -2,6 +2,24 @@
 
 A plain list of the updates made to the proposal portal, newest section first.
 
+## Free add-ons (20 October 2026)
+
+**There is now a Complimentary tick box on every service.** It sits on the
+service's card in the proposal's Presentation section, next to the discount.
+Tick it and that service is given away on that proposal alone. The slide reads
+"Complimentary" instead of a price, the basket and the summary say "Free", no
+total counts it, and the agreement prints it as complimentary with no price
+beside it.
+
+**It is separate from the discount, which is the point.** A 100% discount also
+makes a service free, but only while the offer countdown is running. Let the
+timer lapse and the client is quoted full price for the thing they were
+promised for nothing. The tick box does not look at the countdown at all.
+
+The discount box is greyed out while a service is ticked, because there is no
+price left to take anything off. Untick it and the discount comes back exactly
+as it was.
+
 ## All Done page (20 October 2026)
 
 **The "Yours to keep" section is centred.** It was built for three cards. Now

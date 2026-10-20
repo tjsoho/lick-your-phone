@@ -140,3 +140,47 @@ export function priceServices<T extends PricedService>(
     };
   });
 }
+
+/**
+ * COMPLIMENTARY IS NOT A DISCOUNT, AND IS NOT TIED TO ONE.
+ *
+ * A 100% discount also makes a service free, and for a while that was the
+ * only way to give one away. It has a catch that only shows up later: a
+ * discount reaches the client ONLY while the offer countdown is running. Let
+ * the timer lapse, or never switch it on, and the client is quoted full price
+ * for the thing they were promised for nothing.
+ *
+ * "We need to be able to make a service free (irrespective of the discount)
+ * and the discount should apply separately to this." So this is its own
+ * switch, set per proposal, and it does not look at the timer at all.
+ *
+ * A gift is expressed as the thing the portal already understands — a service
+ * billed in kind — so every screen that knows how to show one keeps working
+ * without being told about this: the slide says "Complimentary" rather than
+ * "$0", the basket and the summary say "Free", and no total counts it. The
+ * struck-through price goes with the price: there is no saving to show on
+ * something that costs nothing.
+ *
+ * Applied AFTER `priceServices`, so what it overwrites is already-priced.
+ */
+export function applyComplimentary<
+  T extends PricedService & { billing: string | null },
+>(services: T[], complimentaryServiceIds: readonly string[]): T[] {
+  if (complimentaryServiceIds.length === 0) return services;
+  const free = new Set(complimentaryServiceIds);
+
+  return services.map((service) =>
+    free.has(service.id)
+      ? {
+          ...service,
+          billing: "in_kind",
+          target_price_cents: 0,
+          discount_pct: null,
+          service_tiers: service.service_tiers.map((tier) => ({
+            ...tier,
+            target_price_cents: 0,
+          })),
+        }
+      : service,
+  );
+}
