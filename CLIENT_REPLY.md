@@ -46,6 +46,16 @@ server, so the note now says that.
 **Onboarding.** The Primary Contact shortcut reads "Same as above". Ticking it
 still copies the director's first name, last name and email down.
 
+**All Done page.** The "Yours to keep" section is centred. It was built for
+three cards, and now that the terms sit inside the agreement PDF there are
+two, so the block sizes itself to whatever is in it.
+
+**Your copies by email.** When a client finishes onboarding, their signed
+agreement and their onboarding answers are now passed straight through to the
+automation that sends their email, so both can go out with it. They are the
+same two files the All Done screen offers, so the email and the screen can
+never give out different versions.
+
 Happy to walk through any of it on a call.
 
 Toby

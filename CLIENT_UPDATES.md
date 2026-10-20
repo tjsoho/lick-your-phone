@@ -2,6 +2,19 @@
 
 A plain list of the updates made to the proposal portal, newest section first.
 
+## All Done page (20 October 2026)
+
+**The "Yours to keep" section is centred.** It was built for three cards. Now
+that the terms sit inside the agreement PDF there are two, and they were
+sitting left of centre with a gap on the right. The block now sizes itself to
+whatever is in it, so two cards centre and three still fill the row.
+
+**The finish now hands over the client's own copies.** When someone completes
+onboarding, the signed agreement and their onboarding answers are passed
+straight through, ready to be emailed to them. They are the same two files the
+All Done screen offers, so the email and the screen can never give out
+different versions.
+
 ## Payment page and onboarding (20 October 2026)
 
 **The line telling them to authorise the payment is gone.** Trying to save
