@@ -705,6 +705,31 @@ export default function IntakePage({
       },
     ];
 
+    /* THE BLOCK IS SIZED TO WHAT IS IN IT.
+
+       "Please centre the 'Yours to keep' section. Since the terms and
+       conditions are now inside the agreement PDF, we need to align the
+       other two."
+
+       Three cards filled a three-column grid. Two cards filled the first two
+       columns of it and left a hole on the right, so the pair sat left of
+       centre under a rule that still ran the full width. Both now take their
+       width from the number of cards, and the column they sit in centres
+       them. Nothing here is hard coded to two: a proposal whose terms are a
+       page the agency hosts still has three, and still looks right. */
+    const takeawayWidth =
+      takeaways.length >= 3
+        ? "max-w-3xl"
+        : takeaways.length === 2
+          ? "max-w-xl"
+          : "max-w-xs";
+    const takeawayCols =
+      takeaways.length >= 3
+        ? "sm:grid-cols-2 lg:grid-cols-3"
+        : takeaways.length === 2
+          ? "sm:grid-cols-2"
+          : "";
+
     return (
       <div className="flex h-full flex-col">
         {/* Centred in what the bar leaves it, the way every portal screen is
@@ -726,7 +751,10 @@ export default function IntakePage({
 
           {/* A rule with the heading sitting in it: a break between what has
               happened and what they can take away with them. */}
-          <Reveal index={3} className="mt-8 flex w-full max-w-3xl items-center gap-4">
+          <Reveal
+            index={3}
+            className={`mt-8 flex w-full ${takeawayWidth} items-center gap-4`}
+          >
             <span className="h-px flex-1 bg-lyp-white/10" />
             <span className="font-body text-[10px] uppercase tracking-[0.3em] text-lyp-white/40">
               {t("downloadsTitle")}
@@ -734,7 +762,7 @@ export default function IntakePage({
             <span className="h-px flex-1 bg-lyp-white/10" />
           </Reveal>
 
-          <div className="mt-5 grid w-full max-w-3xl gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className={`mt-5 grid w-full ${takeawayWidth} gap-3 ${takeawayCols}`}>
             {takeaways.map((doc, i) => (
               <Reveal key={doc.href} index={4 + i} className="h-full">
                 {/* Plain links, so the browser downloads them the way it

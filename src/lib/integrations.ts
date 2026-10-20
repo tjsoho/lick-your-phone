@@ -56,6 +56,8 @@ export async function onIntakeCompleted(params: {
   venueName: string;
   isEdit: boolean;
   assets: string[];
+  /** The signed PDF itself, where one is on file, for attaching to the email. */
+  agreementFileUrl?: string | null;
 }) {
   const appUrl = await getAppUrl();
   const payload = {
@@ -67,6 +69,12 @@ export async function onIntakeCompleted(params: {
       venueAddress: params.venueAddress,
     },
     intakeUrl: `${appUrl}/admin/proposals/${params.proposalId}/intake`,
+    // The client's own two copies, by token — the same addresses the All
+    // Done screen hands them, so the email and the screen can never disagree
+    // about what they were given.
+    agreementUrl: `${appUrl}/api/contract/by-token/${params.proposalToken}`,
+    agreementFileUrl: params.agreementFileUrl ?? null,
+    responsesUrl: `${appUrl}/api/intake/${params.proposalToken}`,
     proposalId: params.proposalId,
     isEdit: params.isEdit,
     assets: params.assets,

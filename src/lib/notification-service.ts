@@ -41,7 +41,28 @@ interface PayloadMap {
   };
   INTAKE_COMPLETED: {
     client: Client;
+    /** The team's view of the answers, inside the dashboard. Not for a client. */
     intakeUrl: string;
+    /**
+     * THE TWO THINGS THE CLIENT TAKES AWAY, SO THEY CAN BE EMAILED ONE.
+     *
+     * "Please email the client a copy of their signed agreement and their
+     * onboarding answers once they've finished."
+     *
+     * Nothing in this app sends mail; n8n does. These are the same two
+     * addresses the All Done screen offers, resolved by portal token, so a
+     * client who loses the email and a client who clicks the card are handed
+     * the identical file. Both are public by token and keep working, which
+     * is what makes them safe to put in a message.
+     *
+     * `agreementUrl` redirects to the stored PDF. `agreementFileUrl` is that
+     * PDF directly, for attaching without following a redirect, and is null
+     * on a proposal with no contract on file.
+     */
+    agreementUrl: string;
+    agreementFileUrl: string | null;
+    /** The answers, rendered as a PDF when asked for. Never stale. */
+    responsesUrl: string;
     isEdit: boolean;
     assets: string[];
   };

@@ -315,7 +315,7 @@ export async function completeIntake(
     const { data: proposal } = await supabase
       .from("proposals")
       .select(
-        "signer_email, client_id, client:clients!client_id(name), venue:venues!venue_id(name, address), status, token",
+        "signer_email, client_id, client:clients!client_id(name, email), venue:venues!venue_id(name, address), status, token",
       )
       .eq("id", proposalId)
       .single();
@@ -402,8 +402,24 @@ export async function completeIntake(
       }
     }
 
+    // The signed agreement, so the completion message can carry it. Looked
+    // up rather than rebuilt: the client is emailed the very file they
+    // signed, not a fresh render of it. A proposal with nothing on file
+    // sends null and the message goes out with the answers alone.
+    const { data: contractDoc } = await supabase
+      .from("documents")
+      .select("file_url")
+      .eq("proposal_id", proposalId)
+      .eq("type", "contract")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
     // Fire integrations (non-blocking)
-    const clientObj = proposal.client as unknown as { name: string } | null;
+    const clientObj = proposal.client as unknown as {
+      name: string;
+      email: string | null;
+    } | null;
     const venueObj = proposal.venue as unknown as {
       name: string;
       address: string;
@@ -413,13 +429,16 @@ export async function completeIntake(
     onIntakeCompleted({
       proposalId,
       clientName,
-      clientEmail: proposal.signer_email ?? "",
-
+      // The person who signed, falling back to the address on the client
+      // record. An empty one here is a message with nowhere to go, and this
+      // is now the event that sends the client their own copies.
+      clientEmail: proposal.signer_email ?? clientObj?.email ?? "",
       venueName: venueObj?.name ?? "Venue",
       venueAddress: venueObj?.address ?? "",
       proposalToken: proposal.token,
       isEdit: false,
       assets,
+      agreementFileUrl: contractDoc?.file_url ?? null,
     });
 
     revalidatePath("/admin");
