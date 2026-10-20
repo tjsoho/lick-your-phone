@@ -112,6 +112,18 @@ export default function ProposalDeckOverview({
     page.overrideDiscountPct ?? page.globalDiscountPct ?? 0;
   const [pages, setPages] = useState(initialPages);
   const [busyId, setBusyId] = useState<string | null>(null);
+  /**
+   * One counter per page, bumped every time its pricing is written.
+   *
+   * The slide beside the controls is an iframe, and the value of the setting
+   * is no good as a cache key: tick, untick, tick again and the third state
+   * asks for an address the browser already has an answer for, so it serves
+   * the stale one and the picture quietly stops agreeing with the tick box.
+   * A counter is never asked for twice.
+   */
+  const [refreshTicks, setRefreshTicks] = useState<Record<string, number>>({});
+  const bumpPreview = (pageId: string) =>
+    setRefreshTicks((prev) => ({ ...prev, [pageId]: (prev[pageId] ?? 0) + 1 }));
   const [resetting, setResetting] = useState(false);
 
   const overrideCount = pages.filter(
@@ -187,6 +199,7 @@ export default function ProposalDeckOverview({
       );
       return;
     }
+    bumpPreview(page.pageId);
     toast.success(
       next ? "Shown to this client as complimentary" : "Back to its usual price",
     );
@@ -236,6 +249,7 @@ export default function ProposalDeckOverview({
       );
       return;
     }
+    bumpPreview(page.pageId);
     toast.success(
       value === null ? "Following the standard discount" : "Discount updated",
     );
@@ -353,6 +367,9 @@ export default function ProposalDeckOverview({
                   proposalId={proposalId}
                   title={title}
                   dimmed={!shown}
+                  // Bumped on every write, so the picture follows the
+                  // controls under it rather than waiting for a reload.
+                  refreshKey={String(refreshTicks[page.pageId] ?? 0)}
                 />
 
                 {/* Deck position, or a plain marker when the slide is skipped. */}

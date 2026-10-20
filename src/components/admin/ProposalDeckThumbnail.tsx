@@ -58,6 +58,14 @@ type Props = {
   title: string;
   /** Hidden slides are dimmed rather than removed, so they stay recoverable. */
   dimmed?: boolean;
+  /**
+   * Changes whenever this page's own tailoring does. The slide is rendered
+   * inside a frame, and a frame does not know that a tick box outside it has
+   * moved: without this, turning a service into a gift left the picture of
+   * the slide quoting a price until the page was reloaded. The frame is
+   * keyed and addressed by it, so it re-renders the moment the setting lands.
+   */
+  refreshKey?: string;
 };
 
 /**
@@ -71,6 +79,7 @@ export default function ProposalDeckThumbnail({
   proposalId,
   title,
   dimmed = false,
+  refreshKey,
 }: Props) {
   const shellRef = useRef<HTMLDivElement | null>(null);
   const releaseRef = useRef<(() => void) | null>(null);
@@ -140,7 +149,10 @@ export default function ProposalDeckThumbnail({
     >
       {mounted && scale > 0 && (
         <iframe
-          src={`/admin/pages/${pageId}/preview?proposalId=${proposalId}`}
+          key={refreshKey}
+          src={`/admin/pages/${pageId}/preview?proposalId=${proposalId}${
+            refreshKey ? `&v=${encodeURIComponent(refreshKey)}` : ""
+          }`}
           title={`Preview of ${title}`}
           tabIndex={-1}
           scrolling="no"
