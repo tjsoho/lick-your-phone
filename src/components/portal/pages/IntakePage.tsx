@@ -660,6 +660,36 @@ export default function IntakePage({
     if (error) setError("");
   }
 
+  /* READABLE ON THE RED.
+   *
+   * "the off white text is very hard to read can you brighten it."
+   *
+   * This screen is the one place the portal sets small type on the brightest
+   * part of the background wash rather than on near-black, and the muted
+   * greys that work everywhere else do not survive it. Measured against the
+   * brightest red behind them, and against a card face on top of that:
+   *
+   *   white/40  3.03:1 on a card   <- what the notes were
+   *   white/75  6.66:1 on a card
+   *   white/80  7.30:1 on a card
+   *
+   * 4.5:1 is the readable floor for text this size, so the old setting was
+   * under it everywhere and well under it on the cards. Every muted line on
+   * this screen now clears the floor with room to spare.
+   *
+   * THE TWO LINKS WERE WORSE THAN THE GREY. Cherry is the portal's accent on
+   * near-black; on the red it all but disappears, and both links here sit on
+   * red rather than on black:
+   *
+   *   cherry on a card   1.59:1   <- "Download PDF", at 11px
+   *   cherry on the wash 2.75:1   <- "Read back your answers"
+   *   rose #f0c9c9       6.92:1 and 11.97:1
+   *
+   * So both take the rose the rest of the portal already uses for exactly
+   * this, on the service slides and in the basket. Same family, readable.
+   * The icons inside the cards' circles keep the cherry: they are ornament
+   * beside a title that names the card, not something anyone has to read.
+   */
   // Completed state. No edit affordance: the only way back in is to read.
   if (locked && !reviewing) {
     /* The end of the journey, and the three things it leaves them with. The
@@ -745,7 +775,7 @@ export default function IntakePage({
           <Reveal as="h1" index={1} className="font-heading text-3xl md:text-5xl text-lyp-white">
             {t("doneTitle")}
           </Reveal>
-          <Reveal as="p" index={2} className="mt-3 max-w-md font-body text-lyp-white/60">
+          <Reveal as="p" index={2} className="mt-3 max-w-md font-body text-lyp-white/80">
             {t("doneBody")}
           </Reveal>
 
@@ -756,7 +786,7 @@ export default function IntakePage({
             className={`mt-8 flex w-full ${takeawayWidth} items-center gap-4`}
           >
             <span className="h-px flex-1 bg-lyp-white/10" />
-            <span className="font-body text-[10px] uppercase tracking-[0.3em] text-lyp-white/40">
+            <span className="font-body text-[10px] uppercase tracking-[0.3em] text-lyp-white/75">
               {t("downloadsTitle")}
             </span>
             <span className="h-px flex-1 bg-lyp-white/10" />
@@ -787,10 +817,10 @@ export default function IntakePage({
                   <span className="font-heading text-base text-lyp-white">
                     {doc.label}
                   </span>
-                  <span className="font-body text-xs leading-relaxed text-lyp-white/40">
+                  <span className="font-body text-xs leading-relaxed text-lyp-white/75">
                     {doc.note}
                   </span>
-                  <span className="mt-auto inline-flex items-center gap-1.5 pt-2 font-body text-[11px] text-lyp-cherry">
+                  <span className="mt-auto inline-flex items-center gap-1.5 pt-2 font-body text-[11px] text-[#f0c9c9]">
                     {doc.external ? (
                       <ExternalLink className="h-3 w-3 transition-transform duration-300 ease-brand group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0" />
                     ) : (
@@ -808,7 +838,7 @@ export default function IntakePage({
           <Reveal
             as="p"
             index={4 + takeaways.length}
-            className="mt-8 flex max-w-md items-start gap-2 font-body text-sm leading-relaxed text-lyp-white/40"
+            className="mt-8 flex max-w-md items-start gap-2 font-body text-sm leading-relaxed text-lyp-white/75"
           >
             <Lock className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
             <span>{t("lockedNote")}</span>
@@ -820,7 +850,7 @@ export default function IntakePage({
                 setReviewing(true);
                 setCurrentIntakePage(1);
               }}
-              className="font-body text-sm text-lyp-cherry transition-colors duration-300 ease-brand hover:text-lyp-cherry/80"
+              className="font-body text-sm text-[#f0c9c9] transition-colors duration-300 ease-brand hover:text-[#f0c9c9]/80"
             >
               {t("reviewResponses")}
             </button>
