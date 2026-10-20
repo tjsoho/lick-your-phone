@@ -48,7 +48,6 @@ export const GLOBAL_COPY: CopySlot[] = [
   { key: "cartOneOffTotalSingle", label: "Basket: one-off total (one)", default: "One-off payment" },
   { key: "cartOneOffTotalPlural", label: "Basket: one-off total (several)", default: "One-off payments" },
   { key: "cartGstSuffixWeekly", label: "Basket: GST label on the weekly total", default: "+ GST /week" },
-  { key: "cartMonthlyNote", label: "Basket: monthly total, under the weekly one", default: "{amount}/month + GST, billed monthly", hint: "{amount} is replaced with the same money expressed as a month." },
   { key: "cartGstSuffix", label: "Basket: GST label on a single payment", default: "+ GST" },
   { key: "cartProceedButton", label: "Basket: main button", default: "Sign", hint: "The one thing the button does. It used to read “Review & sign”, which promised a review step the portal does not have." },
   { key: "cartPaymentButton", label: "Basket: main button once signed", default: "Add payment details" },

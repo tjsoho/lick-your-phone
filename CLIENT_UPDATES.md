@@ -19,10 +19,10 @@ $2,495 photography shoot looked like $2,495 every month on its own slide.
 used to add a single payment into one monthly figure. It now shows the weekly
 subscription total, with any one-off payments listed separately beside it.
 
-**"Monthly Total" is now "Weekly Total".** Underneath it, in smaller type,
-sits the same money as a month with the words "billed monthly". So the client
-sees the weekly price they agreed to and the amount that will actually leave
-their account.
+**"Monthly Total" is now "Weekly Total".** There is no monthly figure in the
+checkout at all. The basket, the Investment Summary and the signing card all
+close on one number, and it is weekly. The monthly amount still appears on the
+contract, which is what the client is actually billed against.
 
 **The "You save" amount is bigger and bolder.** It is now the second largest
 figure on the card, after the total itself.
@@ -46,3 +46,6 @@ now a two option picker, and a new service starts on weekly.
 
 The contract PDF is unchanged. Billing is still monthly, so the contract still
 states monthly amounts.
+
+Opening a service on Your Summary still shows its weekly price with the
+monthly equivalent beside it, for anyone who wants to check the maths.

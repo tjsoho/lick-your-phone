@@ -13,13 +13,12 @@ import type { SelectionTotals as Totals } from "@/lib/selection-pricing";
  *   Full price        $803/wk   ← struck through, only while an offer runs
  *   YOU SAVE         -$187/wk   ← the best news on the card, so it is loud
  *   Weekly Total      $616/wk + GST
- *     $2,671/mo + GST, billed monthly
  *   One-off payment   $2,495 + GST
  *
- * Subscriptions are QUOTED BY THE WEEK and BILLED BY THE MONTH, which is why
- * the monthly figure sits directly under the weekly one instead of replacing
- * it: the client agreed to a weekly number and should see the monthly one
- * before the first invoice rather than after it.
+ * ONE CADENCE ONLY. Subscriptions are billed monthly, and an earlier draft
+ * carried the monthly equivalent under the weekly total for that reason. The
+ * agency wants a single figure at the checkout: "we only want weekly". The
+ * monthly amount still appears where it belongs, on the contract.
  *
  * Single payments are never folded into either. A one-off has no cadence.
  *
@@ -88,25 +87,16 @@ export default function SelectionTotals({
       )}
 
       {hasRecurring && (
-        <div className="pt-1">
-          <div className="flex items-baseline justify-between gap-3">
-            <span className="font-heading text-base text-lyp-white">
-              {t("weeklyTotal")}
+        <div className="flex items-baseline justify-between gap-3 pt-1">
+          <span className="font-heading text-base text-lyp-white">
+            {t("weeklyTotal")}
+          </span>
+          <span className="whitespace-nowrap font-heading text-2xl text-lyp-white">
+            {formatCents(totals.weeklyCents)}
+            <span className="ml-1 font-body text-[13px] text-lyp-white/80">
+              {t("gstSuffixWeekly")}
             </span>
-            <span className="whitespace-nowrap font-heading text-2xl text-lyp-white">
-              {formatCents(totals.weeklyCents)}
-              <span className="ml-1 font-body text-[13px] text-lyp-white/80">
-                {t("gstSuffixWeekly")}
-              </span>
-            </span>
-          </div>
-          {/* What actually leaves the account, so the first invoice is never
-              a surprise. Smaller, but still plainly readable. */}
-          <p className="mt-1 text-right font-body text-[12.5px]/[16px] text-lyp-white/75">
-            {t("monthlyTotalNote", {
-              amount: formatCents(totals.monthlyCents),
-            })}
-          </p>
+          </span>
         </div>
       )}
 

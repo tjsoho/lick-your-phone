@@ -362,8 +362,8 @@ export default function SelectionCart({
       )}
 
       {/* Totals. The same model the summary card closes on: subscriptions
-          quoted by the week, the month they are actually billed as directly
-          underneath, and single payments kept apart from both. */}
+          quoted by the week and nothing else, with single payments kept
+          apart from them. */}
       {lines.length > 0 && (
         <div className="space-y-2 border-t border-lyp-white/10 bg-lyp-black/40 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:pb-4">
           {totals.weeklySavingsCents > 0 && (
@@ -395,29 +395,20 @@ export default function SelectionCart({
           )}
 
           {totals.recurringCount > 0 && (
-            <div className="pt-0.5">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="font-heading text-sm text-lyp-white">
-                  {t("cartWeeklyTotal")}
+            <div className="flex items-baseline justify-between gap-3 pt-0.5">
+              <span className="font-heading text-sm text-lyp-white">
+                {t("cartWeeklyTotal")}
+              </span>
+              <span
+                key={totals.weeklyCents}
+                className="portal-reveal portal-reveal-fade whitespace-nowrap font-heading text-xl tabular-nums text-lyp-white"
+                style={{ animationDelay: "0ms", animationDuration: "380ms" }}
+              >
+                {formatCents(totals.weeklyCents)}
+                <span className="ml-1 font-body text-[10px] text-lyp-white/75">
+                  {t("cartGstSuffixWeekly")}
                 </span>
-                <span
-                  key={totals.weeklyCents}
-                  className="portal-reveal portal-reveal-fade whitespace-nowrap font-heading text-xl tabular-nums text-lyp-white"
-                  style={{ animationDelay: "0ms", animationDuration: "380ms" }}
-                >
-                  {formatCents(totals.weeklyCents)}
-                  <span className="ml-1 font-body text-[10px] text-lyp-white/75">
-                    {t("cartGstSuffixWeekly")}
-                  </span>
-                </span>
-              </div>
-              {/* What actually leaves the account. Quoted by the week, billed
-                  by the month, and the client sees both before they sign. */}
-              <p className="mt-0.5 text-right font-body text-[11px] text-lyp-white/70">
-                {t("cartMonthlyNote", {
-                  amount: formatCents(totals.monthlyCents),
-                })}
-              </p>
+              </span>
             </div>
           )}
 

@@ -59,7 +59,6 @@ export const SIGNATURE_COPY: CopySlot[] = [
   { key: "youSave", label: "Selections card: saving label", default: "You save" },
   { key: "weeklyTotal", label: "Selections card: weekly total label", default: "Weekly Total" },
   { key: "gstSuffixWeekly", label: "Selections card: weekly total suffix", default: "/wk + GST" },
-  { key: "monthlyTotalNote", label: "Selections card: monthly total, under the weekly one", default: "{amount}/mo + GST, billed monthly", hint: "{amount} is replaced with the same money expressed as a month." },
   { key: "gstSuffix", label: "Selections card: one-off total suffix", default: "+ GST" },
   { key: "oneOffTotalSingle", label: "Selections card: one-off total (one item)", default: "One-off payment" },
   { key: "oneOffTotalPlural", label: "Selections card: one-off total (several items)", default: "One-off payments" },

@@ -24,7 +24,6 @@ export const SUMMARY_COPY: CopySlot[] = [
   { key: "youSave", label: "Saving label", default: "You save" },
   { key: "weeklyTotal", label: "Weekly total label", default: "Weekly Total" },
   { key: "gstSuffixWeekly", label: "Weekly total suffix", default: "/wk + GST" },
-  { key: "monthlyTotalNote", label: "Monthly total, under the weekly one", default: "{amount}/mo + GST, billed monthly", hint: "{amount} is replaced with the same money expressed as a month. Subscriptions are quoted by the week but billed monthly, so this line is what actually leaves the client's account." },
   { key: "gstSuffix", label: "One-off total suffix", default: "+ GST" },
   { key: "oneOffTotalSingle", label: "One-off total (one item)", default: "One-off payment" },
   { key: "oneOffTotalPlural", label: "One-off total (several items)", default: "One-off payments" },
