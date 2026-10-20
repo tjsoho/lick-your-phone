@@ -104,7 +104,11 @@ export default function ServiceForm({ service }: ServiceFormProps) {
         ? Math.round(service.discount_pct * 100)
         : 0,
       discount_window_hours: service?.discount_window_hours ?? 0,
-      price_display_period: service?.price_display_period ?? "",
+      // A new service is weekly, because that is how the agency sells
+      // subscriptions now. An existing one keeps whatever it was set to.
+      price_display_period: service
+        ? (service.price_display_period ?? "")
+        : "week",
       sequence: service?.sequence ?? 0,
       requires_other_service: service?.requires_other_service ?? false,
     },
@@ -500,14 +504,25 @@ export default function ServiceForm({ service }: ServiceFormProps) {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="price_display_period" className={labelClasses}>
-              Price Display Period
+              Price Shown As
             </label>
-            <input
+            {/* Two choices, not free text. A subscription is quoted by the
+                week across the whole deck; the videography subscription and
+                community management are the two the agency still quotes by
+                the month. This used to be a text box, where anything other
+                than the exact word "week" silently fell back to monthly. */}
+            <select
               id="price_display_period"
-              type="text"
               {...register("price_display_period")}
               className={cn(inputClasses, "mt-2")}
-            />
+            >
+              <option value="week">Per week</option>
+              <option value="">Per month</option>
+            </select>
+            <p className="mt-1.5 font-body text-[11px] text-[#9C8C8C]">
+              Ignored on a one-off service, which is shown as a single
+              payment with no weekly or monthly figure.
+            </p>
           </div>
           <div>
             <label htmlFor="sequence" className={labelClasses}>
