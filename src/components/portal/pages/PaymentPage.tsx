@@ -532,10 +532,16 @@ function PaymentForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!authorised) {
-      setErrorMsg("Please confirm you authorise the payments");
-      return;
-    }
+    // NO LINE ASKING THEM TO AUTHORISE. "Under the 'I authorise' checkbox,
+    // please remove the extra line asking them to authorise the payment.
+    // Ticking the box already covers it."
+    //
+    // Submitting without ticking used to drop a red "Please confirm you
+    // authorise the payments" under the box, which said in a second voice
+    // what the box itself says. The button is simply unavailable until the
+    // box is ticked, so there is nothing left to tell them off about. This
+    // guard stays as the backstop, silently.
+    if (!authorised) return;
 
     if (method === "bank") {
       const bsbDigits = bsb.replace(/\D/g, "");
@@ -932,7 +938,10 @@ function PaymentForm({
         {/* Submit button */}
         <button
           type="submit"
-          disabled={stage === "processing"}
+          // The tick box is the gate, so the button follows it rather than a
+          // message appearing after the fact. It sits directly under the box,
+          // which is what makes the connection obvious without words.
+          disabled={stage === "processing" || !authorised}
           style={{ animationDelay: `${revealDelay(5)}ms` }}
           className="portal-reveal w-full rounded-lg bg-lyp-cherry px-6 py-4 font-heading text-lg text-lyp-white transition-[background-color,transform] duration-300 ease-brand hover:bg-lyp-deep-red active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed motion-reduce:transition-none motion-reduce:active:scale-100"
         >

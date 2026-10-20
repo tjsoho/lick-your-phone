@@ -16,7 +16,7 @@ export const PAYMENT_COPY: CopySlot[] = [
   { key: "saveButton", label: "Save button", default: "Save Payment Details" },
   { key: "savingButton", label: "Saving button", default: "Saving..." },
   { key: "tryAgainButton", label: "Try again button", default: "Try Again" },
-  { key: "securityNote", label: "Security note", default: "Card details are held by Pinch Payments, an Australian PCI-DSS compliant provider, and never reach our servers. Bank details are encrypted before they are stored. Nothing is charged today.", multiline: true },
+  { key: "securityNote", label: "Security note", default: "Your bank details are encrypted before they are stored. Nothing is charged today.", multiline: true, hint: "Says what happens to the details this form actually collects. It used to open on card details held by Pinch Payments, left over from when a card was an option: the portal takes a bank account and nothing else, and the account never leaves our own server." },
   { key: "acceptedToast", label: "Saved: pop-up notice", default: "Payment details saved" },
   { key: "savedTitle", label: "Saved: title", default: "Payment Details Saved" },
   { key: "savedBody", label: "Saved: message", default: "Your details are on file. Payments will be taken according to your agreement.", multiline: true },

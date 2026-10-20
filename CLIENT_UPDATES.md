@@ -2,6 +2,24 @@
 
 A plain list of the updates made to the proposal portal, newest section first.
 
+## Payment page and onboarding (20 October 2026)
+
+**The line telling them to authorise the payment is gone.** Trying to save
+without ticking the box used to put a red "Please confirm you authorise the
+payments" underneath it. The Save button is simply greyed out until the box is
+ticked, so there is nothing to tell them off about. Every other check still
+speaks up as it did, such as a missing account name or a short BSB.
+
+**The note at the bottom no longer mentions card details.** The portal only
+collects a bank account, so it now reads "Your bank details are encrypted
+before they are stored. Nothing is charged today." It used to open with card
+details being held by Pinch Payments, left over from when a card was an
+option.
+
+**The onboarding shortcut reads "Same as above".** On the Primary Contact
+section it used to say "Same as the director above". Ticking it still copies
+the director's first name, last name and email down.
+
 ## Adding a service (20 October 2026)
 
 **Every service is now added the same way.** A service with a choice of term
