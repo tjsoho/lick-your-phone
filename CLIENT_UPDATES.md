@@ -2,6 +2,18 @@
 
 A plain list of the updates made to the proposal portal, newest section first.
 
+## Adding a service (20 October 2026)
+
+**Every service is now added the same way.** A service with a choice of term
+already showed a row of price boxes with a tick in the corner, one per term.
+A service with a single price showed a separate "I want this" switch beside
+the price instead, which was a second way of doing the same thing.
+
+It is now one price box with a tick, exactly like the term boxes. The price
+sits inside the box, the tick turns green and the edge turns red when it is
+chosen, and the whole box is clickable. Complimentary services work the same
+way, with the word "Complimentary" where the price would be.
+
 ## Pricing shown per week (20 October 2026)
 
 **Subscriptions are now priced per week.** Everywhere the client sees a price.

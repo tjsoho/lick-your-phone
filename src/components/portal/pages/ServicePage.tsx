@@ -574,85 +574,63 @@ export default function ServicePage({ service, page }: ServicePageProps) {
   // The offer is the climax: it waits for the index to finish, then lands.
   const D_OFFER = indexTail + 190;
   const D_TIERS = D_OFFER + 110;
-  const D_TOGGLE = D_OFFER + 170;
   // The picture is a parallel column, not a later one — it settles with the
   // index rather than queueing behind it.
   const D_RAIL = D_RULE + 80;
 
   /* ---------------------------------------------------------------------
-     THE DECISION, AT THE WEIGHT OF THE DECISION.
+     THE DECISION, ON A SERVICE WITH ONE PRICE.
 
-     One action, identical on every service slide, whether or not a term had to
-     be chosen. Beside the quote normally; on its own row under the terms when
-     three of them need the panel's full width. Either way it is the LAST thing
-     on the reading path — and it has to LOOK like the one thing left to do.
+     "For one time services, could the add action match the services with
+     terms? Instead of the 'I want this' toggle, show a single price box that
+     the client ticks, just like the term boxes (Annually, Six months, Three
+     months), so it's consistent everywhere."
 
-     It used to be a small pill dropped on the panel's bottom-right corner:
-     a third of the panel's height, a sixth of its area, in a lighter weight
-     than the price it was deciding on. It is now the offer row's second card —
-     the panel's corner radius, the panel's FULL HEIGHT beside it, and on a
-     three-term service the panel's full width underneath it.
+     So it is a TERM CARD WITH NO TERM. Same ground cut into the slide, same
+     tick box in its corner, same struck price and saving above the figure,
+     same whole-card target. A client who has read three service slides has
+     already learnt this control by the time they reach one that offers a
+     single price.
 
-     None of that costs the spread a pixel, which is the whole point of doing
-     it this way:
-       - Beside the quote, the height comes from `lg:items-stretch` on the
-         offer row. The control takes the panel's height instead of asking the
-         slide for more, and the row was already as tall as the panel.
-       - Under the terms, the weight comes from WIDTH, which is free. The
-         padding there is byte-for-byte what the pill had.
-     So the FITTING figures at the head of this file still stand.
+     It sits INSIDE the quote panel, where the term cards sit, rather than
+     beside it as a separate control. There is no longer a price laid on the
+     panel and a decision next to it: the price IS the decision.
 
-     The ground is the TERM CARDS' ground, not the panel's: cut into the slide
-     (near-black, rose edge) rather than laid on it, because this is a control
-     and the panel is a quote. Choosing it fills it with the same rose as a
-     chosen term, so the slide has one language for "this one".
-
-     The whole card is the switch — `role="switch"` on the card, with the track
-     and thumb drawn inside it as ornament — so the target is the card and not
-     a 44px toggle in its corner. Geometry copied from the portal's `Switch`
-     (h-6/w-11 track, h-5/w-5 thumb, 20px of travel) so it reads as the same
-     component it has always been.
+     Two things it does not copy from the term cards:
+       - The figure keeps its display size. One card has the panel's whole
+         width, and this is the number the slide is about; three abreast is
+         the only reason the tiered cards set theirs smaller.
+       - Where a term card carries its term, this carries what the card does,
+         and says "Added" once it is done.
      --------------------------------------------------------------------- */
-  const wantToggle = (
+  const singleOfferCard = (
     <button
       type="button"
       role="checkbox"
       aria-checked={selected}
-      aria-label={selected ? `Remove ${service.name}` : `I want ${service.name}`}
+      aria-label={selected ? `Remove ${service.name}` : `Add ${service.name}`}
       disabled={isDisabled}
       onClick={handleWantThis}
-      // `pop` scales UP to its final size, so it never occupies more room than
-      // it settles into — safe at the foot of the slide.
-      style={{ animationDelay: `${D_TOGGLE}ms` }}
+      // `pop` scales UP to its final size, so it never occupies more room
+      // than it settles into — safe at the foot of the slide.
+      style={{ animationDelay: `${D_TIERS}ms` }}
       className={cn(
-        "portal-reveal portal-reveal-pop flex shrink-0 items-center justify-center gap-2.5 rounded-2xl transition-[box-shadow] duration-300 ease-brand",
-        // The edge is the resting/selected state, so focus can't live in the
-        // ring without reading as a third state. It takes an outline just
-        // outside the card instead.
+        "portal-reveal portal-reveal-pop relative min-w-0 flex-1 rounded-xl px-4 py-2.5 text-left ring-1 ring-inset transition-[box-shadow,transform] duration-300 ease-brand hover:-translate-y-0.5 active:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none",
+        // The edge carries the chosen state, so focus takes an outline just
+        // outside the card rather than a third ring inside it.
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#f0c9c9]",
-        stackOffer
-          ? // Its own row, so it takes the whole of it.
-            "w-full px-4 py-1.5"
-          : // In the offer row it stretches to the panel; on a phone, where the
-            // offer stacks, it keeps the pill's right-hand anchor. The floor on
-            // the width is so the card does not SHRINK when it is chosen:
-            // "Added" is half the length of "I want this", and a decision that
-            // gets smaller the moment you make it is the opposite of the point.
-            "self-end px-4 py-2.5 lg:min-w-[12.5rem] lg:self-auto",
-        // ONE GROUND, A TICK AND AN EDGE — the same language as the term
-        // cards. "Single-price services: use a tick box instead of a toggle."
-        "bg-[#120406]/70 ring-inset",
+        "bg-[#120406]/70",
         selected
           ? "ring-2 ring-lyp-cherry"
-          : "ring-1 ring-[#f0c9c9]/30",
-        !selected && !isDisabled && "hover:ring-[#f0c9c9]/55",
+          : "ring-[#f0c9c9]/25 hover:ring-[#f0c9c9]/50",
         isDisabled && "cursor-not-allowed opacity-40",
       )}
     >
+      {/* Drawn, not clickable on its own: the whole card is the target. */}
       <span
         aria-hidden
         className={cn(
-          "flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border transition-colors duration-300 ease-brand",
+          "absolute right-3 top-3 flex h-[18px] w-[18px] items-center justify-center rounded-[5px] border transition-colors duration-300 ease-brand",
           selected
             ? "border-[#4ADE80] bg-[#4ADE80]/[0.14]"
             : "border-lyp-white/30 bg-transparent",
@@ -666,17 +644,50 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           )}
         />
       </span>
-      {/* `whitespace-nowrap` matters: a second line would be the one thing on
-          this card that costs the spread any height.
 
-          A complimentary service reads the same as every other one now. It
-          used to say "Paid in kind", which told the client what the agency
-          calls it rather than what the button does: "instead of paid in kind
-          say 'I want this' as all the rest." The price beside it still says
-          Complimentary, which is where that fact belongs. */}
-      <span className="whitespace-nowrap font-heading text-[13px] font-semibold uppercase tracking-[0.16em] text-lyp-white [@media(min-height:950px)]:text-[14px]">
+      {/* A complimentary service reads the same as every other one. It used
+          to say "Paid in kind", which told the client what the agency calls
+          it rather than what the card does. */}
+      <span className="block pr-7 font-heading text-[12px] font-semibold uppercase leading-tight tracking-[0.12em] text-lyp-white/85 [@media(min-height:950px)]:text-[13px]">
         {selected ? t("added") : t("wantThis")}
       </span>
+
+      {isInKind || costsNothing ? (
+        <span
+          className={`mt-1.5 block font-heading text-[22px] leading-none [@media(min-height:950px)]:text-[26px] ${ROSE}`}
+        >
+          {t("complimentary")}
+        </span>
+      ) : (
+        <>
+          {hasDiscount && (
+            <span className="mt-1.5 flex flex-wrap items-baseline gap-x-2.5 font-body text-[11px] [@media(min-height:950px)]:text-xs">
+              <span className="whitespace-nowrap text-lyp-white/70 line-through">
+                {formatCents(displayList)} {t("plusGst")}
+              </span>
+              {savingsCents > 0 && (
+                <span className="whitespace-nowrap text-lyp-gold">
+                  {t("saveAmount", { amount: formatCents(savingsCents) })}
+                </span>
+              )}
+            </span>
+          )}
+          {/* NOTHING RUNS OFF THE EDGE. The figure keeps its own line
+              unbroken; the "+ GST" beside it drops under when the card is
+              too narrow to hold both. */}
+          <span className="mt-1 flex flex-wrap items-baseline gap-x-1.5 font-heading text-[28px] leading-none tabular-nums text-lyp-white [@media(min-height:950px)]:text-[38px]">
+            <span className="whitespace-nowrap">
+              {formatCents(displayTarget)}
+            </span>
+            <span className="text-[14px] text-lyp-white/80 [@media(min-height:950px)]:text-[17px]">
+              {t("plusGst")}
+            </span>
+          </span>
+          <span className="mt-1.5 block font-body text-[10px] uppercase tracking-[0.22em] text-lyp-white/75 [@media(min-height:950px)]:text-[11px]">
+            {periodLabel}
+          </span>
+        </>
+      )}
     </button>
   );
 
@@ -1052,15 +1063,11 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 )}
               </div>
 
-              {isInKind || costsNothing ? (
-                <div className="flex-1">
-                  <p
-                    className={`font-heading text-[20px] leading-tight [@media(min-height:950px)]:text-[26px] ${ROSE}`}
-                  >
-                    {t("complimentary")}
-                  </p>
-                </div>
-              ) : hasTiers ? (
+              {/* A service with a choice of term shows one card per term. One
+                  with a single price shows one card, in the same language —
+                  including a complimentary one, where the card reads
+                  "Complimentary" where a price would be. */}
+              {hasTiers && !isInKind && !costsNothing ? (
                 <div
                   className={cn(
                     "grid flex-1 gap-2.5",
@@ -1209,54 +1216,13 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                     })}
                 </div>
               ) : (
-                <div className="flex min-w-0 flex-1 flex-wrap items-end gap-x-6 gap-y-2">
-                  <div className="min-w-0">
-                    {hasDiscount && (
-                      <p className="whitespace-nowrap font-body text-[13px] leading-none text-lyp-white/70 line-through [@media(min-height:950px)]:text-sm">
-                        {formatCents(displayList)} {t("plusGst")}
-                      </p>
-                    )}
-                    {/* The figure never breaks; its "+ GST" drops under it when
-                        the row runs out of width instead of running off the
-                        panel — which is how "$1,595 + G" happened, on the one
-                        service whose label column carries a two-line note
-                        beside it. */}
-                    <p className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5 font-heading text-[32px] leading-none tabular-nums text-lyp-white [@media(min-height:950px)]:text-[42px]">
-                      <span className="whitespace-nowrap">
-                        {formatCents(displayTarget)}
-                      </span>
-                      <span className="text-[15px] text-lyp-white/80 [@media(min-height:950px)]:text-[18px]">
-                        {t("plusGst")}
-                      </span>
-                    </p>
-                    <p className="mt-1.5 font-body text-[10px] uppercase tracking-[0.22em] text-lyp-white/75 [@media(min-height:950px)]:text-[11px]">
-                      {periodLabel}
-                    </p>
-                  </div>
-                  {hasDiscount && savingsCents > 0 && (
-                    <p className="pb-1 font-body text-[11px] text-lyp-gold [@media(min-height:950px)]:text-xs">
-                      {isOneOff
-                        ? t("savingLineOneOff", {
-                            amount: formatCents(savingsCents),
-                          })
-                        : t("savingLine", {
-                            amount: formatCents(savingsCents),
-                            period: periodLabel,
-                          })}
-                    </p>
-                  )}
-                </div>
+                singleOfferCard
               )}
 
             </div>
 
           </Reveal>
 
-          {/* A tiered service has already been decided by its term cards —
-              ticking one is what puts it in the basket — so there is nothing
-              left for this bar to ask. It stays for the single-price services,
-              which have no other way in. */}
-          {!hasTiers && wantToggle}
           </div>
         </div>
 

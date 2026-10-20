@@ -11,8 +11,6 @@ export const SERVICE_COPY: CopySlot[] = [
   { key: "oneOffLabel", label: "Single payment label", default: "one-off payment", hint: "Replaces the per week / per month cadence on a service that is paid once. A single payment is neither weekly nor monthly and must never be labelled as either." },
   { key: "plusGst", label: "GST label", default: "+ GST" },
   { key: "saveAmount", label: "Saving on a term", default: "Save {amount}", hint: "{amount} is replaced with the saving." },
-  { key: "savingLine", label: "Saving on a single price", default: "Saving {amount} + GST {period}", hint: "{amount} is the saving, {period} the price label." },
-  { key: "savingLineOneOff", label: "Saving on a single payment", default: "Saving {amount} + GST on this one-off", hint: "{amount} is the saving. Used in place of the line above on a service that is paid once, which has no weekly or monthly cadence to name." },
   { key: "complimentary", label: "Complimentary price text", default: "Complimentary" },
   { key: "wantThis", label: "Decision card: not yet added", default: "I want this", hint: "The card beside the price, with the switch off. It is as tall as the price panel, so keep the wording to two or three words — a longer phrase makes the card wide enough to crowd the price." },
   { key: "added", label: "Decision card: added", default: "Added", hint: "The same card with the switch on. Shown on the rose, filled-in state." },
