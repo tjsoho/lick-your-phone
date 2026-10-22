@@ -23,8 +23,12 @@ interface PageSettingsFormProps {
 const ic =
   `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
+/* The page editor's own field label. 11px on a looser track, against the
+ * admin's usual 10px at 0.22em: this screen stacks more labels than any
+ * other, and at that size they stopped reading as words and became grey
+ * texture. "so many containers and small text". */
 const labelClasses =
-  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
+  "block font-body text-[11px] font-medium uppercase tracking-[0.14em] text-[#7A6868]";
 
 /**
  * The featured image is drawn at 58vh tall in a ~44vw column (SIZES.main in

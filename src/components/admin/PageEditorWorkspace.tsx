@@ -8,6 +8,10 @@ import { PageSettingsForm } from "@/components/admin/PageSettingsForm";
 import PageTitleForm from "@/components/admin/PageTitleForm";
 import { PREVIEW_MESSAGE } from "@/components/admin/PagePreviewSurface";
 import PageWordingForm from "@/components/admin/PageWordingForm";
+import PageOfferPanel, {
+  type AttachableService,
+  type OfferService,
+} from "@/components/admin/PageOfferPanel";
 import ServiceTextEditor from "@/components/admin/ServiceTextEditor";
 import { copyKindsForPage, type CopyOverrides } from "@/lib/portal-copy";
 
@@ -33,6 +37,10 @@ type Props = {
   serviceSlug: string | null;
   /** The service's own name, which the slide shows instead of the page title. */
   serviceName?: string | null;
+  /** The attached service's price, charge period and terms, edited in place. */
+  offerService: OfferService | null;
+  /** The catalogue, so a page with nothing on it can attach one from here. */
+  attachableServices: AttachableService[];
 };
 
 /** The slide is designed for a wide screen; the frame renders at that size
@@ -54,6 +62,8 @@ export default function PageEditorWorkspace({
   serviceId,
   serviceSlug,
   serviceName,
+  offerService,
+  attachableServices,
 }: Props) {
   const frameRef = useRef<HTMLIFrameElement>(null);
   const shellRef = useRef<HTMLDivElement>(null);
@@ -196,44 +206,46 @@ export default function PageEditorWorkspace({
           />
         </section>
 
-        {isServicePage && (
-          <section
-            className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
-            style={{ animationDelay: "210ms" }}
-          >
-            <h2 className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
-              Pricing &amp; Inclusions
-            </h2>
-            <p className="mt-2 font-body text-[12.5px] leading-relaxed text-[#6B5A5A]">
-              This page&rsquo;s price, tiers, inclusions, client obligations and
-              disclaimers come from the service record, so they stay consistent
-              wherever the service appears. Edit the wording here; prices and
-              tiers live on the service record.
-            </p>
-            {serviceSlug && (
-              <div className="mt-5">
-                <ServiceTextEditor
-                  serviceSlug={serviceSlug}
-                  onSaved={reloadPreview}
-                />
-              </div>
-            )}
-            <Link
-              href={
-                serviceSlug ? `/admin/services/${serviceSlug}` : "/admin/services"
-              }
-              title={
-                serviceSlug
-                  ? "Edit this service's prices and terms"
-                  : "Open the services list"
-              }
-              className={`mt-4 inline-flex items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-2 font-body text-[12.5px] font-semibold text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
-            >
-              Edit prices &amp; terms
-              <ExternalLink strokeWidth={1.5} className="h-3.5 w-3.5" />
-            </Link>
-          </section>
-        )}
+        {/* Shown whether or not a service is attached. A page with nothing on
+            it used to show no pricing at all and no hint that pricing lived
+            on a service record, which is how a page shipped with no price and
+            no way for a client to pick it. */}
+        <section
+          className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
+          style={{ animationDelay: "210ms" }}
+        >
+          <PageOfferPanel
+            pageId={pageId}
+            pageTitle={initialTitle}
+            pageSlug={initialSlug}
+            service={offerService}
+            services={attachableServices}
+            onChanged={reloadPreview}
+          />
+
+          {/* ONE CARD FOR THE SERVICE, NOT TWO.
+              The price and the words that go with it were separate cards with
+              a paragraph of explanation each, so a page with a service on it
+              opened as six containers: "is it all absolutely necessary?" They
+              are the same subject, so they are one card with a rule between
+              them. */}
+          {isServicePage && serviceSlug && (
+            <div className="mt-6 border-t border-[#F2E9E9] pt-6">
+              <ServiceTextEditor
+                serviceSlug={serviceSlug}
+                onSaved={reloadPreview}
+              />
+              <Link
+                href={`/admin/services/${serviceSlug}`}
+                title="Open the full service record, with discounts and sequence"
+                className={`mt-4 inline-flex items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-2 font-body text-[12.5px] font-semibold text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
+              >
+                Discounts and sequence
+                <ExternalLink strokeWidth={1.5} className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          )}
+        </section>
 
         {/* Kept mounted while empty, so removing and re-adding a results block
             doesn't reset the form to stale saved wording. */}

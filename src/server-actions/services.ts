@@ -54,8 +54,7 @@ export async function getServiceText(slug: string) {
         `id, slug, name, term,
          service_inclusions ( id, text, sequence ),
          service_client_obligations ( id, text, sequence ),
-         service_disclaimers ( id, text, sequence ),
-         service_tiers ( id, name, sequence )`,
+         service_disclaimers ( id, text, sequence )`,
       )
       .eq("slug", slug)
       .single();
@@ -70,36 +69,11 @@ export async function getServiceText(slug: string) {
         service_inclusions: ServiceInclusion[];
         service_client_obligations: ServiceObligation[];
         service_disclaimers: ServiceDisclaimer[];
-        service_tiers: { id: string; name: string; sequence: number | null }[];
       },
       error: null,
     };
   } catch (error) {
     return { data: null, error: (error as Error).message };
-  }
-}
-
-/**
- * Renames a service's pricing terms (e.g. "Annually"). Prices and lengths stay
- * on the tier form; only the wording the client reads changes here.
- */
-export async function updateServiceTierNames(
-  serviceId: string,
-  tiers: { id: string; name: string }[],
-) {
-  try {
-    const supabase = await createClient();
-    for (const tier of tiers) {
-      const { error } = await supabase
-        .from("service_tiers")
-        .update({ name: tier.name, updated_at: new Date().toISOString() })
-        .eq("id", tier.id)
-        .eq("service_id", serviceId);
-      if (error) throw error;
-    }
-    return { error: null };
-  } catch (error) {
-    return { error: (error as Error).message };
   }
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Images, Trash2, Type } from "lucide-react";
+import { ChevronDown, Images, Trash2, Type } from "lucide-react";
 import {
   COPY_REGISTRY,
   type CopyKind,
@@ -17,8 +17,12 @@ const EASE = "ease-brand";
 
 const fieldClasses = `w-full rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-2.5 font-body text-[13px] text-lyp-black outline-none transition-all duration-500 ${EASE} placeholder:text-[#9C8C8C] focus:border-lyp-cherry/30 focus:bg-lyp-white focus:shadow-[0_0_0_4px_rgba(178,38,38,0.07)]`;
 
+/* The page editor's own field label. 11px on a looser track, against the
+ * admin's usual 10px at 0.22em: this screen stacks more labels than any
+ * other, and at that size they stopped reading as words and became grey
+ * texture. "so many containers and small text". */
 const labelClasses =
-  "block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
+  "block font-body text-[11px] font-medium uppercase tracking-[0.14em] text-[#7A6868]";
 
 const quietButton = `flex items-center gap-1.5 font-body text-[12.5px] font-medium text-[#6B5A5A] transition-colors duration-500 ${EASE} hover:text-lyp-cherry`;
 
@@ -241,9 +245,23 @@ export default function PageWordingForm({
     updatePageCopy(pageId, value),
   );
 
+  // How many of this slide's labels have been written over, so the shut panel
+  // can say whether there is anything in here worth opening.
+  const changed = Object.values(cleanCopy(copy)).filter(
+    (value) => typeof value === "string" && value.trim() !== "",
+  ).length;
+
   return (
-    <div className="space-y-5">
-      <div className="flex items-start justify-between gap-3">
+    /* SHUT UNTIL IT IS WANTED.
+     *
+     * Sixteen fields of per-slide label overrides, every one of them already
+     * correct by default, sat open above the content blocks and made the
+     * editor read as a form nobody could finish: "this page seems way too
+     * complex ... so many containers and small text". Almost nobody ever
+     * changes a word in here, so it opens on request and says, shut, whether
+     * anyone has. */
+    <details className="group space-y-5 [&[open]]:space-y-5">
+      <summary className="flex cursor-pointer list-none items-start justify-between gap-3">
         <div className="flex items-start gap-2.5">
           <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-lyp-cherry/[0.06] ring-1 ring-lyp-cherry/10">
             <Type strokeWidth={1.25} className="h-4 w-4 text-lyp-cherry" />
@@ -253,13 +271,26 @@ export default function PageWordingForm({
               Page Wording
             </h2>
             <p className="mt-1 font-body text-[12.5px] leading-relaxed text-[#6B5A5A]">
-              The labels, buttons and messages on this slide. Leave a field
-              empty to use the wording shown in it.
+              {changed === 0
+                ? "Every label on this slide is using its standard wording."
+                : changed === 1
+                  ? "One label on this slide has been written over."
+                  : `${changed} labels on this slide have been written over.`}
             </p>
           </div>
         </div>
-        <SaveStatusBadge status={status} />
-      </div>
+        <span className="flex flex-shrink-0 items-center gap-3">
+          <SaveStatusBadge status={status} />
+          <ChevronDown
+            strokeWidth={1.5}
+            className={`h-4 w-4 text-[#867474] transition-transform duration-500 ${EASE} group-open:rotate-180`}
+          />
+        </span>
+      </summary>
+
+      <p className="mt-5 font-body text-[12.5px] leading-relaxed text-[#6B5A5A]">
+        Leave a field empty to use the wording shown in it.
+      </p>
 
       <CopyFields
         kinds={kinds}
@@ -267,6 +298,6 @@ export default function PageWordingForm({
         onChange={setCopy}
         idPrefix={`page-${pageId}`}
       />
-    </div>
+    </details>
   );
 }

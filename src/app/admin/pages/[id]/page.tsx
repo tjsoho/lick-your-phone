@@ -2,9 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getPageWithBlocks } from "@/server-actions/pages";
+import { getServices } from "@/server-actions/services";
 import { createClient } from "@/utils/server";
 import PageEditorWorkspace from "@/components/admin/PageEditorWorkspace";
 import PageEditorNav from "@/components/admin/PageEditorNav";
+import type {
+  AttachableService,
+  OfferService,
+} from "@/components/admin/PageOfferPanel";
 
 const EASE = "ease-brand";
 
@@ -30,33 +35,82 @@ export default async function EditPagePage({
   const serviceId = (record.service_id as string | null) ?? null;
 
   // Neighbours in the deck's own order, so the editor can step through it.
+  // The service each page carries comes along too, so the attach list can say
+  // which services are already spoken for.
   const supabaseForOrder = await createClient();
   const { data: ordered } = await supabaseForOrder
     .from("pages")
-    .select("id, title")
+    .select("id, title, service_id")
     .order("sequence", { ascending: true });
 
-  const deck = (ordered ?? []) as { id: string; title: string | null }[];
+  const deck = (ordered ?? []) as {
+    id: string;
+    title: string | null;
+    service_id: string | null;
+  }[];
   const index = deck.findIndex((p) => p.id === id);
   const previous = index > 0 ? deck[index - 1] : null;
   const next =
     index >= 0 && index < deck.length - 1 ? deck[index + 1] : null;
 
-  // Service pages send you to the service record for pricing, so fetch the
-  // slug that link needs.
+  // Price, charge period and terms are edited on this screen, so the whole
+  // service comes with them rather than just the slug its link needs.
+  const supabase = await createClient();
   let serviceSlug: string | null = null;
   // The slide shows the service's name, so the title field starts from it.
   let serviceName: string | null = null;
+  let offerService: OfferService | null = null;
   if (serviceId) {
-    const supabase = await createClient();
     const { data: service } = await supabase
       .from("services")
-      .select("slug, name")
+      .select(
+        `id, slug, name, billing, target_price_cents, price_display_period,
+         service_tiers ( id, name, billing_cycle_months, target_price_cents, sequence )`,
+      )
       .eq("id", serviceId)
       .single();
+
     serviceSlug = service?.slug ?? null;
     serviceName = service?.name ?? null;
+    if (service) {
+      offerService = {
+        id: service.id,
+        slug: service.slug,
+        name: service.name,
+        billing: service.billing,
+        target_price_cents: service.target_price_cents ?? 0,
+        price_display_period: service.price_display_period,
+        terms: (service.service_tiers ?? []).map((tier) => ({
+          id: tier.id,
+          name: tier.name,
+          billing_cycle_months: tier.billing_cycle_months ?? 1,
+          target_price_cents: tier.target_price_cents ?? 0,
+          sequence: tier.sequence ?? 0,
+        })),
+      };
+    }
   }
+
+  // Everything that could be attached, and the page any of it is already on.
+  const { data: catalogue } = await getServices<{
+    id: string;
+    name: string;
+    slug: string;
+  }>("id, name, slug");
+
+  const takenBy = new Map<string, string>();
+  for (const other of deck) {
+    if (other.service_id && other.id !== id) {
+      takenBy.set(other.service_id, other.title ?? "another page");
+    }
+  }
+
+  const attachableServices: AttachableService[] = catalogue.map((item) => ({
+    id: item.id,
+    name: item.name,
+    slug: item.slug,
+    usedOnPage: takenBy.get(item.id) ?? null,
+  }));
 
   return (
     <div className="mx-auto max-w-[110rem]">
@@ -104,6 +158,8 @@ export default async function EditPagePage({
         serviceId={serviceId}
         serviceSlug={serviceSlug}
         serviceName={serviceName}
+        offerService={offerService}
+        attachableServices={attachableServices}
       />
     </div>
   );

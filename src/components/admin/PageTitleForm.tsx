@@ -9,8 +9,12 @@ import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
 
 const EASE = "ease-brand";
 
+/* The page editor's own field label. 11px on a looser track, against the
+ * admin's usual 10px at 0.22em: this screen stacks more labels than any
+ * other, and at that size they stopped reading as words and became grey
+ * texture. "so many containers and small text". */
 const labelClasses =
-  "mb-2 block font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]";
+  "mb-2 block font-body text-[11px] font-medium uppercase tracking-[0.14em] text-[#7A6868]";
 
 interface PageTitleFormProps {
   /** Called on every keystroke so a live preview can follow along. */

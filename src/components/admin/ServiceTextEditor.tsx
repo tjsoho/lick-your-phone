@@ -8,7 +8,6 @@ import {
   updateServiceDisclaimers,
   updateServiceInclusions,
   updateServiceObligations,
-  updateServiceTierNames,
 } from "@/server-actions/services";
 import { useAutosave } from "@/hooks/use-autosave";
 import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
@@ -29,14 +28,8 @@ interface Row {
   text: string;
 }
 
-/** A pricing term keeps its database id: only its name is edited here. */
-interface TierRow extends Row {
-  id: string;
-}
-
 interface Draft {
   term: string;
-  tiers: TierRow[];
   inclusions: Row[];
   obligations: Row[];
   disclaimers: Row[];
@@ -46,7 +39,6 @@ type ListName = "inclusions" | "obligations" | "disclaimers";
 
 const EMPTY: Draft = {
   term: "",
-  tiers: [],
   inclusions: [],
   obligations: [],
   disclaimers: [],
@@ -62,12 +54,6 @@ function toRows(items: { text: string; sequence: number | null }[] | null) {
 }
 
 /** What actually gets written: blank rows dropped, order as shown. */
-function toTierPayload(rows: TierRow[]) {
-  return rows
-    .filter((row) => row.text.trim())
-    .map((row) => ({ id: row.id, name: row.text.trim() }));
-}
-
 function toPayload(rows: Row[]) {
   return rows
     .filter((row) => row.text.trim())
@@ -78,8 +64,9 @@ function toPayload(rows: Row[]) {
  * The client-visible words of a service, edited from inside a page editor.
  *
  * Term, inclusions, commitments and disclaimers live on the service record, so
- * they read the same on every proposal. Prices, tiers and billing are left to
- * the service record itself.
+ * they read the same on every proposal. The price, the charge period and the
+ * terms the client picks from are edited in What This Page Sells, above this
+ * form, so each of them has exactly one home.
  */
 export default function ServiceTextEditor({
   serviceSlug,
@@ -96,7 +83,6 @@ export default function ServiceTextEditor({
   // editing the term doesn't delete and reinsert every list row.
   const writtenRef = useRef<Record<keyof Draft, string>>({
     term: "",
-    tiers: "",
     inclusions: "",
     obligations: "",
     disclaimers: "",
@@ -113,7 +99,6 @@ export default function ServiceTextEditor({
       const term = value.term.trim() || null;
       const next = {
         term: JSON.stringify(term),
-        tiers: JSON.stringify(toTierPayload(value.tiers)),
         inclusions: JSON.stringify(toPayload(value.inclusions)),
         obligations: JSON.stringify(toPayload(value.obligations)),
         disclaimers: JSON.stringify(toPayload(value.disclaimers)),
@@ -124,15 +109,6 @@ export default function ServiceTextEditor({
         const { error } = await updateService(serviceId, { term });
         if (error) return { error };
         written.term = next.term;
-      }
-
-      if (next.tiers !== written.tiers) {
-        const { error } = await updateServiceTierNames(
-          serviceId,
-          toTierPayload(value.tiers),
-        );
-        if (error) return { error };
-        written.tiers = next.tiers;
       }
 
       const lists = [
@@ -168,16 +144,12 @@ export default function ServiceTextEditor({
 
       const loaded: Draft = {
         term: data.term ?? "",
-        tiers: [...(data.service_tiers ?? [])]
-          .sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0))
-          .map((tier) => ({ key: newKey(), id: tier.id, text: tier.name })),
         inclusions: toRows(data.service_inclusions),
         obligations: toRows(data.service_client_obligations),
         disclaimers: toRows(data.service_disclaimers),
       };
       writtenRef.current = {
         term: JSON.stringify(data.term?.trim() || null),
-        tiers: JSON.stringify(toTierPayload(loaded.tiers)),
         inclusions: JSON.stringify(toPayload(loaded.inclusions)),
         obligations: JSON.stringify(toPayload(loaded.obligations)),
         disclaimers: JSON.stringify(toPayload(loaded.disclaimers)),
@@ -241,37 +213,6 @@ export default function ServiceTextEditor({
           Sits beside the service name on the slide. Leave blank to hide it.
         </p>
       </div>
-
-      {draft.tiers.length > 0 && (
-        <div>
-          <span className={labelClasses}>Term options</span>
-          <div className="mt-2 space-y-2">
-            {draft.tiers.map((tier, index) => (
-              <input
-                key={tier.key}
-                type="text"
-                value={tier.text}
-                onChange={(e) => {
-                  const text = e.target.value;
-                  setDraft((prev) => ({
-                    ...prev,
-                    tiers: prev.tiers.map((t) =>
-                      t.key === tier.key ? { ...t, text } : t,
-                    ),
-                  }));
-                }}
-                placeholder="e.g. Annually"
-                aria-label={`Term option ${index + 1}`}
-                className={inputClasses}
-              />
-            ))}
-          </div>
-          <p className={hintClasses}>
-            The price choices on the slide and in the summary. Prices and
-            lengths are set on the service record.
-          </p>
-        </div>
-      )}
 
       <ListEditor
         title="Inclusions"
@@ -342,7 +283,7 @@ function ListEditor({
 
       {rows.length === 0 ? (
         <p className="mt-2 font-body text-[12.5px] text-[#6B5A5A]">
-          None yet — this section is hidden on the slide.
+          None yet. This section is hidden on the slide.
         </p>
       ) : (
         <div className="mt-2 space-y-2">

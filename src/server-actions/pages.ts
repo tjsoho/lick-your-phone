@@ -3,6 +3,7 @@
 import { createClient } from "@/utils/server";
 import { revalidatePath } from "next/cache";
 import type { CopyOverrides } from "@/lib/portal-copy";
+import { STRUCTURAL_SLUGS } from "@/lib/structural-pages";
 
 export async function togglePageVisibility(id: string, visible: boolean) {
   try {
@@ -123,6 +124,169 @@ export async function updatePage(
     if (error) throw error;
     revalidatePath("/admin/pages");
     return { data, error: null };
+  } catch (error) {
+    return { data: null, error: (error as Error).message };
+  }
+}
+
+/**
+ * The portal looks for an attached service before it looks at a page's slug,
+ * so selling something from the summary or the payment step would replace
+ * that step with a price slide. The editor hides the controls on those pages;
+ * this is the same answer given from the server.
+ */
+async function refuseStructuralPage(pageId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("pages")
+    .select("slug, title")
+    .eq("id", pageId)
+    .single();
+
+  if (error) throw error;
+  if (data?.slug && STRUCTURAL_SLUGS.includes(data.slug)) {
+    return `"${data.title ?? data.slug}" is one of the proposal's own steps, so it can't sell a service. Add a new page for that instead.`;
+  }
+  return null;
+}
+
+/**
+ * THE TWO FIELDS THAT HAVE TO MOVE TOGETHER.
+ *
+ * The portal only reaches for the rich service layout when a page is typed
+ * 'service' AND has a service attached; miss either and it falls through to
+ * the plain content slide. The Buffet Investment page was typed 'service'
+ * with no service on it, so it rendered as a title, a paragraph and a
+ * picture: no price, no term, no way for a client to add it. These two
+ * actions write both fields at once so that pairing can't come apart again.
+ */
+export async function attachServiceToPage(pageId: string, serviceId: string) {
+  try {
+    const supabase = await createClient();
+
+    const refusal = await refuseStructuralPage(pageId);
+    if (refusal) return { data: null, error: refusal };
+
+    const { data, error } = await supabase
+      .from("pages")
+      .update({
+        service_id: serviceId,
+        type: "service",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", pageId)
+      .select("id, type, service_id")
+      .single();
+
+    if (error) throw error;
+    revalidatePath("/admin/pages");
+    revalidatePath(`/admin/pages/${pageId}`);
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: (error as Error).message };
+  }
+}
+
+export async function detachServiceFromPage(pageId: string) {
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("pages")
+      .update({
+        service_id: null,
+        type: "content",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", pageId)
+      .select("id, type, service_id")
+      .single();
+
+    if (error) throw error;
+    revalidatePath("/admin/pages");
+    revalidatePath(`/admin/pages/${pageId}`);
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error: (error as Error).message };
+  }
+}
+
+/**
+ * Make a service for this page and attach it, in one press.
+ *
+ * Sales shouldn't have to know that "Services" is a separate screen to put a
+ * price on a page, so the name and slug are seeded from the page itself and
+ * the new service starts as a single payment of nothing. Price and charge
+ * period are then set on the page editor.
+ */
+export async function createServiceForPage(
+  pageId: string,
+  fields: { name: string; slug: string },
+) {
+  try {
+    const name = fields.name.trim();
+    const slug = fields.slug.trim();
+    if (!name || !slug) {
+      return { data: null, error: "This page needs a title and a slug first." };
+    }
+
+    const supabase = await createClient();
+
+    const refusal = await refuseStructuralPage(pageId);
+    if (refusal) return { data: null, error: refusal };
+
+    const { data: clash, error: clashError } = await supabase
+      .from("services")
+      .select("id, name")
+      .eq("slug", slug)
+      .maybeSingle();
+
+    if (clashError) throw clashError;
+    if (clash) {
+      return {
+        data: null,
+        error: `"${clash.name}" already uses the address ${slug}. Attach that service instead, or change this page's slug.`,
+      };
+    }
+
+    // services.sequence has no default, so work out the next one.
+    const { data: last, error: seqError } = await supabase
+      .from("services")
+      .select("sequence")
+      .order("sequence", { ascending: false })
+      .limit(1);
+
+    if (seqError) throw seqError;
+    const sequence = last && last.length > 0 ? (last[0].sequence ?? 0) + 1 : 1;
+
+    const { data: service, error: createError } = await supabase
+      .from("services")
+      .insert({
+        name,
+        slug,
+        billing: "one_off",
+        target_price_cents: 0,
+        sequence,
+      })
+      .select("id, slug, name")
+      .single();
+
+    if (createError) throw createError;
+
+    const { error: attachError } = await supabase
+      .from("pages")
+      .update({
+        service_id: service.id,
+        type: "service",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", pageId);
+
+    if (attachError) throw attachError;
+
+    revalidatePath("/admin/pages");
+    revalidatePath(`/admin/pages/${pageId}`);
+    revalidatePath("/admin/services");
+    return { data: service, error: null };
   } catch (error) {
     return { data: null, error: (error as Error).message };
   }
@@ -264,18 +428,6 @@ export async function updatePageCopy(pageId: string, copy: CopyOverrides) {
     return { error: (error as Error).message };
   }
 }
-
-/**
- * Pages the portal addresses by slug. Removing one leaves the presentation
- * without a cover, summary, signing step or payment step, so they are locked.
- */
-const STRUCTURAL_SLUGS = [
-  "cover",
-  "summary",
-  "signature",
-  "payment",
-  "intake",
-];
 
 export async function deletePage(id: string) {
   try {
