@@ -222,30 +222,38 @@ export default function PageEditorWorkspace({
             services={attachableServices}
             onChanged={reloadPreview}
           />
+        </section>
 
-          {/* ONE CARD FOR THE SERVICE, NOT TWO.
-              The price and the words that go with it were separate cards with
-              a paragraph of explanation each, so a page with a service on it
-              opened as six containers: "is it all absolutely necessary?" They
-              are the same subject, so they are one card with a rule between
-              them. */}
-          {isServicePage && serviceSlug && (
-            <div className="mt-6 border-t border-[#F2E9E9] pt-6">
+        {/* TWO CARDS, EACH WITH ONE JOB.
+            These were briefly one card, to cut the count down. That made a
+            1851px card holding the charging, the price, the terms and all
+            three lists, which is harder to read than two of anything. What
+            made the editor heavy was the explaining, not the dividing, so
+            the prose went and the split stayed. */}
+        {isServicePage && serviceSlug && (
+          <section
+            className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
+            style={{ animationDelay: "215ms" }}
+          >
+            <h2 className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
+              What&rsquo;s On The Slide
+            </h2>
+            <div className="mt-5">
               <ServiceTextEditor
                 serviceSlug={serviceSlug}
                 onSaved={reloadPreview}
               />
-              <Link
-                href={`/admin/services/${serviceSlug}`}
-                title="Open the full service record, with discounts and sequence"
-                className={`mt-4 inline-flex items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-2 font-body text-[12.5px] font-semibold text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
-              >
-                Discounts and sequence
-                <ExternalLink strokeWidth={1.5} className="h-3.5 w-3.5" />
-              </Link>
             </div>
-          )}
-        </section>
+            <Link
+              href={`/admin/services/${serviceSlug}`}
+              title="Open the full service record, with discounts and sequence"
+              className={`mt-4 inline-flex items-center gap-2 rounded-full border border-[#EFE6E6] bg-lyp-white px-4 py-2 font-body text-[12.5px] font-semibold text-lyp-black transition-all duration-500 ${EASE} hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]`}
+            >
+              Discounts and sequence
+              <ExternalLink strokeWidth={1.5} className="h-3.5 w-3.5" />
+            </Link>
+          </section>
+        )}
 
         {/* Kept mounted while empty, so removing and re-adding a results block
             doesn't reset the form to stale saved wording. */}

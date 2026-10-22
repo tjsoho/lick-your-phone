@@ -123,7 +123,7 @@ export default function PageOfferPanel({
   return (
     <div>
       <h2 className="font-heading text-[15px] font-bold tracking-[-0.01em] text-lyp-black">
-        What This Page Sells
+        Price
       </h2>
 
       <div className="mt-5">
@@ -514,25 +514,22 @@ function AttachedOffer({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#EFE6E6] bg-[#FBF8F8] px-4 py-3">
-        <div className="min-w-0">
-          <span className={labelClasses}>Selling</span>
-          <p className="mt-1 truncate font-body text-[13px] font-semibold text-lyp-black">
-            {service.name}
-          </p>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <SaveStatusBadge status={status} />
-          <button
-            type="button"
-            onClick={handleDetach}
-            disabled={detaching}
-            title="Take this service off the page"
-            className={quietPillClasses}
-          >
-            {detaching ? "Taking it off..." : "Take it off"}
-          </button>
-        </div>
+      {/* NOT THE NAME AGAIN. This strip used to repeat the service's name,
+          which the page title above and the name field above that were both
+          already showing: "we have double up of service name its said 3 times
+          on this page". What is left is the two things it was really for,
+          whether the typing is saved and how to undo the whole thing. */}
+      <div className="flex flex-wrap items-center justify-end gap-2.5">
+        <SaveStatusBadge status={status} />
+        <button
+          type="button"
+          onClick={handleDetach}
+          disabled={detaching}
+          title="This page goes back to having no price"
+          className={quietPillClasses}
+        >
+          {detaching ? "Removing..." : "No price on this page"}
+        </button>
       </div>
 
       <fieldset>

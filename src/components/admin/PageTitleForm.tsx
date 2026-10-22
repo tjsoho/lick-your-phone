@@ -111,7 +111,7 @@ export default function PageTitleForm({
 
         <div>
           <label htmlFor="page-slug" className={labelClasses}>
-            Slug
+            Web address
           </label>
           <input
             id="page-slug"
@@ -121,8 +121,9 @@ export default function PageTitleForm({
             className={`${fieldClasses} font-mono text-[11px] text-[#6B5A5A]`}
           />
           <p className="mt-1.5 font-body text-[11px] text-[#867474]">
-            Part of the portal address. Cover, Summary, Signature, Payment and
-            Onboarding are found by slug — renaming those breaks the flow.
+            The end of this page&rsquo;s web address. Cover, Summary,
+            Signature, Payment and Onboarding are found by it, so renaming
+            one of those breaks the proposal.
           </p>
         </div>
       </div>

@@ -196,8 +196,11 @@ export default function ServiceTextEditor({
       </div>
 
       <div>
+        {/* NOT "Term". The terms the client chooses between sit directly
+            above this in the same card now, and two different things called
+            the same word, touching, is how someone fills in the wrong one. */}
         <label htmlFor="service-term" className={labelClasses}>
-          Term
+          Note beside the name
         </label>
         <input
           id="service-term"
