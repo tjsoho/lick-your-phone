@@ -164,6 +164,23 @@ function renderBlock(
     );
   }
 
+  /**
+   * A step down from `heading`, for a line that titles a passage inside a
+   * section rather than starting a new one. Same face and casing so the two
+   * read as one family, at the size of the slide's own captions.
+   */
+  if (block.type === "subheading") {
+    return (
+      <Reveal
+        as="h3"
+        delay={base}
+        className="font-heading text-base md:text-lg text-lyp-white uppercase tracking-[0.12em]"
+      >
+        {String(block.content ?? "")}
+      </Reveal>
+    );
+  }
+
   if (block.type === "paragraph") {
     return (
       <Reveal
@@ -386,9 +403,12 @@ export default function ContentBlockRenderer({
             ? leadingGap
             : block.type === "heading"
               ? RHYTHM.section
-              : previous?.type === "heading"
-                ? RHYTHM.grouped
-                : RHYTHM.block;
+              : block.type === "subheading"
+                ? RHYTHM.section
+                : previous?.type === "heading" ||
+                    previous?.type === "subheading"
+                  ? RHYTHM.grouped
+                  : RHYTHM.block;
 
         // The reveal lives on the block's own element, not on this wrapper:
         // the wrapper carries the rhythm margin, and nesting a fading box

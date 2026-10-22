@@ -25,7 +25,7 @@ import toast from "react-hot-toast";
 
 const EASE = "ease-brand";
 
-const BLOCK_TYPES = ["heading", "paragraph", "list", "image", "logos", "media_carousel", "collage", "results", "offset_image", "custom"] as const;
+const BLOCK_TYPES = ["heading", "subheading", "paragraph", "list", "image", "logos", "media_carousel", "collage", "results", "offset_image", "custom"] as const;
 type BlockType = (typeof BLOCK_TYPES)[number];
 
 /** Block types whose content is stored as a `{ url, alt }[]` and edited with LogosEditor. */
@@ -129,11 +129,11 @@ function stringToContent(type: string | null, raw: string): unknown {
 }
 
 const typeLabel = (t: string | null) =>
-  ({ heading: "Heading", paragraph: "Paragraph", list: "List", image: "Image", logos: "Logos", media_carousel: "Media Carousel", collage: "Image Collage", results: "Client Results", offset_image: "Offset Image", custom: "Custom" }[t ?? ""] ?? t ?? "unknown");
+  ({ heading: "Heading", subheading: "Subheading", paragraph: "Paragraph", list: "List", image: "Image", logos: "Logos", media_carousel: "Media Carousel", collage: "Image Collage", results: "Client Results", offset_image: "Offset Image", custom: "Custom" }[t ?? ""] ?? t ?? "unknown");
 
 /** Muted tonal pills — saturated Tailwind defaults read cheap next to the brand. */
 const typeBadge = (t: string | null) =>
-  ({ heading: "bg-[#F1EDF5] text-[#6E5B84]", paragraph: "bg-[#F2EDED] text-[#6B5A5A]", list: "bg-[#EDF1F7] text-[#5B7394]", image: "bg-[#E9F2EC] text-[#4A7A5C]", logos: "bg-[#F7EDF1] text-[#8A5B72]", media_carousel: "bg-[#E7F0F0] text-[#4F7B7B]", collage: "bg-[#F9EFE4] text-[#916338]", results: "bg-[#EBF1E8] text-[#5C7A4A]", offset_image: "bg-[#ECEDF7] text-[#5F5F94]", custom: "bg-[#FBF3E3] text-[#9A7B2E]" }[t ?? ""] ?? "bg-[#F2EDED] text-[#6B5A5A]");
+  ({ heading: "bg-[#F1EDF5] text-[#6E5B84]", subheading: "bg-[#F4F0F8] text-[#7B6A8E]", paragraph: "bg-[#F2EDED] text-[#6B5A5A]", list: "bg-[#EDF1F7] text-[#5B7394]", image: "bg-[#E9F2EC] text-[#4A7A5C]", logos: "bg-[#F7EDF1] text-[#8A5B72]", media_carousel: "bg-[#E7F0F0] text-[#4F7B7B]", collage: "bg-[#F9EFE4] text-[#916338]", results: "bg-[#EBF1E8] text-[#5C7A4A]", offset_image: "bg-[#ECEDF7] text-[#5F5F94]", custom: "bg-[#FBF3E3] text-[#9A7B2E]" }[t ?? ""] ?? "bg-[#F2EDED] text-[#6B5A5A]");
 
 function BlockTextarea({ type, value, onChange }: { type: string; value: string; onChange: (v: string) => void }) {
   const id = useId();
@@ -143,7 +143,7 @@ function BlockTextarea({ type, value, onChange }: { type: string; value: string;
         {type === "list" ? "One item per line" : `${typeLabel(type)} content`}
       </label>
       <textarea id={id} value={value} onChange={(e) => onChange(e.target.value)}
-        rows={type === "heading" ? 2 : 5} className={`${ic} mt-2`}
+        rows={type === "heading" || type === "subheading" ? 2 : 5} className={`${ic} mt-2`}
         placeholder={type === "custom" ? "JSON or plain text" : `Enter ${type} content...`} />
     </div>
   );

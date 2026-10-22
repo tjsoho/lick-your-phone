@@ -382,17 +382,33 @@ function AttachedOffer({
   const onChangedRef = useRef(onChanged);
   onChangedRef.current = onChanged;
 
-  const everyPriceReads =
-    isMoney(draft.price) && draft.terms.every((term) => isMoney(term.price));
-
+  /**
+   * A HALF-TYPED PRICE STOPS ITSELF, NOT EVERYTHING ELSE.
+   *
+   * The whole panel used to refuse to save unless every price on it read as
+   * money, so clearing one box to retype it silently froze the lot: a term's
+   * name, its length, the other terms' prices, all of it. Nothing said so,
+   * because the hook returns before it can even go to "Unsaved changes", and
+   * the edits went when the page did. "extra prices aren't being updated."
+   *
+   * Reproduced by emptying the service price and changing a term's: the box
+   * read 999, the database kept 180.
+   *
+   * So each price is now judged on its own. An unreadable one is left at
+   * whatever is stored, everything beside it still saves, and the field says
+   * out loud that it is the one being skipped.
+   */
   const { status } = useAutosave(
     draft,
     async (value) => {
       const written = writtenRef.current;
+      const servicePriceReads = isMoney(value.price);
 
       const nextService = JSON.stringify({
         billing: value.billing,
-        cents: centsFromDollars(value.price),
+        // Only what is actually written goes in the snapshot, or a price
+        // that was skipped would be remembered as saved.
+        cents: servicePriceReads ? centsFromDollars(value.price) : "skipped",
         // A single payment and a complimentary service have no cadence to
         // show, so the week-or-month choice is only written for a recurring
         // one and left alone otherwise.
@@ -402,7 +418,9 @@ function AttachedOffer({
       if (nextService !== written.service) {
         const { error } = await updateService(service.id, {
           billing: value.billing,
-          target_price_cents: centsFromDollars(value.price),
+          ...(servicePriceReads
+            ? { target_price_cents: centsFromDollars(value.price) }
+            : {}),
           ...(value.billing === "recurring_monthly"
             ? { price_display_period: value.period }
             : {}),
@@ -412,6 +430,9 @@ function AttachedOffer({
       }
 
       for (const [index, term] of value.terms.entries()) {
+        // This term's price is mid-typing. Its neighbours are not.
+        if (!isMoney(term.price)) continue;
+
         const snapshot = termSnapshot(term, index + 1);
         if (written.terms[term.id] === snapshot) continue;
 
@@ -431,7 +452,6 @@ function AttachedOffer({
       onChangedRef.current?.();
       return { error: null };
     },
-    { enabled: everyPriceReads },
   );
 
   async function handleDetach() {
@@ -508,6 +528,17 @@ function AttachedOffer({
       ),
     }));
   }
+
+  const skippedPrices = [
+    ...(isMoney(draft.price) ? [] : ["The price"]),
+    ...draft.terms
+      .map((term, index) =>
+        isMoney(term.price)
+          ? null
+          : `${term.name.trim() || `Term ${index + 1}`}'s price`,
+      )
+      .filter((label): label is string => label !== null),
+  ];
 
   const isRecurring = draft.billing === "recurring_monthly";
   const isComplimentary = draft.billing === "in_kind";
@@ -748,10 +779,15 @@ function AttachedOffer({
         </div>
       )}
 
-      {!everyPriceReads && (
+      {/* Names the box that is not saving, rather than the old line that
+          said nothing was. Everything else around it is still being written. */}
+      {skippedPrices.length > 0 && (
         <p className="font-body text-[12px] text-lyp-cherry">
-          A price is empty, so nothing is being saved. Put a number in every
-          price box, using 0 for free.
+          {skippedPrices.length === 1
+            ? `${skippedPrices[0]} is empty, so that one price is not being saved.`
+            : `${skippedPrices.join(" and ")} are empty, so those prices are not being saved.`}{" "}
+          Put a number in, using 0 for free. Everything else on this card is
+          saving as usual.
         </p>
       )}
     </div>

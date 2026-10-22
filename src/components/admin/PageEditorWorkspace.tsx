@@ -206,21 +206,19 @@ export default function PageEditorWorkspace({
           />
         </section>
 
-        {/* Shown whether or not a service is attached. A page with nothing on
-            it used to show no pricing at all and no hint that pricing lived
-            on a service record, which is how a page shipped with no price and
-            no way for a client to pick it. */}
+        {/* THE ORDER SOMEONE BUILDS A PAGE IN.
+            Words first, then what the service includes, then what it costs:
+            "content block should be above price followed by inclusions
+            followed by price". The price used to sit above both, which asked
+            for the number before there was anything to put a number on. */}
         <section
           className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
           style={{ animationDelay: "210ms" }}
         >
-          <PageOfferPanel
+          <ContentBlocksEditor
             pageId={pageId}
-            pageTitle={initialTitle}
-            pageSlug={initialSlug}
-            service={offerService}
-            services={attachableServices}
-            onChanged={reloadPreview}
+            initialBlocks={initialBlocks}
+            onDraftChange={handleBlocks}
           />
         </section>
 
@@ -255,12 +253,30 @@ export default function PageEditorWorkspace({
           </section>
         )}
 
+        {/* Shown whether or not a service is attached. A page with nothing on
+            it used to show no pricing at all and no hint that pricing lived
+            on a service record, which is how a page shipped with no price and
+            no way for a client to pick it. */}
+        <section
+          className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
+          style={{ animationDelay: "225ms" }}
+        >
+          <PageOfferPanel
+            pageId={pageId}
+            pageTitle={initialTitle}
+            pageSlug={initialSlug}
+            service={offerService}
+            services={attachableServices}
+            onChanged={reloadPreview}
+          />
+        </section>
+
         {/* Kept mounted while empty, so removing and re-adding a results block
             doesn't reset the form to stale saved wording. */}
         <section
           hidden={copyKinds.length === 0}
           className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
-          style={{ animationDelay: "225ms" }}
+          style={{ animationDelay: "240ms" }}
         >
           <PageWordingForm
             pageId={pageId}
@@ -270,16 +286,6 @@ export default function PageEditorWorkspace({
           />
         </section>
 
-        <section
-          className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
-          style={{ animationDelay: "240ms" }}
-        >
-          <ContentBlocksEditor
-            pageId={pageId}
-            initialBlocks={initialBlocks}
-            onDraftChange={handleBlocks}
-          />
-        </section>
       </div>
 
       {/* ─────────────── Live preview ─────────────── */}

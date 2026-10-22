@@ -35,6 +35,8 @@ export interface ContentBlock {
   id: string;
   type:
     | "heading"
+    /** A line that titles a passage inside a section, under a heading. */
+    | "subheading"
     | "paragraph"
     | "image"
     | "list"
