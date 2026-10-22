@@ -50,9 +50,14 @@ export default function Login() {
         />
 
         <div className="relative z-10 mx-auto flex w-full max-w-[29rem] flex-col justify-between">
-          {/* Wordmark lockup */}
+          {/* The lips mark, the same one the proposal cover opens on: "change
+              that logo to the rounded logo we have the first page of the
+              client facing proposal". The wordmark ships on an opaque white
+              background, so on this dark panel it had to sit in a white plate
+              to look deliberate. The mark's corners are genuinely transparent,
+              so it needs no plate and gets none. */}
           <div className="animate-rise">
-            <Logo onDark className="h-9" priority />
+            <Logo variant="mark" className="h-14" priority />
             <span className="mt-3 block font-body text-[9px] font-medium uppercase tracking-[0.3em] text-lyp-gold/60">
               Admin Console
             </span>
