@@ -465,7 +465,7 @@ export default async function ProposalDetailPage({
             {/* Three tiles, not four: "remove the pages the client sees from
                 this step". The deck's own list above already says how many
                 pages there are, by being the list. */}
-            <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <dl className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <ReviewTile
                 label="Services offered"
                 value={String(review.lines.length)}
@@ -486,6 +486,18 @@ export default async function ProposalDetailPage({
                 }
                 hint="if they take everything"
               />
+              {/* The cadence the client is quoted in, so this reads as the
+                  deck reads. The monthly figure stays beside it because that
+                  is what will actually be billed. */}
+              <ReviewTile
+                label="Weekly total"
+                value={
+                  review.weeklyCents > 0
+                    ? `${formatCents(review.weeklyCents)}/wk`
+                    : "—"
+                }
+                hint="if they take everything"
+              />
               <ReviewTile
                 label="Monthly total"
                 value={
@@ -493,7 +505,7 @@ export default async function ProposalDetailPage({
                     ? `${formatCents(review.monthlyCents)}/mo`
                     : "—"
                 }
-                hint="if they take everything"
+                hint="the same money, as billed"
               />
             </dl>
 
@@ -525,9 +537,19 @@ export default async function ProposalDetailPage({
                       )}
                     </span>
                     <span className="font-body text-[13px] tabular-nums text-[#6B5A5A]">
-                      {line.hasChoice ? "from " : ""}
-                      {formatCents(line.fromCents)}
-                      {line.billing === "recurring_monthly" ? "/mo" : ""}
+                      {line.period === "in_kind" ? (
+                        "Complimentary"
+                      ) : (
+                        <>
+                          {line.hasChoice ? "from " : ""}
+                          {formatCents(line.fromCents)}
+                          {line.period === "week"
+                            ? "/wk"
+                            : line.period === "month"
+                              ? "/mo"
+                              : ""}
+                        </>
+                      )}
                     </span>
                   </li>
                 ))}

@@ -2,14 +2,29 @@
 
 import { createClient } from "@/utils/server";
 import { payableCents } from "@/lib/pricing";
+import {
+  monthlyFromWeekly,
+  servicePeriod,
+  weeklyFromMonthly,
+  type PricePeriod,
+} from "@/lib/selection-pricing";
 
 /** One service the client will be offered, priced as the portal will show it. */
 export type ReviewLine = {
   serviceId: string;
   name: string;
   billing: string | null;
-  /** The lowest price the client can take this at, in cents. */
+  /**
+   * The cadence this line is quoted in, which is the portal's own: by the
+   * week for a subscription unless the agency quotes it monthly, neither for
+   * a single payment, and nothing at all for one given away.
+   */
+  period: PricePeriod;
+  /** The lowest price the client can take this at, in its own cadence. */
   fromCents: number;
+  /** The same money as a week and as a month. Zero on a line that is neither. */
+  weeklyCents: number;
+  monthlyCents: number;
   /** True when tiers mean the client picks their own price from this one. */
   hasChoice: boolean;
   /** The discount reaching the client on this service, as a fraction. */
@@ -23,6 +38,16 @@ export type ProposalReview = {
   lines: ReviewLine[];
   /** Totals if the client takes everything at its lowest price. */
   oneOffCents: number;
+  /**
+   * Every subscription added up as a week, and the same money as a month.
+   *
+   * Summed in each cadence from the per-line figure in that cadence rather
+   * than converted from the other, so the monthly total adds up to exactly
+   * what the monthly services say they cost. The old single `monthlyCents`
+   * added a weekly price straight into a monthly total and called the result
+   * monthly, which was wrong by a factor of four on three of the services.
+   */
+  weeklyCents: number;
   monthlyCents: number;
   /** Whether any of the above is discounted right now. */
   discountLive: boolean;
@@ -41,6 +66,7 @@ type ServiceRow = {
   id: string;
   name: string;
   billing: string | null;
+  price_display_period: string | null;
   target_price_cents: number;
   discount_pct: number | null;
   service_tiers: { target_price_cents: number }[];
@@ -77,12 +103,12 @@ export async function getProposalReview(
         .order("sequence", { ascending: true }),
       supabase
         .from("proposal_page_settings")
-        .select("page_id, visible, discount_pct")
+        .select("page_id, visible, discount_pct, complimentary")
         .eq("proposal_id", proposalId),
       supabase
         .from("services")
         .select(
-          "id, name, billing, target_price_cents, discount_pct, service_tiers(target_price_cents)",
+          "id, name, billing, price_display_period, target_price_cents, discount_pct, service_tiers(target_price_cents)",
         ),
     ]);
 
@@ -96,6 +122,7 @@ export async function getProposalReview(
           page_id: string;
           visible: boolean | null;
           discount_pct: number | null;
+          complimentary: boolean | null;
         }[]
       ).map((o) => [o.page_id, o]),
     );
@@ -152,28 +179,49 @@ export async function getProposalReview(
         ),
       );
 
+      // Given away on this proposal is not a discount and not a price: it
+      // costs nothing, so it is quoted as nothing and counted in no total.
+      const period: PricePeriod = override?.complimentary
+        ? "in_kind"
+        : servicePeriod(service);
+      const quoted = period === "in_kind" ? 0 : fromCents;
+      const recurring = period === "week" || period === "month";
+
       lines.push({
         serviceId: service.id,
         name: service.name,
         billing: service.billing,
-        fromCents,
+        period,
+        fromCents: quoted,
+        weeklyCents: !recurring
+          ? 0
+          : period === "week"
+            ? quoted
+            : weeklyFromMonthly(quoted),
+        monthlyCents: !recurring
+          ? 0
+          : period === "week"
+            ? monthlyFromWeekly(quoted)
+            : quoted,
         hasChoice: tiers.length > 1,
-        discountPct: discountLive ? effective : null,
+        discountPct:
+          period === "in_kind" ? null : discountLive ? effective : null,
       });
     }
 
-    const sum = (billing: string) =>
-      lines
-        .filter((l) => l.billing === billing)
-        .reduce((total, l) => total + l.fromCents, 0);
+    const sumOf = (key: "weeklyCents" | "monthlyCents") =>
+      lines.reduce((total, line) => total + line[key], 0);
 
     return {
       data: {
         shownPages,
         hiddenPages,
         lines,
-        oneOffCents: sum("one_off"),
-        monthlyCents: sum("recurring_monthly"),
+        oneOffCents: lines
+          .filter((line) => line.period === "one_off")
+          .reduce((total, line) => total + line.fromCents, 0),
+        weeklyCents: sumOf("weeklyCents"),
+        monthlyCents: sumOf("monthlyCents"),
         discountLive,
         startsAt: proposal.discount_starts_at,
         expiresAt: proposal.discount_expires_at,
