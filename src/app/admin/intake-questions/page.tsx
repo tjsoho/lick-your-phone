@@ -1,12 +1,9 @@
-import Link from "next/link";
-import { AlertCircle, Plus } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import {
   getQuestions,
   getIntakePageTitles,
 } from "@/server-actions/intake-questions";
 import IntakeQuestionsList from "@/components/admin/IntakeQuestionsList";
-
-const EASE = "ease-brand";
 
 export default async function IntakeQuestionsPage() {
   const { data: questions, error } = await getQuestions();
@@ -14,31 +11,20 @@ export default async function IntakeQuestionsPage() {
 
   return (
     <div className="mx-auto max-w-[92rem]">
-      <header className="animate-rise mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="h-px w-7 bg-lyp-cherry/30" />
-            <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
-              Onboarding
-            </span>
-          </div>
-          <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
-            Onboarding Questions
-          </h1>
-        </div>
-
-        <Link
-          href="/admin/intake-questions/new"
-          title="Add a new onboarding question"
-          className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985]`}
-        >
-          Add Question
-          <span
-            className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}
-          >
-            <Plus strokeWidth={1.5} className="h-4 w-4" />
+      {/* No "Add Question" button up here any more. The agency asked for one at
+          the foot of each page's list instead, so the button that adds a
+          question sits next to the questions it will join, and carries that
+          page number with it. IntakeQuestionsList owns them all now. */}
+      <header className="animate-rise mb-6">
+        <div className="flex items-center gap-3">
+          <span className="h-px w-7 bg-lyp-cherry/30" />
+          <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
+            Onboarding
           </span>
-        </Link>
+        </div>
+        <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
+          Onboarding Questions
+        </h1>
       </header>
 
       {error && (

@@ -37,6 +37,15 @@ interface IntakeQuestionFormProps {
   services: { id: string; name: string }[];
   states: { id: string; name: string; code: string }[];
   questions: { id: string; field_label: string }[];
+  /**
+   * Where a brand new question starts out. The list's "Add question" buttons
+   * sit under one page each, so the page and the next free slot on it are
+   * handed over rather than made the admin's problem. Both are still ordinary
+   * fields they can change. Ignored when editing, where the question's own
+   * values win.
+   */
+  initialPageNumber?: number;
+  initialSequence?: number;
 }
 
 interface IntakeQuestionFormData {
@@ -112,6 +121,8 @@ export default function IntakeQuestionForm({
   services,
   states,
   questions,
+  initialPageNumber = 1,
+  initialSequence = 1,
 }: IntakeQuestionFormProps) {
   const router = useRouter();
   const isEditing = !!question;
@@ -161,8 +172,8 @@ export default function IntakeQuestionForm({
     formState: { errors },
   } = useForm<IntakeQuestionFormData>({
     defaultValues: {
-      page_number: question?.page_number ?? 1,
-      sequence: question?.sequence ?? 1,
+      page_number: question?.page_number ?? initialPageNumber,
+      sequence: question?.sequence ?? initialSequence,
       section: question?.section ?? "",
       section_subtitle: question?.section_subtitle ?? "",
       field_label: question?.field_label ?? "",
