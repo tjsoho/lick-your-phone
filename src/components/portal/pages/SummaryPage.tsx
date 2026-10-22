@@ -228,7 +228,7 @@ export default function SummaryPage() {
 
                           {item.service.inclusions.length > 0 && (
                             <div>
-                              <p className="font-heading text-[13px]/[18px] text-lyp-cherry uppercase tracking-wider mb-2">
+                              <p className="font-heading text-[13px]/[18px] text-lyp-white uppercase tracking-wider mb-2">
                                 {t("includedHeading")}
                               </p>
                               <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1.5">
@@ -256,7 +256,7 @@ export default function SummaryPage() {
 
                           {item.service.client_obligations.length > 0 && (
                             <div>
-                              <p className="font-heading text-[13px]/[18px] text-lyp-white/75 uppercase tracking-wider mb-2">
+                              <p className="font-heading text-[13px]/[18px] text-lyp-white uppercase tracking-wider mb-2">
                                 {t("commitmentsHeading")}
                               </p>
                               <ul className="space-y-1">

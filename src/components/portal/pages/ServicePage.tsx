@@ -840,7 +840,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 <Reveal
                   as="h2"
                   delay={D_INDEX}
-                  className={`${CAPTION} ${ROSE}`}
+                  className={`${CAPTION} text-lyp-white`}
                 >
                   {t("includedHeading")}
                 </Reveal>
@@ -906,7 +906,7 @@ export default function ServicePage({ service, page }: ServicePageProps) {
                 <Reveal
                   as="h2"
                   delay={D_OBLIGATIONS}
-                  className={`${CAPTION} ${ROSE}`}
+                  className={`${CAPTION} text-lyp-white`}
                 >
                   {t("commitmentsHeading")}
                 </Reveal>
