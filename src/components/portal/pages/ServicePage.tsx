@@ -825,11 +825,16 @@ export default function ServicePage({ service, page }: ServicePageProps) {
           {/* Safety net only. Every real service fits the frame; if one ever
               outgrows it this column scrolls rather than clipping copy.
 
-              `flex-1` with centred content: this takes all the height above the
-              quote and sits the copy in the middle of it, so the gap under the
-              heading and the gap above the quote match. The quote itself stays
-              at the foot of the column, where the picture's base is. */}
-          <div className="portal-scroll flex min-h-0 flex-1 flex-col justify-center max-lg:overflow-visible">
+              THE COPY STARTS AT THE TOP, LEVEL WITH THE PICTURE.
+
+              It used to be centred in the height above the quote, which read
+              well on a long service and left a visible drop under the heading
+              on a short one: "can we have the sub heading and content at the
+              top of the container so its inline with the top of the image on
+              the right". `flex-1` still takes that height, so the quote stays
+              at the foot of the column on the picture's base line and nothing
+              else in the spread moves. */}
+          <div className="portal-scroll flex min-h-0 flex-1 flex-col justify-start max-lg:overflow-visible">
             {inclusions.length > 0 && (
               <section>
                 <Reveal
