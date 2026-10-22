@@ -105,6 +105,12 @@ The admin setting that controls whether a service is priced weekly or monthly
 used to be a free text box, where a typo silently fell back to monthly. It is
 now a two option picker, and a new service starts on weekly.
 
+The Review and Send card in the dashboard now shows a weekly total alongside
+the monthly one. It had been adding the weekly services straight into the
+monthly figure, so the monthly total was reading well under half of what those
+services actually come to. It was also still charging for anything given away.
+Both corrected. This card is ours, not the client's.
+
 The contract PDF is unchanged. Billing is still monthly, so the contract still
 states monthly amounts.
 
