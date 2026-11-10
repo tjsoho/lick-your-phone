@@ -94,7 +94,6 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
       setPages(before); // rollback
       return;
     }
-    // Sequence numbers are now positional, so mirror that locally.
     setPages((prev) => prev.map((p, i) => ({ ...p, sequence: i })));
     toast.success("Page order updated");
   };
@@ -104,7 +103,6 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
     title: "",
     slug: "",
     type: "content",
-    sequence: 0,
   });
 
   const handleToggle = (id: string, currentVisible: boolean | null) => {
@@ -159,25 +157,21 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
       return;
     }
     setSaving(true);
-    const res = await createPage({
-      ...newForm,
-      sequence: newForm.sequence || (pages.length > 0 ? Math.max(...pages.map((p) => p.sequence)) + 1 : 0),
-    });
+    const res = await createPage(newForm);
     setSaving(false);
     if (res.error) {
       toast.error(res.error);
     } else if (res.data) {
       toast.success("Page created");
       setPages((prev) => [...prev, res.data as PageItem]);
-      setNewForm({ title: "", slug: "", type: "content", sequence: 0 });
+      setNewForm({ title: "", slug: "", type: "content" });
       setAddingNew(false);
     }
   };
 
   const startAdd = () => {
     setAddingNew(true);
-    const nextSeq = pages.length > 0 ? Math.max(...pages.map((p) => p.sequence)) + 1 : 0;
-    setNewForm({ title: "", slug: "", type: "content", sequence: nextSeq });
+    setNewForm({ title: "", slug: "", type: "content" });
   };
 
   if (pages.length === 0 && !addingNew) {
@@ -217,7 +211,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
         </tr>
       </thead>
       <tbody>
-        {pages.map((page) => {
+        {pages.map((page, index) => {
           return (
             <tr
               key={page.id}
@@ -259,7 +253,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                 </Link>
               </td>
               <td className="px-4 py-3 font-mono text-[11px] text-[#867474]">
-                {page.slug ?? "—"}
+                {page.slug ?? "-"}
               </td>
               <td className="px-4 py-3">
                 <span
@@ -268,8 +262,14 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                   {page.type ?? "content"}
                 </span>
               </td>
+              {/*
+                The stored sequence used to be shown and typed in here. A
+                number the client typed landed on one another page already
+                held, so two pages both read 19 and nothing shifted down. This
+                is the row's own place in the list, so it always runs 1..N.
+              */}
               <td className="px-4 py-3 tabular-nums text-[#867474]">
-                {page.sequence}
+                {index + 1}
               </td>
               <td className="px-4 py-3">
                 <div className="flex items-center gap-2">
@@ -362,15 +362,8 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                 <option value="service">service</option>
               </select>
             </td>
-            <td className="px-4 py-2">
-              <input
-                type="number"
-                value={newForm.sequence}
-                onChange={(e) => setNewForm((f) => ({ ...f, sequence: Number(e.target.value) }))}
-                className={ic + " w-20 tabular-nums"}
-                aria-label="New page order"
-              />
-            </td>
+            {/* A new page goes on the end, so there is nothing to type here. */}
+            <td className="px-4 py-2" />
             <td className="px-4 py-2" />
             <td className="px-4 py-2 text-right">
               <div className="flex items-center justify-end gap-1.5">
@@ -388,7 +381,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
                   )}
                 </button>
                 <button
-                  onClick={() => { setAddingNew(false); setNewForm({ title: "", slug: "", type: "content", sequence: 0 }); }}
+                  onClick={() => { setAddingNew(false); setNewForm({ title: "", slug: "", type: "content" }); }}
                   className={`rounded-full p-1.5 text-[#867474] transition-colors duration-500 ${EASE} hover:text-lyp-black`}
                   title="Cancel"
                   aria-label="Cancel new page"
@@ -415,7 +408,7 @@ export function ContentPagesList({ initialPages }: ContentPagesListProps) {
           {savingOrder ? (
             <>
               <Loader2 strokeWidth={1.5} className="h-3.5 w-3.5 animate-spin text-lyp-cherry" />{" "}
-              Saving order…
+              Saving order...
             </>
           ) : (
             <>

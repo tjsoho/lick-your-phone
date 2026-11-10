@@ -52,21 +52,40 @@ export async function reorderPages(orderedIds: string[]) {
   }
 }
 
+/**
+ * A new page always goes on the end.
+ *
+ * The caller used to hand in a sequence, so a number typed by hand could land
+ * on one another page already held. That is how two pages ended up both
+ * numbered 19 with nothing shifted down. Order is changed by dragging rows,
+ * which renumbers the whole list, so nothing else needs to set this.
+ */
 export async function createPage(fields: {
   title: string;
   slug: string;
   type: string;
-  sequence: number;
 }) {
   try {
     const supabase = await createClient();
+
+    // pages.sequence is not null and has no default, and reorderPages writes
+    // 0..n-1, so the end of the list is the highest one plus one.
+    const { data: last, error: seqError } = await supabase
+      .from("pages")
+      .select("sequence")
+      .order("sequence", { ascending: false })
+      .limit(1);
+
+    if (seqError) throw seqError;
+    const sequence = last && last.length > 0 ? (last[0].sequence ?? -1) + 1 : 0;
+
     const { data, error } = await supabase
       .from("pages")
       .insert({
         title: fields.title,
         slug: fields.slug,
         type: fields.type,
-        sequence: fields.sequence,
+        sequence,
         visible: true,
       })
       .select("id, slug, title, type, sequence, visible")
@@ -84,9 +103,9 @@ export async function createPage(fields: {
  * Partial update. Only the keys actually passed are written.
  *
  * This used to spread `featured_image: fields.featured_image ?? null`, so any
- * caller that edited just the title — the inline row editor on the pages list
- * did exactly that — silently wiped the page's featured image and reset its
- * image position.
+ * caller that edited just the title silently wiped the page's featured image
+ * and reset its image position. The inline row editor on the pages list did
+ * exactly that.
  */
 export async function updatePage(
   id: string,
