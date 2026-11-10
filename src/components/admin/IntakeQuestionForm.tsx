@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAutosave } from "@/hooks/use-autosave";
 import SaveStatusBadge from "@/components/admin/SaveStatusBadge";
+import IntakeQuestionPreview from "@/components/admin/IntakeQuestionPreview";
 
 interface IntakeQuestionFormProps {
   question?: {
@@ -37,6 +38,12 @@ interface IntakeQuestionFormProps {
   services: { id: string; name: string }[];
   states: { id: string; name: string; code: string }[];
   questions: { id: string; field_label: string }[];
+  /**
+   * Real providers, so a provider picker previews with real people in it
+   * rather than the empty state a client would only ever see in a region
+   * with nobody on the books.
+   */
+  providers?: Provider[];
   /**
    * Where a brand new question starts out. The list's "Add question" buttons
    * sit under one page each, so the page and the next free slot on it are
@@ -121,6 +128,7 @@ export default function IntakeQuestionForm({
   services,
   states,
   questions,
+  providers = [],
   initialPageNumber = 1,
   initialSequence = 1,
 }: IntakeQuestionFormProps) {
@@ -345,9 +353,16 @@ export default function IntakeQuestionForm({
   const otherQuestions = questions.filter((q) => q.id !== question?.id);
 
   return (
+    /* Editor on the left, the client's view on the right, the way the page
+       editor is laid out: "add a preview on the right (like we did for the
+       proposal) where we can see the changes live". The preview sits OUTSIDE
+       the form element on purpose. The controls inside it are the client's
+       real ones, and a stray Return in one of them would otherwise submit
+       this question. */
+    <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="max-w-3xl space-y-5"
+      className="min-w-0 space-y-5"
     >
       {/* ─────────────── General information ─────────────── */}
       <section className={cn(cardClasses, "animate-rise")}>
@@ -819,7 +834,7 @@ export default function IntakeQuestionForm({
 
         {isEditing && (
           <button
-            title="Delete this question — cannot be undone"
+            title="Delete this question. This cannot be undone."
             type="button"
             onClick={handleDelete}
             disabled={deleting}
@@ -837,5 +852,13 @@ export default function IntakeQuestionForm({
         )}
       </div>
     </form>
+
+      {/* ─────────────── Live preview ─────────────── */}
+      <IntakeQuestionPreview
+        question={buildPayload(allValues)}
+        questionId={question?.id}
+        providers={providers}
+      />
+    </div>
   );
 }

@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { getServices } from "@/server-actions/services";
 import { getStates } from "@/server-actions/states";
 import { getQuestions } from "@/server-actions/intake-questions";
+import { getAllProviders } from "@/server-actions/intake";
 import IntakeQuestionForm from "@/components/admin/IntakeQuestionForm";
 
 const EASE = "ease-brand";
@@ -13,11 +14,15 @@ export default async function NewIntakeQuestionPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const { page } = await searchParams;
-  const [servicesRes, statesRes, questionsRes] = await Promise.all([
-    getServices(),
-    getStates(),
-    getQuestions(),
-  ]);
+  // Providers ride along for the live preview: a provider picker shown with
+  // nobody in it previews as the empty state, which is not what a client gets.
+  const [servicesRes, statesRes, questionsRes, providersRes] =
+    await Promise.all([
+      getServices(),
+      getStates(),
+      getQuestions(),
+      getAllProviders(),
+    ]);
 
   // Every "Add question" button sits at the foot of one page's list, so the
   // page it was clicked under rides along in the URL and the form opens on it.
@@ -65,6 +70,7 @@ export default async function NewIntakeQuestionPage({
           services={servicesRes.data ?? []}
           states={statesRes.data ?? []}
           questions={questionsRes.data ?? []}
+          providers={providersRes.data ?? []}
           initialPageNumber={initialPageNumber}
           initialSequence={initialSequence}
         />

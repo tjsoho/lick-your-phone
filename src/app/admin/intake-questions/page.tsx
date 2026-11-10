@@ -1,4 +1,5 @@
-import { AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { AlertCircle, Eye } from "lucide-react";
 import {
   getQuestions,
   getIntakePageTitles,
@@ -15,16 +16,31 @@ export default async function IntakeQuestionsPage() {
           the foot of each page's list instead, so the button that adds a
           question sits next to the questions it will join, and carries that
           page number with it. IntakeQuestionsList owns them all now. */}
-      <header className="animate-rise mb-6">
-        <div className="flex items-center gap-3">
-          <span className="h-px w-7 bg-lyp-cherry/30" />
-          <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
-            Onboarding
-          </span>
+      <header className="animate-rise mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="h-px w-7 bg-lyp-cherry/30" />
+            <span className="font-body text-[10px] font-medium uppercase tracking-[0.32em] text-lyp-cherry/70">
+              Onboarding
+            </span>
+          </div>
+          <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
+            Onboarding Questions
+          </h1>
         </div>
-        <h1 className="mt-3 font-heading text-[28px] font-bold leading-[1.05] tracking-[-0.03em] text-lyp-black">
-          Onboarding Questions
-        </h1>
+
+        {/* The whole form, without making a test proposal to see it: "in
+            order to see my new question I had to test it." A new tab, so the
+            list they were working down is still where they left it. */}
+        <Link
+          href="/admin/intake-questions/preview"
+          target="_blank"
+          title="See the whole form the way a client sees it"
+          className="group inline-flex items-center gap-2.5 rounded-full border border-[#EFE6E6] bg-lyp-white px-5 py-2.5 font-body text-[12.5px] font-semibold tracking-wide text-lyp-black transition-all duration-500 ease-brand hover:border-lyp-cherry/25 hover:text-lyp-cherry active:scale-[0.985]"
+        >
+          Preview form
+          <Eye strokeWidth={1.5} className="h-3.5 w-3.5" />
+        </Link>
       </header>
 
       {error && (

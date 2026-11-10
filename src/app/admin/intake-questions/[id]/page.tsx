@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { getServices } from "@/server-actions/services";
 import { getStates } from "@/server-actions/states";
 import { getQuestions } from "@/server-actions/intake-questions";
+import { getAllProviders } from "@/server-actions/intake";
 import IntakeQuestionForm from "@/components/admin/IntakeQuestionForm";
 
 const EASE = "ease-brand";
@@ -15,11 +16,15 @@ interface PageProps {
 export default async function EditIntakeQuestionPage({ params }: PageProps) {
   const { id } = await params;
 
-  const [servicesRes, statesRes, questionsRes] = await Promise.all([
-    getServices(),
-    getStates(),
-    getQuestions(),
-  ]);
+  // Providers ride along for the live preview: a provider picker shown with
+  // nobody in it previews as the empty state, which is not what a client gets.
+  const [servicesRes, statesRes, questionsRes, providersRes] =
+    await Promise.all([
+      getServices(),
+      getStates(),
+      getQuestions(),
+      getAllProviders(),
+    ]);
 
   const question = questionsRes.data?.find((q) => q.id === id);
 
@@ -60,6 +65,7 @@ export default async function EditIntakeQuestionPage({ params }: PageProps) {
           services={servicesRes.data ?? []}
           states={statesRes.data ?? []}
           questions={questionsRes.data ?? []}
+          providers={providersRes.data ?? []}
         />
       </div>
     </div>

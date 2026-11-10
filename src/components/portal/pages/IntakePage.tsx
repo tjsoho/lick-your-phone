@@ -15,22 +15,7 @@ import {
 } from "lucide-react";
 import { useCopy, useProposal } from "../ProposalContext";
 import FlowProgress from "../FlowProgress";
-import {
-  TextField,
-  TextareaField,
-  EmailField,
-  PhoneField,
-  AbnField,
-  AddressField,
-  RadioField,
-  CheckboxField,
-  MultiselectField,
-  FileField,
-  MatrixField,
-  RepeatableGroupField,
-  ProviderPickerField,
-  StaticContentField,
-} from "@/components/intake";
+import { FIELD_COMPONENTS, IntakeSectionHeading } from "@/components/intake";
 import { saveIntakeResponses, completeIntake } from "@/server-actions/intake";
 import Reveal, { revealDelay } from "../Reveal";
 
@@ -110,6 +95,19 @@ interface IntakePageProps {
   hasContract: boolean;
   /** Page number to the name the agency gave it, where they gave one. */
   pageTitles?: Record<number, string>;
+  /**
+   * The dashboard is looking at the form, not a client filling it in.
+   *
+   * The agency asked to see the whole form without having to make a test
+   * proposal and walk it through signing: "in order to see my new question I
+   * had to test it." So the same component serves that view, reading the real
+   * questions, and this flag is the one difference: nothing is written. No
+   * answer is autosaved, no step is saved on the way past, and the last step
+   * does not submit. It is the component's own guard rather than a stand-in
+   * proposal, because a stand-in would still be an id these writes could aim
+   * at.
+   */
+  preview?: boolean;
 }
 
 /**
@@ -193,32 +191,6 @@ function availableOptionCount(
 
   return Array.isArray(q.options) ? q.options.length : 0;
 }
-
-const FIELD_COMPONENTS: Record<
-  string,
-  React.ComponentType<{
-    question: IntakeQuestionWithConditions;
-    value: unknown;
-    onChange: (value: unknown) => void;
-    providers?: Provider[];
-    disabled?: boolean;
-  }>
-> = {
-  text: TextField,
-  textarea: TextareaField,
-  email: EmailField,
-  phone: PhoneField,
-  abn: AbnField,
-  address: AddressField,
-  radio: RadioField,
-  checkbox: CheckboxField,
-  multiselect: MultiselectField,
-  file: FileField,
-  matrix: MatrixField,
-  repeatable_group: RepeatableGroupField,
-  provider_picker: ProviderPickerField,
-  static_content: StaticContentField,
-};
 
 /**
  * Whether a question shows, given what the client bought and what they have
@@ -320,6 +292,7 @@ export default function IntakePage({
   existingResponses,
   hasContract,
   pageTitles = {},
+  preview = false,
 }: IntakePageProps) {
   const { proposal, selections, agreement, updateProposal } = useProposal();
   const t = useCopy("intake");
@@ -476,8 +449,13 @@ export default function IntakePage({
   const isFirstPage = prevPage === null;
   const isLastPage = nextPage === null;
 
-  // Validate required fields on current page
-  function validateCurrentPage(): boolean {
+  /**
+   * The first required question on this page that has not been answered.
+   *
+   * Pulled out of the check below so a preview can ask the same question
+   * without being stopped by the answer.
+   */
+  function firstUnansweredRequired(): string | null {
     for (const q of visibleQuestionsForPage) {
       if (!q.required) continue;
       if (q.field_type === "static_content") continue;
@@ -495,9 +473,18 @@ export default function IntakePage({
         val === "" ||
         (Array.isArray(val) && val.length === 0)
       ) {
-        setError(`Please fill in "${q.field_label}"`);
-        return false;
+        return q.field_label;
       }
+    }
+    return null;
+  }
+
+  // Validate required fields on current page
+  function validateCurrentPage(): boolean {
+    const missing = firstUnansweredRequired();
+    if (missing) {
+      setError(`Please fill in "${missing}"`);
+      return false;
     }
     setError("");
     return true;
@@ -528,6 +515,27 @@ export default function IntakePage({
     // Nothing writes once the form is locked. The buttons are gone by then;
     // this is the guard behind them.
     if (locked) return;
+
+    /* The agency is reading the form, so the step just turns.
+
+       An earlier draft ran the same validation here. It meant filling in
+       every required question on every page before the next page could be
+       seen, which is the whole thing a preview is meant to save them from:
+       "in order to see my new question I had to test it". So the page turns
+       either way, and the note says what a client would have been stopped by,
+       which is the part worth knowing. The last step has nowhere left to go
+       and submits nothing. */
+    if (preview) {
+      const missing = firstUnansweredRequired();
+      setError(
+        missing
+          ? `A client could not go on from here until "${missing}" is answered.`
+          : "",
+      );
+      if (targetPage !== null) setCurrentIntakePage(targetPage);
+      return;
+    }
+
     if (!validateCurrentPage()) return;
 
     setSaving(true);
@@ -594,6 +602,12 @@ export default function IntakePage({
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const flushAutosave = useCallback(async () => {
+    // Guarded here rather than at each caller: the tab going away flushes
+    // too, and a preview must not write on its way out either.
+    if (preview) {
+      pendingRef.current = {};
+      return;
+    }
     const pending = pendingRef.current;
     pendingRef.current = {};
     const entries = Object.entries(pending).filter(([, v]) => v != null);
@@ -608,7 +622,7 @@ export default function IntakePage({
       // the form, the next change schedules another write, and pressing Next
       // saves the whole step anyway.
     }
-  }, [proposal.id]);
+  }, [preview, proposal.id]);
 
   // Whatever is still pending when the tab goes away is written immediately.
   // `visibilitychange` is the reliable one on a phone, where `beforeunload`
@@ -965,16 +979,10 @@ export default function IntakePage({
                   <div key={si} className={breakClass}>
                     {section.section && (
                       <Reveal delay={revealDelay(qi++)} className="mb-7">
-                        <h2 className="font-heading text-2xl text-lyp-white md:text-3xl">
-                          {section.section}
-                        </h2>
-                        {/* Says what the section is for, so "Access Audit" is not
-                            a mystery to the person filling it in. */}
-                        {section.subtitle && (
-                          <p className="mt-2 max-w-xl font-body text-sm leading-relaxed text-lyp-white/50">
-                            {section.subtitle}
-                          </p>
-                        )}
+                        <IntakeSectionHeading
+                          section={section.section}
+                          subtitle={section.subtitle}
+                        />
                       </Reveal>
                     )}
                     {/* Saves retyping details already given just above. */}
