@@ -96,3 +96,41 @@ never meant for you.
 
 **Note:** the live site can take a few seconds to catch up after Add page. The
 page is saved straight away even if the screen lags.
+
+---
+
+## Three more, after your round of testing
+
+### 9. Create Question told you nothing when it would not save
+
+If you added a visibility condition and did not choose a service, the
+button did nothing at all. No message, no error, nothing. Same for an
+option row left blank.
+
+**Test:** Add question, fill in Field Label, click Add Condition, leave
+Choose Service alone, press Create Question. It tells you what is missing,
+in red under that field and across the top.
+
+---
+
+### 10. Deleting a page made the next one look like a new page
+
+Deleting page 6 of 8 left the pages numbered 1,2,3,4,5,7,8. The screen
+still counted them 1 to 7, so the card saying Page 6 was really page 7,
+and adding a question to it opened on a page number you had never made.
+That is why a page 8 appeared out of nowhere. The numbers now close up the
+moment a page is deleted.
+
+**Test:** Add page, drag it up the list, delete an empty page above it,
+then Add question on the page below. The number on the form matches the
+page you clicked under.
+
+---
+
+### 11. Preview form at the bottom too
+
+It was only in the top right. It is now also next to Add page at the foot
+of the list, which is where you are standing after writing a question.
+
+**Test:** Scroll to the bottom of Onboarding Questions. Preview form sits
+beside Add page, and opens in a new tab.
