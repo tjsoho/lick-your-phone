@@ -1,5 +1,6 @@
 "use client";
 
+import { HIDDEN_BLOCK_KINDS } from "@/lib/page-layouts";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   Plus,
@@ -220,7 +221,16 @@ function TypeSelect({ value, onChange }: { value: BlockType; onChange: (v: Block
       aria-label="Block type"
       className={ic + " w-44"}
     >
-      {BLOCK_TYPES.map((t) => <option key={t} value={t}>{typeLabel(t)}</option>)}
+      {/* `custom` takes raw JSON and falls back to plain text. That is an
+          escape hatch for us, not a choice to put in front of the agency, so
+          it is only listed when a block is already using it. */}
+      {BLOCK_TYPES.filter(
+        (t) => !HIDDEN_BLOCK_KINDS.includes(t) || t === value,
+      ).map((t) => (
+        <option key={t} value={t}>
+          {typeLabel(t)}
+        </option>
+      ))}
     </select>
   );
 }

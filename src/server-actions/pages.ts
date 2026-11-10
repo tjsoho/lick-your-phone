@@ -116,6 +116,7 @@ export async function updatePage(
     sequence?: number;
     featured_image?: string | null;
     image_position?: string;
+    layout?: string | null;
   },
 ) {
   try {
@@ -132,12 +133,13 @@ export async function updatePage(
       patch.featured_image = fields.featured_image;
     if (fields.image_position !== undefined)
       patch.image_position = fields.image_position;
+    if (fields.layout !== undefined) patch.layout = fields.layout;
 
     const { data, error } = await supabase
       .from("pages")
       .update(patch)
       .eq("id", id)
-      .select("id, slug, title, type, sequence, visible, featured_image, image_position")
+      .select("id, slug, title, type, sequence, visible, featured_image, image_position, layout")
       .single();
 
     if (error) throw error;
@@ -317,7 +319,7 @@ export async function getPageWithBlocks(id: string) {
     const { data, error } = await supabase
       .from("pages")
       .select(
-        `id, slug, title, type, sequence, visible, service_id, featured_image, image_position, copy,
+        `id, slug, title, type, sequence, visible, service_id, featured_image, image_position, layout, copy,
          content_blocks ( id, type, content, sequence )`
       )
       .eq("id", id)

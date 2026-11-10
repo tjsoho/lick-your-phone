@@ -19,6 +19,7 @@ export function mapPages(raw: any[]): PageData[] {
     title: p.title,
     featuredImage: p.featured_image,
     imagePosition: p.image_position as PageData["imagePosition"],
+    layout: (p.layout as PageData["layout"]) ?? null,
     sequence: p.sequence,
     serviceId: p.service_id,
     copy: p.copy ?? {},

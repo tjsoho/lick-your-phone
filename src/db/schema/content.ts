@@ -7,6 +7,15 @@ export const contentBlockTypeEnum = pgEnum('content_block_type', ['heading', 'su
 
 export const imagePositionEnum = pgEnum('image_position', ['left', 'right'])
 
+/**
+ * The shape of a content page, as the agency chooses it.
+ *
+ * Null means nobody has chosen, so the portal works it out from the blocks on
+ * the page. That is what it did for every page before this existed, so an
+ * untouched page renders exactly as it always has.
+ */
+export const pageLayoutEnum = pgEnum('page_layout', ['text_image', 'showcase', 'results', 'statement'])
+
 export const pages = pgTable('pages', {
   id: uuid('id').primaryKey().defaultRandom(),
   type: pageTypeEnum('type'),
@@ -16,6 +25,7 @@ export const pages = pgTable('pages', {
   visible: boolean('visible').default(true),
   featuredImage: text('featured_image'),
   imagePosition: imagePositionEnum('image_position').default('right'),
+  layout: pageLayoutEnum('layout'),
   serviceId: uuid('service_id').references(() => services.id),
   /** Overrides for the page's fixed wording, keyed by slot. See src/lib/portal-copy. */
   copy: jsonb('copy').$type<Record<string, string>>().default({}).notNull(),

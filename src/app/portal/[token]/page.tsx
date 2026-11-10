@@ -83,7 +83,7 @@ export default async function PortalPage({ params }: Props) {
   const { data: pagesRaw } = await supabase
     .from("pages")
     .select(
-      `id, type, slug, title, sequence, service_id, visible, featured_image, image_position, copy,
+      `id, type, slug, title, sequence, service_id, visible, featured_image, image_position, layout, copy,
        content_blocks ( id, type, content, sequence )`,
     )
     .order("sequence", { ascending: true });

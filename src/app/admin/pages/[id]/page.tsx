@@ -1,3 +1,4 @@
+import type { PageLayout } from "@/lib/page-layouts";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -152,6 +153,7 @@ export default async function EditPagePage({
         initialSlug={page.slug ?? ""}
         initialImage={(record.featured_image as string | null) ?? null}
         initialPosition={(record.image_position as string | null) ?? "right"}
+        initialLayout={(record.layout as PageLayout | null) ?? null}
         initialBlocks={blocks}
         initialCopy={(record.copy as Record<string, string> | null) ?? {}}
         isServicePage={!!serviceId}

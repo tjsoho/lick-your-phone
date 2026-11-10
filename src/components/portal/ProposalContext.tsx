@@ -1,5 +1,6 @@
 "use client";
 
+import type { PageLayout } from "@/lib/page-layouts";
 import {
   createContext,
   useContext,
@@ -66,6 +67,8 @@ export interface PageData {
   serviceId: string | null;
   featuredImage: string | null;
   imagePosition: "left" | "right" | null;
+  /** The layout the agency picked, or null to let the blocks decide. */
+  layout: PageLayout | null;
   contentBlocks: ContentBlock[];
   /** Overrides for this page's fixed wording, keyed by slot. See src/lib/portal-copy. */
   copy?: CopyOverrides;

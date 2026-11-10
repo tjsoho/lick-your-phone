@@ -1,5 +1,10 @@
 "use client";
 
+import {
+  inferPageLayout,
+  type BlockKind,
+  type PageLayout,
+} from "@/lib/page-layouts";
 import Image from "next/image";
 import Link from "next/link";
 import Logo from "@/components/Logo";
@@ -198,12 +203,6 @@ export default function ContentPage({ page }: ContentPageProps) {
   const subheadBlocks = textBlocks.filter(
     (b) => b.type && SUBHEAD_TYPES.includes(b.type),
   );
-  const bodyBlocks = textBlocks.filter(
-    (b) =>
-      !(b.type && IMAGE_LIST_TYPES.includes(b.type)) &&
-      !(b.type && SUBHEAD_TYPES.includes(b.type)),
-  );
-
   const asImages = (types: string[]) =>
     imageListBlocks
       .filter((b) => b.type && types.includes(b.type) && Array.isArray(b.content))
@@ -236,23 +235,32 @@ export default function ContentPage({ page }: ContentPageProps) {
   // content shape, not by slug, and no other page uses the block, so no
   // existing page changes behaviour.
   const resultsBlocks = textBlocks.filter((b) => b.type === "results");
-  const isResults = resultsBlocks.length > 0;
 
-  // Note the branch order below: a page with NO blocks at all is a statement
-  // slide and is handled before this, even though a featured image alone would
-  // otherwise satisfy the showcase test. Showcase is for pages that carry image
-  // BLOCKS — a device row, a press strip — not for a lone featured image.
-  // A showcase is imagery plus AT MOST one line of supporting copy. Without the
-  // subhead cap, any page built only from headings/paragraphs plus a logos
-  // block — `who-we-are`, which has five blocks of real body copy — was
-  // classed as a showcase and had its whole article rendered as centred
-  // subheading text.
-  const isShowcase =
-    bodyBlocks.length === 0 &&
-    subheadBlocks.length <= 1 &&
-    (showcaseImages.length > 0 || showcaseLogos.length > 0);
+  // The rules that used to live here, deciding the shape of the page from the
+  // blocks on it, now live in `src/lib/page-layouts` so the admin picker and
+  // this component read the same ones. They still run, as the fallback for a
+  // page nobody has picked a layout for.
 
-  const hasBlocks = textBlocks.length > 0;
+  /**
+   * The layout the agency picked, or the old guess where they have not.
+   *
+   * Every one of these pages was shaped by whatever blocks happened to be on
+   * it, which is why adding a second paragraph could silently turn a showcase
+   * back into the two column template. Picking a layout settles it. A page
+   * nobody has picked for falls back to exactly the guess that used to run,
+   * so nothing already built moves until somebody changes it.
+   */
+  const layout: PageLayout =
+    page.layout ??
+    inferPageLayout({
+      kinds: textBlocks
+        .map((b) => b.type)
+        .filter((t): t is BlockKind => Boolean(t)),
+      hasShowcaseImagery: showcaseImages.length > 0 || showcaseLogos.length > 0,
+    });
+
+  const isResultsLayout = layout === "results";
+  const isShowcase = layout === "showcase";
   const hasImage = columnImages.length > 0;
   const imageFirst = page.imagePosition === "left";
 
@@ -311,7 +319,7 @@ export default function ContentPage({ page }: ContentPageProps) {
       />
     ) : null;
 
-  if (isResults) {
+  if (isResultsLayout) {
     // The bottom band is built from ordinary blocks so it stays editable in the
     // admin: the first image of the `logos` block is the brand mark, and the
     // `heading`/`paragraph` blocks are the tagline beside it. Nothing is
@@ -474,7 +482,7 @@ export default function ContentPage({ page }: ContentPageProps) {
   // broken two-column pages: one large image with the page title beneath it,
   // centred as a single composition. Nothing else — no rule, no body copy —
   // which is what makes the pairing read as deliberate rather than sparse.
-  if (!hasBlocks) {
+  if (layout === "statement") {
     // The image carries the slide here, so it is sized far larger than the
     // one in the two-column layout. The cap is viewport-relative on purpose:
     // it grows with the window, and it steps down on short viewports so a

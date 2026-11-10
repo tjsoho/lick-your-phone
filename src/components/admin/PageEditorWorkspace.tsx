@@ -5,6 +5,12 @@ import Link from "next/link";
 import { ExternalLink, Monitor, Smartphone } from "lucide-react";
 import { ContentBlocksEditor } from "@/components/admin/ContentBlocksEditor";
 import { PageSettingsForm } from "@/components/admin/PageSettingsForm";
+import { PageLayoutPicker } from "@/components/admin/PageLayoutPicker";
+import {
+  inferPageLayout,
+  type BlockKind,
+  type PageLayout,
+} from "@/lib/page-layouts";
 import PageTitleForm from "@/components/admin/PageTitleForm";
 import { PREVIEW_MESSAGE } from "@/components/admin/PagePreviewSurface";
 import PageWordingForm from "@/components/admin/PageWordingForm";
@@ -30,6 +36,7 @@ type Props = {
   initialSlug: string;
   initialImage: string | null;
   initialPosition: string;
+  initialLayout: PageLayout | null;
   initialBlocks: Block[];
   initialCopy: CopyOverrides;
   isServicePage: boolean;
@@ -56,6 +63,7 @@ export default function PageEditorWorkspace({
   initialSlug,
   initialImage,
   initialPosition,
+  initialLayout,
   initialBlocks,
   initialCopy,
   isServicePage,
@@ -86,6 +94,39 @@ export default function PageEditorWorkspace({
       }),
     [initialSlug, isServicePage, hasResultsBlock],
   );
+
+  /**
+   * The blocks as they stand, for the layout picker.
+   *
+   * They also live in the ref below, but the picker has to redraw as blocks
+   * come and go: it says which of them the chosen layout actually draws, and
+   * a stale answer there is worse than none.
+   */
+  const [draftBlocks, setDraftBlocks] = useState<Block[]>(initialBlocks);
+
+  const draftBlockKinds = useMemo(
+    () =>
+      draftBlocks
+        .map((b) => b.type)
+        .filter((t): t is BlockKind => Boolean(t)),
+    [draftBlocks],
+  );
+
+  /**
+   * What this page would be without a choice, worked out exactly as the
+   * portal does it, so an unpicked page shows the shape it really has.
+   */
+  const inferredLayout = useMemo(() => {
+    const IMAGE_LIST = ["media_carousel", "collage", "logos", "image"];
+    const hasShowcaseImagery =
+      Boolean(initialImage) ||
+      draftBlocks.some((b) => {
+        if (!b.type || !IMAGE_LIST.includes(b.type)) return false;
+        if (Array.isArray(b.content)) return b.content.length > 0;
+        return typeof b.content === "string" && b.content.trim().length > 0;
+      });
+    return inferPageLayout({ kinds: draftBlockKinds, hasShowcaseImagery });
+  }, [draftBlocks, draftBlockKinds, initialImage]);
 
   // The draft lives here so the three editors below can each own their own
   // fields while the preview sees the page as a whole.
@@ -156,6 +197,7 @@ export default function PageEditorWorkspace({
   const handleBlocks = useCallback(
     (contentBlocks: Block[]) => {
       draftRef.current = { ...draftRef.current, contentBlocks };
+      setDraftBlocks(contentBlocks);
       setHasResultsBlock(contentBlocks.some((b) => b.type === "results"));
       post();
     },
@@ -203,6 +245,24 @@ export default function PageEditorWorkspace({
             initialImage={initialImage}
             initialPosition={initialPosition}
             onDraftChange={handleSettings}
+          />
+        </section>
+
+        {/* The shape of the page, picked rather than guessed. It sits right
+            under the image settings because it decides whether those settings
+            do anything, and above the blocks because it decides which of
+            those draw. */}
+        <section
+          className="animate-rise rounded-2xl border border-[#EFE6E6] bg-lyp-white p-6"
+          style={{ animationDelay: "195ms" }}
+        >
+          <PageLayoutPicker
+            pageId={pageId}
+            initialLayout={initialLayout}
+            inferredLayout={inferredLayout}
+            blockKinds={draftBlockKinds}
+            isServicePage={isServicePage}
+            onSaved={reloadPreview}
           />
         </section>
 

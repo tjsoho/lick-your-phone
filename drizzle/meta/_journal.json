@@ -71,6 +71,13 @@
       "when": 1794278233295,
       "tag": "0009_subheading_block_type",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794281754196,
+      "tag": "0010_page_layout_choice",
+      "breakpoints": true
     }
   ]
 }

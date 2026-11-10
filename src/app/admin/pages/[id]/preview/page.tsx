@@ -141,7 +141,7 @@ export default async function PagePreviewRoute({
     supabase
       .from("pages")
       .select(
-        `id, type, slug, title, sequence, service_id, featured_image, image_position, copy,
+        `id, type, slug, title, sequence, service_id, featured_image, image_position, layout, copy,
          content_blocks ( id, type, content, sequence )`,
       )
       .eq("id", id)
