@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm, useFieldArray, type FieldErrors } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { Check, ChevronDown, Loader2, Plus, Trash2 } from "lucide-react";
@@ -109,6 +109,25 @@ const pillIcon = `flex h-8 w-8 items-center justify-center rounded-full bg-lyp-w
 const destructivePillIcon = `flex h-8 w-8 items-center justify-center rounded-full bg-lyp-cherry/10 transition-transform duration-500 ${EASE} group-hover:scale-105`;
 
 const iconButtonClasses = `flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-[#867474] transition-colors duration-500 ${EASE} hover:bg-lyp-cherry/[0.06] hover:text-lyp-cherry`;
+
+/**
+ * Every message in a react-hook-form error tree, in field order.
+ *
+ * The tree nests: `conditions` is an array of objects of error nodes, and an
+ * error node is the only thing in it carrying a string `message`.
+ */
+function collectMessages(node: unknown, out: string[] = []): string[] {
+  if (!node || typeof node !== "object") return out;
+  const message = (node as { message?: unknown }).message;
+  if (typeof message === "string") {
+    out.push(message);
+    return out;
+  }
+  for (const value of Object.values(node as Record<string, unknown>)) {
+    collectMessages(value, out);
+  }
+  return out;
+}
 
 /** Native selects need their own chevron once appearance is stripped. */
 function SelectShell({ children }: { children: React.ReactNode }) {
@@ -308,6 +327,33 @@ export default function IntakeQuestionForm({
     },
   );
 
+  /**
+   * A CLICK THAT DOES NOTHING IS WORSE THAN A CLICK THAT SAYS NO.
+   *
+   * react-hook-form's handleSubmit never calls onSubmit when a rule fails. A
+   * rule whose message is rendered nowhere, which was every condition field
+   * and every option row, therefore turned Create Question into a dead
+   * button: "create question doesn't do anything should it ? nothing happens
+   * on click".
+   *
+   * The messages are now drawn beside the field that failed, and this says so
+   * as well, because the field that failed can easily be off screen.
+   */
+  function onInvalid(formErrors: FieldErrors<IntakeQuestionFormData>) {
+    const messages = [...new Set(collectMessages(formErrors))];
+    if (messages.length === 0) {
+      toast.error("Not saved. Something on this form is not filled in.");
+      return;
+    }
+    toast.error(
+      messages.length === 1
+        ? `Not saved. ${messages[0]}`
+        : `Not saved. ${messages[0]} There ${
+            messages.length === 2 ? "is 1 other thing" : `are ${messages.length - 1} other things`
+          } to fill in.`,
+    );
+  }
+
   async function onSubmit(data: IntakeQuestionFormData) {
     setSaving(true);
     try {
@@ -361,7 +407,7 @@ export default function IntakeQuestionForm({
        this question. */
     <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={handleSubmit(onSubmit, onInvalid)}
       className="min-w-0 space-y-5"
     >
       {/* ─────────────── General information ─────────────── */}
@@ -482,6 +528,9 @@ export default function IntakeQuestionForm({
                   <option value="static_content">Static Content</option>
                 </select>
               </SelectShell>
+              {errors.field_type && (
+                <p className={errorClasses}>{errors.field_type.message}</p>
+              )}
             </div>
 
             <label
@@ -586,28 +635,35 @@ export default function IntakeQuestionForm({
           ) : (
             <div className="mt-4 space-y-2.5">
               {optionFields.map((field, index) => (
-                <div key={field.id} className="flex items-center gap-2.5">
-                  <span className="w-6 flex-shrink-0 font-body text-[11px] tabular-nums text-[#867474]">
-                    #{index + 1}
-                  </span>
-                  <input
-                    type="text"
-                    aria-label={`Option ${index + 1}`}
-                    placeholder={`Option ${index + 1}`}
-                    {...register(`options.${index}.value` as const, {
-                      required: "Option text is required",
-                    })}
-                    className={inputClasses}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeOption(index)}
-                    className={iconButtonClasses}
-                    title="Remove option"
-                    aria-label={`Remove option ${index + 1}`}
-                  >
-                    <Trash2 strokeWidth={1.5} className="h-4 w-4" />
-                  </button>
+                <div key={field.id}>
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 flex-shrink-0 font-body text-[11px] tabular-nums text-[#867474]">
+                      #{index + 1}
+                    </span>
+                    <input
+                      type="text"
+                      aria-label={`Option ${index + 1}`}
+                      placeholder={`Option ${index + 1}`}
+                      {...register(`options.${index}.value` as const, {
+                        required: `Option ${index + 1} is empty. Fill it in, or remove it.`,
+                      })}
+                      className={inputClasses}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeOption(index)}
+                      className={iconButtonClasses}
+                      title="Remove option"
+                      aria-label={`Remove option ${index + 1}`}
+                    >
+                      <Trash2 strokeWidth={1.5} className="h-4 w-4" />
+                    </button>
+                  </div>
+                  {errors.options?.[index]?.value && (
+                    <p className={cn(errorClasses, "ml-[2.1rem]")}>
+                      {errors.options[index]?.value?.message}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -707,7 +763,8 @@ export default function IntakeQuestionForm({
                             {...register(
                               `conditions.${index}.condition_service_id` as const,
                               {
-                                required: "Service is required",
+                                required:
+                                  "Choose a service for the visibility condition, or remove the condition.",
                               },
                             )}
                             className={cn(selectClasses, "bg-lyp-white")}
@@ -720,6 +777,14 @@ export default function IntakeQuestionForm({
                             ))}
                           </select>
                         </SelectShell>
+                        {errors.conditions?.[index]?.condition_service_id && (
+                          <p className={errorClasses}>
+                            {
+                              errors.conditions[index]?.condition_service_id
+                                ?.message
+                            }
+                          </p>
+                        )}
                       </div>
                     )}
 
@@ -737,7 +802,8 @@ export default function IntakeQuestionForm({
                             {...register(
                               `conditions.${index}.condition_state_id` as const,
                               {
-                                required: "State is required",
+                                required:
+                                  "Choose a state for the visibility condition, or remove the condition.",
                               },
                             )}
                             className={cn(selectClasses, "bg-lyp-white")}
@@ -750,6 +816,14 @@ export default function IntakeQuestionForm({
                             ))}
                           </select>
                         </SelectShell>
+                        {errors.conditions?.[index]?.condition_state_id && (
+                          <p className={errorClasses}>
+                            {
+                              errors.conditions[index]?.condition_state_id
+                                ?.message
+                            }
+                          </p>
+                        )}
                       </div>
                     )}
 
@@ -768,7 +842,8 @@ export default function IntakeQuestionForm({
                               {...register(
                                 `conditions.${index}.condition_question_id` as const,
                                 {
-                                  required: "Question is required",
+                                  required:
+                                    "Choose a question for the visibility condition, or remove the condition.",
                                 },
                               )}
                               className={cn(selectClasses, "bg-lyp-white")}
@@ -781,6 +856,15 @@ export default function IntakeQuestionForm({
                               ))}
                             </select>
                           </SelectShell>
+                          {errors.conditions?.[index]
+                            ?.condition_question_id && (
+                            <p className={errorClasses}>
+                              {
+                                errors.conditions[index]?.condition_question_id
+                                  ?.message
+                              }
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label
@@ -796,11 +880,20 @@ export default function IntakeQuestionForm({
                             {...register(
                               `conditions.${index}.condition_value` as const,
                               {
-                                required: "Value is required",
+                                required:
+                                  "Type the answer the visibility condition looks for, or remove the condition.",
                               },
                             )}
                             className={cn(inputClasses, "bg-lyp-white")}
                           />
+                          {errors.conditions?.[index]?.condition_value && (
+                            <p className={errorClasses}>
+                              {
+                                errors.conditions[index]?.condition_value
+                                  ?.message
+                              }
+                            </p>
+                          )}
                         </div>
                       </>
                     )}
