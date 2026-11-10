@@ -64,6 +64,13 @@
       "when": 1792464771205,
       "tag": "0008_complimentary_service_override",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794278233295,
+      "tag": "0009_subheading_block_type",
+      "breakpoints": true
     }
   ]
 }
