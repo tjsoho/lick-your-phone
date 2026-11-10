@@ -134,34 +134,61 @@ pages without filling anything in.
 
 ---
 
+## [ ] 8. You pick the layout now, it is not guessed
+
+**What was wrong, and it is worse than it looked.** A page's layout was never
+chosen. It was worked out from whichever blocks happened to be on it.
+
+- Add a Client Results block and the whole page became the results slide.
+- Images with almost no words became a full-width showcase.
+- Add a second paragraph and it silently turned back into the two-column page.
+
+So you added one element and the shape of the whole page changed, with nothing
+on screen saying it would. That is "I tried adding a couple of elements and it
+looks a bit off".
+
+**Your two screenshots show exactly this.** The page looks completely different
+between them because a service got attached in between, and a page with a
+service on it is drawn by a different template altogether. Nothing told you
+that either.
+
+**What it does now.** Every content page has a Layout card with four choices in
+plain words:
+
+- **Text and image.** Words down one side, a picture down the other.
+- **Showcase.** Big imagery, at most one line of text.
+- **Client results.** A grid of results, a phone mockup, a strip of logos.
+- **Statement.** The title on its own.
+
+Each one lists the blocks it actually draws. The card also:
+
+- **names any block on the page that your chosen layout ignores,** so a block
+  doing nothing can never be a mystery again
+- **says when Image Position does nothing.** That left and right setting was
+  already being ignored on two layouts out of three, silently
+- **says when a page is on a service**, where the shape is fixed, and lists what
+  shows on it rather than offering four choices that would do nothing
+
+**Custom is gone from the list of block types.** It took raw code and was never
+meant for you. Any page already using one still works.
+
+**Nothing you have already built has moved.** Every existing page keeps the
+shape it has today until somebody actually picks something. The old rules still
+run as the fallback, and the card tells you when that is what is happening.
+
+**Test it.** Content Pages, open Our Promise. The Layout card says it is working
+the layout out from the page, and Text and image is selected. Click Showcase and
+watch the preview change, and watch it tell you the List block will not show.
+Click Text and image to put it back.
+
+---
+
 ## Still open
 
-**The block types and layouts.** You said choosing them is confusing, and you
-are right, but the reason is worse than it looks and it is worth saying plainly.
+**Nothing from your list.** All eight are done.
 
-**A page's layout is never chosen. It is worked out from which blocks happen to
-be on the page.**
-
-- Add a Client Results block and the whole page becomes the results slide.
-- Images with no body copy and at most one line of text become a full-width
-  showcase.
-- Add a second paragraph to that page and it silently flips back to the
-  two-column template.
-
-So you add one element and the entire page changes shape, and nothing on screen
-says it is going to. That is "I tried adding a couple of elements and it looks a
-bit off".
-
-There are three smaller things feeding the same confusion:
-
-- **Image Position (left/right) does nothing on two of the three layouts**, and
-  does not say so.
-- **Offset Image draws nothing on its own.** It only appears if the page already
-  has a featured image for it to sit over. Choosing it and seeing no change
-  reads as broken.
-- **Custom takes raw JSON.** That is a developer's escape hatch sitting in a
-  client-facing dropdown.
-
-The fix is to make layout a choice you make, in plain words, with the block list
-then offering only what that layout uses. Waiting on your last two screenshots
-before starting, so it is built against the page you were actually on.
+One thing we chose not to do this round, so you know it was a decision and not
+an oversight: on a page with only a few blocks the words sit low and detached
+from the title, with a gap above them, and body copy is quite small for a
+slide. That is a design change affecting every content page, so it is worth
+looking at together rather than slipping it in beside everything else.
