@@ -898,7 +898,11 @@ export default function IntakeQuestionsList({
           </div>
         </SortableContext>
 
-        <div className="flex flex-wrap items-center justify-center gap-3 rounded-2xl border border-dashed border-[#EFE6E6] px-5 py-4 text-center">
+        {/* Add page, and the whole form beside it. The preview is up in the
+            header as well, but the foot of the list is where someone ends up
+            after writing a question, and it is the question they just wrote
+            that they want to go and look at. */}
+        <div className="flex flex-wrap items-center justify-center gap-5 rounded-2xl border border-dashed border-[#EFE6E6] px-5 py-4 text-center">
           <button
             type="button"
             onClick={addPage}
@@ -909,6 +913,18 @@ export default function IntakeQuestionsList({
             <FilePlus strokeWidth={1.5} className="h-3.5 w-3.5" />
             Add page
           </button>
+
+          <span aria-hidden className="h-4 w-px bg-[#EFE6E6]" />
+
+          <Link
+            href="/admin/intake-questions/preview"
+            target="_blank"
+            title="Click through the whole form the way a client sees it"
+            className={addLinkClasses}
+          >
+            <Eye strokeWidth={1.5} className="h-3.5 w-3.5" />
+            Preview form
+          </Link>
         </div>
       </div>
 

@@ -420,6 +420,36 @@ export async function deleteIntakePage(pageNumber: number) {
       .eq("page_number", pageNumber);
     if (error) throw error;
 
+    // CLOSE THE GAP THE DELETE JUST LEFT.
+    //
+    // Deleting page 6 out of 8 used to leave 1,2,3,4,5,7,8. The list numbers
+    // its cards by position, so the screen still read "page 6 of 7" over a
+    // page whose real number was 7, and the Add question button under it
+    // carried page 7. Writing a question there put it on a page the agency
+    // had never made: "in page 6 added a new question and that automatically
+    // added a new page 8".
+    //
+    // So the numbers are closed up straight away, the same way adding a page
+    // normalises them before appending. What a card says and what it is can
+    // then never drift apart.
+    const { data: numbered, error: listError } = await supabase
+      .from("intake_questions")
+      .select("page_number");
+    if (listError) throw listError;
+
+    const existing = new Set<number>((numbered ?? []).map((r) => r.page_number));
+    const { data: namedPages, error: namedError } = await supabase
+      .from("intake_pages")
+      .select("page_number");
+    if (namedError) throw namedError;
+    for (const row of namedPages ?? []) existing.add(row.page_number);
+
+    const order = [...existing].sort((a, b) => a - b);
+    if (!order.every((page, index) => page === index + 1)) {
+      const { error: tidyError } = await reorderIntakePages(order);
+      if (tidyError) throw new Error(tidyError);
+    }
+
     revalidatePath("/admin/intake-questions");
     return { data: true, error: null };
   } catch (error) {
