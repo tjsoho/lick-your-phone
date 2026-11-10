@@ -15,6 +15,23 @@ import {
   Layers,
 } from "lucide-react";
 import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   upsertContentBlock,
   deleteContentBlock,
 } from "@/server-actions/pages";
@@ -51,13 +68,13 @@ const addLabelFor = (t: string | null) =>
    Every number below is twice the largest size the portal actually draws that
    picture at, because screens go up to 2x:
 
-   - image           SIZES.bodyImage — 730px wide inside the 7/12 text column.
+   - image           SIZES.bodyImage: 730px wide inside the 7/12 text column.
    - logos           h-16, so 64px tall and ~200px of artwork wide.
    - media_carousel  a device column in the showcase row: ~450px wide,
                      max-h-[60vh] tall, portrait.
-   - collage         a square tile capped at max-w-[10rem] — 160px.
-   - results         the circular client mark — h-16, h-20 on tall screens.
-   - offset_image    62% x 82% of a 24rem portrait stage — ~240 x 420px.
+   - collage         a square tile capped at max-w-[10rem], 160px.
+   - results         the circular client mark: h-16, h-20 on tall screens.
+   - offset_image    62% x 82% of a 24rem portrait stage, about 240 x 420px.
    ------------------------------------------------------------------------- */
 const IMAGE_SIZE_HINTS: Record<string, string> = {
   image: "Recommended 1600px wide (JPG or PNG)",
@@ -74,9 +91,9 @@ const imageListLabel = (t: string | null) =>
   t === "media_carousel"
     ? "Carousel images with alt text"
     : t === "collage"
-    ? "Collage images with alt text — shown as a row (4 across on desktop, 2 on mobile)"
+    ? "Collage images with alt text. Shown as a row (4 across on desktop, 2 on mobile)"
     : t === "results"
-    ? "Client results — a circular logo plus the result copy, laid out two across on desktop"
+    ? "Client results. A circular logo plus the result copy, laid out two across on desktop"
     : t === "offset_image"
     ? "Sits over this page's featured image to form the offset pair on the right. Add one image; the featured image is the other half."
     : "Logo images with alt text";
@@ -131,7 +148,7 @@ function stringToContent(type: string | null, raw: string): unknown {
 const typeLabel = (t: string | null) =>
   ({ heading: "Heading", subheading: "Subheading", paragraph: "Paragraph", list: "List", image: "Image", logos: "Logos", media_carousel: "Media Carousel", collage: "Image Collage", results: "Client Results", offset_image: "Offset Image", custom: "Custom" }[t ?? ""] ?? t ?? "unknown");
 
-/** Muted tonal pills — saturated Tailwind defaults read cheap next to the brand. */
+/** Muted tonal pills. Saturated Tailwind defaults read cheap next to the brand. */
 const typeBadge = (t: string | null) =>
   ({ heading: "bg-[#F1EDF5] text-[#6E5B84]", subheading: "bg-[#F4F0F8] text-[#7B6A8E]", paragraph: "bg-[#F2EDED] text-[#6B5A5A]", list: "bg-[#EDF1F7] text-[#5B7394]", image: "bg-[#E9F2EC] text-[#4A7A5C]", logos: "bg-[#F7EDF1] text-[#8A5B72]", media_carousel: "bg-[#E7F0F0] text-[#4F7B7B]", collage: "bg-[#F9EFE4] text-[#916338]", results: "bg-[#EBF1E8] text-[#5C7A4A]", offset_image: "bg-[#ECEDF7] text-[#5F5F94]", custom: "bg-[#FBF3E3] text-[#9A7B2E]" }[t ?? ""] ?? "bg-[#F2EDED] text-[#6B5A5A]");
 
@@ -287,7 +304,7 @@ function LogosEditor({ logos, onChange, addLabel = "Add logo", label = "Logo ima
                 value={logo.text ?? ""}
                 onChange={(e) => updateField(i, "text", e.target.value)}
                 rows={2}
-                placeholder="Result copy — e.g. 40% increase in bookings! The Truffle campaign was sold out within one hour."
+                placeholder="Result copy. For example: 40% increase in bookings! The Truffle campaign was sold out within one hour."
                 aria-label={`Result copy for item ${i + 1}`}
                 className={ic + " px-3 py-2 text-[12px]"}
               />
@@ -430,9 +447,56 @@ function BlockRow({ block, idx, total, onEdit, onDelete, onMove, onAddImage }: {
   const iconButton =
     `rounded-full p-1.5 text-[#867474] transition-all duration-500 ${EASE} hover:text-lyp-cherry disabled:opacity-30 disabled:hover:text-[#867474]`;
 
+  // Only the handle picks the row up. If the whole row were the drag target,
+  // the Edit and Delete buttons on it would stop being clickable.
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: block.id });
+
+  // Translate only. Scaling a row that is being carried makes the rest of the
+  // list jump about under the pointer.
+  const style = {
+    transform: CSS.Translate.toString(transform),
+    transition,
+  };
+
+  const alone = total === 1;
+
   return (
-    <div className={`group flex items-start gap-3 rounded-2xl border border-[#EFE6E6] bg-lyp-white p-3.5 transition-all duration-500 ${EASE} hover:border-lyp-cherry/20 hover:shadow-[0_12px_28px_-16px_rgba(61,11,17,0.25)]`}>
-      <GripVertical strokeWidth={1.5} className="mt-1 h-4 w-4 flex-shrink-0 text-[#9C8C8C]" aria-hidden="true" />
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group relative flex items-start gap-3 rounded-2xl border bg-lyp-white p-3.5 transition-all duration-500 ${EASE} hover:border-lyp-cherry/20 hover:shadow-[0_12px_28px_-16px_rgba(61,11,17,0.25)] ${
+        isDragging
+          ? "z-10 border-lyp-cherry/30 shadow-[0_18px_36px_-18px_rgba(61,11,17,0.35)]"
+          : "border-[#EFE6E6]"
+      }`}
+    >
+      {/* The grip used to be decoration, which is why the client kept trying
+          to drag it. It is the handle now, and it matches the one on the
+          onboarding questions. */}
+      <button
+        type="button"
+        disabled={alone}
+        ref={setActivatorNodeRef}
+        {...attributes}
+        {...listeners}
+        title="Drag to reorder, or use the up and down arrows on the right"
+        aria-label={`Reorder this ${typeLabel(block.type)} block, ${idx + 1} of ${total}`}
+        className={`mt-0.5 flex h-7 w-7 flex-shrink-0 touch-none select-none items-center justify-center rounded-lg transition-colors duration-500 ${EASE} focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lyp-cherry/40 ${
+          alone
+            ? "cursor-not-allowed text-[#D4C6C6]"
+            : "cursor-grab text-[#9C8C8C] hover:bg-[#F1E8E8] hover:text-[#6B5A5A] active:cursor-grabbing"
+        }`}
+      >
+        <GripVertical strokeWidth={1.5} className="h-4 w-4" />
+      </button>
       <div className="min-w-0 flex-1">
         <div className="mb-1.5 flex items-center gap-2">
           <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] ${typeBadge(block.type)}`}>{typeLabel(block.type)}</span>
@@ -634,18 +698,62 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
     else { toast.success("Block deleted"); setBlocks((prev) => prev.filter((b) => b.id !== blockId)); }
   };
 
+  /**
+   * TAKE A NEW ORDER AND WRITE DOWN WHAT MOVED.
+   *
+   * A drag can carry one block past many others, so a swap of two rows is not
+   * enough: every row between where it left and where it landed shifts by one.
+   * The whole list is renumbered from the new order, then only the blocks whose
+   * sequence actually changed are saved. That keeps a drag across a long page
+   * from writing a row that has not moved.
+   */
+  const applyOrder = async (ordered: Block[]) => {
+    const reseq = ordered.map((b, i) => ({ ...b, sequence: i }));
+    const before = new Map(blocks.map((b) => [b.id, b.sequence]));
+    const moved = reseq.filter((b) => before.get(b.id) !== b.sequence);
+
+    setBlocks(reseq);
+    if (moved.length === 0) return;
+
+    const results = await Promise.all(
+      moved.map((b) =>
+        upsertContentBlock({
+          id: b.id,
+          page_id: pageId,
+          type: b.type ?? "paragraph",
+          content: b.content,
+          sequence: b.sequence ?? 0,
+        }),
+      ),
+    );
+    if (results.some((r) => r.error)) {
+      toast.error("The new order did not save. Reload the page to see what stuck.");
+    }
+  };
+
   const handleMove = async (blockId: string, dir: "up" | "down") => {
     const idx = blocks.findIndex((b) => b.id === blockId);
     const swap = dir === "up" ? idx - 1 : idx + 1;
     if (swap < 0 || swap >= blocks.length) return;
     const updated = [...blocks];
     [updated[idx], updated[swap]] = [updated[swap], updated[idx]];
-    const reseq = updated.map((b, i) => ({ ...b, sequence: i }));
-    setBlocks(reseq);
-    await Promise.all([
-      upsertContentBlock({ id: reseq[idx].id, page_id: pageId, type: reseq[idx].type ?? "paragraph", content: reseq[idx].content, sequence: idx }),
-      upsertContentBlock({ id: reseq[swap].id, page_id: pageId, type: reseq[swap].type ?? "paragraph", content: reseq[swap].content, sequence: swap }),
-    ]);
+    await applyOrder(updated);
+  };
+
+  // A pointer has to travel a few pixels before a drag starts, so a plain
+  // click on the handle is still a click and does not shuffle the page.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const from = blocks.findIndex((b) => b.id === active.id);
+    const to = blocks.findIndex((b) => b.id === over.id);
+    if (from === -1 || to === -1) return;
+    await applyOrder(arrayMove(blocks, from, to));
   };
 
   return (
@@ -689,44 +797,58 @@ export function ContentBlocksEditor({ pageId, initialBlocks, onDraftChange }: Co
         </div>
       )}
 
-      <div className="space-y-2.5">
-        {blocks.map((block, idx) =>
-          editingId === block.id ? (
-            <div key={block.id} className="space-y-3.5 rounded-2xl border border-lyp-cherry/25 bg-[#FBF8F8] p-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <TypeSelect value={editType} onChange={setEditType} />
-                <span className="font-mono text-[11px] tabular-nums text-[#867474]">seq: {block.sequence}</span>
-              </div>
-              {isImageListType(editType)
-                ? <LogosEditor logos={editLogos} onChange={setEditLogos} addLabel={addLabelFor(editType)} label={imageListLabel(editType)} showText={withCopy(editType)} sizeHint={sizeHintFor(editType)} />
-                : editType === "image"
-                ? <ImageUploadEditor value={editContent} onChange={setEditContent} sizeHint={sizeHintFor(editType)} />
-                : <BlockTextarea type={editType} value={editContent} onChange={setEditContent} />
-              }
-              <div className="flex flex-wrap items-center gap-3">
-                <button onClick={() => handleSave(block.id)} disabled={saving}
-                  title="Close this block — changes save as you type"
-                  className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none`}>
-                  Done
-                  <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}>
-                    {saving ? <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" /> : <Check strokeWidth={1.5} className="h-4 w-4" />}
-                  </span>
-                </button>
-                <SaveStatusBadge status={blockStatus} />
-              </div>
-            </div>
-          ) : (
-            <BlockRow key={block.id} block={block} idx={idx} total={blocks.length}
-              onEdit={() => startEdit(block)} onDelete={() => handleDelete(block.id)}
-              onMove={(dir) => handleMove(block.id, dir)}
-              onAddImage={
-                isImageListType(block.type)
-                  ? () => setAddingToBlockId(block.id)
-                  : undefined
-              } />
-          )
-        )}
-      </div>
+      {/* The rows sort within this list and nowhere else. A block that is open
+          for editing renders its editor instead of a row, so it is not a drop
+          target while it is open. */}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext
+          items={blocks.map((b) => b.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="space-y-2.5">
+            {blocks.map((block, idx) =>
+              editingId === block.id ? (
+                <div key={block.id} className="space-y-3.5 rounded-2xl border border-lyp-cherry/25 bg-[#FBF8F8] p-4">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <TypeSelect value={editType} onChange={setEditType} />
+                    <span className="font-mono text-[11px] tabular-nums text-[#867474]">seq: {block.sequence}</span>
+                  </div>
+                  {isImageListType(editType)
+                    ? <LogosEditor logos={editLogos} onChange={setEditLogos} addLabel={addLabelFor(editType)} label={imageListLabel(editType)} showText={withCopy(editType)} sizeHint={sizeHintFor(editType)} />
+                    : editType === "image"
+                    ? <ImageUploadEditor value={editContent} onChange={setEditContent} sizeHint={sizeHintFor(editType)} />
+                    : <BlockTextarea type={editType} value={editContent} onChange={setEditContent} />
+                  }
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button onClick={() => handleSave(block.id)} disabled={saving}
+                      title="Close this block. Changes save as you type"
+                      className={`group inline-flex items-center gap-3 rounded-full bg-lyp-cherry py-1.5 pl-6 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-white shadow-[0_10px_30px_-10px_rgba(178,38,38,0.5)] transition-all duration-500 ${EASE} hover:bg-[#c22e2e] active:scale-[0.985] disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none`}>
+                      Done
+                      <span className={`flex h-8 w-8 items-center justify-center rounded-full bg-lyp-white/15 transition-transform duration-500 ${EASE} group-hover:scale-105`}>
+                        {saving ? <Loader2 strokeWidth={1.5} className="h-4 w-4 animate-spin" /> : <Check strokeWidth={1.5} className="h-4 w-4" />}
+                      </span>
+                    </button>
+                    <SaveStatusBadge status={blockStatus} />
+                  </div>
+                </div>
+              ) : (
+                <BlockRow key={block.id} block={block} idx={idx} total={blocks.length}
+                  onEdit={() => startEdit(block)} onDelete={() => handleDelete(block.id)}
+                  onMove={(dir) => handleMove(block.id, dir)}
+                  onAddImage={
+                    isImageListType(block.type)
+                      ? () => setAddingToBlockId(block.id)
+                      : undefined
+                  } />
+              )
+            )}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       {addingNew && (
         <div className="space-y-3.5 rounded-2xl border border-dashed border-lyp-cherry/30 bg-lyp-cherry/[0.04] p-4">
