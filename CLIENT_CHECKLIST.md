@@ -134,3 +134,38 @@ of the list, which is where you are standing after writing a question.
 
 **Test:** Scroll to the bottom of Onboarding Questions. Preview form sits
 beside Add page, and opens in a new tab.
+
+---
+
+## Three more
+
+### 12. Deleting a question a client had answered
+
+If any client had already answered a question, the bin failed with a
+database error and there was no way round it. It works now. Because an
+answer is a client's own words, the confirmation counts them first and
+says so before you agree.
+
+**Test:** Onboarding Questions, bin any question. If anyone has answered
+it, the message says how many answers go with it.
+
+---
+
+### 13. Deleting a whole page
+
+A page refused while anything stood on it, and the bin only showed up once
+it was empty. Any page can go now, questions and all, and the message
+names exactly what it takes.
+
+**Test:** Onboarding Questions, the bin in a page header. It tells you how
+many questions and client answers go with it before anything happens.
+
+---
+
+### 14. The live preview looks like the real page
+
+It was a flat black panel. It now has the same drifting red background the
+client sees, with the real colours and fonts.
+
+**Test:** Onboarding Questions, Add question. Type a Section and a Field
+Label and look at the panel on the right.
