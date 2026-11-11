@@ -816,7 +816,13 @@ export default function IntakeQuestionsList({
       const data = over.data.current as
         | { page: number; sectionName?: string | null }
         | undefined;
-      if (data && data.page !== carried.page_number) {
+      // Only ever a page with nothing on it. This is the one place a row is
+      // appended rather than placed, so it must not be reachable for a page
+      // whose rows the agency can see and aim at.
+      const pageIsEmpty =
+        !!data &&
+        !rows.some((r) => r.page_number === data.page && r.id !== activeKey);
+      if (data && pageIsEmpty && data.page !== carried.page_number) {
         const from = rows.findIndex((r) => r.id === activeKey);
         next = [...rows];
         next.splice(from, 1);
@@ -1144,9 +1150,17 @@ function PageCard({
   } = useSortable({ id: pageId(page), data: { kind: "page", page } });
 
   // An entirely empty page still has to be able to receive a question.
+  //
+  // DISABLED WHILE THE PAGE HAS ANYTHING ON IT, which is not tidiness. The
+  // zone is only drawn on an empty page, but the droppable was registered on
+  // every page regardless, so a page with questions on it still carried an
+  // invisible target. Winning it is the one path that appends a row to the
+  // end of a page, and that is how a question dropped on page 5 turned up at
+  // the bottom of page 1.
   const { setNodeRef: setBinRef, isOver: binIsOver } = useDroppable({
     id: pageBinId(page),
     data: { kind: "bin", page, sectionName: null },
+    disabled: rows.length > 0,
   });
 
   const blocks = groupIntoSections(rows);
