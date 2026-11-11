@@ -52,3 +52,6 @@ Thumbs.db
 
 # playwright-mcp session artifacts
 .playwright-mcp/
+
+# Staged admin session for local testing (scripts/dev-login.sh)
+public/claude-session-tmp.json

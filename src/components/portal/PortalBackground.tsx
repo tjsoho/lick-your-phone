@@ -84,11 +84,25 @@ function SmokeField({
   );
 }
 
-export default function PortalBackground() {
+/**
+ * `contained` fills its nearest positioned parent instead of the viewport,
+ * so the admin's live preview can stand the real backdrop behind a question
+ * rather than approximating it with flat black: "can we make it look like
+ * the actual page with the red animated background an actual colours fonts".
+ *
+ * The filter and gradient ids are suffixed with it, because two copies on
+ * one page sharing an id would both draw whichever was defined last.
+ */
+export default function PortalBackground({
+  contained = false,
+}: {
+  contained?: boolean;
+} = {}) {
+  const key = contained ? "c" : "v";
   return (
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#050203]"
+      className={`pointer-events-none ${contained ? "absolute" : "fixed"} inset-0 z-0 overflow-hidden bg-[#050203]`}
     >
       {/* Deep base wash */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_90%_at_8%_50%,#2c070d_0%,#0c0203_58%,#050203_100%)]" />
@@ -102,7 +116,7 @@ export default function PortalBackground() {
       <div className="portal-smoke-b absolute -inset-[32%] opacity-70">
         <div className="portal-smoke-b-inner h-full w-full">
           <SmokeField
-            id="b"
+            id={`b${key}`}
             seed={23}
             cx="26%"
             cy="52%"
@@ -118,7 +132,7 @@ export default function PortalBackground() {
       <div className="portal-smoke-a absolute -inset-[20%]">
         <div className="portal-smoke-a-inner h-full w-full">
           <SmokeField
-            id="a"
+            id={`a${key}`}
             seed={9}
             cx="18%"
             cy="47%"

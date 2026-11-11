@@ -84,15 +84,84 @@ export async function upsertQuestion(input: IntakeQuestionInput) {
   }
 }
 
+/**
+ * WHAT GOES WITH A QUESTION, BEFORE ANYONE AGREES TO IT.
+ *
+ * Three things point at a question, and the database refuses to delete one
+ * while any of them still does. Only the first was ever cleared, so a
+ * question a client had answered could not be deleted at all and the bin
+ * returned a raw constraint error: "why can't i delete the question in page
+ * 7 onboarding".
+ *
+ * Clearing them is right, but a client's answer is their words, so the
+ * number of them is counted first and said out loud in the confirmation
+ * rather than discovered afterwards.
+ */
+export async function describeQuestionDeletion(id: string) {
+  try {
+    const supabase = await createAdminClient();
+
+    const [answers, pointedAt] = await Promise.all([
+      supabase
+        .from("intake_responses")
+        .select("id", { count: "exact", head: true })
+        .eq("question_id", id),
+      supabase
+        .from("intake_conditions")
+        .select("id", { count: "exact", head: true })
+        .eq("condition_question_id", id),
+    ]);
+
+    if (answers.error) throw answers.error;
+    if (pointedAt.error) throw pointedAt.error;
+
+    return {
+      data: {
+        answers: answers.count ?? 0,
+        rules: pointedAt.count ?? 0,
+      },
+      error: null,
+    };
+  } catch (error) {
+    return { data: null, error: (error as Error).message };
+  }
+}
+
+/** Clear everything that points at a question, then the question. */
+async function clearQuestionReferences(
+  supabase: Awaited<ReturnType<typeof createAdminClient>>,
+  ids: string[],
+) {
+  if (ids.length === 0) return;
+
+  // Conditions ON these questions, and conditions on OTHER questions that
+  // read these ones. A rule that asks about a question that no longer
+  // exists can never be answered, so it goes with it.
+  const { error: ownError } = await supabase
+    .from("intake_conditions")
+    .delete()
+    .in("question_id", ids);
+  if (ownError) throw ownError;
+
+  const { error: refError } = await supabase
+    .from("intake_conditions")
+    .delete()
+    .in("condition_question_id", ids);
+  if (refError) throw refError;
+
+  // What clients have already typed in. The confirmation said how many.
+  const { error: answerError } = await supabase
+    .from("intake_responses")
+    .delete()
+    .in("question_id", ids);
+  if (answerError) throw answerError;
+}
+
 export async function deleteQuestion(id: string) {
   try {
     const supabase = await createAdminClient();
 
-    const { error: cError } = await supabase
-      .from("intake_conditions")
-      .delete()
-      .eq("question_id", id);
-    if (cError) throw cError;
+    await clearQuestionReferences(supabase, [id]);
 
     const { error: qError } = await supabase
       .from("intake_questions")
@@ -390,28 +459,92 @@ export async function createIntakePage() {
   }
 }
 
-/**
- * Remove a page that has nothing on it.
- *
- * Only ever an empty one. A page with questions on it would take them with
- * it, and deleting a client's questions is not something a stray click
- * should be able to do.
- */
-export async function deleteIntakePage(pageNumber: number) {
+/** What a page takes with it, so the confirmation can say so first. */
+export async function describePageDeletion(pageNumber: number) {
   try {
     const supabase = await createAdminClient();
 
-    const { count, error: countError } = await supabase
+    const { data: onPage, error: qError } = await supabase
       .from("intake_questions")
-      .select("id", { count: "exact", head: true })
+      .select("id")
+      .eq("page_number", pageNumber);
+    if (qError) throw qError;
+
+    const ids = (onPage ?? []).map((q) => q.id);
+    if (ids.length === 0) {
+      return { data: { questions: 0, answers: 0, rules: 0 }, error: null };
+    }
+
+    const [answers, pointedAt] = await Promise.all([
+      supabase
+        .from("intake_responses")
+        .select("id", { count: "exact", head: true })
+        .in("question_id", ids),
+      supabase
+        .from("intake_conditions")
+        .select("id", { count: "exact", head: true })
+        .in("condition_question_id", ids),
+    ]);
+    if (answers.error) throw answers.error;
+    if (pointedAt.error) throw pointedAt.error;
+
+    return {
+      data: {
+        questions: ids.length,
+        answers: answers.count ?? 0,
+        rules: pointedAt.count ?? 0,
+      },
+      error: null,
+    };
+  } catch (error) {
+    return { data: null, error: (error as Error).message };
+  }
+}
+
+/**
+ * Remove a page, and the questions standing on it.
+ *
+ * A page used to refuse while anything stood on it, which left no way to be
+ * rid of one short of emptying it a question at a time: "delete teh entire
+ * page should be an option but it fails".
+ *
+ * So it goes, questions and all. `expectedQuestions` is the count the
+ * screen showed when the agency agreed to it, and the delete stops if the
+ * page no longer matches, so this can never quietly take more than was
+ * named in the confirmation.
+ */
+export async function deleteIntakePage(
+  pageNumber: number,
+  expectedQuestions = 0,
+) {
+  try {
+    const supabase = await createAdminClient();
+
+    const { data: onPage, error: countError } = await supabase
+      .from("intake_questions")
+      .select("id")
       .eq("page_number", pageNumber);
     if (countError) throw countError;
 
-    if (count && count > 0) {
+    const ids = (onPage ?? []).map((q) => q.id);
+
+    if (ids.length !== expectedQuestions) {
       return {
         data: null,
-        error: "That page still has questions on it. Move or delete them first.",
+        error:
+          ids.length === 0
+            ? "That page is already empty. Reload the list and try again."
+            : `That page has ${ids.length} question${ids.length === 1 ? "" : "s"} on it now, not ${expectedQuestions}. Reload the list and try again.`,
       };
+    }
+
+    if (ids.length > 0) {
+      await clearQuestionReferences(supabase, ids);
+      const { error: dropError } = await supabase
+        .from("intake_questions")
+        .delete()
+        .in("id", ids);
+      if (dropError) throw dropError;
     }
 
     const { error } = await supabase

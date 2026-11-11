@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import { FIELD_COMPONENTS, IntakeSectionHeading } from "@/components/intake";
+import PortalBackground from "@/components/portal/PortalBackground";
 
 const EASE = "ease-brand";
 
@@ -85,10 +86,14 @@ export default function IntakeQuestionPreview({
         </span>
       </div>
 
-      {/* The portal's own base colour, and the question centred in the panel
-          the way every portal screen is centred in what it is given. */}
-      <div className="flex min-h-[26rem] items-center overflow-hidden rounded-2xl border border-[#EFE6E6] bg-[#050203] px-6 py-10 md:px-10">
-        <div className="w-full">
+      {/* The portal's own backdrop, not a flat black stand-in: the same
+          drifting red smoke the client has behind them, with the question
+          centred on it the way every portal screen is centred in what it is
+          given. The controls were already the client's own, so the panel now
+          matches the real page down to the colours and the fonts. */}
+      <div className="relative flex min-h-[26rem] items-center overflow-hidden rounded-2xl border border-[#EFE6E6] px-6 py-10 md:px-10">
+        <PortalBackground contained />
+        <div className="relative z-10 w-full">
           {!started ? (
             <p className="font-body text-sm text-lyp-white/40">
               Type a field label on the left and the question appears here.

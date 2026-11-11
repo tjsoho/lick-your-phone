@@ -39,6 +39,8 @@ import {
   createIntakePage,
   deleteIntakePage,
   deleteQuestion,
+  describeQuestionDeletion,
+  describePageDeletion,
   reorderIntakePages,
   reorderQuestions,
   setIntakePageTitle,
@@ -796,12 +798,39 @@ export default function IntakeQuestionsList({
     router.refresh();
   }
 
-  async function removePage(pageNumber: number) {
-    if (!window.confirm(`Delete page ${pageNumber}? It has no questions on it.`)) {
+  /** "3 questions and 1 client answer", in the order they matter. */
+  function spell(parts: [number, string, string][]) {
+    const said = parts
+      .filter(([n]) => n > 0)
+      .map(([n, one, many]) => `${n} ${n === 1 ? one : many}`);
+    if (said.length === 0) return "";
+    if (said.length === 1) return said[0];
+    return `${said.slice(0, -1).join(", ")} and ${said[said.length - 1]}`;
+  }
+
+  async function removePage(pageNumber: number, shownAs: string) {
+    setBusy(true);
+    const { data: impact, error: lookError } =
+      await describePageDeletion(pageNumber);
+    if (lookError || !impact) {
+      setBusy(false);
+      toast.error(lookError || "Could not check what is on that page");
       return;
     }
+    setBusy(false);
+
+    const takes = spell([
+      [impact.questions, "question", "questions"],
+      [impact.answers, "client answer", "client answers"],
+      [impact.rules, "visibility rule", "visibility rules"],
+    ]);
+    const warning = takes
+      ? `Delete ${shownAs}? It takes ${takes} with it. This cannot be undone.`
+      : `Delete ${shownAs}? It has nothing on it.`;
+    if (!window.confirm(warning)) return;
+
     setBusy(true);
-    const { error } = await deleteIntakePage(pageNumber);
+    const { error } = await deleteIntakePage(pageNumber, impact.questions);
     setBusy(false);
     if (error) {
       toast.error(error);
@@ -812,7 +841,23 @@ export default function IntakeQuestionsList({
   }
 
   async function handleDelete(id: string, label: string) {
-    if (!window.confirm(`Are you sure you want to delete "${label}"?`)) return;
+    const { data: impact, error: lookError } =
+      await describeQuestionDeletion(id);
+    if (lookError || !impact) {
+      toast.error(lookError || "Could not check what that question holds");
+      return;
+    }
+
+    // A client's answer is their words, so the number of them is said before
+    // anyone agrees, not discovered after.
+    const takes = spell([
+      [impact.answers, "client answer", "client answers"],
+      [impact.rules, "visibility rule", "visibility rules"],
+    ]);
+    const warning = takes
+      ? `Delete "${label}"? It takes ${takes} with it. This cannot be undone.`
+      : `Delete "${label}"? This cannot be undone.`;
+    if (!window.confirm(warning)) return;
 
     try {
       const { error } = await deleteQuestion(id);
@@ -890,7 +935,9 @@ export default function IntakeQuestionsList({
                 }}
                 onCancelRename={() => setRenaming(null)}
                 onSaveTitle={() => saveTitle(pNum)}
-                onDeletePage={() => removePage(pNum)}
+                onDeletePage={() =>
+                  removePage(pNum, pageTitles[pNum] || `page ${pageIndex + 1}`)
+                }
                 onToggleHidden={toggleHidden}
                 onDeleteQuestion={handleDelete}
               />
@@ -1083,21 +1130,23 @@ function PageCard({
         <span className="rounded-full bg-[#F7F1F1] px-2.5 py-1 font-body text-[10px] font-medium uppercase tracking-[0.14em] tabular-nums text-[#6B5A5A]">
           {rows.length} {rows.length === 1 ? "Question" : "Questions"}
         </span>
-        {/* Only an empty page offers this. A page with questions on it would
-            take them with it, which is not something a stray click should be
-            able to do. */}
-        {rows.length === 0 && (
-          <button
-            type="button"
-            onClick={onDeletePage}
-            disabled={busy}
-            className={rowIconClasses}
-            title="Delete this empty page"
-            aria-label={`Delete empty page ${position}`}
-          >
-            <Trash2 strokeWidth={1.5} className="h-4 w-4" />
-          </button>
-        )}
+        {/* Any page can go now, not just an empty one. What it takes with
+            it is counted and named in the confirmation first, because a
+            client's answer is their words and not ours to drop quietly. */}
+        <button
+          type="button"
+          onClick={onDeletePage}
+          disabled={busy}
+          className={rowIconClasses}
+          title={
+            rows.length === 0
+              ? "Delete this empty page"
+              : `Delete this page and its ${rows.length} question${rows.length === 1 ? "" : "s"}`
+          }
+          aria-label={`Delete page ${position}`}
+        >
+          <Trash2 strokeWidth={1.5} className="h-4 w-4" />
+        </button>
       </div>
 
       <div className="overflow-x-auto">
