@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -454,16 +454,48 @@ export default function IntakeQuestionsList({
 
   // A dragged row has to follow the pointer at once, so the list on screen is
   // a local copy held in display order. Anything fresh from the server wins:
-  // it lands after a router.refresh() and is the truth this copy stood in for.
+  // it lands after a revalidate and is the truth this copy stood in for.
   const [rows, setRows] = useState(() => sortRows(questions));
   const [fromServer, setFromServer] = useState(questions);
-  if (questions !== fromServer) {
+
+  // THE ROW DROPPING BACK, AND THEN JUMPING TO WHERE IT WAS PUT.
+  //
+  // Whether new props have arrived is its own question, and it needs its own
+  // answer. It used to be asked of `fromServer`, which a save then rewrote
+  // with the sequences it had just stored. That made `fromServer` a new
+  // object while `questions` was still the old one, so the very next render
+  // read that as fresh props and rebuilt the list out of the stale prop,
+  // which is the row snapping back to where it started. The real props
+  // landed a moment later and moved it again: "it reverts back to its
+  // orginal place and then on the hot toast then it flicks to the right
+  // position".
+  //
+  // So the prop this copy was last built from is remembered separately, and
+  // nothing but a genuinely new prop ever touches it.
+  const [seenProps, setSeenProps] = useState(questions);
+  if (questions !== seenProps) {
+    setSeenProps(questions);
     setFromServer(questions);
     setRows(sortRows(questions));
   }
 
   /** The order pages are shown in while one is being carried. */
   const [pageOrder, setPageOrder] = useState<number[] | null>(null);
+
+  /**
+   * THE PAGE THE CARRIED ROW WAS LIFTED FROM, AND WHETHER IT HAS LEFT IT.
+   *
+   * Carrying the last row off a page leaves that page empty, and an empty
+   * page puts out a drop zone that fills the space the row was just in,
+   * which is exactly where the pointer still is. The row was dropped onto
+   * the page it had just left and snapped straight back.
+   *
+   * A page that is only empty because you are holding its last row is not an
+   * empty page, it is the page you are dragging from, so its drop zone is
+   * kept out of the way until the row has actually landed somewhere.
+   */
+  const liftedFrom = useRef<number | null>(null);
+  const hasLeftItsPage = useRef(false);
 
   const sensors = useSensors(
     // A few pixels of travel before a drag starts, so a click on the grip is
@@ -615,8 +647,16 @@ export default function IntakeQuestionsList({
       if (kind === "section") {
         return id.startsWith("sect:") && container.data.current?.page === activePage;
       }
-      // A row can land on another row, in an emptied section, or on a page
-      // that has nothing on it at all.
+      // A row can land on another row, or on a page that has nothing on it
+      // at all. Not, however, on the drop zone of the page it is being
+      // carried off, which only appeared because it is being carried.
+      if (
+        hasLeftItsPage.current &&
+        liftedFrom.current !== null &&
+        id === pageBinId(liftedFrom.current)
+      ) {
+        return false;
+      }
       return (
         !id.startsWith("page:") &&
         !id.startsWith("sect:")
@@ -627,7 +667,10 @@ export default function IntakeQuestionsList({
   }, []);
 
   function handleDragStart(event: DragStartEvent) {
-    setActiveId(String(event.active.id));
+    const id = String(event.active.id);
+    setActiveId(id);
+    liftedFrom.current = rows.find((r) => r.id === id)?.page_number ?? null;
+    hasLeftItsPage.current = false;
   }
 
   /**
@@ -657,23 +700,25 @@ export default function IntakeQuestionsList({
       let to: number;
 
       if (overKey.startsWith("bin:") || overKey.startsWith("pagebin:")) {
-        const data = over.data.current as
-          | { page: number; sectionName?: string | null }
-          | undefined;
-        if (!data) return prev;
-        targetPage = data.page;
-        targetSection = data.sectionName ?? null;
-        // The end of that page, which is where an empty run sits.
-        const lastOnPage = prev.reduce(
-          (last, r, i) => (r.page_number === targetPage ? i : last),
-          -1,
-        );
-        to = lastOnPage === -1 ? prev.length : lastOnPage + 1;
+        // AN EMPTY PAGE TAKES IT ON THE DROP, NOT ON THE WAY PAST.
+        //
+        // Moving the row onto the empty page while it is still being carried
+        // reflows two cards underneath the pointer at once: the page it left
+        // puts out a drop zone, and the page it arrived at stops being one.
+        // dnd-kit then measures the carried row against a layout that has
+        // moved under it and picks a different target, so the row ends up
+        // somewhere nobody aimed at.
+        //
+        // Nothing moves until the drop, so nothing reflows, and the drop
+        // lands exactly where it was aimed. The zone lights up meanwhile so
+        // it is still clear where it is going.
+        return prev;
       } else {
         const overIndex = prev.findIndex((r) => r.id === overKey);
         if (overIndex === -1) return prev;
         targetPage = prev[overIndex].page_number;
         targetSection = prev[overIndex].section ?? null;
+
         to = overIndex;
       }
 
@@ -681,12 +726,27 @@ export default function IntakeQuestionsList({
       const unchanged =
         moving.page_number === targetPage &&
         (moving.section ?? null) === targetSection &&
-        from === to;
+        to === from;
       if (unchanged) return prev;
+
+      // THE ROW IS LIFTED OUT FIRST, AND THAT IS THE WHOLE TRICK.
+      //
+      // Taking it out shifts everything below it up one, so putting it back
+      // at the index its target held lands it AFTER that target when it came
+      // from above, and BEFORE it when it came from below. Which is how
+      // every sortable list behaves, and how the last place in a list is
+      // reachable at all.
+      //
+      // Stepping the index back by one when moving down, which is what used
+      // to happen here, turns that into "always land in front of it". The
+      // place behind the last row then does not exist: "moving questions to
+      // the last position doesnt seem to work i can move question 5 to
+      // question 8".
+      if (targetPage !== liftedFrom.current) hasLeftItsPage.current = true;
 
       const next = [...prev];
       next.splice(from, 1);
-      next.splice(to > from ? to - 1 : to, 0, {
+      next.splice(to, 0, {
         ...moving,
         page_number: targetPage,
         section: targetSection,
@@ -699,6 +759,8 @@ export default function IntakeQuestionsList({
     const { active, over } = event;
     const activeKey = String(active.id);
     setActiveId(null);
+    liftedFrom.current = null;
+    hasLeftItsPage.current = false;
     if (!over) return;
 
     const kind = kindOf(activeKey);
@@ -742,21 +804,43 @@ export default function IntakeQuestionsList({
       return;
     }
 
-    // A row. handleDragOver has already put it where it is going, so all that
-    // is left is to write down both the page it left and the page it is on.
-    const landed = rows.find((r) => r.id === activeKey);
+    // A row. A move among other rows was already made as it was carried, so
+    // all that is left is an empty page, which waits until now.
+    const overKey = String(over.id);
+    const carried = rows.find((r) => r.id === activeKey);
     const started = fromServer.find((r) => r.id === activeKey);
-    if (!landed) return;
+    if (!carried) return;
 
+    let next = rows;
+    if (overKey.startsWith("bin:") || overKey.startsWith("pagebin:")) {
+      const data = over.data.current as
+        | { page: number; sectionName?: string | null }
+        | undefined;
+      if (data && data.page !== carried.page_number) {
+        const from = rows.findIndex((r) => r.id === activeKey);
+        next = [...rows];
+        next.splice(from, 1);
+        next.push({
+          ...carried,
+          page_number: data.page,
+          section: data.sectionName ?? null,
+        });
+        setRows(next);
+      }
+    }
+
+    const landed = next.find((r) => r.id === activeKey) ?? carried;
     const touched = new Set<number>([landed.page_number]);
     if (started && started.page_number !== landed.page_number) {
       touched.add(started.page_number);
     }
-    void saveRows(rows, [...touched]);
+    void saveRows(next, [...touched]);
   }
 
   function handleDragCancel() {
     setActiveId(null);
+    liftedFrom.current = null;
+    hasLeftItsPage.current = false;
     setRows(sortRows(fromServer));
   }
 
@@ -1060,7 +1144,7 @@ function PageCard({
   } = useSortable({ id: pageId(page), data: { kind: "page", page } });
 
   // An entirely empty page still has to be able to receive a question.
-  const { setNodeRef: setBinRef } = useDroppable({
+  const { setNodeRef: setBinRef, isOver: binIsOver } = useDroppable({
     id: pageBinId(page),
     data: { kind: "bin", page, sectionName: null },
   });
@@ -1167,10 +1251,16 @@ function PageCard({
           {rows.length === 0 ? (
             <div
               ref={setBinRef}
-              className="px-5 py-10 text-center font-body text-[12.5px] text-[#9C8C8C]"
+              className={cn(
+                "px-5 py-10 text-center font-body text-[12.5px] transition-colors duration-200",
+                binIsOver
+                  ? "bg-lyp-cherry/[0.05] text-lyp-cherry"
+                  : "text-[#9C8C8C]",
+              )}
             >
-              Nothing on this page yet. Add a question, or drag one here from
-              another page.
+              {binIsOver
+                ? "Drop it here to put it on this page."
+                : "Nothing on this page yet. Add a question, or drag one here from another page."}
             </div>
           ) : (
             <SortableContext
