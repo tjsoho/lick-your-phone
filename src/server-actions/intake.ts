@@ -265,13 +265,14 @@ async function syncAbnFromIntake(
     .find((v) => v.length > 0);
   if (!raw) return null;
 
-  // Never overwrite an ABN the team has already put on the record.
-  const { data: client } = await supabase
-    .from("clients")
-    .select("abn")
-    .eq("id", clientId)
-    .maybeSingle();
-  if (client?.abn && client.abn.trim()) return client.abn;
+  // THE CLIENT'S OWN ANSWER WINS.
+  //
+  // This used to stand down whenever the record already had an ABN, on the
+  // reasoning that a value typed by the team should not be trampled. That is
+  // backwards. The team enters an ABN before onboarding as a best guess; the
+  // client types theirs on the form, about their own business. When the two
+  // disagree the client is right, and the one that gets used downstream has
+  // to be the one they gave us.
 
   const { error: updateError } = await supabase
     .from("clients")
