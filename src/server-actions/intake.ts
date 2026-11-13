@@ -224,6 +224,64 @@ export async function saveIntakeResponses(
  * can add by hand — not a reason to hand the client an error for answers
  * that are safely in.
  */
+/**
+ * THE ABN THE CLIENT TYPES IN, ONTO THE CLIENT RECORD.
+ *
+ * The onboarding form has always asked for an ABN and the answer has always
+ * stopped there, in `intake_responses`. The client record has its own `abn`
+ * column, the contract webhook reads it, and Make keeps a field for it, so
+ * all three were sitting empty waiting for somebody to type it in by hand.
+ *
+ * Matched on the question's field type rather than its label, so renaming
+ * the question on the form does not quietly break this.
+ */
+async function syncAbnFromIntake(
+  supabase: Awaited<ReturnType<typeof createAdminClient>>,
+  clientId: string,
+  proposalId: string,
+): Promise<string | null> {
+  const { data: abnQuestions, error: qError } = await supabase
+    .from("intake_questions")
+    .select("id")
+    .eq("field_type", "abn");
+  if (qError) throw qError;
+
+  const ids = (abnQuestions ?? []).map((q) => q.id);
+  if (ids.length === 0) return null;
+
+  const { data: answers, error: aError } = await supabase
+    .from("intake_responses")
+    .select("question_id, value")
+    .eq("proposal_id", proposalId)
+    .in("question_id", ids);
+  if (aError) throw aError;
+
+  // The first answer with anything in it. A client with one ABN question
+  // has one answer; more than one is a form someone built oddly, and the
+  // first filled one is still the best guess.
+  const raw = (answers ?? [])
+    .map((a) => (typeof a.value === "string" ? a.value : String(a.value ?? "")))
+    .map((v) => v.trim())
+    .find((v) => v.length > 0);
+  if (!raw) return null;
+
+  // Never overwrite an ABN the team has already put on the record.
+  const { data: client } = await supabase
+    .from("clients")
+    .select("abn")
+    .eq("id", clientId)
+    .maybeSingle();
+  if (client?.abn && client.abn.trim()) return client.abn;
+
+  const { error: updateError } = await supabase
+    .from("clients")
+    .update({ abn: raw })
+    .eq("id", clientId);
+  if (updateError) throw updateError;
+
+  return raw;
+}
+
 async function syncContactsFromIntake(
   supabase: Awaited<ReturnType<typeof createAdminClient>>,
   clientId: string,
@@ -385,6 +443,7 @@ export async function completeIntake(
     if (proposal.client_id) {
       try {
         await syncContactsFromIntake(supabase, proposal.client_id, proposalId);
+        await syncAbnFromIntake(supabase, proposal.client_id, proposalId);
       } catch (err) {
         console.error("[intake] contact sync failed:", err);
         await supabase

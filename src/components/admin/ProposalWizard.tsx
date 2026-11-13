@@ -263,7 +263,13 @@ export default function ProposalWizard({
       setNewClientEmail("");
       setNewVenueName("");
       setNewClientLogo("");
-      toast.success("Client added");
+      // Say which of the two happened. Quietly folding a new venue into
+      // somebody who already exists would be a surprise worth avoiding.
+      toast.success(
+        data.reusedExisting
+          ? `${data.client.name} already had that email, so the venue was added to them`
+          : "Client added",
+      );
       setStep(2);
     }
   }

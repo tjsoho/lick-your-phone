@@ -264,19 +264,40 @@ export async function createClientWithVenue(data: {
   const supabase = await createSupabaseClient();
   const slug = await uniqueClientSlug(supabase, data.slug);
 
-  const { data: client, error: clientError } = await supabase
+  // THE EMAIL IS UNIQUE, AND A REPEAT IS USUALLY THE SAME PERSON.
+  //
+  // Writing a second proposal for a client who already exists used to stop
+  // dead on "duplicate key value violates unique constraint", which is both
+  // a dead end and not a sentence anyone should have to read. A person with
+  // that address is already on file, so their new venue is added to them and
+  // the proposal carries on.
+  const { data: existing } = await supabase
     .from("clients")
-    .insert({
-      name: data.name,
-      slug,
-      email: data.email,
-      logo_url: data.logo_url?.trim() || null,
-    })
-    .select()
-    .single();
+    .select("*")
+    .eq("email", data.email)
+    .maybeSingle();
 
-  if (clientError) {
-    return { data: null, error: clientError.message };
+  let client = existing;
+  let reusedExisting = false;
+
+  if (client) {
+    reusedExisting = true;
+  } else {
+    const { data: created, error: clientError } = await supabase
+      .from("clients")
+      .insert({
+        name: data.name,
+        slug,
+        email: data.email,
+        logo_url: data.logo_url?.trim() || null,
+      })
+      .select()
+      .single();
+
+    if (clientError) {
+      return { data: null, error: clientError.message };
+    }
+    client = created;
   }
 
   const { data: venue, error: venueError } = await supabase
@@ -286,10 +307,14 @@ export async function createClientWithVenue(data: {
     .single();
 
   if (venueError) {
-    await supabase.from("clients").delete().eq("id", client.id);
+    // Only clean up a client this call created. An existing one keeps its
+    // other venues and its history.
+    if (!reusedExisting) {
+      await supabase.from("clients").delete().eq("id", client.id);
+    }
     return { data: null, error: venueError.message };
   }
 
   revalidatePath("/admin");
-  return { data: { client, venue }, error: null };
+  return { data: { client, venue, reusedExisting }, error: null };
 }
