@@ -1,5 +1,5 @@
 import { dispatchNotification } from "./notification-service";
-import { sendContractToMake } from "./make-webhook";
+import { sendContractToMake, sendOnboardingToMake } from "./make-webhook";
 import { logAuditEvent } from "./audit-service";
 import { getAppUrl } from "./app-url";
 
@@ -101,5 +101,18 @@ export async function onIntakeCompleted(params: {
   await Promise.allSettled([
     dispatchNotification("INTAKE_COMPLETED", payload),
     logAuditEvent(params.proposalId, "INTAKE_COMPLETED", payload),
+    // Make's onboarding scenario, which used to be triggered by a Jotform.
+    sendOnboardingToMake({
+      proposalId: params.proposalId,
+      businessName: params.venueName,
+      clientName: params.clientName,
+      clientEmail: params.clientEmail,
+      venueAddress: params.venueAddress,
+      agreementUrl: params.agreementFileUrl ?? null,
+      responsesUrl: payload.responsesUrl,
+      intakeUrl: `${appUrl}/portal/${params.proposalToken}`,
+      assets: params.assets,
+      isEdit: params.isEdit,
+    }),
   ]);
 }

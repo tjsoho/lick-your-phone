@@ -657,9 +657,16 @@ export default function IntakePage({
    * when unticked, so the shortcut is always reversible.
    */
   function applySameAs(cfg: SameAsConfig, on: boolean) {
-    const byLabel = new Map(
-      visibleQuestionsForPage.map((q) => [q.field_label, q.id]),
-    );
+    // ACROSS PAGES, NOT JUST THIS ONE.
+    //
+    // This used to look only at the questions on the page in front of the
+    // client, so a pair naming a question from an earlier page matched
+    // nothing and the tick box did nothing at all. The thing worth copying
+    // is usually on an earlier page: "in primary contact have a tick box
+    // that says same as director that on tick takes the directors first
+    // name and last name". Answers from every page are already held, so the
+    // lookup simply has to be as wide as they are.
+    const byLabel = new Map(questions.map((q) => [q.field_label, q.id]));
 
     setResponses((prev) => {
       const next = { ...prev };

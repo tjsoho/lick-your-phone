@@ -170,3 +170,79 @@ export async function sendContractToMake(input: MakeContractInput) {
     console.error(`[make] contract ${input.proposalId} failed:`, err);
   }
 }
+
+/**
+ * THE ONBOARDING FORM, HANDED TO MAKE THE SAME WAY THE CONTRACT IS.
+ *
+ * Make's onboarding scenario used to be triggered by a Jotform, one per
+ * state, and dug the client's details back out of the submission. The
+ * portal owns that form now, so it sends the finished thing: the same
+ * record id the contract carried, so the two line up, and links to the two
+ * files the client is emailed.
+ *
+ * The contract scenario already wrote a Backlog Data record under this
+ * record id, holding the Drive folder and the ClickUp task ids. Make reads
+ * those back rather than having them passed around again.
+ */
+const MAKE_ONBOARDING_WEBHOOK_URL = process.env.MAKE_ONBOARDING_WEBHOOK_URL;
+
+export interface MakeOnboardingInput {
+  proposalId: string;
+  businessName: string;
+  clientName: string;
+  clientEmail: string;
+  venueAddress: string;
+  /** The signed contract, and the answers, both resolvable by token. */
+  agreementUrl: string | null;
+  responsesUrl: string;
+  intakeUrl: string;
+  /** Files the client uploaded on the form. */
+  assets: string[];
+  isEdit: boolean;
+  notes?: string | null;
+  totalCents?: number;
+  contractLength?: string | null;
+  lineItems?: Array<{ serviceName: string; priceCents: number; billing: string }>;
+}
+
+export function buildMakeOnboardingPayload(input: MakeOnboardingInput) {
+  const signed = (input.lineItems ?? []).map((li) => norm(li.serviceName));
+  const has = (keys: string[]) => keys.some((k) => signed.includes(k));
+  const yes = (on: boolean) => (on ? "Yes" : "No");
+  const { first, last } = splitName(input.clientName);
+
+  return {
+    record_id: input.proposalId,
+    business_name: input.businessName || input.clientName,
+    contact: { first_name: first, last_name: last, email: input.clientEmail },
+    venue_address: input.venueAddress,
+    agreement_url: input.agreementUrl ?? "",
+    responses_url: input.responsesUrl,
+    intake_url: input.intakeUrl,
+    assets: input.assets,
+    is_edit: input.isEdit,
+    notes: input.notes ?? "",
+    contract_length: input.contractLength ?? "",
+    services: Object.fromEntries(
+      Object.entries(SERVICE_FLAGS).map(([flag, names]) => [flag, yes(has(names))]),
+    ),
+    pricing: { currency: "AUD", total: (input.totalCents ?? 0) / 100 },
+  };
+}
+
+export async function sendOnboardingToMake(input: MakeOnboardingInput) {
+  if (!MAKE_ONBOARDING_WEBHOOK_URL) {
+    console.warn("[make] MAKE_ONBOARDING_WEBHOOK_URL missing, nothing sent");
+    return;
+  }
+  const payload = buildMakeOnboardingPayload(input);
+  try {
+    await axios.post(MAKE_ONBOARDING_WEBHOOK_URL, payload, {
+      headers: { "Content-Type": "application/json" },
+      timeout: 15000,
+    });
+    console.log(`[make] onboarding ${input.proposalId} sent`);
+  } catch (err) {
+    console.error(`[make] onboarding ${input.proposalId} failed:`, err);
+  }
+}

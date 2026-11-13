@@ -39,7 +39,21 @@ const CONFIRM_GREEN_TINT = "bg-[#86D6A5]/[0.18]";
  * less movement is not helped by a screen that changes under them on a timer
  * they cannot see, so they get the destination immediately instead.
  */
-const HANDOFF_MS = 2000;
+/**
+ * ONE STEP TO THE FORM, NOT TWO.
+ *
+ * Saving payment details used to park the client on a confirmation screen
+ * for two seconds with an "Access Onboarding Form" button on it, and the
+ * deck's own onboarding signpost sat on the slide after that with a second
+ * button. Two presses to reach one form: "theres two steps to onboarding
+ * cvontinue to onboarding then access onboarding ... its overkill".
+ *
+ * The confirmation still appears, just long enough to read that the details
+ * saved, and then carries them in. The button stays for anyone who gets
+ * there before the jump, and the deck's signpost stays for a client who
+ * leaves and comes back, which is the one case that must not dead end.
+ */
+const HANDOFF_MS = 900;
 
 /**
  * WHETHER THE CLIENT MAY PAY BY CARD.
