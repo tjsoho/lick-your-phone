@@ -126,12 +126,32 @@ itself. Both the test execution and the test record were deleted afterwards.
 
 ---
 
+---
+
+### 11. Stripe is out of the onboarding flow
+
+The onboarding automation used to look a client up in Stripe and create a
+Stripe customer if it did not find one. It never charged anything, it just
+made a record.
+
+The portal has never used Stripe. It bills through Pinch. So those two steps
+were doing nothing useful and have been removed.
+
+**Test:** Submit the onboarding form. The run is 2 operations shorter and
+there is no Stripe step in the log.
+
 ## Still open
 
 - **NSW Add-Ons is still on Jotform.** Scenario 2b handles it. Nothing has
   been retired, so it still works. Moving it into the portal is a separate
   job.
-- **Stripe is still in the onboarding flow.** The client said billing moves
-  to Pinch but only named Xero. Needs a decision before anything is changed.
+- **Two ClickUp steps have never worked.** "Onboarding status change" and
+  "Clone Onboarding Task to Account - Active" both try to set a task to the
+  status "dedicated smm/am" on the Client Onboarding list. ClickUp rejects it
+  with "Status does not exist". Both steps are wrapped in an "ignore the
+  error" instruction, so the run still reports success and nobody ever saw
+  it. This is inherited from NSW Add-Ons, unchanged, and it fails there the
+  same way. We need to know from your side what those two steps should
+  actually set before it can be fixed.
 - **2a and 2b are still live and untouched**, on purpose, until the new path
   is confirmed working by the client.
