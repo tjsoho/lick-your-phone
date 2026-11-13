@@ -61,7 +61,7 @@ export async function signProposal(input: SignProposalInput) {
         `
         id, status, token, discount_timer_active, discount_expires_at,
         discount_starts_at,
-        client:clients!client_id ( id, name, contact_name, logo_url ),
+        client:clients!client_id ( id, name, contact_name, logo_url, abn ),
         venue:venues!venue_id ( id, name, address, logo_url )
       `,
       )
@@ -255,6 +255,7 @@ export async function signProposal(input: SignProposalInput) {
       name: string;
       contact_name: string | null;
       logo_url: string | null;
+      abn: string | null;
     } | null;
     const venueObj = proposal.venue as unknown as {
       id: string;
@@ -364,6 +365,7 @@ export async function signProposal(input: SignProposalInput) {
       clientSlug,
       venueName: venueObj?.name ?? "Venue",
       venueAddress: venueObj?.address ?? "",
+      abn: clientObj?.abn ?? null,
       signerEmail: input.signerEmail,
       totalCents,
       lineItems: pdfLineItems.map((li) => ({

@@ -1,4 +1,5 @@
 import { dispatchNotification } from "./notification-service";
+import { sendContractToMake } from "./make-webhook";
 import { logAuditEvent } from "./audit-service";
 import { getAppUrl } from "./app-url";
 
@@ -8,6 +9,8 @@ interface IntegrationContext {
   clientSlug: string;
   venueName: string;
   venueAddress: string;
+  /** Set on the client record by the team. Empty until somebody fills it in. */
+  abn?: string | null;
   signerEmail: string;
   totalCents: number;
   lineItems: Array<{
@@ -27,7 +30,7 @@ export async function onProposalSigned(ctx: IntegrationContext) {
       clientEmail: ctx.signerEmail,
       portalUrl: `${appUrl}/portal/${ctx.proposalId}`,
       venueName: ctx.venueName,
-      venueAddress: "", // Assuming venue address is not available in the context
+      venueAddress: ctx.venueAddress,
     },
     proposalId: ctx.proposalId,
     contractUrl: ctx.documentUrl,
@@ -44,6 +47,21 @@ export async function onProposalSigned(ctx: IntegrationContext) {
   await Promise.allSettled([
     dispatchNotification("PROPOSAL_SIGNED", payload),
     logAuditEvent(ctx.proposalId, "PROPOSAL_SIGNED", payload),
+    // Make's contract scenario, which can no longer read PandaDoc and so
+    // needs the whole signed picture handed to it.
+    sendContractToMake({
+      proposalId: ctx.proposalId,
+      clientName: ctx.clientName,
+      venueName: ctx.venueName,
+      venueAddress: ctx.venueAddress,
+      abn: ctx.abn,
+      signerEmail: ctx.signerEmail,
+      totalCents: ctx.totalCents,
+      signedAt: new Date().toISOString(),
+      contractUrl: ctx.documentUrl,
+      intakeUrl: `${appUrl}/portal/${ctx.proposalId}`,
+      lineItems: ctx.lineItems,
+    }),
   ]);
 }
 
