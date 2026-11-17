@@ -140,18 +140,37 @@ were doing nothing useful and have been removed.
 **Test:** Submit the onboarding form. The run is 2 operations shorter and
 there is no Stripe step in the log.
 
+---
+
+### 12. The two ClickUp steps now work
+
+Two steps in the onboarding automation had never once succeeded. Both tried to
+set a task to the status "dedicated smm/am", which exists on neither list, so
+ClickUp rejected them every time. An "ignore the error" instruction swallowed
+it, which is why the run still said Success and nobody saw it.
+
+Rita confirmed what they should do:
+
+- When a client submits the onboarding form, their onboarding task moves to
+  **check pinch / cc details**.
+- Their **accounts** task moves to **waiting for payments**. The second step
+  was editing the onboarding task by mistake, despite being named "Clone
+  Onboarding Task to Account - Active". It now acts on the accounts task, in
+  the Accounts space, where that status lives.
+
+Both steps now raise a MAKE.COM ALERT if they fail, rather than being ignored.
+
+**Test:** Submit the onboarding form. In ClickUp, the onboarding task reads
+"check pinch / cc details" and the accounts task reads "waiting for payments".
+
 ## Still open
 
 - **NSW Add-Ons is still on Jotform.** Scenario 2b handles it. Nothing has
   been retired, so it still works. Moving it into the portal is a separate
   job.
-- **Two ClickUp steps have never worked.** "Onboarding status change" and
-  "Clone Onboarding Task to Account - Active" both try to set a task to the
-  status "dedicated smm/am" on the Client Onboarding list. ClickUp rejects it
-  with "Status does not exist". Both steps are wrapped in an "ignore the
-  error" instruction, so the run still reports success and nobody ever saw
-  it. This is inherited from NSW Add-Ons, unchanged, and it fails there the
-  same way. We need to know from your side what those two steps should
-  actually set before it can be fixed.
+- **"waiting for payments" is not final yet.** Rita believes that is where
+  the accounts task should end up, and it is built that way, but she is
+  confirming with the Accounts team. It is one field to change if they say
+  otherwise.
 - **2a and 2b are still live and untouched**, on purpose, until the new path
   is confirmed working by the client.
