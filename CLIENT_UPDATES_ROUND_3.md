@@ -153,24 +153,22 @@ Rita confirmed what they should do:
 
 - When a client submits the onboarding form, their onboarding task moves to
   **check pinch / cc details**.
-- Their **accounts** task moves to **waiting for payments**. The second step
-  was editing the onboarding task by mistake, despite being named "Clone
-  Onboarding Task to Account - Active". It now acts on the accounts task, in
-  the Accounts space, where that status lives.
+- Their **accounts** task moves to **in onboarding, new client**, and the
+  accounts team takes it by hand from there. The second step was editing the
+  onboarding task by mistake, despite being named "Clone Onboarding Task to
+  Account - Active". It now acts on the accounts task, in the Accounts space,
+  where that status lives.
 
 Both steps now raise a MAKE.COM ALERT if they fail, rather than being ignored.
 
 **Test:** Submit the onboarding form. In ClickUp, the onboarding task reads
-"check pinch / cc details" and the accounts task reads "waiting for payments".
+"check pinch / cc details" and the accounts task reads "in onboarding, new
+client".
 
 ## Still open
 
 - **NSW Add-Ons is still on Jotform.** Scenario 2b handles it. Nothing has
   been retired, so it still works. Moving it into the portal is a separate
   job.
-- **"waiting for payments" is not final yet.** Rita believes that is where
-  the accounts task should end up, and it is built that way, but she is
-  confirming with the Accounts team. It is one field to change if they say
-  otherwise.
 - **2a and 2b are still live and untouched**, on purpose, until the new path
   is confirmed working by the client.
