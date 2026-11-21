@@ -7,7 +7,12 @@ import { cn } from "@/lib/utils";
 import Reveal, { STEP, revealDelay } from "../Reveal";
 import SelectionTotals from "../SelectionTotals";
 import { CountdownClock, useDiscountTimerLive } from "../DiscountCountdown";
-import { buildSelectionLines, totalSelection } from "@/lib/selection-pricing";
+import {
+  buildSelectionLines,
+  groupHeading,
+  groupSelectionLines,
+  totalSelection,
+} from "@/lib/selection-pricing";
 
 function formatCents(cents: number): string {
   return new Intl.NumberFormat("en-AU", {
@@ -50,6 +55,18 @@ export default function SummaryPage() {
   // prices the price bar and the basket too.
   const selectedServices = buildSelectionLines(selections, serviceMap);
   const totals = totalSelection(selectedServices);
+
+  // GATHERED BY TERM, LONGEST FIRST, FREEBIES LAST.
+  //
+  // "Could the summary be grouped by term: 18 months, 12 months, 6 months,
+  // one off payment, and complimentary items at the end?" The drawers are
+  // unchanged; only the order they appear in and the headings over them.
+  const groups = groupSelectionLines(selectedServices);
+  // The reveal still cascades down the page as one list, so the stagger has
+  // to count across the groups rather than restarting inside each.
+  const revealOrder = new Map(
+    groups.flatMap((g) => g.lines).map((line, i) => [line.id, i] as const),
+  );
 
   const signatureIdx = pages.findIndex((p) => p.slug === "signature");
   const paymentIdx = pages.findIndex((p) => p.slug === "payment");
@@ -96,9 +113,15 @@ export default function SummaryPage() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8 items-start">
               {/* Left: expandable drawers */}
-              <div className="space-y-2">
-                {selectedServices.map((item, i) => {
+              <div className="space-y-5">
+                {groups.map((group) => (
+                  <div key={group.key} className="space-y-2">
+                    <p className="border-b border-lyp-white/10 pb-1.5 font-body text-[11px] font-medium uppercase tracking-[0.2em] text-lyp-white/55">
+                      {groupHeading(group)}
+                    </p>
+                {group.lines.map((item) => {
                   if (!item) return null;
+                  const i = revealOrder.get(item.id) ?? 0;
                   const isOpen = expandedId === item.id;
                   // The slide this service was pitched on, so the drawer can
                   // offer a way back to it. `pages` is already filtered to what
@@ -320,6 +343,8 @@ export default function SummaryPage() {
                     </Reveal>
                   );
                 })}
+                  </div>
+                ))}
               </div>
 
               {/* Right: pricing card */}
@@ -337,59 +362,48 @@ export default function SummaryPage() {
                     {t("cardTitle")}
                   </h3>
 
-                  <div className="space-y-2">
-                    {selectedServices.map((item) => {
-                      if (!item) return null;
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex justify-between items-start"
-                        >
-                          <span className="font-body text-[13.5px]/[18px] text-lyp-white/90 mr-2 mt-px">
-                            {item.name}
-                          </span>
-                          <div className="flex flex-col items-end shrink-0">
-                            <span className="font-body text-[13.5px]/[18px] text-lyp-white">
-                              {item.period === "in_kind" ? (
-                                t("free")
-                              ) : (
-                                <>
-                                  {formatCents(item.nativeCents)}
-                                  {item.period === "week" && (
-                                    <span className="text-lyp-white/80">
-                                      {t("perWeekShort")}
-                                    </span>
-                                  )}
-                                  {item.period === "month" && (
-                                    <span className="text-lyp-white/80">
-                                      {t("perMonthShort")}
-                                    </span>
-                                  )}
-                                </>
-                              )}
-                            </span>
-
-                            {/* Every paid line says how long it runs, so a
-                              12-month plan reads as plainly as a 3-month one
-                              and a single payment is never mistaken for a
-                              recurring one. */}
-                            {item.billing === "recurring_monthly" ? (
-                              <span className="font-body text-[12.5px]/[16px] text-lyp-white/75 mt-0.5">
-                                {item.billingCycleMonths === 1
-                                  ? t("forOneMonth")
-                                  : t("forMonths", {
-                                      months: item.billingCycleMonths,
-                                    })}
+                  {/* Gathered by term here too, so the price card reads the
+                      same way as the list beside it. The term is said once
+                      over the group rather than against every line. */}
+                  <div className="space-y-3">
+                    {groups.map((group) => (
+                      <div key={group.key}>
+                        <p className="mb-1.5 border-b border-lyp-white/10 pb-1 font-body text-[10px] font-medium uppercase tracking-[0.18em] text-lyp-white/55">
+                          {groupHeading(group)}
+                        </p>
+                        <div className="space-y-2">
+                          {group.lines.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex justify-between items-start"
+                            >
+                              <span className="font-body text-[13.5px]/[18px] text-lyp-white/90 mr-2 mt-px">
+                                {item.name}
                               </span>
-                            ) : item.period === "one_off" ? (
-                              <span className="font-body text-[12.5px]/[16px] text-lyp-white/75 mt-0.5">
-                                {t("oneOffPayment")}
+                              <span className="shrink-0 font-body text-[13.5px]/[18px] text-lyp-white">
+                                {item.period === "in_kind" ? (
+                                  t("free")
+                                ) : (
+                                  <>
+                                    {formatCents(item.nativeCents)}
+                                    {item.period === "week" && (
+                                      <span className="text-lyp-white/80">
+                                        {t("perWeekShort")}
+                                      </span>
+                                    )}
+                                    {item.period === "month" && (
+                                      <span className="text-lyp-white/80">
+                                        {t("perMonthShort")}
+                                      </span>
+                                    )}
+                                  </>
+                                )}
                               </span>
-                            ) : null}
-                          </div>
+                            </div>
+                          ))}
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                   </div>
 
                   <SelectionTotals t={t} totals={totals} />

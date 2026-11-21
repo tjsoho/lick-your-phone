@@ -199,7 +199,7 @@ export function PageRenderer({ page }: { page: PageData }) {
 /** ease-brand, as a framer cubic-bezier array. */
 const BRAND_EASE = [0.32, 0.72, 0, 1] as const;
 
-function CarouselInner() {
+function CarouselInner({ internalView = false }: { internalView?: boolean }) {
   const {
     pages,
     currentPage,
@@ -299,12 +299,25 @@ function CarouselInner() {
 
   const hasTop = selectedCount > 0;
   const isSummary = page.slug === "summary";
+  /**
+   * ONE PLACE TO SIGN.
+   *
+   * "Please hide the side panel with the selections (and its sign button) on
+   * the signing page, so clients only sign in one place."
+   *
+   * The signing slide already stands the whole list beside the pad, so the
+   * basket repeated it and its Sign button was a second, competing way to
+   * finish. The slide now follows the same rule the summary does: no price
+   * bar, no basket. The offer countdown is separate and stays.
+   */
+  const isSigning = page.slug === "signature";
+  const hidesBasket = isSummary || isSigning;
   // The counter's slot goes to the stage tracker from the summary onwards.
   const showFlow = !!page.slug && CLOSING_SLUGS.includes(page.slug);
   // Once signed, the selection is locked in — the running total stops being
   // a shopping aid and just follows the client through onboarding.
   const isSigned = proposal.status === "signed" || proposal.status === "intake_complete";
-  const showRunningTotal = hasTop && !isSummary && !isSigned;
+  const showRunningTotal = hasTop && !hidesBasket && !isSigned;
   // The countdown is a buying aid too, so it goes once the client has signed.
   //
   // It also does not start at slide one. "Show that discount red banner at the
@@ -335,11 +348,11 @@ function CarouselInner() {
           : "";
 
   // The basket is the price bar's own panel, so it follows the bar's rule:
-  // gone on the summary slide (which is the same list at full size) and gone
-  // for good once the proposal is signed. It does NOT follow the bar's
+  // gone on the summary and signing slides (both of which already show the
+  // same list at full size) and gone for good once the proposal is signed. It does NOT follow the bar's
   // selection count, though — removing the last line should leave an empty
   // basket open to say so, rather than snapping it shut mid-gesture.
-  const showCart = cartOpen && !isSummary && !isSigned;
+  const showCart = cartOpen && !hidesBasket && !isSigned;
   // Where the rail hangs from on `sm` and up: under the price bar when it is
   // there, otherwise under the countdown strip, otherwise the top of the page.
   const cartTopOffset = showRunningTotal ? 52 : showTimer ? 44 : 0;
@@ -366,8 +379,12 @@ function CarouselInner() {
         </div>
       )}
 
-      {/* Reports the visit to the dashboard. Renders nothing. */}
-      <RecordView token={proposal.token} currentPage={currentPage} />
+      {/* Reports the visit to the dashboard. Renders nothing. Left off
+          entirely on the team's own link, so an internal check never lands
+          in the client's reading history. */}
+      {!internalView && (
+        <RecordView token={proposal.token} currentPage={currentPage} />
+      )}
 
       <SelectionCart
         open={showCart}
@@ -485,6 +502,13 @@ export interface ProposalCarouselProps {
   complimentaryServiceIds?: string[];
   /** Wording overrides for the structural pages, keyed by slug. */
   pageCopy?: Record<string, CopyOverrides>;
+  /**
+   * The team opened their own link rather than the client's. The deck is
+   * identical; the difference is that nothing about the visit is reported,
+   * so checking a proposal before sending it cannot show up in the pipeline
+   * as the client having opened it.
+   */
+  internalView?: boolean;
 }
 
 export default function ProposalCarousel({
@@ -497,6 +521,7 @@ export default function ProposalCarousel({
   discountOverrides,
   complimentaryServiceIds,
   pageCopy,
+  internalView = false,
 }: ProposalCarouselProps) {
   return (
     <ProposalProvider
@@ -510,7 +535,7 @@ export default function ProposalCarousel({
       complimentaryServiceIds={complimentaryServiceIds}
       pageCopy={pageCopy}
     >
-      <CarouselInner />
+      <CarouselInner internalView={internalView} />
     </ProposalProvider>
   );
 }

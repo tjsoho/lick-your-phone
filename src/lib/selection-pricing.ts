@@ -209,3 +209,66 @@ export function totalSelection(lines: SelectionLine[]): SelectionTotals {
   totals.monthlySavingsCents = totals.monthlyFullCents - totals.monthlyCents;
   return totals;
 }
+
+/* -------------------------------------------------------------------------
+   THE SAME LINES, GATHERED BY TERM
+
+   "If it's doable, could the summary be grouped by term: 18 months, 12
+   months, 6 months, one off payment, and complimentary items at the end?
+   We found it a bit hard to read."
+
+   A basket can hold five services on five different terms, and read as a
+   flat list it gives the client no way to see what they are committing to
+   for how long. Grouping is presentation only: the figures, and the totals
+   under them, are the ones `buildSelectionLines` already worked out.
+
+   Order runs longest commitment first, down to the shortest, then single
+   payments, then anything given away. That is the order the agency asked
+   for, and it also happens to put the biggest number at the top.
+   ------------------------------------------------------------------------- */
+
+export interface SelectionGroup {
+  /** Stable across renders, and used as the React key. */
+  key: string;
+  /** How many months the group runs. Null for one-offs and freebies. */
+  months: number | null;
+  kind: "recurring" | "one_off" | "in_kind";
+  lines: SelectionLine[];
+}
+
+/**
+ * A group's heading, in plain words. Kept here rather than in the card so the
+ * summary slide and the signing card cannot word the same group differently.
+ */
+export function groupHeading(group: SelectionGroup): string {
+  if (group.kind === "in_kind") return "Complimentary";
+  if (group.kind === "one_off") return "One-off payment";
+  if (group.months === 1) return "1 month";
+  return `${group.months} months`;
+}
+
+export function groupSelectionLines(lines: SelectionLine[]): SelectionGroup[] {
+  const groups = new Map<string, SelectionGroup>();
+
+  for (const line of lines) {
+    const kind: SelectionGroup["kind"] =
+      line.period === "in_kind"
+        ? "in_kind"
+        : line.period === "one_off"
+          ? "one_off"
+          : "recurring";
+    const months = kind === "recurring" ? line.billingCycleMonths : null;
+    const key = kind === "recurring" ? `m${months}` : kind;
+
+    const existing = groups.get(key);
+    if (existing) existing.lines.push(line);
+    else groups.set(key, { key, months, kind, lines: [line] });
+  }
+
+  // Longest term first, then single payments, then the freebies.
+  const rank = { recurring: 0, one_off: 1, in_kind: 2 } as const;
+  return [...groups.values()].sort((a, b) => {
+    if (rank[a.kind] !== rank[b.kind]) return rank[a.kind] - rank[b.kind];
+    return (b.months ?? 0) - (a.months ?? 0);
+  });
+}

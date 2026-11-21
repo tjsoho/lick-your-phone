@@ -246,3 +246,73 @@ export async function sendOnboardingToMake(input: MakeOnboardingInput) {
     console.error(`[make] onboarding ${input.proposalId} failed:`, err);
   }
 }
+
+/**
+ * THE PROPOSAL LINK, EMAILED TO THE CLIENT.
+ *
+ * "The automatic proposal email isn't arriving. Could you fix the send and
+ * also check the resend link?"
+ *
+ * It was going to an n8n webhook that answers 404: the workflow behind it is
+ * no longer registered, so every send since has gone nowhere. Worse, the
+ * dispatcher swallowed the failure, so the button still said "Proposal sent".
+ *
+ * It now goes to Make, alongside the contract and onboarding scenarios, on
+ * the same Gmail connection that already sends as the agency. This one
+ * reports whether it got through, so a dead webhook can never again look
+ * like a successful send.
+ */
+const MAKE_PROPOSAL_WEBHOOK_URL = process.env.MAKE_PROPOSAL_WEBHOOK_URL;
+
+export interface MakeProposalInput {
+  proposalId: string;
+  businessName: string;
+  clientName: string;
+  clientEmail: string;
+  /** The client's own link. Never the team's. */
+  portalUrl: string;
+  /** False the first time it goes out, true every time after. */
+  isResend: boolean;
+}
+
+export function buildMakeProposalPayload(input: MakeProposalInput) {
+  const { first, last } = splitName(input.clientName);
+  return {
+    record_id: input.proposalId,
+    business_name: input.businessName || input.clientName,
+    contact: { first_name: first, last_name: last, email: input.clientEmail },
+    portal_url: input.portalUrl,
+    is_resend: input.isResend,
+  };
+}
+
+/**
+ * Unlike the other two, this one throws. The team is standing at the button
+ * waiting to hear whether their client got the link, so a failure has to
+ * reach them rather than a console nobody is reading.
+ */
+export async function sendProposalEmailToMake(input: MakeProposalInput) {
+  if (!MAKE_PROPOSAL_WEBHOOK_URL) {
+    throw new Error(
+      "The proposal email is not configured yet, so nothing was sent.",
+    );
+  }
+  if (!input.clientEmail) {
+    throw new Error("This client has no email address on file.");
+  }
+
+  const payload = buildMakeProposalPayload(input);
+  const res = await axios.post(MAKE_PROPOSAL_WEBHOOK_URL, payload, {
+    headers: { "Content-Type": "application/json" },
+    timeout: 15000,
+    validateStatus: () => true,
+  });
+
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(
+      `The email service refused the send (${res.status}). Nothing has gone to the client.`,
+    );
+  }
+
+  console.log(`[make] proposal ${input.proposalId} link emailed`);
+}

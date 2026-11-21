@@ -3,7 +3,12 @@
 import { useProposal } from "./ProposalContext";
 import SelectionTotals from "./SelectionTotals";
 import { cn } from "@/lib/utils";
-import { buildSelectionLines, totalSelection } from "@/lib/selection-pricing";
+import {
+  buildSelectionLines,
+  groupHeading,
+  groupSelectionLines,
+  totalSelection,
+} from "@/lib/selection-pricing";
 
 /**
  * THE INVESTMENT SUMMARY, OFF THE SUMMARY SLIDE.
@@ -48,6 +53,8 @@ export default function SelectionSummaryCard({
 
   const lines = buildSelectionLines(selections, serviceMap);
   const totals = totalSelection(lines);
+  // Longest commitment first, single payments next, anything free at the end.
+  const groups = groupSelectionLines(lines);
 
   return (
     <div
@@ -63,54 +70,50 @@ export default function SelectionSummaryCard({
       {/* A long list gets its own scroll on desktop rather than pushing the
           signature pad off the bottom of a slide that must not scroll. On a
           phone it runs at full length, where the page scrolls anyway. */}
-      <div className="portal-scroll space-y-2 lg:max-h-[38vh] lg:overflow-y-auto lg:pr-1">
-        {lines.map((line) => (
-          <div key={line.id} className="flex items-start justify-between">
-            <div className="mr-2 mt-px min-w-0">
-              <span className="block font-body text-[13.5px]/[18px] text-lyp-white/90">
-                {line.name}
-              </span>
-              {line.tierName && (
-                <span className="block font-body text-[12.5px]/[16px] text-lyp-white/70">
-                  {line.tierName}
-                </span>
-              )}
-            </div>
-            <div className="flex shrink-0 flex-col items-end">
-              <span className="font-body text-[13.5px]/[18px] text-lyp-white">
-                {line.period === "in_kind" ? (
-                  t("free")
-                ) : (
-                  <>
-                    {formatCents(line.nativeCents)}
-                    {line.period === "week" && (
-                      <span className="text-lyp-white/80">
-                        {t("perWeekShort")}
-                      </span>
-                    )}
-                    {line.period === "month" && (
-                      <span className="text-lyp-white/80">
-                        {t("perMonthShort")}
-                      </span>
-                    )}
-                  </>
-                )}
-              </span>
+      <div className="portal-scroll space-y-3.5 lg:max-h-[38vh] lg:overflow-y-auto lg:pr-1">
+        {groups.map((group) => (
+          <div key={group.key}>
+            {/* The term is said once, over the services that share it, rather
+                than repeated against every line. That is the whole point of
+                the grouping: "we found it a bit hard to read". */}
+            <p className="mb-1.5 border-b border-lyp-white/10 pb-1 font-body text-[10px] font-medium uppercase tracking-[0.18em] text-lyp-white/55">
+              {groupHeading(group)}
+            </p>
 
-              {/* Every paid line says how long it runs, so a 12-month plan
-                  reads as plainly as a 3-month one and a single payment is
-                  never mistaken for a recurring one. */}
-              {line.billing === "recurring_monthly" ? (
-                <span className="mt-0.5 font-body text-[12.5px]/[16px] text-lyp-white/75">
-                  {line.billingCycleMonths === 1
-                    ? t("forOneMonth")
-                    : t("forMonths", { months: line.billingCycleMonths })}
-                </span>
-              ) : line.period === "one_off" ? (
-                <span className="mt-0.5 font-body text-[12.5px]/[16px] text-lyp-white/75">
-                  {t("oneOffPayment")}
-                </span>
-              ) : null}
+            <div className="space-y-2">
+              {group.lines.map((line) => (
+                <div key={line.id} className="flex items-start justify-between">
+                  <div className="mr-2 mt-px min-w-0">
+                    <span className="block font-body text-[13.5px]/[18px] text-lyp-white/90">
+                      {line.name}
+                    </span>
+                    {line.tierName && (
+                      <span className="block font-body text-[12.5px]/[16px] text-lyp-white/70">
+                        {line.tierName}
+                      </span>
+                    )}
+                  </div>
+                  <span className="shrink-0 font-body text-[13.5px]/[18px] text-lyp-white">
+                    {line.period === "in_kind" ? (
+                      t("free")
+                    ) : (
+                      <>
+                        {formatCents(line.nativeCents)}
+                        {line.period === "week" && (
+                          <span className="text-lyp-white/80">
+                            {t("perWeekShort")}
+                          </span>
+                        )}
+                        {line.period === "month" && (
+                          <span className="text-lyp-white/80">
+                            {t("perMonthShort")}
+                          </span>
+                        )}
+                      </>
+                    )}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         ))}

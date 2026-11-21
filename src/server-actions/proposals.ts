@@ -4,6 +4,7 @@ import { createClient } from "@/utils/server";
 import { revalidatePath } from "next/cache";
 import crypto from "crypto";
 import { dispatchNotification } from "@/lib/notification-service";
+import { sendProposalEmailToMake } from "@/lib/make-webhook";
 import { logAuditEvent } from "@/lib/audit-service";
 import { getAppUrl } from "@/lib/app-url";
 
@@ -207,13 +208,6 @@ export const sendProposal = async (proposalId: string) => {
     }
 
     const proposalData = proposal;
-    if (proposalData.status === "draft") {
-      const { error: updateErr } = await supabase
-        .from("proposals")
-        .update({ status: "sent" })
-        .eq("id", proposalId);
-      if (updateErr) throw updateErr;
-    }
 
     const appUrl = await getAppUrl();
     const clientData = Array.isArray(proposalData.clients)
@@ -223,14 +217,44 @@ export const sendProposal = async (proposalId: string) => {
       ? proposalData.venues[0]
       : proposalData.venues;
 
+    const portalUrl = `${appUrl}/portal/${proposal.token}`;
     const payload = {
       clientEmail: clientData?.email,
       clientName: clientData?.name,
       venueName: venueData?.name,
       venueAddress: venueData?.address,
-      portalUrl: `${appUrl}/portal/${proposal.token}`,
+      portalUrl,
     };
 
+    // THE EMAIL ITSELF, AND IT HAS TO BE HEARD.
+    //
+    // This is the one notification the team waits on, so it is sent first
+    // and its failure is returned rather than logged. The old path went to
+    // n8n through `dispatchNotification`, which swallows everything: the
+    // webhook had been answering 404 for weeks and the button still said
+    // "Proposal sent".
+    await sendProposalEmailToMake({
+      proposalId,
+      businessName: venueData?.name ?? clientData?.name ?? "",
+      clientName: clientData?.name ?? "",
+      clientEmail: clientData?.email ?? "",
+      portalUrl,
+      // A draft going out for the first time was flipped to "sent" above.
+      isResend: proposalData.status !== "draft",
+    });
+
+    // Only now is a draft a sent proposal. It used to flip before the send,
+    // so a failed send still left the pipeline reading "sent".
+    if (proposalData.status === "draft") {
+      const { error: updateErr } = await supabase
+        .from("proposals")
+        .update({ status: "sent" })
+        .eq("id", proposalId);
+      if (updateErr) throw updateErr;
+    }
+
+    // Kept alongside it, so anything still listening on the old path carries
+    // on working. Neither of these can fail the send.
     await Promise.allSettled([
       dispatchNotification("PROPOSAL_SENT", payload),
       logAuditEvent(proposalId, "PROPOSAL_SENT", payload),

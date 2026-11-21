@@ -223,9 +223,19 @@ export default async function ProposalDetailPage({
   const isDraft = proposal.status === "draft";
   const canSend = isDraft || proposal.status === "sent";
 
-  const portalUrl = proposal.token
-    ? `${await getAppUrl()}/portal/${proposal.token}`
-    : null;
+  const appUrl = await getAppUrl();
+  const portalUrl = proposal.token ? `${appUrl}/portal/${proposal.token}` : null;
+
+  // THE TEAM'S OWN WAY IN.
+  //
+  // "At the moment Open client view uses the client link, so our opens are
+  // recorded as the client's." Same deck, different token: a visit on this
+  // one is not written to the proposal's first open, last open or reading
+  // heat map. Every control on this page that opens the deck uses it; the
+  // only link that stays the client's is the one you copy and send.
+  const internalUrl = proposal.internal_token
+    ? `${appUrl}/portal/${proposal.internal_token}`
+    : portalUrl;
 
   // There is no sent_at column, so the audit trail is the record — and it is
   // already loaded above, newest first.
@@ -346,13 +356,13 @@ export default async function ProposalDetailPage({
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
-            {portalUrl && (
+            {internalUrl && (
               <a
-                href={portalUrl}
+                href={internalUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`group inline-flex items-center gap-3 rounded-full border border-lyp-cherry/25 bg-lyp-cherry/[0.06] py-1.5 pl-5 pr-1.5 font-body text-[13px] font-semibold tracking-wide text-lyp-cherry transition-all duration-500 ${EASE} hover:bg-lyp-cherry/[0.12] active:scale-[0.985]`}
-                title="Open the client-facing proposal in a new tab"
+                title="Open the proposal on the team's own link — this visit is not recorded as a client open"
               >
                 View Proposal
                 <span
@@ -610,7 +620,11 @@ export default async function ProposalDetailPage({
                 chip={canSend ? "Ready to copy" : "Still opens"}
                 chipTone="neutral"
               >
-                <ProposalPortalLink url={portalUrl} variant="step" />
+                <ProposalPortalLink
+                  url={portalUrl}
+                  internalUrl={internalUrl !== portalUrl ? internalUrl : null}
+                  variant="step"
+                />
               </SendStep>
             )}
 

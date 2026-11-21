@@ -31,6 +31,18 @@ export default async function PortalPage({ params }: Props) {
   const { token } = await params;
   const supabase = await createClient();
 
+  // TWO FRONT DOORS ONTO THE SAME DECK.
+  //
+  // "Could we please have two links per proposal like pandadoc has: one for
+  // the client and one internal link for the team that doesn't count as a
+  // client open in the tracking."
+  //
+  // The team's token is prefixed, the client's is not. Shape alone could not
+  // tell them apart, because both are uuids, so the prefix is what makes the
+  // two links distinguishable in one query rather than two.
+  const isInternal = token.startsWith("team-");
+  const tokenColumn = isInternal ? "internal_token" : "token";
+
   // 1. Validate token. Agreement settings load alongside it, because even the
   //    broken-link screens use the workspace's wording.
   const [
@@ -52,7 +64,7 @@ export default async function PortalPage({ params }: Props) {
       proposal_line_items(*)
     `,
       )
-      .eq("token", token)
+      .eq(tokenColumn, token)
       .single(),
     getAgreementSettings(),
     getTermsClauses(),
@@ -164,7 +176,9 @@ export default async function PortalPage({ params }: Props) {
     // The slide they had reached last time, so a client who closes the tab
     // half way through comes back where they left off instead of at the cover.
     // Recorded by `api/portal/viewed` in this same index space.
-    lastPage: (proposal as { last_page?: number | null }).last_page ?? null,
+    lastPage: isInternal
+      ? null
+      : ((proposal as { last_page?: number | null }).last_page ?? null),
     furthestPage:
       (proposal as { furthest_page?: number | null }).furthest_page ?? null,
     clientLogoUrl: clientObj?.logo_url ?? null,
@@ -245,6 +259,9 @@ export default async function PortalPage({ params }: Props) {
       paymentCaptured={paymentCaptured}
       discountOverrides={Object.fromEntries(discountByService)}
       complimentaryServiceIds={complimentaryServiceIds}
+      // Nothing about this visit is written back: it is the team checking
+      // their own deck, not the client reading it.
+      internalView={isInternal}
     />
   );
 }
