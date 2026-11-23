@@ -501,6 +501,16 @@ export async function completeIntake(
       agreementFileUrl: contractDoc?.file_url ?? null,
     });
 
+    // A RE-SUBMISSION REOPENS THE SIGN-OFF.
+    //
+    // A client who comes back and changes an answer has given the team
+    // something new to read, so the checkpoint goes back up rather than
+    // standing on the reading somebody did before the edit.
+    await supabase
+      .from("proposals")
+      .update({ signed_off_at: null, signed_off_by: null })
+      .eq("id", proposalId);
+
     revalidatePath("/admin");
     // The submission now writes the client's contacts, and those are read on
     // the client's own page — which would otherwise serve a cached copy

@@ -87,6 +87,44 @@ function FullTermsLink({
   );
 }
 
+/**
+ * THE SIGNATURE AS IT GOES ON THE CONTRACT: BLACK INK.
+ *
+ * "Please change the colour of the client's signature on the contract. Make
+ * it black."
+ *
+ * The pad draws in white because the slide behind it is nearly black, and
+ * that white stroke was going onto the PDF as it was drawn, against a white
+ * page. Rather than make the client sign in ink they cannot see, the strokes
+ * are recoloured on the way out: every mark the client made is kept, at the
+ * opacity they made it, and only the colour changes.
+ *
+ * The alpha channel is what carries the signature, so it is the one thing
+ * left alone. The anti-aliased edge of each stroke keeps its softness and
+ * the result is a clean black signature rather than a jagged traced one.
+ */
+function inkOnWhite(source: HTMLCanvasElement): string {
+  const out = document.createElement("canvas");
+  out.width = source.width;
+  out.height = source.height;
+  const ctx = out.getContext("2d");
+  if (!ctx) return source.toDataURL("image/png");
+
+  ctx.drawImage(source, 0, 0);
+  const image = ctx.getImageData(0, 0, out.width, out.height);
+  const px = image.data;
+  for (let i = 0; i < px.length; i += 4) {
+    // Transparent pixels stay transparent; everything the client drew
+    // becomes black and keeps the alpha it was drawn with.
+    if (px[i + 3] === 0) continue;
+    px[i] = 0;
+    px[i + 1] = 0;
+    px[i + 2] = 0;
+  }
+  ctx.putImageData(image, 0, 0);
+  return out.toDataURL("image/png");
+}
+
 export default function SignaturePage() {
   const {
     proposal,
@@ -237,7 +275,7 @@ export default function SignaturePage() {
     setErrorMsg("");
 
     try {
-      const signatureDataUrl = canvas.toDataURL("image/png");
+      const signatureDataUrl = inkOnWhite(canvas);
 
       const result = await signProposal({
         proposalId: proposal.id,

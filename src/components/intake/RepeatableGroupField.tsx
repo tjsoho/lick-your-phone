@@ -44,6 +44,14 @@ export default function RepeatableGroupField({
   };
   const rows = (value as Record<string, string>[]) ?? [];
 
+  /**
+   * A group with nothing in it can collect nothing, so the client is shown
+   * nothing rather than an "Entry 1" box with no fields in it, which is what
+   * "Other Team Members" did: the admin let you pick the type but gave you
+   * no way to say what was inside one, so the question saved empty.
+   */
+  if (config.subFields.length === 0) return null;
+
   // The question's own wording wins; the copy slot is the fallback for every
   // group that hasn't been given one.
   const entryLabel = config.entryLabel?.trim() || "";

@@ -1,5 +1,9 @@
 import { dispatchNotification } from "./notification-service";
-import { sendContractToMake, sendOnboardingToMake } from "./make-webhook";
+import {
+  sendContractToMake,
+  sendOnboardingSubmittedToMake,
+  sendOnboardingToMake,
+} from "./make-webhook";
 import { logAuditEvent } from "./audit-service";
 import { getAppUrl } from "./app-url";
 
@@ -101,8 +105,12 @@ export async function onIntakeCompleted(params: {
   await Promise.allSettled([
     dispatchNotification("INTAKE_COMPLETED", payload),
     logAuditEvent(params.proposalId, "INTAKE_COMPLETED", payload),
-    // Make's onboarding scenario, which used to be triggered by a Jotform.
-    sendOnboardingToMake({
+    // THE CLIENT'S TWO EMAILS, AND NOTHING ELSE.
+    //
+    // Drive, ClickUp and the Slack post used to go at the same moment,
+    // which told the team a client was finished before anyone had read
+    // their answers. Those now wait for sign-off; see `onProposalSignedOff`.
+    sendOnboardingSubmittedToMake({
       proposalId: params.proposalId,
       businessName: params.venueName,
       clientName: params.clientName,
@@ -113,6 +121,50 @@ export async function onIntakeCompleted(params: {
       intakeUrl: `${appUrl}/portal/${params.proposalToken}`,
       assets: params.assets,
       isEdit: params.isEdit,
+      signOffUrl: `${appUrl}/admin/proposals/${params.proposalId}`,
+    }),
+  ]);
+}
+
+/**
+ * SALES HAS READ THE FORM AND SIGNED IT OFF.
+ *
+ * Everything internal happens here rather than on submission: the Drive
+ * upload, the ClickUp tasks and their statuses, and the Slack post that
+ * tells the team there is a new client. Their notes ride along with it, so
+ * the marketing team opens a task that already says what the deal is.
+ */
+export async function onProposalSignedOff(params: {
+  proposalId: string;
+  proposalToken: string;
+  clientName: string;
+  clientEmail: string;
+  venueAddress: string;
+  venueName: string;
+  assets: string[];
+  agreementFileUrl?: string | null;
+  /** What sales wants the marketing team to know. May be empty. */
+  notes: string;
+}) {
+  const appUrl = await getAppUrl();
+  const responsesUrl = `${appUrl}/api/intake/${params.proposalToken}`;
+
+  await Promise.allSettled([
+    logAuditEvent(params.proposalId, "PROPOSAL_SIGNED_OFF", {
+      notes: params.notes,
+    }),
+    sendOnboardingToMake({
+      proposalId: params.proposalId,
+      businessName: params.venueName,
+      clientName: params.clientName,
+      clientEmail: params.clientEmail,
+      venueAddress: params.venueAddress,
+      agreementUrl: params.agreementFileUrl ?? null,
+      responsesUrl,
+      intakeUrl: `${appUrl}/portal/${params.proposalToken}`,
+      assets: params.assets,
+      isEdit: false,
+      notes: params.notes,
     }),
   ]);
 }

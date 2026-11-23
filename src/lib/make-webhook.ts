@@ -230,6 +230,15 @@ export function buildMakeOnboardingPayload(input: MakeOnboardingInput) {
   };
 }
 
+/**
+ * THE INTERNAL HALF, WHICH NOW WAITS FOR A HUMAN.
+ *
+ * Drive, ClickUp, the task status and the Slack post. This used to fire the
+ * moment a client pressed Submit, so Slack announced a finished client
+ * before anybody had read a word of their answers. It is now sent by the
+ * sign-off action instead, once sales has checked the form and written
+ * their notes.
+ */
 export async function sendOnboardingToMake(input: MakeOnboardingInput) {
   if (!MAKE_ONBOARDING_WEBHOOK_URL) {
     console.warn("[make] MAKE_ONBOARDING_WEBHOOK_URL missing, nothing sent");
@@ -244,6 +253,48 @@ export async function sendOnboardingToMake(input: MakeOnboardingInput) {
     console.log(`[make] onboarding ${input.proposalId} sent`);
   } catch (err) {
     console.error(`[make] onboarding ${input.proposalId} failed:`, err);
+  }
+}
+
+/**
+ * THE CLIENT'S HALF, WHICH DOES NOT WAIT.
+ *
+ * "Here's what happens next" and the payment reminder. These are the
+ * client's own two emails, so they go the moment they submit: a client who
+ * fills the form in on a Friday night should never be left wondering
+ * whether it went through until somebody signs off on Monday.
+ *
+ * Its scenario also tells sales there is a form waiting to be read, which
+ * is the notification that starts the sign-off step.
+ */
+const MAKE_ONBOARDING_SUBMITTED_WEBHOOK_URL =
+  process.env.MAKE_ONBOARDING_SUBMITTED_WEBHOOK_URL;
+
+export async function sendOnboardingSubmittedToMake(
+  input: MakeOnboardingInput & { signOffUrl: string },
+) {
+  if (!MAKE_ONBOARDING_SUBMITTED_WEBHOOK_URL) {
+    console.warn(
+      "[make] MAKE_ONBOARDING_SUBMITTED_WEBHOOK_URL missing, nothing sent",
+    );
+    return;
+  }
+  const payload = {
+    ...buildMakeOnboardingPayload(input),
+    /** Where sales reads the answers and signs off. Never sent to a client. */
+    sign_off_url: input.signOffUrl,
+  };
+  try {
+    await axios.post(MAKE_ONBOARDING_SUBMITTED_WEBHOOK_URL, payload, {
+      headers: { "Content-Type": "application/json" },
+      timeout: 15000,
+    });
+    console.log(`[make] onboarding submitted ${input.proposalId} sent`);
+  } catch (err) {
+    console.error(
+      `[make] onboarding submitted ${input.proposalId} failed:`,
+      err,
+    );
   }
 }
 

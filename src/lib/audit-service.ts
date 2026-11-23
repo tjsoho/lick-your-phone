@@ -16,6 +16,7 @@ export type AuditEvent =
   | "PAYMENT_SUCCEEDED"
   | "PAYMENT_CAPTURED"
   | "PROPOSAL_VIEWED"
+  | "PROPOSAL_SIGNED_OFF"
   | "BANK_DETAILS_VIEWED";
 
 interface AuditPayloadMap {
@@ -26,6 +27,12 @@ interface AuditPayloadMap {
    * something anybody needs an email about.
    */
   PROPOSAL_VIEWED: { firstViewedAt: string };
+  /**
+   * Sales read the finished onboarding form, wrote their notes and released
+   * the internal automations. The timeline is where "who let this through,
+   * and when" is answered.
+   */
+  PROPOSAL_SIGNED_OFF: { notes: string };
   PROPOSAL_SIGNED: {
     client: Client;
     totalAmount: number;

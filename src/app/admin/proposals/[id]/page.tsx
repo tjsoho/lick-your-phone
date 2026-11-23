@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import React from "react";
 import { getProposal } from "@/server-actions/proposals";
+import SignOffPanel from "@/components/admin/SignOffPanel";
 import {
   formatCents,
   formatDate,
@@ -177,6 +178,20 @@ export default async function ProposalDetailPage({
   if (error || !proposal) return notFound();
 
   const supabase = await createAdminClient();
+
+  // Who released the automations, where somebody did. The id on the proposal
+  // is an auth user, so the readable name comes from the users table beside
+  // it rather than being shown as a uuid.
+  let signedOffByName: string | null = null;
+  if (proposal.signed_off_by) {
+    const { data: signer } = await supabase
+      .from("users")
+      .select("name, email")
+      .eq("id", proposal.signed_off_by)
+      .maybeSingle();
+    signedOffByName = signer?.name ?? signer?.email ?? null;
+  }
+
   const { data: auditEvents } = await supabase
     .from("audit_events")
     .select("*")
@@ -770,14 +785,31 @@ export default async function ProposalDetailPage({
               </Link>
             </div>
 
+            {/* THE SIGN-OFF, which is what actually releases the team's
+                half of the automation and carries the notes to ClickUp. */}
+            <div>
+              <p className="mb-1 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]">
+                Sign Off
+              </p>
+              <p className="mb-3.5 font-body text-[12px] text-[#6B5A5A]">
+                Nothing reaches the team until this is done.
+              </p>
+              <SignOffPanel
+                proposalId={id}
+                signedOffAt={proposal.signed_off_at ?? null}
+                signedOffByName={signedOffByName}
+                existingNotes={proposal.sign_off_notes ?? null}
+              />
+            </div>
+
             {/* Internal notes */}
             <div>
               <p className="mb-1 font-body text-[10px] font-medium uppercase tracking-[0.22em] text-[#867474]">
                 Internal Notes
               </p>
               <p className="mb-3.5 font-body text-[12px] text-[#6B5A5A]">
-                What the delivery team needs to know. These feed the ClickUp
-                brief.
+                A running record for this proposal, kept here. It is the sign
+                off note above that reaches the ClickUp task.
               </p>
               <ProposalInternalNotes proposalId={id} initialNotes={notes} />
             </div>

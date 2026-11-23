@@ -64,10 +64,19 @@ interface IntakeQuestionFormData {
   field_type: string;
   required: boolean;
   options: { value: string }[];
+  /**
+   * The fields inside one entry of a Repeatable Group. The type could be
+   * chosen in the admin but the fields inside it could not, so every group
+   * created here came out with nothing to fill in: the client saw an empty
+   * "Entry 1" box and could type nothing into it.
+   */
+  subFields: { key: string; label: string; type: string }[];
   config: {
     placeholder?: string;
     content?: string;
     providerType?: string;
+    entryLabel?: string;
+    addLabel?: string;
   };
   conditions: {
     id?: string;
@@ -130,9 +139,15 @@ function collectMessages(node: unknown, out: string[] = []): string[] {
 }
 
 /** Native selects need their own chevron once appearance is stripped. */
-function SelectShell({ children }: { children: React.ReactNode }) {
+function SelectShell({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="relative">
+    <div className={cn("relative", className)}>
       {children}
       <ChevronDown
         strokeWidth={1.5}
@@ -184,6 +199,20 @@ export default function IntakeQuestionForm({
     "content" in question.config
       ? String(question.config?.content)
       : "";
+  /** A group's own wording and fields, as last saved. */
+  const groupConfig = (question?.config ?? null) as {
+    subFields?: { key?: string; label?: string; type?: string }[];
+    entryLabel?: string;
+    addLabel?: string;
+  } | null;
+  const initialSubFields = (groupConfig?.subFields ?? [])
+    .filter((f) => f && typeof f === "object")
+    .map((f) => ({
+      key: String(f.key ?? ""),
+      label: String(f.label ?? ""),
+      type: String(f.type ?? "text"),
+    }));
+
   const configProviderType =
     question?.config &&
     typeof question.config === "object" &&
@@ -210,10 +239,13 @@ export default function IntakeQuestionForm({
           : (question?.field_type ?? "text"),
       required: question?.required ?? false,
       options: initialOptions,
+      subFields: initialSubFields,
       config: {
         placeholder: configPlaceholder,
         content: configContent,
         providerType: configProviderType,
+        entryLabel: groupConfig?.entryLabel ?? "",
+        addLabel: groupConfig?.addLabel ?? "",
       },
       conditions: initialConditions,
     },
@@ -226,6 +258,15 @@ export default function IntakeQuestionForm({
   } = useFieldArray({
     control,
     name: "options",
+  });
+
+  const {
+    fields: subFieldFields,
+    append: appendSubField,
+    remove: removeSubField,
+  } = useFieldArray({
+    control,
+    name: "subFields",
   });
 
   const {
@@ -243,6 +284,7 @@ export default function IntakeQuestionForm({
   const isChoiceBased = ["radio", "checkbox", "multiselect", "select"].includes(
     watchedFieldType,
   );
+  const isGroup = watchedFieldType === "repeatable_group";
 
   /** One payload shape, whether the question is being created or autosaved. */
   function buildPayload(data: IntakeQuestionFormData): IntakeQuestionInput {
@@ -285,6 +327,30 @@ export default function IntakeQuestionForm({
     } else if (data.field_type === "provider_picker") {
       configPayload = {
         providerType: data.config?.providerType || "photographer",
+      };
+    } else if (data.field_type === "repeatable_group") {
+      // A key is what the answer is stored under, so one is derived from the
+      // label rather than asked for: the team names the field, not the
+      // column. Falls back to the position if a label is all punctuation.
+      const subFields = (data.subFields ?? [])
+        .map((f, i) => {
+          const label = (f.label ?? "").trim();
+          if (!label) return null;
+          const key =
+            (f.key ?? "").trim() ||
+            label
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "_")
+              .replace(/^_+|_+$/g, "") ||
+            `field_${i + 1}`;
+          return { key, label, type: f.type || "text" };
+        })
+        .filter((f): f is { key: string; label: string; type: string } => !!f);
+
+      configPayload = {
+        subFields,
+        entryLabel: (data.config?.entryLabel ?? "").trim(),
+        addLabel: (data.config?.addLabel ?? "").trim(),
       };
     }
 
@@ -668,6 +734,108 @@ export default function IntakeQuestionForm({
               ))}
             </div>
           )}
+        </section>
+      )}
+
+      {/* ─────────────── Repeatable group field builder ─────────────── */}
+      {isGroup && (
+        <section
+          className={cn(cardClasses, "animate-rise")}
+          style={{ animationDelay: "80ms" }}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className={sectionHeadingClasses}>Fields in each entry</h2>
+              <p className={cn(helperClasses, "mt-1.5")}>
+                What the client fills in for each one they add. A group with
+                no fields here shows the client nothing, so add at least one.
+              </p>
+            </div>
+            <button
+              title="Add another field to each entry"
+              type="button"
+              onClick={() => appendSubField({ key: "", label: "", type: "text" })}
+              className={ghostAddClasses}
+            >
+              Add Field
+              <Plus strokeWidth={1.5} className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {subFieldFields.length === 0 ? (
+            <p className={cn(helperClasses, "mt-4")}>
+              No fields yet. Until one is added the client sees an empty entry
+              with nothing to type into.
+            </p>
+          ) : (
+            <div className="mt-4 space-y-2.5">
+              {subFieldFields.map((field, index) => (
+                <div key={field.id} className="flex items-center gap-2.5">
+                  <span className="w-6 flex-shrink-0 font-body text-[11px] tabular-nums text-[#867474]">
+                    #{index + 1}
+                  </span>
+                  <input
+                    type="text"
+                    aria-label={`Field ${index + 1} label`}
+                    placeholder="Field label, e.g. Name"
+                    {...register(`subFields.${index}.label` as const)}
+                    className={inputClasses}
+                  />
+                  <SelectShell className="w-44 flex-shrink-0">
+                    <select
+                      aria-label={`Field ${index + 1} type`}
+                      {...register(`subFields.${index}.type` as const)}
+                      className={selectClasses}
+                    >
+                      <option value="text">Text</option>
+                      <option value="email">Email</option>
+                      <option value="phone">Phone</option>
+                    </select>
+                  </SelectShell>
+                  <button
+                    type="button"
+                    onClick={() => removeSubField(index)}
+                    className={iconButtonClasses}
+                    title="Remove field"
+                    aria-label={`Remove field ${index + 1}`}
+                  >
+                    <Trash2 strokeWidth={1.5} className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label htmlFor="config.entryLabel" className={labelClasses}>
+                What one entry is called
+              </label>
+              <input
+                id="config.entryLabel"
+                type="text"
+                placeholder="Team member {number}"
+                {...register("config.entryLabel")}
+                className={inputClasses}
+              />
+              <p className={cn(helperClasses, "mt-1.5")}>
+                Put {"{number}"} where the number should go. Left blank it
+                reads &ldquo;Entry 1&rdquo;.
+              </p>
+            </div>
+            <div>
+              <label htmlFor="config.addLabel" className={labelClasses}>
+                What the add button says
+              </label>
+              <input
+                id="config.addLabel"
+                type="text"
+                placeholder="Add another team member"
+                {...register("config.addLabel")}
+                className={inputClasses}
+              />
+            </div>
+          </div>
         </section>
       )}
 
