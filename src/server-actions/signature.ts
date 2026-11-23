@@ -336,8 +336,24 @@ export async function signProposal(input: SignProposalInput) {
       return { error: "Failed to create document record: " + docErr.message };
     }
 
-    // 9. Update proposal to signed
-    const { error: updateErr } = await admin
+    /**
+     * 9. CLAIM THE PROPOSAL, RATHER THAN SIMPLY MARKING IT SIGNED.
+     *
+     * The read at step 1 checked the status and then let go of it. Two
+     * requests a fraction of a second apart therefore both passed that check
+     * and both ran the whole way through: two contract PDFs on file, two runs
+     * of the automation, and so two sets of ClickUp tasks, two Drive folders,
+     * two Slack posts and two emails to the office, all for one signature.
+     * A client who double-clicks, or presses the button again because nothing
+     * seemed to happen, is enough to cause it; it was reproduced on the live
+     * site with two clicks thirteen milliseconds apart.
+     *
+     * `signed_at is null` makes the claim itself the race: the database
+     * decides, and only one update can match. The second request finds
+     * nothing to claim, clears up the PDF it made on the way here, and stops
+     * without telling anyone a client has signed twice.
+     */
+    const { data: claimed, error: updateErr } = await admin
       .from("proposals")
       .update({
         status: "signed",
@@ -348,10 +364,35 @@ export async function signProposal(input: SignProposalInput) {
         document_hash: documentHash,
         total_snapshot_cents: totalCents,
       })
-      .eq("id", input.proposalId);
+      .eq("id", input.proposalId)
+      .is("signed_at", null)
+      .select("id");
 
     if (updateErr) {
       return { error: "Failed to update proposal: " + updateErr.message };
+    }
+
+    if (!claimed || claimed.length === 0) {
+      // Somebody else got there first. Take back the spare contract so the
+      // proposal is left holding exactly one, and hand the client the one
+      // that counts so their screen moves on as it should.
+      await admin.from("documents").delete().eq("id", doc.id);
+      await admin.storage.from("site-images").remove([storagePath]);
+
+      const { data: winner } = await admin
+        .from("documents")
+        .select("id, file_url")
+        .eq("proposal_id", input.proposalId)
+        .eq("type", "contract")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      return {
+        error: null,
+        documentId: winner?.id ?? doc.id,
+        documentUrl: winner?.file_url ?? fileUrl,
+      };
     }
 
     // 11. Fire integrations (non-blocking — failures don't affect the client)

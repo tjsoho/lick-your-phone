@@ -418,13 +418,29 @@ export async function completeIntake(
       });
     }
 
-    // Update proposal status
-    const { error: updateError } = await supabase
+    /**
+     * CLAIM IT, RATHER THAN CHECKING AND THEN SETTING IT.
+     *
+     * The status check above happened several queries ago and nothing held
+     * the row in between, so two submissions a fraction of a second apart
+     * both got past it and both went on to send the client their emails and
+     * tell sales there was a form waiting. Asking the database to make the
+     * change only while the status is still something else means exactly one
+     * of them can win, and the loser is turned away by the same message a
+     * late submission already gets.
+     */
+    const { data: claimed, error: updateError } = await supabase
       .from("proposals")
       .update({ status: "intake_complete" })
-      .eq("id", proposalId);
+      .eq("id", proposalId)
+      .neq("status", "intake_complete")
+      .select("id");
 
     if (updateError) throw updateError;
+
+    if (!claimed || claimed.length === 0) {
+      return { error: INTAKE_LOCKED_MESSAGE, locked: true };
+    }
 
     // Write audit event
     const { error: auditError } = await supabase.from("audit_events").insert({
@@ -515,9 +531,11 @@ export async function completeIntake(
 
     // A RE-SUBMISSION REOPENS THE SIGN-OFF.
     //
-    // A client who comes back and changes an answer has given the team
-    // something new to read, so the checkpoint goes back up rather than
-    // standing on the reading somebody did before the edit.
+    // Submitting is a one-way door, so in normal use this is already null and
+    // the write changes nothing. It matters only where the team has deliberately
+    // put a client's status back to `signed` to let them fill the form in again:
+    // the checkpoint then goes back up, rather than standing on the reading
+    // somebody did of the earlier answers.
     await supabase
       .from("proposals")
       .update({ signed_off_at: null, signed_off_by: null })

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import { CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Clock, Loader2, ShieldCheck } from "lucide-react";
 import { signOffProposal } from "@/server-actions/sign-off";
 
 const EASE = "ease-brand";
@@ -25,11 +25,20 @@ const EASE = "ease-brand";
  */
 export default function SignOffPanel({
   proposalId,
+  status,
   signedOffAt,
   signedOffByName,
   existingNotes,
 }: {
   proposalId: string;
+  /**
+   * Where the client has got to. Without it the panel offered a Sign off
+   * button on a client who had not filled the form in yet: the action refused
+   * it, correctly, but only after somebody had written their notes and
+   * pressed the button, and the wording above it said the client had finished
+   * when they had not.
+   */
+  status: string;
   signedOffAt: string | null;
   /** Who released it, where the record knows. */
   signedOffByName: string | null;
@@ -80,9 +89,30 @@ export default function SignOffPanel({
         )}
 
         <p className="mt-2.5 font-body text-[11px] leading-relaxed text-[#5A8468]">
-          The team has been told and the notes are on the ClickUp task. If the
-          client changes an answer, this opens again so the new version gets
-          read too.
+          The team has been told and the notes are on the ClickUp task. The
+          client cannot change their answers now, so anything else they tell
+          you goes on the task by hand.
+        </p>
+      </div>
+    );
+  }
+
+  // Nothing to sign off until the client has actually sent their answers in.
+  if (status !== "intake_complete") {
+    return (
+      <div className="rounded-2xl border border-[#EFE6E6] bg-[#FCFAFA] px-4 py-3.5">
+        <div className="flex items-center gap-2.5">
+          <Clock
+            strokeWidth={1.75}
+            className="h-4 w-4 flex-shrink-0 text-[#BFADAD]"
+          />
+          <p className="font-body text-[13px] font-semibold text-[#867474]">
+            Waiting on the client
+          </p>
+        </div>
+        <p className="mt-2 font-body text-[11px] leading-relaxed text-[#867474]">
+          There is nothing to sign off until they have sent their onboarding
+          form in. This opens on its own when they do.
         </p>
       </div>
     );
@@ -103,7 +133,8 @@ export default function SignOffPanel({
       <p className="mt-2 font-body text-[11px] leading-relaxed text-[#867474]">
         The client has finished their form and has had their emails. Read the
         answers above, add anything the marketing team needs to know, then
-        sign off. Nothing reaches ClickUp, Drive or Slack until you do.
+        sign off. Nothing reaches ClickUp, Drive or Slack until you do. Their
+        answers are final from here, so this only happens once.
       </p>
 
       <label htmlFor="sign-off-notes" className="sr-only">
