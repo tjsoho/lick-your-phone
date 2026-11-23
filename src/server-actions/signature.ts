@@ -2,6 +2,7 @@
 
 import { createAdminClient, createClient } from "@/utils/server";
 import { headers } from "next/headers";
+import { after } from "next/server";
 import crypto from "crypto";
 import { generateContractPdf, type PdfLineItem } from "@/lib/pdf";
 import { onProposalSigned } from "@/lib/integrations";
@@ -359,24 +360,39 @@ export async function signProposal(input: SignProposalInput) {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
-    onProposalSigned({
-      proposalId: input.proposalId,
-      clientName: clientObj?.name ?? "Client",
-      clientSlug,
-      venueName: venueObj?.name ?? "Venue",
-      venueAddress: venueObj?.address ?? "",
-      abn: clientObj?.abn ?? null,
-      signerEmail: input.signerEmail,
-      totalCents,
-      lineItems: pdfLineItems.map((li) => ({
-        serviceName: li.name,
-        priceCents: li.priceCents,
-        billing: li.billing,
-      })),
-      documentUrl: fileUrl,
-      documentHash,
-    }).catch((err) =>
-      console.error("[integrations] onProposalSigned error:", err),
+    /**
+     * HANDED TO `after`, NOT LEFT DANGLING.
+     *
+     * This used to be a bare call with a `.catch` on the end: the action
+     * returned, and the promise was left to finish on its own. On a laptop it
+     * does. On the host this runs on, the function is frozen the moment the
+     * response goes back, so the call to Make was cut off mid-flight and a
+     * signed contract reached neither Drive, ClickUp nor Slack. Nothing was
+     * logged, because the logging line never ran either.
+     *
+     * `after` keeps the client's signing just as fast while making the
+     * platform hold the function open until this finishes.
+     */
+    after(() =>
+      onProposalSigned({
+        proposalId: input.proposalId,
+        clientName: clientObj?.name ?? "Client",
+        clientSlug,
+        venueName: venueObj?.name ?? "Venue",
+        venueAddress: venueObj?.address ?? "",
+        abn: clientObj?.abn ?? null,
+        signerEmail: input.signerEmail,
+        totalCents,
+        lineItems: pdfLineItems.map((li) => ({
+          serviceName: li.name,
+          priceCents: li.priceCents,
+          billing: li.billing,
+        })),
+        documentUrl: fileUrl,
+        documentHash,
+      }).catch((err) =>
+        console.error("[integrations] onProposalSigned error:", err),
+      ),
     );
 
     return {

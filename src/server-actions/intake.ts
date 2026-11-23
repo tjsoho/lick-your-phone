@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/utils/server";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { onIntakeCompleted } from "@/lib/integrations";
 import {
   contactKey,
@@ -486,20 +487,31 @@ export async function completeIntake(
     } | null;
     const clientName = clientObj?.name ?? "Client";
 
-    onIntakeCompleted({
-      proposalId,
-      clientName,
-      // The person who signed, falling back to the address on the client
-      // record. An empty one here is a message with nowhere to go, and this
-      // is now the event that sends the client their own copies.
-      clientEmail: proposal.signer_email ?? clientObj?.email ?? "",
-      venueName: venueObj?.name ?? "Venue",
-      venueAddress: venueObj?.address ?? "",
-      proposalToken: proposal.token,
-      isEdit: false,
-      assets,
-      agreementFileUrl: contractDoc?.file_url ?? null,
-    });
+    /**
+     * HANDED TO `after` FOR THE SAME REASON THE SIGNING IS.
+     *
+     * Left as a bare call, this raced the response: the host freezes the
+     * function as soon as the client sees "All done", so the two emails they
+     * are owed could be cut off half-sent, with nothing in the log to say so.
+     */
+    after(() =>
+      onIntakeCompleted({
+        proposalId,
+        clientName,
+        // The person who signed, falling back to the address on the client
+        // record. An empty one here is a message with nowhere to go, and this
+        // is now the event that sends the client their own copies.
+        clientEmail: proposal.signer_email ?? clientObj?.email ?? "",
+        venueName: venueObj?.name ?? "Venue",
+        venueAddress: venueObj?.address ?? "",
+        proposalToken: proposal.token,
+        isEdit: false,
+        assets,
+        agreementFileUrl: contractDoc?.file_url ?? null,
+      }).catch((err) =>
+        console.error("[integrations] onIntakeCompleted error:", err),
+      ),
+    );
 
     // A RE-SUBMISSION REOPENS THE SIGN-OFF.
     //
