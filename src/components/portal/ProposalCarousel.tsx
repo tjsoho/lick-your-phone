@@ -534,6 +534,7 @@ export default function ProposalCarousel({
       discountOverrides={discountOverrides}
       complimentaryServiceIds={complimentaryServiceIds}
       pageCopy={pageCopy}
+      internalView={internalView}
     >
       <CarouselInner internalView={internalView} />
     </ProposalProvider>

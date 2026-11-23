@@ -134,6 +134,7 @@ export default function SignaturePage() {
     pages,
     setCurrentPage,
     paymentCaptured,
+    internalView,
   } = useProposal();
   const t = useCopy("signature");
 
@@ -396,6 +397,35 @@ export default function SignaturePage() {
      onboarding form's All Done screen offers
      `/api/contract/by-token/<token>` alongside the terms and their own
      answers. */
+  /**
+   * THE TEAM'S OWN LINK CANNOT SIGN.
+   *
+   * The team link was built so the deck could be checked without the visit
+   * counting as the client having read it. It carried on all the way to a
+   * working signature pad, so anyone reading a proposal through to the end
+   * could put a signature on it and set the whole chain running: a contract
+   * on file, Drive, ClickUp, Slack and the office told a client had signed.
+   * Only the client's own link can do that.
+   */
+  if (internalView && !alreadySigned) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center px-6 text-center">
+        <Reveal variant="pop" index={0}>
+          <p className="font-heading text-2xl text-lyp-white md:text-3xl">
+            This is the team link
+          </p>
+        </Reveal>
+        <Reveal variant="fade" index={1}>
+          <p className="mt-3 max-w-md font-body text-sm leading-relaxed text-lyp-white/60">
+            The deck is the same as the client&rsquo;s, but only they can sign
+            their own agreement. Send them their own link from the proposal
+            page when you are happy with this.
+          </p>
+        </Reveal>
+      </div>
+    );
+  }
+
   if (confirming) {
     return (
       <div className="flex h-full flex-col items-center justify-center px-6 text-center">

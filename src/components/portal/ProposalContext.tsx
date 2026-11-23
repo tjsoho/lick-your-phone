@@ -176,6 +176,14 @@ interface ProposalContextValue {
   totals: SelectionTotals;
   selectedCount: number;
   paymentCaptured: boolean;
+
+  /**
+   * The deck was opened on the team's own link rather than the client's.
+   * The slides are identical; what changes is that the visit is not recorded
+   * and, because only the client can sign their own agreement, the signing
+   * page refuses rather than offering a pad to anyone reviewing the deck.
+   */
+  internalView: boolean;
 }
 
 const ProposalContext = createContext<ProposalContextValue | null>(null);
@@ -210,6 +218,8 @@ interface ProviderProps {
    * slide deck at every stage but their wording is still needed.
    */
   pageCopy?: Record<string, CopyOverrides>;
+  /** See `internalView` on the context value. */
+  internalView?: boolean;
   children: ReactNode;
 }
 
@@ -228,6 +238,7 @@ export function ProposalProvider({
   discountOverrides = NO_OVERRIDES,
   complimentaryServiceIds = NO_COMPLIMENTARY,
   pageCopy = NO_PAGE_COPY,
+  internalView = false,
 }: ProviderProps) {
   const [proposal, setProposal] = useState<ProposalData>(initialProposal);
 
@@ -397,6 +408,7 @@ export function ProposalProvider({
     totals,
     selectedCount,
     paymentCaptured,
+    internalView,
   };
 
   return (
