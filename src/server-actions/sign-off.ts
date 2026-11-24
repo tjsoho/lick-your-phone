@@ -31,7 +31,7 @@ export async function signOffProposal(proposalId: string, notes: string) {
     const { data: proposal, error } = await supabase
       .from("proposals")
       .select(
-        `id, token, status, signed_off_at, signer_email,
+        `id, token, status, signed_at, signed_off_at, signer_email,
          client:clients!client_id ( name, email ),
          venue:venues!venue_id ( name, address )`,
       )
@@ -42,10 +42,26 @@ export async function signOffProposal(proposalId: string, notes: string) {
       return { error: error?.message ?? "Proposal not found." };
     }
 
-    if (proposal.status !== "intake_complete") {
+    /**
+     * SIGNED IS THE BAR, NOT THE FORM.
+     *
+     * "have a button for any clients that have signed but havent clicked
+     * off so we can test this now."
+     *
+     * It used to insist on `intake_complete`, which meant a client who had
+     * signed but not yet filled the form in could never be released, and
+     * nothing already signed could be put through at all. The signature is
+     * what makes them a client, so that is what opens this. Where the form
+     * is still outstanding the panel says so before the button is pressed,
+     * and the brief simply goes without answers attached.
+     *
+     * `signed_at` rather than the status, because finishing the form
+     * overwrites `signed` with `intake_complete`.
+     */
+    if (!proposal.signed_at) {
       return {
         error:
-          "This client has not finished their onboarding form yet, so there is nothing to sign off.",
+          "This client has not signed their agreement yet, so there is nothing to sign off.",
       };
     }
 

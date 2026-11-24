@@ -797,6 +797,7 @@ export default async function ProposalDetailPage({
               <SignOffPanel
                 proposalId={id}
                 status={proposal.status}
+                signedAt={proposal.signed_at ?? null}
                 signedOffAt={proposal.signed_off_at ?? null}
                 signedOffByName={signedOffByName}
                 existingNotes={proposal.sign_off_notes ?? null}
