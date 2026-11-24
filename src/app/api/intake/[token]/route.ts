@@ -223,10 +223,26 @@ function fileNameFor(name: string): string {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ token: string }> },
 ) {
   const { token } = await params;
+
+  /**
+   * HAND BACK A DOCUMENT EVEN WHEN THERE IS NOTHING IN IT.
+   *
+   * The sign-off button opens as soon as a client signs, so the team can
+   * release a client whose onboarding form has not come back yet. The
+   * automation fetches this address as a file before it does anything else,
+   * and a 404 there stops the whole run dead and parks it in incomplete
+   * executions.
+   *
+   * Only the internal sign-off payload asks for this. The link a client is
+   * emailed does not carry it, so they still get a plain "not submitted yet"
+   * rather than a document recording answers they never gave.
+   */
+  const allowEmpty = request.nextUrl.searchParams.get("allow_empty") === "1";
+
   const supabase = await createClient();
 
   const { data: proposal, error } = await supabase
@@ -246,7 +262,7 @@ export async function GET(
   // Nothing to hand back until the form has been handed in. A part-filled
   // form is still the client's to change, and a document of it would be a
   // record of something that never happened.
-  if (proposal.status !== "intake_complete") {
+  if (proposal.status !== "intake_complete" && !allowEmpty) {
     return NextResponse.json(
       { error: "The onboarding form has not been submitted yet." },
       { status: 404 },
@@ -275,7 +291,7 @@ export async function GET(
     supabase.from("providers").select("id, name"),
   ]);
 
-  if (!responses || responses.length === 0) {
+  if ((!responses || responses.length === 0) && !allowEmpty) {
     return NextResponse.json(
       { error: "No onboarding answers were found." },
       { status: 404 },
@@ -283,7 +299,7 @@ export async function GET(
   }
 
   const answerFor = new Map<string, unknown>(
-    responses.map((r) => [r.question_id, r.value]),
+    (responses ?? []).map((r) => [r.question_id, r.value]),
   );
   const providerNames = new Map<string, string>(
     (providers ?? []).map((p) => [p.id, p.name]),
@@ -335,17 +351,39 @@ export async function GET(
   }
 
   if (pages.length === 0) {
-    return NextResponse.json(
-      { error: "No onboarding answers were found." },
-      { status: 404 },
-    );
+    if (!allowEmpty) {
+      return NextResponse.json(
+        { error: "No onboarding answers were found." },
+        { status: 404 },
+      );
+    }
+    // Said plainly, so whoever opens this on the task knows the form is
+    // still outstanding rather than wondering where the answers went.
+    pages.push({
+      title: "Onboarding form",
+      sections: [
+        {
+          heading: null,
+          questions: [
+            {
+              label: "Not submitted",
+              answer: {
+                kind: "text",
+                text:
+                  "This client had not sent their onboarding form back when the team signed them off. Their answers will need chasing.",
+              },
+            },
+          ],
+        },
+      ],
+    });
   }
 
   const client = proposal.client as unknown as { name: string } | null;
   const venue = proposal.venue as unknown as { name: string } | null;
 
   // The last answer saved is when the form was handed in.
-  const submittedAt = responses
+  const submittedAt = (responses ?? [])
     .map((r) => r.created_at)
     .filter(Boolean)
     .sort()

@@ -147,7 +147,15 @@ export async function onProposalSignedOff(params: {
   notes: string;
 }) {
   const appUrl = await getAppUrl();
-  const responsesUrl = `${appUrl}/api/intake/${params.proposalToken}`;
+  /**
+   * `allow_empty` because the team can now sign a client off before their
+   * onboarding form comes back. Make fetches this as a file before it does
+   * anything else, so a 404 here would stop the whole run. With the flag it
+   * gets a one-line document saying the form is still outstanding, and the
+   * rest of the automation carries on. The client's own copy, sent from
+   * `onIntakeCompleted`, never carries it.
+   */
+  const responsesUrl = `${appUrl}/api/intake/${params.proposalToken}?allow_empty=1`;
 
   await Promise.allSettled([
     logAuditEvent(params.proposalId, "PROPOSAL_SIGNED_OFF", {
