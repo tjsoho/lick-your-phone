@@ -58,6 +58,13 @@ export async function getPinchToken(): Promise<string> {
     },
     body: new URLSearchParams({
       grant_type: "client_credentials",
+      /**
+       * The live credentials refuse a token without this and answer
+       * `invalid_request`, with nothing to say which field is missing. The
+       * sandbox credentials do not care either way, which is why it was
+       * never noticed. The agency's own working Make scenario sends it.
+       */
+      scope: "api1",
     }),
   });
 
