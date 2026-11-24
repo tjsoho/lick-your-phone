@@ -11,6 +11,38 @@ import axios from "axios";
 
 const PINCH_API_URL =
   process.env.PINCH_API_URL || "https://api.getpinch.com.au/test";
+
+/**
+ * WHICH PINCH THIS IS TALKING TO, AND WHY ANYONE SHOULD CARE.
+ *
+ * Pinch picks the environment off the address alone: `/test` and `/live` take
+ * the same credentials and look identical in every response. Nothing in a
+ * reply says which one answered.
+ *
+ * That cost this project months without anybody noticing. The portal ran
+ * against `/test` from the day it was built, so every payment method a client
+ * ever entered went into a sandbox: fifty payers sitting in test while the
+ * live account showed none, and no error anywhere, because test is not a
+ * failure. It answers 200 and holds the account exactly as live would.
+ *
+ * The silent fallback above is what made it invisible. It stays, because a
+ * missing variable should not take a developer's machine down, but it is no
+ * longer silent: the dashboard says out loud when the live site is pointed at
+ * a sandbox.
+ */
+export type PinchEnvironment = "test" | "live" | "unknown";
+
+export function pinchEnvironment(): PinchEnvironment {
+  const url = PINCH_API_URL.replace(/\/+$/, "");
+  if (url.endsWith("/test")) return "test";
+  if (url.endsWith("/live")) return "live";
+  return "unknown";
+}
+
+/** Whether this is the real site, as opposed to somebody's laptop. */
+export function pinchIsMisconfigured(): boolean {
+  return process.env.NODE_ENV === "production" && pinchEnvironment() !== "live";
+}
 const PINCH_AUTH_URL =
   process.env.PINCH_AUTH_URL || "https://auth.getpinch.com.au";
 const PINCH_MERCHANT_ID = process.env.PINCH_MERCHANT_ID || "";

@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Sidebar from "@/components/admin/Sidebar";
 import NotificationBell from "@/components/admin/NotificationBell";
 import HoverTips from "@/components/admin/HoverTips";
+import PinchEnvironmentBanner from "@/components/admin/PinchEnvironmentBanner";
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -57,7 +58,12 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
                 <NotificationBell />
               </div>
             </div>
-            <div className="px-6 pb-6 pt-2 lg:px-8 lg:pb-8">{children}</div>
+            <div className="px-6 pb-6 pt-2 lg:px-8 lg:pb-8">
+              {/* Above everything, on every page, because somebody has to
+                  see it before the next client enters their account. */}
+              <PinchEnvironmentBanner />
+              {children}
+            </div>
           </main>
         </div>
       ) : (
