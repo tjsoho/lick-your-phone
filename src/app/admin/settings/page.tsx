@@ -1,5 +1,6 @@
 import { getAgreementSettings } from "@/server-actions/agreement-settings";
 import AgreementSettingsForm from "@/components/admin/AgreementSettingsForm";
+import PaymentsStatusCard from "@/components/admin/PaymentsStatusCard";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,11 @@ export default async function SettingsPage() {
         initialTermsDocumentName={settings.termsDocumentName}
         initialPortalCopy={settings.portalCopy}
       />
+
+      {/* Not an agreement setting, but this is where somebody comes to ask
+          "is it on live yet", and the answer was previously unknowable
+          without reading an environment variable nobody can read. */}
+      <PaymentsStatusCard />
     </div>
   );
 }
