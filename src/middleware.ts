@@ -27,7 +27,13 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(new URL("/admin", request.url));
         }
 
-        if (pathname === "/admin/login") {
+        // Open without a session, by definition: somebody following an
+        // invite or a password-reset link has no session yet, and the whole
+        // point of the page is to give them one.
+        if (
+            pathname === "/admin/login" ||
+            pathname === "/admin/set-password"
+        ) {
             return NextResponse.next({ request: { headers: forwarded } });
         }
 

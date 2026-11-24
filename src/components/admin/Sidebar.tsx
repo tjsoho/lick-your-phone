@@ -12,6 +12,7 @@ import {
   Camera,
   MapPin,
   Settings,
+  UserPlus,
   LogOut,
   Menu,
   X,
@@ -37,6 +38,9 @@ const navItems = [
   { label: "Providers", icon: Camera, href: "/admin/providers" },
   { label: "Venues", icon: MapPin, href: "/admin/venues" },
   { label: "States", icon: MapPin, href: "/admin/states" },
+  // Who can open this dashboard at all. Sits next to Settings because it is
+  // the same kind of job: setting the place up rather than running a deal.
+  { label: "Users", icon: UserPlus, href: "/admin/users" },
   { label: "Settings", icon: Settings, href: "/admin/settings" },
 ];
 
