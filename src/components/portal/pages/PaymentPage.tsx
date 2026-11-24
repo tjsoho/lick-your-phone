@@ -480,9 +480,12 @@ function PaymentForm({
    * details." But some will only ever pay by card, so both are offered and
    * the bank account leads.
    *
-   * Either way nothing is charged here. A card is vaulted at Pinch, so the
-   * number never reaches us and accounting charges the token later. A bank
-   * account is encrypted and held, because there is no vault for one.
+   * Either way nothing is charged here, and either way Pinch holds it. A
+   * card is tokenised in the browser, so the number never reaches us at all.
+   * A bank account is posted to our server and handed straight on to Pinch,
+   * which keeps it against the same payer. We are left with the name and the
+   * last three digits, which is enough to recognise an account and not
+   * enough to debit one.
    */
   const [method, setMethod] = useState<"bank" | "card">("bank");
   // `method` can only ever be "bank" while cards are switched off, because
@@ -575,9 +578,9 @@ function PaymentForm({
       setStage("processing");
       setErrorMsg("");
       try {
-        // Straight to our own server, which encrypts before it stores. No
-        // provider in the middle: nothing is charged, the account is put on
-        // file for accounting to debit.
+        // Our own server takes the numbers and hands them straight to
+        // Pinch, which holds them. Nothing is charged, and nothing of the
+        // account stays here but its last three digits.
         const result = await captureBankDetails(proposalId, {
           accountName: accountName.trim(),
           bsb: bsbDigits,
@@ -634,10 +637,10 @@ function PaymentForm({
       // THE NUMBER NEVER REACHES US.
       //
       // Pinch tokenises it in the browser and we send on the token alone,
-      // which is the whole reason a card goes this way round rather than
-      // being encrypted into our own database like the bank account is.
-      // Holding card numbers would put the agency inside PCI DSS; holding a
-      // token does not.
+      // so a card number never touches our server at all. A bank account
+      // does pass through it, for one request, on its way to Pinch. Holding
+      // card numbers would put the agency inside PCI DSS; holding a token
+      // does not.
       const expiryFormatted = `${rawExp.slice(0, 2)}/${rawExp.slice(2)}`;
       const { token } = await capture.createToken({
         sourceType: "credit-card",

@@ -88,7 +88,17 @@ interface AuditPayloadMap {
    * never dispatched: it is a record of who looked, for the agency's own
    * sake, and it carries no part of the number.
    */
-  BANK_DETAILS_VIEWED: { proposalId: string; viewedBy: string };
+  /**
+   * `heldBy` says where the numbers were read from: "pinch" for an account
+   * Pinch holds, "portal" for one taken before that and still encrypted in
+   * our own database. It tells whoever reads the timeline which of the two
+   * stores was actually opened.
+   */
+  BANK_DETAILS_VIEWED: {
+    proposalId: string;
+    viewedBy: string;
+    heldBy?: "pinch" | "portal";
+  };
 }
 
 export async function logAuditEvent<K extends AuditEvent>(

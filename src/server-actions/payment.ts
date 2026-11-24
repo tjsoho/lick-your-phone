@@ -2,15 +2,20 @@
 
 import { createAdminClient, createClient } from "@/utils/server";
 import {
-  bankDetailsConfigured,
+  // `encryptField` has gone: nothing writes an account into our database any
+  // more. `decryptField` stays for the accounts taken before Pinch held them.
   decryptField,
-  encryptField,
   formatBsb,
   lastThree,
   normaliseAccountNumber,
   normaliseBsb,
 } from "@/lib/bank-details";
-import { createPayer, vaultSource } from "@/lib/pinch";
+import {
+  createPayer,
+  getPayer,
+  vaultBankAccount,
+  vaultSource,
+} from "@/lib/pinch";
 import crypto from "crypto";
 import { dispatchNotification } from "@/lib/notification-service";
 import { logAuditEvent } from "@/lib/audit-service";
@@ -344,28 +349,35 @@ export async function resedNotificationForPayment(proposalId: string) {
 /* ------------------------------------------------------------------ */
 
 /**
- * HOLDING AN ACCOUNT, NOT CHARGING IT.
+ * HOLDING AN ACCOUNT, NOT CHARGING IT. HELD BY PINCH, NOT BY US.
  *
  * "Collect BSB and account number instead of credit card details", and no
- * payment is taken: accounting debits the account later out of band. So this
- * does none of the Pinch work above. It validates, encrypts, and records that
- * the client gave their authority.
+ * payment is taken: accounting debits the account later out of band.
  *
- * The numbers are encrypted before they reach the database and never come
- * back to a browser from here. Reading them again is a separate, deliberate
- * act by a signed-in member of staff, and it leaves a line in the timeline.
+ * This used to encrypt the BSB and the account number into our own database,
+ * because the card path tokenised in the browser and there was believed to be
+ * no equivalent for an account. There is. Pinch takes a bank account on the
+ * same endpoint a card goes to, so it goes there now and we keep nothing but
+ * the name, the last three digits and the two ids Pinch gave back.
+ *
+ * What that buys: a dump of our database no longer contains a single account
+ * number, and the encryption key stops being the one thing standing between
+ * an attacker and every client's bank account.
+ *
+ * What it costs: a Pinch outage stops a client submitting, rather than
+ * quietly storing something we would then have to move. That is the right way
+ * round. The client is told to try again and nothing half-happens.
+ *
+ * One thing the client sees. Pinch raises a Direct Debit Request agreement
+ * itself the moment an account is handed to it, and marks it active, so the
+ * client may receive a DDR confirmation from Pinch. The wording above the
+ * tick box says as much.
  */
 export async function captureBankDetails(
   proposalId: string,
   input: { accountName: string; bsb: string; accountNumber: string },
 ): Promise<CaptureResult> {
   try {
-    if (!bankDetailsConfigured()) {
-      throw new Error(
-        "Bank details cannot be stored yet: the server is missing BANK_DETAILS_KEY.",
-      );
-    }
-
     const accountName = input.accountName.trim();
     if (accountName.length < 2) {
       throw new Error("Enter the name on the account.");
@@ -399,14 +411,54 @@ export async function captureBankDetails(
       );
     }
 
+    const clientRow = proposal.clients as unknown as {
+      name: string;
+      email: string;
+    } | null;
+
+    /**
+     * HAND IT TO PINCH BEFORE ANYTHING IS WRITTEN DOWN HERE.
+     *
+     * If this throws, nothing has been recorded and the client is told to
+     * try again. The alternative, writing the row first and vaulting after,
+     * leaves an account half-stored in two places, which is worse than a
+     * client having to press the button twice.
+     */
+    const nameParts = (clientRow?.name || "").trim().split(/\s+/);
+    let payerId: string;
+    let sourceId: string;
+    try {
+      const payer = await createPayer({
+        firstName: nameParts[0] || "Client",
+        lastName: nameParts.slice(1).join(" ") || "-",
+        emailAddress: proposal.signer_email || clientRow?.email || "",
+        companyName: clientRow?.name || undefined,
+      });
+      const source = await vaultBankAccount(payer.id, {
+        accountName,
+        bsb,
+        accountNumber,
+      });
+      payerId = payer.id;
+      sourceId = source.id;
+    } catch (err) {
+      console.error("[pinch] bank account could not be vaulted:", err);
+      throw new Error(
+        "We could not save those details just now. Please try again in a moment.",
+      );
+    }
+
     const now = new Date().toISOString();
     const { data: payment, error: paymentErr } = await supabase
       .from("payments")
       .insert({
         proposal_id: proposalId,
         bank_account_name: accountName,
-        bank_bsb_encrypted: encryptField(bsb),
-        bank_account_number_encrypted: encryptField(accountNumber),
+        // The two ids are the whole record of the account now. Neither is
+        // any use without our Pinch credentials.
+        pinch_payer_id: payerId,
+        pinch_source_id: sourceId,
+        // Enough to recognise an account on a screen, not enough to debit it.
         bank_account_last_three: lastThree(accountNumber),
         // Submitting the form IS the authority; the wording sits above the
         // button and the tick is required before it can be pressed.
@@ -421,10 +473,6 @@ export async function captureBankDetails(
       throw new Error(paymentErr?.message || "Failed to store bank details");
     }
 
-    const client = proposal.clients as unknown as {
-      name: string;
-      email: string;
-    } | null;
     const venue = proposal.venues as unknown as {
       name: string;
       address: string | null;
@@ -439,8 +487,8 @@ export async function captureBankDetails(
       accountName,
       accountLastThree: lastThree(accountNumber),
       client: {
-        clientName: client?.name || "",
-        clientEmail: proposal.signer_email || client?.email || "",
+        clientName: clientRow?.name || "",
+        clientEmail: proposal.signer_email || clientRow?.email || "",
         venueName: venue?.name || "",
         venueAddress: venue?.address || "",
         portalUrl: `${appUrl}/portal/${proposal.token}`,
@@ -481,30 +529,60 @@ export async function revealBankDetails(proposalId: string): Promise<{
     const { data: payment, error } = await supabase
       .from("payments")
       .select(
-        "bank_account_name, bank_bsb_encrypted, bank_account_number_encrypted",
+        "bank_account_name, bank_bsb_encrypted, bank_account_number_encrypted, pinch_payer_id, pinch_source_id",
       )
       .eq("proposal_id", proposalId)
-      .not("bank_bsb_encrypted", "is", null)
+      .or("pinch_source_id.not.is.null,bank_bsb_encrypted.not.is.null")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
 
     if (error) throw new Error(error.message);
-    if (!payment?.bank_bsb_encrypted || !payment.bank_account_number_encrypted) {
+    if (!payment) return { data: null, error: "No bank details on file." };
+
+    let accountName = payment.bank_account_name ?? "";
+    let bsb: string;
+    let accountNumber: string;
+
+    if (payment.pinch_payer_id && payment.pinch_source_id) {
+      /**
+       * The account lives at Pinch now, so this fetches it rather than
+       * decrypting anything. There is no endpoint for a single source, so
+       * the payer comes back whole and the one we stored is picked out.
+       */
+      const payer = await getPayer(payment.pinch_payer_id);
+      const source = (payer.sources ?? []).find(
+        (sc) => sc.id === payment.pinch_source_id,
+      );
+      if (!source || source.sourceType !== "bank-account") {
+        return {
+          data: null,
+          error: "Pinch no longer holds a bank account for this client.",
+        };
+      }
+      accountName = source.bankAccountName ?? accountName;
+      bsb = source.bankAccountBsb ?? "";
+      accountNumber = source.bankAccountNumber ?? "";
+    } else if (
+      payment.bank_bsb_encrypted &&
+      payment.bank_account_number_encrypted
+    ) {
+      // Taken before the account went to Pinch, and still readable here.
+      bsb = decryptField(payment.bank_bsb_encrypted);
+      accountNumber = decryptField(payment.bank_account_number_encrypted);
+    } else {
       return { data: null, error: "No bank details on file." };
     }
-
-    const bsb = decryptField(payment.bank_bsb_encrypted);
-    const accountNumber = decryptField(payment.bank_account_number_encrypted);
 
     await logAuditEvent(proposalId, "BANK_DETAILS_VIEWED", {
       proposalId,
       viewedBy: user.email ?? user.id,
+      heldBy: payment.pinch_source_id ? "pinch" : "portal",
     });
 
     return {
       data: {
-        accountName: payment.bank_account_name ?? "",
+        accountName,
         bsb: formatBsb(bsb),
         accountNumber,
       },
