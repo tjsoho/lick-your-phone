@@ -27,12 +27,18 @@ export default function SetPasswordForm() {
   /**
    * TURN WHATEVER THE LINK CARRIED INTO A SESSION.
    *
-   * Supabase hands the tokens back in one of two shapes depending on how the
-   * project is configured, so both are handled rather than guessing: a `code`
-   * in the query string, or the tokens themselves in the fragment after the
-   * hash. The fragment never reaches the server, which is the point of it.
+   * Three shapes, because links from three different eras can land here.
    *
-   * Either way the address bar is cleaned afterwards, so a password-setting
+   * `token_hash` is the one we issue now: the link points straight at this
+   * page on our own domain and the token is exchanged here. That is what
+   * keeps invites working regardless of the redirect allow list in the
+   * Supabase dashboard, which silently sent people to localhost before.
+   *
+   * `code` and the tokens-in-the-fragment form both come from Supabase's own
+   * verify endpoint, and are kept so a link somebody was sent earlier still
+   * works rather than dying on them.
+   *
+   * The address bar is cleaned afterwards either way, so a password-setting
    * token is not left sitting in the browser's history.
    */
   useEffect(() => {
@@ -43,6 +49,8 @@ export default function SetPasswordForm() {
 
       try {
         const url = new URL(window.location.href);
+        const tokenHash = url.searchParams.get("token_hash");
+        const otpType = url.searchParams.get("type");
         const code = url.searchParams.get("code");
         const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
         const accessToken = hash.get("access_token");
@@ -54,7 +62,13 @@ export default function SetPasswordForm() {
           return;
         }
 
-        if (code) {
+        if (tokenHash) {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: otpType === "invite" ? "invite" : "recovery",
+          });
+          if (error) throw error;
+        } else if (code) {
           const { error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
         } else if (accessToken && refreshToken) {

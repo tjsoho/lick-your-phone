@@ -32,6 +32,24 @@ export interface TeamMember {
   createdAt: string;
 }
 
+/**
+ * The address we hand somebody, on our own domain.
+ *
+ * `token_hash` and `type` are what `verifyOtp` needs on the other end. They
+ * are single use and short lived, so a link that leaks is a link that has
+ * probably already stopped working.
+ */
+function setPasswordLink(
+  appUrl: string,
+  hashedToken: string,
+  type: "invite" | "recovery",
+): string {
+  const url = new URL(`${appUrl}/admin/set-password`);
+  url.searchParams.set("token_hash", hashedToken);
+  url.searchParams.set("type", type);
+  return url.toString();
+}
+
 /** A signed-in member of staff, or nothing. Every action here needs one. */
 async function requireUser() {
   const session = await createClient();
@@ -94,6 +112,20 @@ export async function listTeamMembers(): Promise<{
  * rate limited to a couple an hour and will not reach an address outside the
  * project's own team unless custom SMTP is set up, so an invite could fail
  * silently. A link on screen cannot fail silently.
+ *
+ * THE LINK POINTS AT US, NOT AT SUPABASE.
+ *
+ * Supabase's own `action_link` goes to its `/auth/v1/verify` endpoint and
+ * then bounces to wherever `redirectTo` says. That bounce is checked against
+ * an allow list in the Supabase dashboard, and when the address is not on it
+ * Supabase silently substitutes the project's Site URL instead of refusing.
+ * This project's Site URL is still `http://localhost:3000`, so every invite
+ * would have landed a new starter on a dead address on their own machine,
+ * with nothing anywhere saying why.
+ *
+ * So the token is lifted out and the link is built against our own domain.
+ * The page exchanges it for a session itself. Nothing depends on a setting
+ * in a dashboard nobody here can see.
  */
 export async function addTeamMember(input: {
   name: string;
@@ -119,13 +151,10 @@ export async function addTeamMember(input: {
     const { data, error } = await admin.auth.admin.generateLink({
       type: "invite",
       email,
-      options: {
-        redirectTo: `${appUrl}/admin/set-password`,
-        data: { name },
-      },
+      options: { data: { name } },
     });
 
-    if (error || !data?.user || !data.properties?.action_link) {
+    if (error || !data?.user || !data.properties?.hashed_token) {
       // The usual cause by a mile, and worth saying in plain words rather
       // than passing Supabase's own wording through.
       if (error?.message?.toLowerCase().includes("already")) {
@@ -159,7 +188,7 @@ export async function addTeamMember(input: {
 
     revalidatePath("/admin/users");
     return {
-      data: { link: data.properties.action_link, email },
+      data: { link: setPasswordLink(appUrl, data.properties.hashed_token, "invite"), email },
       error: null,
     };
   } catch (err) {
@@ -186,17 +215,21 @@ export async function resendPasswordLink(
     const { data, error } = await admin.auth.admin.generateLink({
       type: "recovery",
       email: email.trim().toLowerCase(),
-      options: { redirectTo: `${appUrl}/admin/set-password` },
     });
 
-    if (error || !data?.properties?.action_link) {
+    if (error || !data?.properties?.hashed_token) {
       return {
         data: null,
         error: error?.message ?? "A link could not be created for that address.",
       };
     }
 
-    return { data: { link: data.properties.action_link }, error: null };
+    return {
+      data: {
+        link: setPasswordLink(appUrl, data.properties.hashed_token, "recovery"),
+      },
+      error: null,
+    };
   } catch (err) {
     return { data: null, error: (err as Error).message };
   }
