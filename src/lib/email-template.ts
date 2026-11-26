@@ -23,6 +23,11 @@ export const PLACEHOLDER_LABELS: Record<string, string> = {
   signed_at: "When they signed",
   total: "The contract total",
   currency: "The currency, normally AUD",
+  // The chase emails only.
+  outstanding_step:
+    "What they still have to do, in words. Fills in as \"your agreement\" or \"your onboarding form\".",
+  rep_name: "The first name of whoever is looking after them",
+  unsubscribe_url: "Where they go to stop these reminders. Chase emails only.",
 };
 
 /**
